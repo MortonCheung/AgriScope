@@ -22,6 +22,14 @@ export type MdBlock =
 const HEADING = /^(#{1,4})\s+(.*)$/;
 const LIST_ITEM = /^[-*]\s+(.*)$/;
 const TABLE_ROW = /^\|(.+)\|$/;
+/**
+ * 行内语法：粗体 / 斜体 / 代码 / 链接。这四种是研究正文真正用到的全部写法。
+ * 斜体刻意要求内容两侧都不是空白，否则 `A * B * C` 这种乘法会被误认成斜体。
+ */
+const INLINE = /(\*\*[^*]+\*\*|\*[^\s*][^*\n]*[^\s*]\*|`[^`]+`|\[[^\]\n]+\]\([^)\n]+\))/g;
+const LINK = /^\[([^\]\n]+)\]\(([^)\n]+)\)$/;
+/** 只允许这两种协议，避免把 `javascript:` 之类的东西渲染成可点击链接。 */
+const SAFE_PROTOCOL = /^https?:\/\//i;
 
 function splitRow(line: string): string[] {
   const inner = TABLE_ROW.exec(line.trim());
@@ -220,14 +228,27 @@ export function renderInline(rawText: string, keyPrefix = 'i', refs?: Map<string
 }
 
 function renderPrepared(text: string, keyPrefix: string, refs?: Map<string, string>): ReactNode[] {
-  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).filter((part) => part !== '');
+  const parts = text.split(INLINE).filter((part) => part !== '');
   return parts.map((part, index) => {
     const key = `${keyPrefix}-${index}`;
     if (part.startsWith('**') && part.endsWith('**')) {
       return <strong key={key}>{renderPrepared(part.slice(2, -2), `${key}s`, refs)}</strong>;
     }
+    /** 斜体：研究用它标刊物名（`*Econometrica*`）。 */
+    if (part.length > 2 && part.startsWith('*') && part.endsWith('*')) {
+      return <em key={key}>{renderPrepared(part.slice(1, -1), `${key}e`, refs)}</em>;
+    }
     if (part.startsWith('`') && part.endsWith('`')) {
       return <Fragment key={key}>{inlineCode(part.slice(1, -1), refs)}</Fragment>;
+    }
+    /** 链接：参考文献用 `[地址](地址)`。非 http(s) 一律按普通文字处理。 */
+    const link = LINK.exec(part);
+    if (link && SAFE_PROTOCOL.test(link[2].trim())) {
+      return (
+        <a key={key} href={link[2].trim()} target="_blank" rel="noreferrer noopener">
+          {renderPrepared(link[1], `${key}a`, refs)}
+        </a>
+      );
     }
     const plain = translateBare(part).replace(EMPTY_BRACKETS, '');
     const matches = plain.match(FILE_IN_TEXT) ?? [];

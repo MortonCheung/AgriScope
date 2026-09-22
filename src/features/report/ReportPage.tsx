@@ -60,6 +60,31 @@ export function ReportPage() {
   article.tables.forEach((table, index) => assetRefs.set(table.file, `表 ${index + 1}`));
   article.figures.forEach((figure, index) => assetRefs.set(figure.file, `图 ${index + 1}`));
 
+  /**
+   * A09 自己的章节已经包含「研究方法 / 研究局限 / 结论」。
+   * 前端如果再把它们当独立区块追加一次，页面上就会出现两遍同名小节（§73/§74：
+   * 不要另拼一套结构覆盖研究原文）。因此**只在原文章节没有覆盖时才补**。
+   */
+  const sectionTitles = article.sections.map((section) => section.title);
+  const covered = (keywords: string[]) => sectionTitles.some((title) => keywords.some((word) => title.includes(word)));
+  const showConclusion = !covered(['结论']);
+  const showMethods = !covered(['方法']);
+  const showLimitations = !covered(['限制', '局限']);
+
+  /** 正文点名过的图 / 表就近落位；谁也没点名的才在文末集中呈现（避免出现两遍）。 */
+  const looseTables = new Set(article.tables.map((table) => table.file));
+  const looseFigures = new Set(article.figures.map((figure) => figure.file));
+  const placements = article.sections.map((section) => {
+    const tables = article.tables.filter((table) => looseTables.has(table.file) && section.content.includes(table.file));
+    const figures = article.figures.filter((figure) => looseFigures.has(figure.file) && section.content.includes(figure.file));
+    tables.forEach((table) => looseTables.delete(table.file));
+    figures.forEach((figure) => looseFigures.delete(figure.file));
+    return { section, tables, figures };
+  });
+
+  /** 「图 2」→ 2；只用于图注编号，取不到就退回 1。 */
+  const refOrder = (ref: string | undefined) => Number((ref ?? '').replace(/\D/g, '')) || 1;
+
   return (
     <main className="report">
       <div className="report__body">
@@ -74,46 +99,60 @@ export function ReportPage() {
           <MarkdownBlocks source={article.abstract} refs={assetRefs} />
         </section>
 
-        {article.sections.map((section) => (
+        {placements.map(({ section, tables, figures }) => (
           <section className="report__section" id={`section-${section.number}`} key={section.number}>
             <h2 className="report__section-title">{section.title}</h2>
             <MarkdownBlocks source={section.content} refs={assetRefs} />
+            {tables.map((table) => (
+              <div className="report__asset-wide" key={table.file}>
+                <TableAsset file={table.file} caption={`${assetRefs.get(table.file) ?? ''} · ${section.title}`} />
+              </div>
+            ))}
+            {figures.map((figure) => (
+              <div className="report__asset-wide" key={figure.file}>
+                <V2Figure src={v2AssetUrl.figure(figure.file)} alt={`${article.title} 配图`} index={refOrder(assetRefs.get(figure.file))} />
+              </div>
+            ))}
           </section>
         ))}
 
-        {article.figures.length > 0 && (
+        {looseFigures.size > 0 && (
           <section className="report__section">
             <h2 className="report__section-title">图表</h2>
-            {article.figures.map((figure, index) => (
+            {article.figures.filter((figure) => looseFigures.has(figure.file)).map((figure) => (
               <div className="report__asset-wide" key={figure.file}>
-                <V2Figure src={v2AssetUrl.figure(figure.file)} alt={`${article.title} 配图 ${index + 1}`} index={index + 1} />
+                <V2Figure src={v2AssetUrl.figure(figure.file)} alt={`${article.title} 配图`} index={refOrder(assetRefs.get(figure.file))} />
               </div>
             ))}
           </section>
         )}
 
-        {article.tables.length > 0 && (
+        {looseTables.size > 0 && (
           <section className="report__section">
             <h2 className="report__section-title">数据表</h2>
-            {article.tables.map((table, index) => (
+            {article.tables.filter((table) => looseTables.has(table.file)).map((table) => (
               <div className="report__asset-wide" key={table.file}>
-                <TableAsset file={table.file} caption={`表 ${index + 1} · ${article.title}`} />
+                <TableAsset file={table.file} caption={`${assetRefs.get(table.file) ?? ''} · ${article.title}`} />
               </div>
             ))}
           </section>
         )}
 
-        <section className="report__section">
-          <h2 className="report__section-title">结论</h2>
-          <MarkdownBlocks source={article.conclusion} refs={assetRefs} />
-        </section>
+        {showConclusion && (
+          <section className="report__section">
+            <h2 className="report__section-title">结论</h2>
+            <MarkdownBlocks source={article.conclusion} refs={assetRefs} />
+          </section>
+        )}
 
-        <section className="report__section">
-          <h2 className="report__section-title">方法</h2>
-          {article.methods.map((method, index) => <MarkdownBlocks key={index} source={method.summary} refs={assetRefs} />)}
-        </section>
+        {showMethods && (
+          <section className="report__section">
+            <h2 className="report__section-title">方法</h2>
+            {article.methods.map((method, index) => <MarkdownBlocks key={index} source={method.summary} refs={assetRefs} />)}
+          </section>
+        )}
 
-        {article.limitations.length > 0 && (
+        {showLimitations && article.limitations.length > 0 && (
           <section className="report__section">
             <h2 className="report__section-title">研究限制</h2>
             <ul className="report__list">
