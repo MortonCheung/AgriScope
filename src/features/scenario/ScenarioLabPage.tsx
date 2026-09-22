@@ -43,7 +43,6 @@ export function ScenarioLabPage() {
   return (
     <main className="ag-page ag-container scenario-lab">
       <header className="scenario-lab__head">
-        <p className="ag-label">情景实验</p>
         <h1 className="ag-hero scenario-lab__title">平行世界实验室</h1>
         <p className="ag-lead">
           把 2026 暴雨事件放进四个平行情景：基准情景、无灾害情景、冲击增强情景、供应缓冲情景。
@@ -148,7 +147,7 @@ function ScenarioLabBody({ tables }: { tables: ResearchTable[] }) {
           <p className="ag-label">情景参数</p>
           <h2 className="ag-section-title" id="scenario-params">三个可调项</h2>
           <p className="ag-body">
-            每项的可选集合都来自真实研究表。若取值不在表中，界面对齐到最接近的真实取值并明确标注，不做插值。
+            可选值都来自真实研究表；取值不在表中时，界面对齐到最近的真实取值并标注，不做插值。
           </p>
         </div>
         <div className="scenario-lab__params">

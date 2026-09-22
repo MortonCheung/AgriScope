@@ -19,9 +19,8 @@ export function CityReportPage() {
   if (!city) {
     return (
       <main className="ag-page ag-container ag-container--prose">
-        <p className="ag-label">城市综合研究</p>
         <h1 className="ag-hero">未知城市</h1>
-        <p className="ag-body">没有名为 {cityId} 的研究城市。请从省域空间重新选择。</p>
+        <p className="ag-body">没有名为 {cityId} 的研究城市。</p>
         <div className="ag-row">
           <Link className="ag-button" to={ROUTES.liaoning}>返回辽宁</Link>
         </div>
@@ -32,7 +31,6 @@ export function CityReportPage() {
   if (!city.hasResearch) {
     return (
       <main className="ag-page ag-container ag-container--prose">
-        <p className="ag-label">城市综合研究</p>
         <h1 className="ag-hero">{city.name}</h1>
         <p className="ag-lead">
           {city.shortName}的研究尚未开放。当前阶段的完整样板为沈阳，其余城市沿用同一套研究方法与页面模板。
@@ -89,7 +87,6 @@ function CityReportBody({ index }: { index: CityResearchIndex }) {
         <div className="ag-row city-report__entries">
           <Link className="ag-button" to={ROUTES.city(index.cityId)}>城市研究空间</Link>
           <Link className="ag-button" to={ROUTES.rainstorm}>2026 暴雨专题</Link>
-          <Link className="ag-button" to={ROUTES.scenarioLab}>平行世界实验室</Link>
         </div>
       </header>
 
@@ -123,7 +120,7 @@ function CityReportBody({ index }: { index: CityResearchIndex }) {
         <div className="ag-section__head">
           <p className="ag-label">专题结构</p>
           <h2 className="ag-section-title" id="city-report-topics">{index.topics.length} 个专题 · {index.points.length} 个研究点</h2>
-          <p className="ag-body">每个专题的结论由多个研究点支撑。进入研究点可查看交互研究表与原始图表。</p>
+          <p className="ag-body">进入研究点可查看交互研究表与原始图表。</p>
         </div>
         <div className="city-report__topics">
           {index.topics.map((topic) => (

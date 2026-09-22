@@ -8,7 +8,6 @@ export function AboutPage() {
   return (
     <main className="ag-page ag-container ag-container--prose about-page">
       <header className="ag-stack ag-stack--tight">
-        <p className="ag-label">关于</p>
         <h1 className="ag-hero">AgriScope 穹衡</h1>
         <p className="ag-lead">
           面向辽宁农业场景的交互式数据研究产品。核心问题：不同城市的农业与市场如何面对气象风险？
@@ -76,8 +75,8 @@ export function AboutPage() {
           </p>
         </div>
         <div className="ag-row">
-          <Link className="ag-button" to={ROUTES.city('shenyang')}>沈阳研究空间</Link>
-          <Link className="ag-button" to={ROUTES.liaoning}>辽宁省域空间</Link>
+          <Link className="ag-button" to={ROUTES.city('shenyang')}>沈阳研究</Link>
+          <Link className="ag-button" to={ROUTES.liaoning}>辽宁</Link>
         </div>
       </section>
     </main>
