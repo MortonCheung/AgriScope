@@ -46,7 +46,7 @@
 .city-report__topics { display: flex; flex-direction: column; gap: var(--ag-space-8); }
 .report-topic { display: flex; flex-direction: column; gap: var(--ag-space-3); }
 .report-topic__head { display: flex; align-items: baseline; gap: var(--ag-space-3); flex-wrap: wrap; }
-.report-topic__id { color: var(--ag-ink-faint); font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); letter-spacing: 0.14em; }
+.report-topic__id { color: var(--ag-ink-muted); font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); letter-spacing: 0.14em; }
 .report-topic__title { margin: 0; color: var(--ag-ink); font-size: 1.1rem; font-weight: 600; }
 .report-topic__summary { max-width: 74ch; }
 
@@ -61,7 +61,7 @@
   transition: background var(--ag-dur-fast) var(--ag-ease);
 }
 .report-point:hover { background: color-mix(in srgb, var(--ag-ink) 4%, transparent); }
-.report-point__id { color: var(--ag-ink-faint); font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); letter-spacing: 0.1em; }
+.report-point__id { color: var(--ag-ink-muted); font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); letter-spacing: 0.1em; }
 .report-point__title { min-width: 0; color: var(--ag-ink); font-size: 1rem; line-height: 1.45; }
 .report-point__tags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 

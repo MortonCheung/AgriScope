@@ -25,14 +25,14 @@
 
 /* 筛选器 */
 .selector { display: flex; flex-direction: column; gap: 6px; }
-.selector__label { color: var(--ag-ink-faint); font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); letter-spacing: 0.12em; text-transform: uppercase; }
+.selector__label { color: var(--ag-ink-muted); font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); letter-spacing: 0.12em; text-transform: uppercase; }
 .selector__options { display: flex; gap: 6px; flex-wrap: wrap; }
 
 /* 图表 */
 .chart { display: flex; flex-direction: column; gap: 8px; }
 .chart__svg { width: 100%; height: auto; overflow: visible; }
 .chart__readout { min-height: 1.2em; color: var(--ag-ink-soft); font-size: var(--ag-fs-small); font-variant-numeric: tabular-nums; }
-.chart__readout-hint { color: var(--ag-ink-ghost); }
+.chart__readout-hint { color: var(--ag-ink-muted); }
 .chart__legend { display: flex; gap: var(--ag-space-4); flex-wrap: wrap; margin: 0; padding: 0; list-style: none; }
 .chart__legend li { display: inline-flex; align-items: center; gap: 6px; color: var(--ag-ink-muted); font-size: var(--ag-fs-meta); }
 .chart__swatch { width: 10px; height: 2px; border-radius: 1px; }
@@ -41,7 +41,7 @@
 /* 时间控制器 */
 .scrubber { display: flex; align-items: center; gap: var(--ag-space-3); }
 .scrubber__input { flex: 1; min-width: 120px; accent-color: var(--ag-ink); }
-.scrubber__bound { color: var(--ag-ink-faint); }
+.scrubber__bound { color: var(--ag-ink-muted); }
 .scrubber__value { color: var(--ag-ink); font-size: var(--ag-fs-small); min-width: 8ch; text-align: right; }
 /* 播放按钮（V3 §54）：普通文字按钮，不用胶囊。 */
 .scrubber__play { min-height: 28px; padding: 0 2px; border: 0; border-radius: 0; background: transparent; color: var(--ag-ink-muted); font-size: var(--ag-fs-meta); transition: color var(--ag-dur-fast) var(--ag-ease); }
@@ -50,7 +50,7 @@
 /* 研究表浏览器 */
 .table-explorer { display: flex; flex-direction: column; gap: var(--ag-space-3); }
 .table-explorer__bar { display: flex; align-items: center; justify-content: space-between; gap: var(--ag-space-4); flex-wrap: wrap; }
-.table-explorer__meta { color: var(--ag-ink-faint); font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); }
+.table-explorer__meta { color: var(--ag-ink-muted); font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); }
 .table-explorer__scroll { max-height: 420px; overflow: auto; border: 1px solid var(--ag-rule-soft); border-radius: var(--ag-radius-sm); }
 .table-explorer th button { color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; }
 .table-explorer th[aria-sort] button { color: var(--ag-ink); }
@@ -59,7 +59,7 @@
 /* 关键数字行内读数 */
 .readout-row { display: flex; gap: var(--ag-space-5); flex-wrap: wrap; }
 .readout-row__item { display: flex; flex-direction: column; gap: 2px; }
-.readout-row__item dt { color: var(--ag-ink-faint); font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); }
+.readout-row__item dt { color: var(--ag-ink-muted); font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); }
 .readout-row__item dd { margin: 0; color: var(--ag-ink); font-size: 1.1rem; }
 
 /* 逐步诊断（伪显著揭示） */

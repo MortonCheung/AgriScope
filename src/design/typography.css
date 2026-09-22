@@ -20,7 +20,8 @@
   --ag-fs-micro: 0.6875rem;
 
   --ag-lh-tight: 1.06;
-  --ag-lh-heading: 1.18;
+  /* 中文大型标题在 Safari 下 1.18 过紧（V3 §25）：放宽到 1.26，避免两行/三行中文贴在一起 */
+  --ag-lh-heading: 1.26;
   --ag-lh-body: 1.78;
   --ag-lh-relaxed: 1.9;
 
@@ -45,6 +46,9 @@
   font-size: var(--ag-fs-hero);
   line-height: var(--ag-lh-heading);
   letter-spacing: var(--ag-tracking-display);
+  /* 长中文标题 / 中文+数字混排不得溢出或重叠（V3 §25/§62） */
+  overflow-wrap: break-word;
+  text-wrap: balance;
 }
 
 .ag-section-title {
@@ -54,6 +58,7 @@
   font-size: var(--ag-fs-section);
   line-height: var(--ag-lh-heading);
   letter-spacing: -0.01em;
+  overflow-wrap: break-word;
   text-wrap: balance;
 }
 
@@ -62,8 +67,9 @@
   font-family: var(--ag-font-text);
   font-weight: 600;
   font-size: var(--ag-fs-title);
-  line-height: 1.35;
+  line-height: 1.38;
   letter-spacing: -0.01em;
+  overflow-wrap: break-word;
 }
 
 .ag-lead {
@@ -82,10 +88,11 @@
   line-height: var(--ag-lh-body);
 }
 
+/* 分区标签是功能文字（城市结论 / 核心数据 / 研究信息），不能太浅（V3 §20/§63） */
 .ag-label {
   display: block;
   margin: 0;
-  color: var(--ag-ink-faint);
+  color: var(--ag-ink-muted);
   font-family: var(--ag-font-mono);
   font-size: var(--ag-fs-micro);
   letter-spacing: var(--ag-tracking-label);

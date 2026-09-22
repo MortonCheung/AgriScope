@@ -23,7 +23,7 @@
   text-align: left;
 }
 .research-tree__toggle:disabled { cursor: default; }
-.research-tree__topic-id { color: var(--ag-ink-faint); font-family: var(--ag-font-mono); font-size: 0.625rem; letter-spacing: 0.14em; }
+.research-tree__topic-id { color: var(--ag-ink-muted); font-family: var(--ag-font-mono); font-size: 0.625rem; letter-spacing: 0.14em; }
 .research-tree__topic-title { color: var(--ag-ink); font-size: 0.9375rem; font-weight: 600; line-height: 1.45; }
 
 /* 结构线（§18）：很浅、很细、很克制；├ / └ 由伪元素画出来 */
@@ -63,7 +63,7 @@
   padding: 6px 0;
   text-align: left;
 }
-.research-tree__point-id { color: var(--ag-ink-faint); font-family: var(--ag-font-mono); font-size: 0.625rem; letter-spacing: 0.06em; }
+.research-tree__point-id { color: var(--ag-ink-muted); font-family: var(--ag-font-mono); font-size: 0.625rem; letter-spacing: 0.06em; }
 .research-tree__point-title { color: var(--ag-ink-muted); font-size: 0.8125rem; line-height: 1.5; transition: color var(--ag-dur-fast) var(--ag-ease); }
 .research-tree__link:hover .research-tree__point-title { color: var(--ag-ink); }
 .research-tree__link[data-selected] .research-tree__point-title { color: var(--ag-ink); }

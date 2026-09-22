@@ -32,7 +32,7 @@
   font-style: normal;
   font-size: 9px;
   letter-spacing: 0.14em;
-  color: var(--ag-ink-faint);
+  color: var(--ag-ink-muted);
 }
 /* 地图侧 hover：与右下城市入口共用同一个状态，只加深文字，不再画下划线（V3 §8/§46） */
 .liaoning-label.is-active { color: var(--ag-ink); }

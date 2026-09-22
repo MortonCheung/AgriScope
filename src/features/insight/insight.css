@@ -54,4 +54,4 @@
   white-space: pre-wrap;
   word-break: break-word;
 }
-.insight-dock__note { margin: 0; color: var(--ag-ink-faint); font-size: var(--ag-fs-micro); line-height: 1.6; }
+.insight-dock__note { margin: 0; color: var(--ag-ink-muted); font-size: var(--ag-fs-micro); line-height: 1.6; }

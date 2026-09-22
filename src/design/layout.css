@@ -149,7 +149,7 @@ img, svg { display: block; max-width: 100%; }
 /* ---------- 表格 ---------- */
 .ag-table { width: 100%; border-collapse: collapse; font-size: var(--ag-fs-small); }
 .ag-table th, .ag-table td { padding: 9px 12px; border-bottom: 1px solid var(--ag-rule-soft); text-align: left; vertical-align: top; }
-.ag-table th { color: var(--ag-ink-faint); font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; }
+.ag-table th { color: var(--ag-ink-muted); font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; }
 .ag-table td { color: var(--ag-ink-soft); font-variant-numeric: tabular-nums; }
 .ag-table tbody tr:hover td { background: var(--ag-paper-sunken); }
 

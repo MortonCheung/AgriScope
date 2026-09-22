@@ -47,7 +47,7 @@
 .scenario-param__input { width: 100%; margin: var(--ag-space-2) 0; accent-color: var(--ag-ink); }
 .scenario-param__note { margin: 0; color: var(--ag-ink-soft); font-size: var(--ag-fs-small); line-height: 1.65; }
 .scenario-param[data-clamped] .scenario-param__note { color: var(--ag-danger); }
-.scenario-param__hint { margin: 0; color: var(--ag-ink-faint); font-size: var(--ag-fs-meta); line-height: 1.65; }
+.scenario-param__hint { margin: 0; color: var(--ag-ink-muted); font-size: var(--ag-fs-meta); line-height: 1.65; }
 
 /* 四个世界 */
 .scenario-lab__worlds { align-items: start; }
