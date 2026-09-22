@@ -24,7 +24,7 @@
   padding: var(--ag-space-5) var(--ag-space-2);
   cursor: pointer;
   list-style: none;
-  transition: background 160ms var(--ag-ease);
+  transition: background var(--ag-dur-fast) var(--ag-ease);
 }
 .report-qa__summary::-webkit-details-marker { display: none; }
 .report-qa__summary:hover { background: color-mix(in srgb, var(--ag-ink) 3%, transparent); }
@@ -58,7 +58,7 @@
   gap: var(--ag-space-4);
   padding: var(--ag-space-4) var(--ag-space-2);
   border-bottom: 1px solid var(--ag-rule-soft);
-  transition: background 160ms var(--ag-ease);
+  transition: background var(--ag-dur-fast) var(--ag-ease);
 }
 .report-point:hover { background: color-mix(in srgb, var(--ag-ink) 4%, transparent); }
 .report-point__id { color: var(--ag-ink-faint); font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); letter-spacing: 0.1em; }

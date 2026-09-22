@@ -45,7 +45,7 @@
 .rainstorm__media--inline { position: static; max-height: none; overflow: visible; padding-right: 0; }
 
 .rainstorm__steps { display: flex; flex-direction: column; gap: clamp(56px, 12vh, 132px); margin: 0; padding: 0; list-style: none; }
-.rainstorm__step { display: flex; flex-direction: column; gap: var(--ag-space-5); opacity: 0.62; transition: opacity 260ms var(--ag-ease); }
+.rainstorm__step { display: flex; flex-direction: column; gap: var(--ag-space-5); opacity: 0.62; transition: opacity var(--ag-dur-normal) var(--ag-ease); }
 .rainstorm__step[data-active] { opacity: 1; }
 
 .rainstorm__step-text { display: flex; flex-direction: column; gap: var(--ag-space-3); max-width: 62ch; }

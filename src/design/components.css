@@ -33,7 +33,7 @@
   border-top: 1px solid var(--ag-rule-soft);
   background: transparent;
   text-align: left;
-  transition: background 160ms var(--ag-ease);
+  transition: background var(--ag-dur-fast) var(--ag-ease);
 }
 .ag-point-row:hover { background: color-mix(in srgb, var(--ag-ink) 4%, transparent); }
 .ag-point-row__main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }

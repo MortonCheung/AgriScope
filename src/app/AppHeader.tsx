@@ -1,7 +1,8 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, useReducedMotion } from 'motion/react';
 import { ROUTES } from './routes';
-import { MOTION_DURATION, MOTION_SPRING } from '../design/motion';
+import { AnimatedUnderline } from '../components/AnimatedUnderline';
+import { MOTION_DURATION } from '../design/motion';
 import './app-header.css';
 
 /**
@@ -55,21 +56,14 @@ export function AppHeader() {
               <NavLink
                 key={item.label}
                 to={item.to}
-                className="ag-header__link"
+                className="ag-header__link ag-underline-host"
                 aria-current={active ? 'page' : undefined}
                 data-active={active || undefined}
               >
                 {item.label}
-                {/* Hover 是本地临时下划线；Active 是共享指示线，两者不打架（V2 §43/§44） */}
-                <span className="ag-header__hover-line" aria-hidden />
-                {active && (
-                  <motion.span
-                    layoutId="main-nav-indicator"
-                    className="ag-header__indicator"
-                    aria-hidden
-                    transition={reducedMotion ? { duration: 0 } : MOTION_SPRING.direct}
-                  />
-                )}
+                {/* Hover 是本地临时下划线；Active 是共享指示线，两者不打架（V2 §42/§43/§44） */}
+                <AnimatedUnderline hover tone="soft" />
+                {active && <AnimatedUnderline layoutId="main-nav-indicator" tone="ink" />}
               </NavLink>
             );
           })}

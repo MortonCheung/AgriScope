@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { motion, useReducedMotion } from 'motion/react';
 import { ROUTES } from '../../app/routes';
 import { AsyncBoundary } from '../../components/AsyncState';
 import { EvidenceBadge, StatusBadge } from '../../components/EvidenceBadge';
 import { KeyNumberGrid } from '../../components/KeyNumberGrid';
 import { EVIDENCE_LEVELS } from '../../domain/research';
+import { MOTION_SPRING } from '../../design/motion';
 import type { CityResearchIndex, ResearchArticle, ResearchPoint } from '../../domain/research/types';
 import { ResearchRepository } from '../../services/ResearchRepository';
 import { useCityResearch, type AsyncState } from '../../services/useCityResearch';
@@ -86,6 +88,7 @@ function ResearchPointBody({ index, point, mode, onModeChange, articleState }: {
   articleState: AsyncState<ResearchArticle>;
 }) {
   const evidence = EVIDENCE_LEVELS[point.evidenceLevel];
+  const reducedMotion = Boolean(useReducedMotion());
   const setPointContext = useResearchContextStore((state) => state.setPoint);
   const topicSummary = useMemo(
     () => index.topics.find((topic) => topic.id === point.topicId)?.summary ?? '',
@@ -136,7 +139,16 @@ function ResearchPointBody({ index, point, mode, onModeChange, articleState }: {
           data-active={mode === 'interactive' || undefined}
           onClick={() => onModeChange('interactive')}
         >
-          交互研究
+          {/* 选中态是与侧栏同源的共享指示块：在 tab 之间滑动，而不是瞬间换底（§45/§103） */}
+          {mode === 'interactive' && (
+            <motion.span
+              layoutId="research-point-tab"
+              className="research-point__tab-pill"
+              aria-hidden
+              transition={reducedMotion ? { duration: 0 } : MOTION_SPRING.soft}
+            />
+          )}
+          <span className="research-point__tab-label">交互研究</span>
         </button>
         <button
           type="button"
@@ -147,7 +159,15 @@ function ResearchPointBody({ index, point, mode, onModeChange, articleState }: {
           onClick={() => onModeChange('article')}
           disabled={!point.articleId}
         >
-          查看原文
+          {mode === 'article' && (
+            <motion.span
+              layoutId="research-point-tab"
+              className="research-point__tab-pill"
+              aria-hidden
+              transition={reducedMotion ? { duration: 0 } : MOTION_SPRING.soft}
+            />
+          )}
+          <span className="research-point__tab-label">查看原文</span>
         </button>
       </div>
 

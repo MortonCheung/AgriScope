@@ -18,14 +18,25 @@
 
 .research-point__switch { display: inline-flex; gap: 2px; align-self: flex-start; padding: 3px; border: 1px solid var(--ag-rule); border-radius: var(--ag-radius-pill); }
 .research-point__tab {
+  position: relative;
   padding: 7px 16px;
   border-radius: var(--ag-radius-pill);
   color: var(--ag-ink-muted);
   font-size: var(--ag-fs-small);
-  transition: background 180ms var(--ag-ease), color 180ms var(--ag-ease);
+  transition: color var(--ag-dur-fast) var(--ag-ease);
 }
 .research-point__tab:hover:not(:disabled) { color: var(--ag-ink); }
-.research-point__tab[data-active] { background: var(--ag-ink); color: var(--ag-paper); }
+.research-point__tab:disabled { color: var(--ag-ink-ghost); cursor: not-allowed; }
+.research-point__tab[data-active] { color: var(--ag-paper); }
+/* 共享指示块：两块 tab 之间连续滑动，视觉与侧栏选中态同源（§45/§103）。 */
+.research-point__tab-pill {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: var(--ag-radius-pill);
+  background: var(--ag-ink);
+}
+.research-point__tab-label { position: relative; z-index: 1; }
 
 .research-point__body { display: flex; flex-direction: column; gap: var(--ag-space-7); padding-top: var(--ag-space-5); border-top: 1px solid var(--ag-rule); }
 .research-point__backlink { align-self: flex-start; color: var(--ag-ink-muted); font-size: var(--ag-fs-small); }

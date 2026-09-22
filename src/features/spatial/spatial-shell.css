@@ -5,7 +5,7 @@
   inset: 0;
   z-index: 0;
   opacity: 1;
-  transition: opacity 440ms var(--ag-ease);
+  transition: opacity var(--ag-dur-slow) var(--ag-ease);
 }
 .spatial-shell__canvas:not([data-visible]) { opacity: 0; pointer-events: none; }
 .spatial-shell__canvas canvas { display: block; width: 100% !important; height: 100% !important; touch-action: none; }

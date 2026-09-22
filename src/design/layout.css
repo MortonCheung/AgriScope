@@ -96,7 +96,7 @@ img, svg { display: block; max-width: 100%; }
   background: transparent;
   color: var(--ag-ink);
   font-size: var(--ag-fs-small);
-  transition: background 180ms var(--ag-ease), border-color 180ms var(--ag-ease), color 180ms var(--ag-ease);
+  transition: background var(--ag-dur-fast) var(--ag-ease), border-color var(--ag-dur-fast) var(--ag-ease), color var(--ag-dur-fast) var(--ag-ease);
 }
 .ag-button:hover { border-color: var(--ag-ink); background: var(--ag-paper-sunken); }
 .ag-button--primary { background: var(--ag-ink); border-color: var(--ag-ink); color: var(--ag-paper); }
@@ -116,7 +116,7 @@ img, svg { display: block; max-width: 100%; }
   color: var(--ag-ink-muted);
   font-size: var(--ag-fs-meta);
   white-space: nowrap;
-  transition: border-color 160ms var(--ag-ease), color 160ms var(--ag-ease), background 160ms var(--ag-ease);
+  transition: border-color var(--ag-dur-fast) var(--ag-ease), color var(--ag-dur-fast) var(--ag-ease), background var(--ag-dur-fast) var(--ag-ease);
 }
 .ag-chip:hover { border-color: var(--ag-rule-strong); color: var(--ag-ink); }
 .ag-chip[aria-pressed="true"], .ag-chip[data-active="true"] { border-color: var(--ag-ink); background: var(--ag-ink); color: var(--ag-paper); }

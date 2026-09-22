@@ -15,6 +15,12 @@ export const MOTION_DURATION = {
   chartReveal: 1.2,
   /** 开场 */
   opening: 2.1,
+  /** 文字/导航下划线：hover 与 active 共用（§41/§43） */
+  underline: 0.22,
+  /** 列表/侧栏选中项共享指示器移动（§46/§99） */
+  selection: 0.32,
+  /** hover 时元素轻微抬起（§92：一次性、可中断） */
+  hoverLift: 0.2,
 } as const;
 
 export const MOTION_EASE = {

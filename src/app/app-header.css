@@ -43,31 +43,7 @@
 .ag-header__link:hover { color: var(--ag-ink); }
 .ag-header__link[data-active] { color: var(--ag-ink); }
 
-/* Hover：本地临时下划线，从左侧展开 */
-.ag-header__hover-line {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 1px;
-  background: var(--ag-ink-soft);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform var(--ag-dur-fast) var(--ag-ease);
-}
-.ag-header__link:hover .ag-header__hover-line { transform: scaleX(1); }
-/* Active 优先：当前项不叠两条线 */
-.ag-header__link[data-active] .ag-header__hover-line { transform: scaleX(0); }
-
-/* Active：共享指示线，在导航项之间连续滑动，而不是消失再出现 */
-.ag-header__indicator {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 1px;
-  background: var(--ag-ink);
-}
+/* Hover 线与 Active 指示线统一由 components/AnimatedUnderline 提供（V2 §41）。 */
 
 @media (max-width: 560px) {
   .ag-header__nav { gap: 14px; }

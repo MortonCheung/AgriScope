@@ -58,6 +58,9 @@
   --ag-dur-normal: 280ms;
   --ag-dur-slow: 440ms;
   --ag-dur-route: 420ms;
+  --ag-dur-underline: 220ms;
+  --ag-dur-selection: 320ms;
+  --ag-dur-hover-lift: 200ms;
 
   /* 只用于 Research Reader 的外壳窗口，不要全站卡片通用。 */
   --ag-radius-window: 14px;

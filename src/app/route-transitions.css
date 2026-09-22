@@ -9,7 +9,7 @@
 ::view-transition-old(root) { display: none; }
 ::view-transition-new(root) { animation: none; }
 ::view-transition-group(route-page) {
-  animation-duration: 390ms;
+  animation-duration: var(--ag-dur-route);
   animation-timing-function: cubic-bezier(.22, .68, .18, 1);
 }
 ::view-transition-image-pair(route-page) { isolation: isolate; }
@@ -17,7 +17,7 @@
 ::view-transition-new(route-page) {
   mix-blend-mode: normal;
   transform-origin: 50% 50%;
-  animation-duration: 390ms;
+  animation-duration: var(--ag-dur-route);
   animation-timing-function: cubic-bezier(.22, .68, .18, 1);
   animation-fill-mode: both;
 }
@@ -25,8 +25,8 @@
 :root[data-route-direction="forward"]::view-transition-new(route-page) { z-index: 2; animation-name: page-arrive; }
 :root[data-route-direction="back"]::view-transition-old(route-page) { z-index: 2; animation-name: page-arrive; animation-direction: reverse; }
 :root[data-route-direction="back"]::view-transition-new(route-page) { z-index: 1; animation-name: page-recede; animation-direction: reverse; }
-:root[data-route-direction="lateral"]::view-transition-old(route-page) { animation: page-dissolve 180ms ease both; }
-:root[data-route-direction="lateral"]::view-transition-new(route-page) { animation: page-dissolve 180ms ease reverse both; }
+:root[data-route-direction="lateral"]::view-transition-old(route-page) { animation: page-dissolve var(--ag-dur-fast) ease both; }
+:root[data-route-direction="lateral"]::view-transition-new(route-page) { animation: page-dissolve var(--ag-dur-fast) ease reverse both; }
 
 /* 导航是稳定宿主：提交后立刻显示当前控件。 */
 ::view-transition-group(ag-header) { z-index: 3; animation: none; }
