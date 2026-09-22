@@ -8,10 +8,11 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b --pretty false",
-    "test": "vitest run && node scripts/verify-content.mjs",
+    "test": "vitest run && node scripts/verify-content.mjs && node scripts/verify-v2-payload.mjs",
     "test:unit": "vitest run",
     "test:watch": "vitest",
-    "sync": "node scripts/sync-shenyang-content.mjs"
+    "sync": "node scripts/sync-shenyang-v2.mjs",
+    "verify:v2": "node scripts/verify-v2-payload.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.6",

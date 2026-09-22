@@ -1,0 +1,140 @@
+{
+  "generatedBy": "scripts/sync-shenyang-v2.mjs",
+  "sourceRoot": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/workspace/research_v2/exports/frontend",
+  "outRoot": "public/research/shenyang/v2",
+  "articles": [
+    {
+      "id": "A01",
+      "title": "沈阳市主要蔬菜批发市场的时间结构与季节性特征",
+      "sections": 7,
+      "sources": 1,
+      "figures": [
+        "A01_seasonal_amplitude.png"
+      ],
+      "tables": [
+        "A01_monthly.csv",
+        "A01_seasonal_amplitude.csv",
+        "A01_seasonal_index.csv",
+        "A01_stl_strength.csv"
+      ]
+    },
+    {
+      "id": "A02",
+      "title": "气象条件与沈阳市主要蔬菜批发市场日度响应",
+      "sections": 7,
+      "sources": 3,
+      "figures": [],
+      "tables": [
+        "A02_daily_response.csv",
+        "A02_daily_response_Fwx.csv"
+      ]
+    },
+    {
+      "id": "A03",
+      "title": "气象影响的滞后累积与非线性特征",
+      "sections": 7,
+      "sources": 2,
+      "figures": [],
+      "tables": [
+        "A03_accumulation.csv",
+        "A03_lag_windows.csv",
+        "A03_nonlinearity.csv"
+      ]
+    },
+    {
+      "id": "A04",
+      "title": "极端天气事件下沈阳市蔬菜批发市场响应及 2026 年强降雨案例",
+      "sections": 7,
+      "sources": 4,
+      "figures": [],
+      "tables": [
+        "A04_event_summary.csv"
+      ]
+    },
+    {
+      "id": "A05",
+      "title": "沈阳市不同蔬菜的气象响应差异与市场恢复特征",
+      "sections": 7,
+      "sources": 3,
+      "figures": [],
+      "tables": [
+        "A05_heterogeneity.csv",
+        "A05_recovery.csv",
+        "A05_recovery_by_crop.csv"
+      ]
+    },
+    {
+      "id": "A06",
+      "title": "沈阳市蔬菜市场量价关系风险传导与天气信息预测增量",
+      "sections": 7,
+      "sources": 2,
+      "figures": [],
+      "tables": [
+        "A06_forecast_gain.csv",
+        "A06_forecast_rolling.csv",
+        "A06_price_volume.csv"
+      ]
+    },
+    {
+      "id": "A07",
+      "title": "沈阳市农业生产的区县格局与作物结构（2018-2024）",
+      "sections": 7,
+      "sources": 11,
+      "figures": [
+        "A07_district_structure.png"
+      ],
+      "tables": [
+        "A07_change_2018_2024.csv",
+        "A07_district_crop_structure.csv",
+        "A07_district_grain.csv"
+      ]
+    },
+    {
+      "id": "A08",
+      "title": "气象条件与沈阳市农业单产变化的区县面板研究",
+      "sections": 7,
+      "sources": 3,
+      "figures": [],
+      "tables": [
+        "A08_panel_results.csv",
+        "A08_robustness_loo.csv",
+        "A08_wild_bootstrap.csv"
+      ]
+    },
+    {
+      "id": "A09",
+      "title": "沈阳市农业气象风险、生产响应与农产品市场表现综合研究",
+      "sections": 7,
+      "sources": 16,
+      "figures": [],
+      "tables": []
+    }
+  ],
+  "counts": {
+    "articles": 9,
+    "sources": 16,
+    "figuresCopied": 2,
+    "tablesCopied": 17
+  },
+  "assets": {
+    "figuresReferencedButMissing": [],
+    "tablesReferencedButMissing": [
+      "A01 / A01_monthly.csv",
+      "A01 / A01_seasonal_index.csv",
+      "A01 / A01_stl_strength.csv",
+      "A02 / A02_daily_response_Fwx.csv",
+      "A05 / A05_recovery.csv",
+      "A06 / A06_forecast_rolling.csv",
+      "A07 / A07_change_2018_2024.csv"
+    ],
+    "tablesPresentButUnreferenced": [
+      "A01_trend.csv",
+      "A04_event_clusters.csv"
+    ],
+    "figuresPresentButUnreferenced": []
+  },
+  "exportContracts": {
+    "article_end_marker_required": true,
+    "no_substring_summary": true
+  }
+}
