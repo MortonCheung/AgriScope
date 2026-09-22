@@ -8,6 +8,8 @@
 export const SCENE_TOKENS = {
   /** 画布底色 = --ag-paper */
   paper: '#f7f5f1',
+  /** 纸面承载平面：与画布底色接近但不相同，形成极轻的桌面层次（V3 §41） */
+  ground: '#f1eee7',
   /** 高光/主光 = 纯白 */
   lightKey: '#ffffff',
   /** 环境补光 = --ag-paper-deep 一侧的暖灰 */

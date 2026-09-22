@@ -4,6 +4,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { STUDY_CITY_IDS } from '../../domain/geography/cities';
 import { CitySolidMesh, SOLID_DEPTH } from './CitySolidMesh';
+import { PaperGround } from './PaperGround';
 import { useLiaoningModel } from './useLiaoningModel';
 import { useAnimationFrames } from './useAnimationFrames';
 import { QUALITY_CONFIG, resolveAutoQualityTier, resolveDpr, readRuntimeQualitySignals } from '../../performance/qualityPolicy';
@@ -222,17 +223,22 @@ function SceneContents({ mode, focusCityId, hoveredCityId, dollyToken, onHoverCi
         targetPoint={focusPoint}
         provinceRadius={model.radius}
       />
+      {/* 承载平面在最底层：辽宁实体 → 接触阴影 → 纸面（V3 §41） */}
+      <PaperGround radius={model.radius} />
       {/*
         接触阴影：目标是"让辽宁像真的从纸面浮起来"，不是真实光影（V2 §53/§54）。
         frames={1} 只烘焙一次，因此没有逐帧成本；若日后发现它变贵，删掉即可。
+        注意：drei 烘焙时会临时把 scene.background 置空后写进自己的 render target，
+        因此 Canvas 必须是 alpha:true，否则 render target 会被不透明清屏，
+        这块阴影平面会变成一块实心方块、在纸面上留下一条方形边缘（V3 §64 明令禁止）。
       */}
       <ContactShadows
         frames={1}
         position={[0, -0.02, 0]}
-        scale={model.radius * 3}
-        far={6}
+        scale={Math.max(200, model.radius * 6)}
+        far={8}
         blur={2.5}
-        opacity={0.12}
+        opacity={0.16}
         resolution={512}
       />
       <OpeningRevealDriver mode={mode} reducedMotion={reducedMotion} progressRef={revealRef} />
@@ -288,7 +294,7 @@ export function LiaoningCanvas(props: LiaoningCanvasProps) {
     <Canvas
       dpr={dpr}
       frameloop="demand"
-      gl={{ antialias: quality === 'quality', alpha: false, powerPreference: 'high-performance', stencil: false }}
+      gl={{ antialias: quality === 'quality', alpha: true, powerPreference: 'high-performance', stencil: false }}
       onPointerMissed={() => props.onHoverCity(null)}
       onCreated={({ gl }) => {
         gl.domElement.setAttribute('role', 'img');
