@@ -1,0 +1,22 @@
+/* 辽宁综合研究 Shell（V4 §十三）：只建立正确层级，内容区先空着。 */
+.province-research {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(20px, 3.4vw, 40px);
+  padding: calc(var(--ag-nav-height) + clamp(28px, 6vh, 72px)) var(--ag-gutter) clamp(40px, 8vh, 96px);
+}
+.province-research__head { display: flex; flex-direction: column; gap: var(--ag-space-4); }
+.province-research__status { margin: 0; color: var(--ag-ink-muted); font-size: var(--ag-fs-small); }
+.province-research__cities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ag-space-3) clamp(20px, 3vw, 40px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ag-ink-soft);
+  font-size: var(--ag-fs-body);
+  border-top: 1px solid var(--ag-rule);
+  padding-top: clamp(16px, 2.4vw, 28px);
+}

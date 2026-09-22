@@ -5,6 +5,8 @@ export const ROUTES = {
   city: (cityId: string) => `/cities/${cityId}`,
   research: (cityId: string, researchId: string) => `/cities/${cityId}/research/${researchId}`,
   report: (cityId: string) => `/cities/${cityId}/report`,
+  /** 辽宁六城综合研究（V4 §十三）：与单城市报告完全分开，不能互相冒充。 */
+  provinceResearch: '/research',
   rainstorm: '/shenyang-rainstorm',
   scenarioLab: '/scenario-lab',
   about: '/about',
@@ -21,6 +23,7 @@ export function structuralParent(pathname: string): string | null {
   if (pathname === ROUTES.root) return null;
   if (pathname === ROUTES.about) return ROUTES.root;
   if (pathname === ROUTES.liaoning) return ROUTES.root;
+  if (pathname === ROUTES.provinceResearch) return ROUTES.root;
   if (pathname === ROUTES.scenarioLab) return ROUTES.rainstorm;
   if (pathname === ROUTES.rainstorm) return ROUTES.report('shenyang');
 

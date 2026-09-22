@@ -6,6 +6,7 @@ describe('structural parent (V3 §10 返回结构 fallback)', () => {
     ['/', null],
     [ROUTES.about, ROUTES.root],
     [ROUTES.liaoning, ROUTES.root],
+    [ROUTES.provinceResearch, ROUTES.root],
     [ROUTES.city('shenyang'), ROUTES.liaoning],
     [ROUTES.report('shenyang'), ROUTES.city('shenyang')],
     [ROUTES.research('shenyang', 'C5'), ROUTES.city('shenyang')],
