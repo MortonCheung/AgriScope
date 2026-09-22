@@ -53,7 +53,8 @@ export interface XYChartProps {
 }
 
 const WIDTH = 760;
-const PAD = { left: 52, right: 18, top: 18, bottom: 34 };
+/** 右侧留白要容得下最右端一个居中的刻度标签（V4 §五十二：标签不得被截或越界）。 */
+const PAD = { left: 52, right: 48, top: 18, bottom: 34 };
 
 function extent(values: number[]): [number, number] {
   if (values.length === 0) return [0, 1];
@@ -178,12 +179,16 @@ export function XYChart({
         {zeroLine && yMin <= 0 && yMax >= 0 && (
           <line x1={PAD.left} x2={WIDTH - PAD.right} y1={sy(0)} y2={sy(0)} stroke={CHART_TOKENS.axis} strokeDasharray="3 3" />
         )}
-        {visibleMarkers.map((marker) => (
-          <g key={`m-${marker.label}-${marker.x}`}>
-            <line x1={sx(marker.x)} x2={sx(marker.x)} y1={PAD.top} y2={PAD.top + innerH} stroke={marker.color ?? CHART_TOKENS.annotationStrong} strokeDasharray={marker.dash ?? '4 3'} />
-            <text x={sx(marker.x) + 4} y={PAD.top + 10} fontSize={CHART_TOKENS.fontSize} fill={marker.color ?? CHART_TOKENS.annotationStrong} fontFamily={CHART_TOKENS.fontFamily}>{marker.label}</text>
-          </g>
-        ))}
+        {visibleMarkers.map((marker) => {
+          /** 靠近右边界时标签改为反向对齐，否则会顶出 viewBox（V4 §五十二）。 */
+          const atRightEdge = sx(marker.x) > WIDTH - PAD.right - 56;
+          return (
+            <g key={`m-${marker.label}-${marker.x}`}>
+              <line x1={sx(marker.x)} x2={sx(marker.x)} y1={PAD.top} y2={PAD.top + innerH} stroke={marker.color ?? CHART_TOKENS.annotationStrong} strokeDasharray={marker.dash ?? '4 3'} />
+              <text x={sx(marker.x) + (atRightEdge ? -4 : 4)} y={PAD.top + 10} textAnchor={atRightEdge ? 'end' : 'start'} fontSize={CHART_TOKENS.fontSize} fill={marker.color ?? CHART_TOKENS.annotationStrong} fontFamily={CHART_TOKENS.fontFamily}>{marker.label}</text>
+            </g>
+          );
+        })}
         {visibleSeries.map((entry) => (
           <g key={entry.id}>
             <path d={linePath(entry.points)} fill="none" stroke={entry.color} strokeWidth={entry.width ?? 1.8} strokeDasharray={entry.dash} strokeLinejoin="round" strokeLinecap="round" />
@@ -217,6 +222,12 @@ export function XYChart({
 /** 水平条形图：用于排名/对比类结果（趋势、重要性、缺口）。 */
 export interface BarDatum { id: string; label: string; value: number; color?: string; muted?: boolean; note?: string }
 
+/**
+ * 水平条形图。
+ *
+ * 图内只保留最重要的一个读数（V4 §五十一）：p / CI / n / HAC SE 这类细节
+ * 不再塞进条目标签（那正是标签拥挤的来源），统一放到下方固定读数区。
+ */
 export function BarChart({ data, valueFormat = (value: number) => value.toFixed(2), zeroLine = true, ariaLabel, onSelect, selectedId }: {
   data: BarDatum[];
   valueFormat?: (value: number) => string;
@@ -225,6 +236,7 @@ export function BarChart({ data, valueFormat = (value: number) => value.toFixed(
   onSelect?: (id: string) => void;
   selectedId?: string | null;
 }) {
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
   const values = data.map((entry) => entry.value);
   const [min, max] = extent(values);
   const span = Math.max(Math.abs(min), Math.abs(max)) || 1;
@@ -232,10 +244,17 @@ export function BarChart({ data, valueFormat = (value: number) => value.toFixed(
   const rowH = 26;
   const width = 760;
   const labelW = 150;
-  const zeroX = zeroLine ? labelW + ((0 - (-bound)) / (2 * bound || 1)) * (width - labelW - 40) : labelW;
+  /** 条尾数值标签的横向空间（V4 §五十二）：太窄会让最长的条把标签顶出 viewBox。 */
+  const labelGap = 6;
+  const reserveRight = 56;
+  const zeroX = zeroLine
+    ? labelW + ((0 - (-bound)) / (2 * bound || 1)) * (width - labelW - reserveRight)
+    : labelW;
   const scale = zeroLine
-    ? (width - labelW - 40) / (2 * bound || 1)
-    : (width - labelW - 40) / (bound || 1);
+    ? (width - labelW - reserveRight) / (2 * bound || 1)
+    : (width - labelW - reserveRight) / (bound || 1);
+  /** 固定读数区显示鼠标悬停（或已选中）那一条的完整细节。 */
+  const active = data.find((entry) => entry.id === (hoveredId ?? selectedId ?? null)) ?? null;
 
   return (
     <div className="barchart">
@@ -246,18 +265,60 @@ export function BarChart({ data, valueFormat = (value: number) => value.toFixed(
           const x = entry.value >= 0 ? zeroX : zeroX - barW;
           const isSelected = selectedId === entry.id;
           return (
-            <g key={entry.id} onClick={() => onSelect?.(entry.id)} style={{ cursor: onSelect ? 'pointer' : undefined }} opacity={entry.muted ? 0.45 : 1}>
-              <rect x={labelW} y={y} width={width - labelW - 40} height={rowH - 8} fill={isSelected ? CHART_TOKENS.band : 'transparent'} />
+            <g
+              key={entry.id}
+              onPointerEnter={() => setHoveredId(entry.id)}
+              onPointerLeave={() => setHoveredId(null)}
+              onClick={() => onSelect?.(entry.id)}
+              style={{ cursor: onSelect ? 'pointer' : undefined }}
+              opacity={entry.muted ? 0.45 : 1}
+            >
+              <rect x={labelW} y={y} width={width - labelW - reserveRight} height={rowH - 8} fill={isSelected ? CHART_TOKENS.band : 'transparent'} />
               <text x={labelW - 10} y={y + 13} textAnchor="end" fontSize={CHART_TOKENS.fontSize + 1} fill={CHART_TOKENS.labelStrong}>{entry.label}</text>
               <rect x={x} y={y + 2} width={barW} height={rowH - 12} fill={entry.color ?? 'var(--ag-data-price)'} />
-              <text x={entry.value >= 0 ? zeroX + barW + 6 : zeroX - barW - 6} y={y + 13} textAnchor={entry.value >= 0 ? 'start' : 'end'} fontSize={CHART_TOKENS.fontSize} fill={CHART_TOKENS.label} fontFamily={CHART_TOKENS.fontFamily}>
-                {valueFormat(entry.value)}{entry.note ? ` · ${entry.note}` : ''}
+              {/* 图内只留最重要的一个读数；细节见下方固定读数区（V4 §五十一） */}
+              <text x={entry.value >= 0 ? zeroX + barW + labelGap : zeroX - barW - labelGap} y={y + 13} textAnchor={entry.value >= 0 ? 'start' : 'end'} fontSize={CHART_TOKENS.fontSize} fill={CHART_TOKENS.label} fontFamily={CHART_TOKENS.fontFamily}>
+                {valueFormat(entry.value)}
               </text>
             </g>
           );
         })}
         {zeroLine && <line x1={zeroX} x2={zeroX} y1={4} y2={data.length * rowH + 2} stroke={CHART_TOKENS.axis} />}
       </svg>
+      {/* 固定读数区（V4 §五十）：始终渲染，无选中时为「—」，高度不随 hover 变化 */}
+      <div className="chart__readout" aria-live="polite">
+        {active
+          ? <span>{active.label} · {valueFormat(active.value)}{active.note ? ` · ${active.note}` : ''}</span>
+          : <span className="chart__readout-hint">—</span>}
+      </div>
+    </div>
+  );
+}
+
+export interface ReadoutItem {
+  label: string;
+  value: ReactNode;
+  /** 文字类读数（品种名等）不加数字字体，与原有呈现保持一致 */
+  text?: boolean;
+}
+
+/**
+ * 固定读数区（V4 §五十/§五十一）。
+ *
+ * 两条硬约束：
+ *   1. hover 不得改变布局几何 —— 因此它**始终渲染**：无读数时值为「—」，
+ *      高度与有读数时完全一致，不会出现"插入文本 → 容器变高 → 鼠标错位 → 抽搐"；
+ *   2. 图内只留最重要的一个读数，p / CI / n / HAC SE 这类细节全部放这里。
+ */
+export function ReadoutRow({ items }: { items: ReadoutItem[] }) {
+  return (
+    <div className="readout-row">
+      {items.map((item) => (
+        <div className="readout-row__item" key={item.label}>
+          <dt>{item.label}</dt>
+          <dd className={item.text ? undefined : 'ag-number'}>{item.value}</dd>
+        </div>
+      ))}
     </div>
   );
 }

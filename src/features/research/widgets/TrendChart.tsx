@@ -4,7 +4,7 @@ import { AsyncBoundary } from '../../../components/AsyncState';
 import type { EvidenceLevelCode } from '../../../domain/research/types';
 import { numeric } from '../../../services/csv';
 import { useTables } from '../data/useTable';
-import { BarChart, ChartFrame, type BarDatum } from './primitives';
+import { BarChart, ChartFrame, ReadoutRow, type BarDatum } from './primitives';
 import { VariableSelector } from './Selectors';
 
 type Variable = 'price' | 'volume';
@@ -133,17 +133,16 @@ export function TrendChart({ sources, evidenceLevel }: {
               </ul>
             </div>
 
-            {focus ? (
-              <div className="readout-row">
-                <div className="readout-row__item"><dt>品种</dt><dd>{focus.crop}</dd></div>
-                <div className="readout-row__item"><dt>年化趋势</dt><dd className="ag-number">{focus.annualizedPct.toFixed(2)}%</dd></div>
-                <div className="readout-row__item"><dt>95% 区间</dt><dd className="ag-number">{formatInterval(focus.ciLow, focus.ciHigh)}</dd></div>
-                <div className="readout-row__item"><dt>p 值</dt><dd className="ag-number">{formatP(focus.p)}</dd></div>
-                <div className="readout-row__item"><dt>HAC 标准误</dt><dd className="ag-number">{focus.seHac !== null ? focus.seHac.toExponential(2) : '—'}</dd></div>
-                <div className="readout-row__item"><dt>交易日样本</dt><dd className="ag-number">{focus.nObs ?? '—'}</dd></div>
-                <div className="readout-row__item"><dt>显著性</dt><dd>{isSignificant(focus) ? '显著（p<0.05）' : '不显著'}</dd></div>
-              </div>
-            ) : <p className="ag-meta">悬停或点选任一品种，查看该品种的年化趋势、区间与 p 值。</p>}
+            {/* 读数区始终渲染（V4 §五十）：无选中时为「—」，高度与有读数时一致 */}
+            <ReadoutRow items={[
+              { label: '品种', value: focus ? focus.crop : '—', text: true },
+              { label: '年化趋势', value: focus ? `${focus.annualizedPct.toFixed(2)}%` : '—' },
+              { label: '95% 区间', value: focus ? formatInterval(focus.ciLow, focus.ciHigh) : '—' },
+              { label: 'p 值', value: focus ? formatP(focus.p) : '—' },
+              { label: 'HAC 标准误', value: focus && focus.seHac !== null ? focus.seHac.toExponential(2) : '—' },
+              { label: '交易日样本', value: focus?.nObs ?? '—' },
+              { label: '显著性', value: focus ? (isSignificant(focus) ? '显著（p<0.05）' : '不显著') : '—', text: true },
+            ]} />
 
             <p className="chart-frame__note">
               价格端仅少数品种趋势显著（{model.priceSig}/{model.priceTotal}）；成交量端显著品种更多，但方向分化（{model.volumeSig}/{model.volumeTotal}）。

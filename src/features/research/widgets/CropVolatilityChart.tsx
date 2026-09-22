@@ -4,7 +4,7 @@ import { AsyncBoundary } from '../../../components/AsyncState';
 import type { EvidenceLevelCode } from '../../../domain/research/types';
 import { numeric } from '../../../services/csv';
 import { useTable } from '../data/useTable';
-import { BarChart, ChartFrame, type BarDatum } from './primitives';
+import { BarChart, ChartFrame, ReadoutRow, type BarDatum } from './primitives';
 import { OptionSelector, VariableSelector } from './Selectors';
 
 type Variable = 'price' | 'volume';
@@ -156,20 +156,19 @@ export function CropVolatilityChart({ source, evidenceLevel }: {
               </ul>
             </div>
 
-            {focus ? (
-              <div className="readout-row">
-                <div className="readout-row__item"><dt>品种</dt><dd>{focus.crop}</dd></div>
-                <div className="readout-row__item"><dt>单位</dt><dd>{focus.unit}</dd></div>
-                <div className="readout-row__item"><dt>均值</dt><dd className="ag-number">{formatNumber(focus.mean)}</dd></div>
-                <div className="readout-row__item"><dt>标准差</dt><dd className="ag-number">{formatNumber(focus.std)}</dd></div>
-                <div className="readout-row__item"><dt>变异系数 CV</dt><dd className="ag-number">{formatNumber(focus.cv)}</dd></div>
-                <div className="readout-row__item"><dt>年化波动率</dt><dd className="ag-number">{focus.annualizedVolPct !== null ? `${focus.annualizedVolPct.toFixed(2)}%` : '—'}</dd></div>
-                <div className="readout-row__item"><dt>IQR</dt><dd className="ag-number">{formatNumber(focus.iqr)}</dd></div>
-                <div className="readout-row__item"><dt>P05 – P95</dt><dd className="ag-number">{formatRange(focus.p05, focus.p95)}</dd></div>
-                <div className="readout-row__item"><dt>最小 – 最大</dt><dd className="ag-number">{formatRange(focus.min, focus.max)}</dd></div>
-                <div className="readout-row__item"><dt>交易日样本</dt><dd className="ag-number">{focus.nObs ?? '—'}</dd></div>
-              </div>
-            ) : <p className="ag-meta">尚未选择品种。</p>}
+            {/* 读数区始终渲染（V4 §五十）：无选中时为「—」，高度与有读数时一致 */}
+            <ReadoutRow items={[
+              { label: '品种', value: focus ? focus.crop : '—', text: true },
+              { label: '单位', value: focus ? focus.unit : '—', text: true },
+              { label: '均值', value: focus ? formatNumber(focus.mean) : '—' },
+              { label: '标准差', value: focus ? formatNumber(focus.std) : '—' },
+              { label: '变异系数 CV', value: focus ? formatNumber(focus.cv) : '—' },
+              { label: '年化波动率', value: focus && focus.annualizedVolPct !== null ? `${focus.annualizedVolPct.toFixed(2)}%` : '—' },
+              { label: 'IQR', value: focus ? formatNumber(focus.iqr) : '—' },
+              { label: 'P05 – P95', value: focus ? formatRange(focus.p05, focus.p95) : '—' },
+              { label: '最小 – 最大', value: focus ? formatRange(focus.min, focus.max) : '—' },
+              { label: '交易日样本', value: focus?.nObs ?? '—' },
+            ]} />
 
             <p className="chart-frame__note">
               波动存在清晰的品类分层，但品种间异质性缺乏统计支持：本表只给出描述统计，未做检验，不能据此给出作物风险分组。

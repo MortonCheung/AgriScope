@@ -4,7 +4,7 @@ import { AsyncBoundary } from '../../../components/AsyncState';
 import type { EvidenceLevelCode } from '../../../domain/research/types';
 import { numeric } from '../../../services/csv';
 import { useTable } from '../data/useTable';
-import { BarChart, ChartFrame, type BarDatum } from './primitives';
+import { BarChart, ChartFrame, ReadoutRow, type BarDatum } from './primitives';
 import { OptionSelector, VariableSelector } from './Selectors';
 
 type Variable = 'price' | 'volume';
@@ -174,21 +174,20 @@ export function PhenologyChart({ source, evidenceLevel }: {
               </ul>
             </div>
 
-            {focus ? (
-              <div className="readout-row">
-                <div className="readout-row__item"><dt>品种</dt><dd>{focus.crop}</dd></div>
-                <div className="readout-row__item"><dt>暴露变量</dt><dd>{focus.hazardLabel}</dd></div>
-                <div className="readout-row__item"><dt>窗口天数</dt><dd className="ag-number">{focus.windowDays ?? '—'}</dd></div>
-                <div className="readout-row__item"><dt>主效应 b1</dt><dd className="ag-number">{formatNumber(focus.betaHazard)}</dd></div>
-                <div className="readout-row__item"><dt>b1 p 值</dt><dd className="ag-number">{formatP(focus.pHazard)}</dd></div>
-                <div className="readout-row__item"><dt>交互项 b2</dt><dd className="ag-number">{formatNumber(focus.betaInteraction)}</dd></div>
-                <div className="readout-row__item"><dt>b2 p 值</dt><dd className="ag-number">{formatP(focus.pInteraction)}</dd></div>
-                <div className="readout-row__item"><dt>b2 FDR p</dt><dd className="ag-number">{formatP(focus.fdrP)}</dd></div>
-                <div className="readout-row__item"><dt>窗内 / 窗外斜率</dt><dd className="ag-number">{formatNumber(focus.slopeIn)} / {formatNumber(focus.slopeOut)}</dd></div>
-                <div className="readout-row__item"><dt>R²</dt><dd className="ag-number">{formatNumber(focus.r2, 4)}</dd></div>
-                <div className="readout-row__item"><dt>样本</dt><dd className="ag-number">{focus.n ?? '—'}</dd></div>
-              </div>
-            ) : <p className="ag-meta">尚未选择品种。</p>}
+            {/* 读数区始终渲染（V4 §五十）：无选中时为「—」，高度与有读数时一致 */}
+            <ReadoutRow items={[
+              { label: '品种', value: focus ? focus.crop : '—', text: true },
+              { label: '暴露变量', value: focus ? focus.hazardLabel : '—', text: true },
+              { label: '窗口天数', value: focus?.windowDays ?? '—' },
+              { label: '主效应 b1', value: focus ? formatNumber(focus.betaHazard) : '—' },
+              { label: 'b1 p 值', value: focus ? formatP(focus.pHazard) : '—' },
+              { label: '交互项 b2', value: focus ? formatNumber(focus.betaInteraction) : '—' },
+              { label: 'b2 p 值', value: focus ? formatP(focus.pInteraction) : '—' },
+              { label: 'b2 FDR p', value: focus ? formatP(focus.fdrP) : '—' },
+              { label: '窗内 / 窗外斜率', value: focus ? `${formatNumber(focus.slopeIn)} / ${formatNumber(focus.slopeOut)}` : '—' },
+              { label: 'R²', value: focus ? formatNumber(focus.r2, 4) : '—' },
+              { label: '样本', value: focus?.n ?? '—' },
+            ]} />
 
             <div className="readout-row">
               <div className="readout-row__item"><dt>FDR 显著计数（本口径）</dt><dd className="ag-number">{model.familySig} / {model.family.length}</dd></div>

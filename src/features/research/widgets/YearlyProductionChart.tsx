@@ -4,7 +4,7 @@ import { AsyncBoundary } from '../../../components/AsyncState';
 import type { EvidenceLevelCode } from '../../../domain/research/types';
 import { numeric } from '../../../services/csv';
 import { useTables } from '../data/useTable';
-import { ChartFrame, XYChart, type XYSeries } from './primitives';
+import { ChartFrame, ReadoutRow, XYChart, type XYSeries } from './primitives';
 import { CropSelector, OptionSelector } from './Selectors';
 
 type Metric = 'production_ton' | 'planting_area_kha' | 'yield_kg_per_ha';
@@ -225,16 +225,15 @@ export function YearlyProductionChart({ panelSource, corrSource, evidenceLevel }
         <AsyncBoundary state={state}>
           {() => (model && model.correlations.length > 0 ? (
             <>
-              {hoveredCorr ? (
-                <div className="readout-row">
-                  <div className="readout-row__item"><dt>生产指标</dt><dd>{PRODUCTION_LABEL[hoveredCorr.variable] ?? hoveredCorr.variable}</dd></div>
-                  <div className="readout-row__item"><dt>天气变量</dt><dd>{WEATHER_LABEL[hoveredCorr.weather] ?? hoveredCorr.weather}</dd></div>
-                  <div className="readout-row__item"><dt>年数</dt><dd className="ag-number">{hoveredCorr.nYears ?? '—'}</dd></div>
-                  <div className="readout-row__item"><dt>Pearson r</dt><dd className="ag-number">{formatCorrelation(hoveredCorr.pearson)}</dd></div>
-                  <div className="readout-row__item"><dt>Spearman r</dt><dd className="ag-number">{formatCorrelation(hoveredCorr.spearman)}</dd></div>
-                  <div className="readout-row__item"><dt>能否推断</dt><dd>{hoveredCorr.interpretationAllowed ? '可推断' : '不作推断'}</dd></div>
-                </div>
-              ) : <p className="ag-meta">尚未选择组合。</p>}
+              {/* 读数区始终渲染（V4 §五十）：无选中时为「—」，高度与有读数时一致 */}
+              <ReadoutRow items={[
+                { label: '生产指标', value: hoveredCorr ? (PRODUCTION_LABEL[hoveredCorr.variable] ?? hoveredCorr.variable) : '—', text: true },
+                { label: '天气变量', value: hoveredCorr ? (WEATHER_LABEL[hoveredCorr.weather] ?? hoveredCorr.weather) : '—', text: true },
+                { label: '年数', value: hoveredCorr?.nYears ?? '—' },
+                { label: 'Pearson r', value: hoveredCorr ? formatCorrelation(hoveredCorr.pearson) : '—' },
+                { label: 'Spearman r', value: hoveredCorr ? formatCorrelation(hoveredCorr.spearman) : '—' },
+                { label: '能否推断', value: hoveredCorr ? (hoveredCorr.interpretationAllowed ? '可推断' : '不作推断') : '—', text: true },
+              ]} />
 
               <div className="table-explorer">
                 <div className="table-explorer__scroll">

@@ -4,7 +4,7 @@ import { AsyncBoundary } from '../../../components/AsyncState';
 import type { EvidenceLevelCode } from '../../../domain/research/types';
 import { numeric } from '../../../services/csv';
 import { useTable } from '../data/useTable';
-import { BarChart, ChartFrame, type BarDatum } from './primitives';
+import { BarChart, ChartFrame, ReadoutRow, type BarDatum } from './primitives';
 import { VariableSelector } from './Selectors';
 
 type Variable = 'price' | 'volume';
@@ -136,20 +136,19 @@ export function EventContrastChart({ source, evidenceLevel }: {
               </ul>
             </div>
 
-            {focus ? (
-              <div className="readout-row">
-                <div className="readout-row__item"><dt>品种</dt><dd>{focus.crop}</dd></div>
-                <div className="readout-row__item"><dt>z 均值差</dt><dd className="ag-number">{formatNumber(focus.diff)}</dd></div>
-                <div className="readout-row__item"><dt>95% 区间</dt><dd className="ag-number">{focus.ciLow !== null && focus.ciHigh !== null ? `[${focus.ciLow.toFixed(3)}, ${focus.ciHigh.toFixed(3)}]` : '—'}</dd></div>
-                <div className="readout-row__item"><dt>极端日 z 均值</dt><dd className="ag-number">{formatNumber(focus.meanZExtreme)}</dd></div>
-                <div className="readout-row__item"><dt>普通日 z 均值</dt><dd className="ag-number">{formatNumber(focus.meanZNormal)}</dd></div>
-                <div className="readout-row__item"><dt>极端日 |z| 均值</dt><dd className="ag-number">{formatNumber(focus.abszExtreme)}</dd></div>
-                <div className="readout-row__item"><dt>普通日 |z| 均值</dt><dd className="ag-number">{formatNumber(focus.abszNormal)}</dd></div>
-                <div className="readout-row__item"><dt>Welch p</dt><dd className="ag-number">{formatP(focus.p)}</dd></div>
-                <div className="readout-row__item"><dt>FDR p</dt><dd className="ag-number">{formatP(focus.fdr)}</dd></div>
-                <div className="readout-row__item"><dt>极端日 / 普通日样本</dt><dd className="ag-number">{focus.nExtreme ?? '—'} / {focus.nNormal ?? '—'}</dd></div>
-              </div>
-            ) : <p className="ag-meta">悬停或点选任一品种，查看均值差、区间与显著性。</p>}
+            {/* 读数区始终渲染（V4 §五十）：无选中时为「—」，高度与有读数时一致 */}
+            <ReadoutRow items={[
+              { label: '品种', value: focus ? focus.crop : '—', text: true },
+              { label: 'z 均值差', value: focus ? formatNumber(focus.diff) : '—' },
+              { label: '95% 区间', value: focus && focus.ciLow !== null && focus.ciHigh !== null ? `[${focus.ciLow.toFixed(3)}, ${focus.ciHigh.toFixed(3)}]` : '—' },
+              { label: '极端日 z 均值', value: focus ? formatNumber(focus.meanZExtreme) : '—' },
+              { label: '普通日 z 均值', value: focus ? formatNumber(focus.meanZNormal) : '—' },
+              { label: '极端日 |z| 均值', value: focus ? formatNumber(focus.abszExtreme) : '—' },
+              { label: '普通日 |z| 均值', value: focus ? formatNumber(focus.abszNormal) : '—' },
+              { label: 'Welch p', value: focus ? formatP(focus.p) : '—' },
+              { label: 'FDR p', value: focus ? formatP(focus.fdr) : '—' },
+              { label: '极端日 / 普通日样本', value: focus ? `${focus.nExtreme ?? '—'} / ${focus.nNormal ?? '—'}` : '—' },
+            ]} />
 
             <p className="chart-frame__note">
               以极端日与普通日的 |z| 均值衡量，{model.calmCount}/{model.rows.length} 个品种在极端日的波动并不更大；

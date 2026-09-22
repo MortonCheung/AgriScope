@@ -31,7 +31,8 @@
 /* 图表 */
 .chart { display: flex; flex-direction: column; gap: 8px; }
 .chart__svg { width: 100%; height: auto; overflow: visible; }
-.chart__readout { min-height: 1.2em; color: var(--ag-ink-soft); font-size: var(--ag-fs-small); font-variant-numeric: tabular-nums; }
+/* 固定读数区（V4 §五十）：高度写死，hover 只替换内容，绝不改变布局几何。 */
+.chart__readout { height: 3.2em; overflow: hidden; color: var(--ag-ink-soft); font-size: var(--ag-fs-small); font-variant-numeric: tabular-nums; }
 .chart__readout-hint { color: var(--ag-ink-muted); }
 .chart__legend { display: flex; gap: var(--ag-space-4); flex-wrap: wrap; margin: 0; padding: 0; list-style: none; }
 .chart__legend li { display: inline-flex; align-items: center; gap: 6px; color: var(--ag-ink-muted); font-size: var(--ag-fs-meta); }
@@ -57,7 +58,8 @@
 .table-explorer td { white-space: nowrap; font-family: var(--ag-font-mono); font-size: var(--ag-fs-meta); }
 
 /* 关键数字行内读数 */
-.readout-row { display: flex; gap: var(--ag-space-5); flex-wrap: wrap; }
+/* 读数行给固定下限（V4 §五十）：hover 只替换内容，绝不改变布局几何 */
+.readout-row { display: flex; gap: var(--ag-space-5); flex-wrap: wrap; min-height: 72px; align-content: flex-start; }
 .readout-row__item { display: flex; flex-direction: column; gap: 2px; }
 .readout-row__item dt { color: var(--ag-ink-muted); font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); }
 .readout-row__item dd { margin: 0; color: var(--ag-ink); font-size: 1.1rem; }
