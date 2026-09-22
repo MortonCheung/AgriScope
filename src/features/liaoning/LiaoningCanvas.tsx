@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { CameraControls, CameraControlsImpl, ContactShadows, Html, PerspectiveCamera } from '@react-three/drei';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { STUDY_CITY_IDS } from '../../domain/geography/cities';
 import { CitySolidMesh, SOLID_DEPTH } from './CitySolidMesh';
@@ -9,6 +9,7 @@ import { useAnimationFrames } from './useAnimationFrames';
 import { QUALITY_CONFIG, resolveAutoQualityTier, resolveDpr, readRuntimeQualitySignals } from '../../performance/qualityPolicy';
 import { SCENE_TOKENS } from '../../design/sceneTokens';
 import { MOTION_DURATION } from '../../design/motion';
+import { hasSeenOpening } from '../opening/openingSession';
 
 export interface LiaoningCanvasProps {
   mode: 'opening' | 'province' | 'city';
@@ -88,6 +89,42 @@ function ParallaxGroup({ enabled, children }: { enabled: boolean; children: Reac
   return <group ref={group}>{children}</group>;
 }
 
+/**
+ * Opening 揭示时间轴（V2 §61）：把 0–1 的进度写进一个引用，每帧由各城市自己读取，
+ * 因此整段编排不触发任何 React 渲染。
+ * 只在首次进入时完整播放；session 内再次回到首页、或 reduced motion 时直接给最终状态（§63/§64）。
+ */
+function OpeningRevealDriver({ mode, reducedMotion, progressRef }: {
+  mode: LiaoningCanvasProps['mode'];
+  reducedMotion: boolean;
+  progressRef: RefObject<number>;
+}) {
+  const invalidate = useThree((state) => state.invalidate);
+  const [seen] = useState(() => hasSeenOpening());
+
+  useEffect(() => {
+    const playing = mode === 'opening' && !reducedMotion && !seen;
+    if (!playing) {
+      progressRef.current = 1;
+      invalidate();
+      return;
+    }
+    const total = MOTION_DURATION.opening * 1000;
+    const start = performance.now();
+    let frame = 0;
+    const step = () => {
+      const progress = Math.min(1, (performance.now() - start) / total);
+      progressRef.current = progress;
+      invalidate();
+      if (progress < 1) frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [invalidate, mode, progressRef, reducedMotion, seen]);
+
+  return null;
+}
+
 function CameraRig({ mode, focusCityId, dollyToken, reducedMotion, onCameraRest, targetPoint, provinceRadius }: {
   mode: LiaoningCanvasProps['mode'];
   focusCityId: string | null;
@@ -156,6 +193,8 @@ function SceneContents({ mode, focusCityId, hoveredCityId, dollyToken, onHoverCi
   const state = useLiaoningModel();
   const studyIds = useMemo(() => new Set<string>(STUDY_CITY_IDS), []);
   const model = state.status === 'ready' ? state.model : null;
+  /** Opening 揭示进度由驱动组件写、由每座城市读，中间不经过 React state。 */
+  const revealRef = useRef(1);
 
   const focusPoint = useMemo(() => {
     if (!model) return new THREE.Vector3();
@@ -196,8 +235,9 @@ function SceneContents({ mode, focusCityId, hoveredCityId, dollyToken, onHoverCi
         opacity={0.12}
         resolution={512}
       />
+      <OpeningRevealDriver mode={mode} reducedMotion={reducedMotion} progressRef={revealRef} />
       <ParallaxGroup enabled={mode === 'opening'}>
-        {model.cities.map((city) => (
+        {model.cities.map((city, index) => (
           <CitySolidMesh
             key={city.id}
             city={city}
@@ -206,6 +246,8 @@ function SceneContents({ mode, focusCityId, hoveredCityId, dollyToken, onHoverCi
             onHover={onHoverCity}
             onSelect={onSelectCity}
             reducedMotion={reducedMotion}
+            revealRef={revealRef}
+            revealDelay={index * 0.02}
           />
         ))}
       </ParallaxGroup>

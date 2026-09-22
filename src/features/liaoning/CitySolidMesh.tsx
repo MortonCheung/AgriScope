@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { ringsToShapes, type CitySolid } from './liaoningGeometry';
@@ -18,7 +18,15 @@ interface CitySolidMeshProps {
   onHover: (cityId: string | null) => void;
   onSelect: (cityId: string) => void;
   reducedMotion: boolean;
+  /** Opening 揭示进度（0–1）所在的引用；每帧读取，避免逐帧触发 React 渲染。 */
+  revealRef?: RefObject<number>;
+  /** 该城市的揭示延迟（0–1 的进度偏移），用于"边界逐个出现"。 */
+  revealDelay?: number;
 }
+
+/** 揭示时间轴：先画轮廓，再获得厚度（V2 §61 阶段 1–4）。 */
+const OUTLINE_SPAN = 0.45;
+const FLAT_SCALE = 0.02;
 
 const FILL: Record<CitySolidMeshProps['emphasis'], THREE.Color> = {
   base: new THREE.Color(SCENE_TOKENS.cityFill.base),
@@ -28,7 +36,7 @@ const FILL: Record<CitySolidMeshProps['emphasis'], THREE.Color> = {
 };
 
 /** 单块城市实体：挤出几何 + 极细分隔线。Hover 只轻微抬升与加深，不爆亮。 */
-export function CitySolidMesh({ city, emphasis, hovered, onHover, onSelect, reducedMotion }: CitySolidMeshProps) {
+export function CitySolidMesh({ city, emphasis, hovered, onHover, onSelect, reducedMotion, revealRef, revealDelay = 0 }: CitySolidMeshProps) {
   const group = useRef<THREE.Group>(null);
   const geometry = useMemo(() => {
     const shapes = ringsToShapes(city.rings);
@@ -61,6 +69,20 @@ export function CitySolidMesh({ city, emphasis, hovered, onHover, onSelect, redu
   useFrame(() => {
     const mesh = group.current;
     if (!mesh) return;
+
+    // Opening 揭示：先把轮廓画出来，再让平面获得厚度（§61/§65/§66）
+    if (revealRef) {
+      const reveal = revealRef.current;
+      const riseSpan = 1 - OUTLINE_SPAN;
+      mesh.scale.y = reveal <= OUTLINE_SPAN
+        ? FLAT_SCALE
+        : FLAT_SCALE + (1 - FLAT_SCALE) * Math.min(1, (reveal - OUTLINE_SPAN) / riseSpan);
+      const drawn = Math.max(0, Math.min(1, (reveal - revealDelay) / OUTLINE_SPAN));
+      for (const outline of edges) {
+        outline.setDrawRange(0, Math.floor(outline.attributes.position.count * drawn));
+      }
+    }
+
     if (reducedMotion) { mesh.position.y = target; return; }
     const delta = target - mesh.position.y;
     if (Math.abs(delta) < LIFT_EPSILON) { mesh.position.y = target; return; }
