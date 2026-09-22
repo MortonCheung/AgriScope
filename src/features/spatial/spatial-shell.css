@@ -24,7 +24,7 @@
   letter-spacing: 0.02em;
   white-space: nowrap;
   user-select: none;
-  transition: color 180ms var(--ag-ease), opacity 180ms var(--ag-ease);
+  transition: color var(--ag-dur-fast) var(--ag-ease), opacity var(--ag-dur-fast) var(--ag-ease), box-shadow var(--ag-dur-fast) var(--ag-ease);
 }
 .liaoning-label.is-research { color: var(--ag-ink); font-weight: 600; }
 .liaoning-label.is-research em {
@@ -34,7 +34,8 @@
   letter-spacing: 0.14em;
   color: var(--ag-ink-faint);
 }
-.liaoning-label.is-active { color: var(--ag-ink); }
+/* 地图侧 hover：与右下城市按钮是同一条下划线，双向共用一个状态（§57/§58） */
+.liaoning-label.is-active { color: var(--ag-ink); box-shadow: inset 0 -1px 0 var(--ag-ink); }
 
 .spatial-notice {
   position: fixed;

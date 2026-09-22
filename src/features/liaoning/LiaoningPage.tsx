@@ -36,6 +36,7 @@ export function LiaoningPage() {
                 type="button"
                 className="liaoning-city"
                 data-ready={city.hasResearch || undefined}
+                data-hovered={hoveredCityId === city.id || undefined}
                 onFocus={() => setHoveredCity(city.id)}
                 onBlur={() => setHoveredCity(null)}
                 onClick={() => selectCity(city.id)}

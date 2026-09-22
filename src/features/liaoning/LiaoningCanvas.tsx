@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { CameraControls, CameraControlsImpl, Html, PerspectiveCamera } from '@react-three/drei';
-import { Canvas } from '@react-three/fiber';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { CameraControls, CameraControlsImpl, ContactShadows, Html, PerspectiveCamera } from '@react-three/drei';
+import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { STUDY_CITY_IDS } from '../../domain/geography/cities';
 import { CitySolidMesh, SOLID_DEPTH } from './CitySolidMesh';
@@ -33,6 +33,59 @@ function cityView(targetPoint: THREE.Vector3, radius: number) {
     position: [targetPoint.x + radius * 0.24, radius * 0.5, targetPoint.z + radius * 0.5] as const,
     target: [targetPoint.x, 1.6, targetPoint.z] as const,
   };
+}
+
+/** Opening 专用：极轻的鼠标视差（±1.5°），不进省域交互，避免影响拖动（V2 §56）。 */
+const PARALLAX_LIMIT_DEG = 1.5;
+const PARALLAX_LERP = 0.1;
+
+function ParallaxGroup({ enabled, children }: { enabled: boolean; children: ReactNode }) {
+  const group = useRef<THREE.Group>(null);
+  const pointer = useRef({ x: 0, y: 0 });
+  const running = useRef(false);
+  const [moving, setMoving] = useState(false);
+  useAnimationFrames(moving, MOTION_DURATION.slow);
+
+  useEffect(() => {
+    if (!enabled) return;
+    const wake = () => {
+      if (!running.current) { running.current = true; setMoving(true); }
+    };
+    const onMove = (event: PointerEvent) => {
+      pointer.current = {
+        x: (event.clientX / window.innerWidth) * 2 - 1,
+        y: (event.clientY / window.innerHeight) * 2 - 1,
+      };
+      wake();
+    };
+    const onLeave = () => { pointer.current = { x: 0, y: 0 }; wake(); };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerleave', onLeave);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerleave', onLeave);
+      running.current = false;
+    };
+  }, [enabled]);
+
+  useFrame(() => {
+    const instance = group.current;
+    if (!instance) return;
+    const limit = THREE.MathUtils.degToRad(PARALLAX_LIMIT_DEG);
+    const targetZ = -pointer.current.x * limit;
+    const targetX = pointer.current.y * limit;
+    const deltaZ = targetZ - instance.rotation.z;
+    const deltaX = targetX - instance.rotation.x;
+    if (Math.abs(deltaZ) < 0.0004 && Math.abs(deltaX) < 0.0004) {
+      instance.rotation.set(targetX, 0, targetZ);
+      if (running.current) { running.current = false; setMoving(false); }
+      return;
+    }
+    instance.rotation.z += deltaZ * PARALLAX_LERP;
+    instance.rotation.x += deltaX * PARALLAX_LERP;
+  });
+
+  return <group ref={group}>{children}</group>;
 }
 
 function CameraRig({ mode, focusCityId, dollyToken, reducedMotion, onCameraRest, targetPoint, provinceRadius }: {
@@ -130,7 +183,20 @@ function SceneContents({ mode, focusCityId, hoveredCityId, dollyToken, onHoverCi
         targetPoint={focusPoint}
         provinceRadius={model.radius}
       />
-      <group>
+      {/*
+        接触阴影：目标是"让辽宁像真的从纸面浮起来"，不是真实光影（V2 §53/§54）。
+        frames={1} 只烘焙一次，因此没有逐帧成本；若日后发现它变贵，删掉即可。
+      */}
+      <ContactShadows
+        frames={1}
+        position={[0, -0.02, 0]}
+        scale={model.radius * 3}
+        far={6}
+        blur={2.5}
+        opacity={0.12}
+        resolution={512}
+      />
+      <ParallaxGroup enabled={mode === 'opening'}>
         {model.cities.map((city) => (
           <CitySolidMesh
             key={city.id}
@@ -142,7 +208,7 @@ function SceneContents({ mode, focusCityId, hoveredCityId, dollyToken, onHoverCi
             reducedMotion={reducedMotion}
           />
         ))}
-      </group>
+      </ParallaxGroup>
       {mode !== 'opening' && model.cities.map((city) => {
         const active = hoveredCityId === city.id || focusCityId === city.id;
         if (!city.hasResearch && !studyIds.has(city.id) && !active) return null;
