@@ -1,10 +1,15 @@
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { ringsToShapes, type CitySolid } from './liaoningGeometry';
 import { SCENE_TOKENS } from '../../design/sceneTokens';
+import { MOTION_DURATION } from '../../design/motion';
+import { useAnimationFrames } from './useAnimationFrames';
 
 export const SOLID_DEPTH = 1.8;
+/** 抬起插值系数与收敛阈值：不收敛到阈值内就持续请求帧。 */
+const LIFT_LERP = 0.14;
+const LIFT_EPSILON = 0.001;
 
 interface CitySolidMeshProps {
   city: CitySolid;
@@ -44,10 +49,22 @@ export function CitySolidMesh({ city, emphasis, hovered, onHover, onSelect, redu
   }, [city.rings]);
 
   const target = hovered ? SOLID_DEPTH * 0.5 : 0;
+  /**
+   * 抬起是"由 hover 驱动"的插值。画布是 demand 帧循环：
+   * 没有帧就没有插值（第一次常常因为相机还在动而有帧，之后便只剩颜色跳变）。
+   * 每次目标变化都重新开一个有限时长的帧窗口。
+   */
+  const [liftNonce, setLiftNonce] = useState(0);
+  useEffect(() => { setLiftNonce((value) => value + 1); }, [target]);
+  useAnimationFrames(!reducedMotion && liftNonce > 0, MOTION_DURATION.slow * 2, liftNonce);
+
   useFrame(() => {
-    if (!group.current) return;
-    if (reducedMotion) { group.current.position.y = target; return; }
-    group.current.position.y += (target - group.current.position.y) * 0.14;
+    const mesh = group.current;
+    if (!mesh) return;
+    if (reducedMotion) { mesh.position.y = target; return; }
+    const delta = target - mesh.position.y;
+    if (Math.abs(delta) < LIFT_EPSILON) { mesh.position.y = target; return; }
+    mesh.position.y += delta * LIFT_LERP;
   });
 
   const fill = hovered ? FILL.focus : FILL[emphasis];
