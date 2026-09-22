@@ -31,15 +31,17 @@ export function LiaoningPage() {
 
       <div className="liaoning-page__index" role="group" aria-label="研究城市入口">
         <p className="ag-label">研究城市</p>
-        <ul className="liaoning-page__cities">
+        {/*
+          进入城市只在"项"上设置，清空只在"整个列表"离开时做。
+          否则鼠标穿过两项之间的间隙会先经过 null，地图会闪一下。
+        */}
+        <ul className="liaoning-page__cities" onPointerLeave={() => setHoveredCity(null)}>
           {studyCities.map((city) => (
-            <li key={city.id}>
+            <li key={city.id} onPointerEnter={() => setHoveredCity(city.id)}>
               <button
                 type="button"
                 className="liaoning-city"
                 data-ready={city.hasResearch || undefined}
-                onMouseEnter={() => setHoveredCity(city.id)}
-                onMouseLeave={() => setHoveredCity(null)}
                 onFocus={() => setHoveredCity(city.id)}
                 onBlur={() => setHoveredCity(null)}
                 onClick={() => selectCity(city.id)}

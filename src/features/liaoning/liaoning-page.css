@@ -14,7 +14,10 @@
 .liaoning-page__hint { margin: 0; color: var(--ag-ink-faint); font-family: var(--ag-font-mono); font-size: var(--ag-fs-meta); min-height: 1.4em; }
 
 .liaoning-page__index { pointer-events: auto; align-self: end; display: flex; flex-direction: column; gap: var(--ag-space-3); }
-.liaoning-page__cities { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
+/* 视觉间隙仍为 6px，但由 li 的内边距提供，命中区域连续：
+   鼠标在两项之间移动不会经过"死区"，hover 状态不会被清空再重设。 */
+.liaoning-page__cities { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; margin: 0; padding: 0; list-style: none; }
+.liaoning-page__cities li { padding: 3px; }
 .liaoning-city {
   display: flex;
   flex-direction: column;
