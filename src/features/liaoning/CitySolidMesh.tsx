@@ -10,6 +10,8 @@ export const SOLID_DEPTH = 1.8;
 /** 抬起插值系数与收敛阈值：不收敛到阈值内就持续请求帧。 */
 const LIFT_LERP = 0.14;
 const LIFT_EPSILON = 0.001;
+/** 颜色插值系数：hover 不改材质、只让当前色缓慢逼近目标色（V3 §43）。 */
+const COLOR_LERP = 0.1;
 
 interface CitySolidMeshProps {
   city: CitySolid;
@@ -35,9 +37,13 @@ const FILL: Record<CitySolidMeshProps['emphasis'], THREE.Color> = {
   dim: new THREE.Color(SCENE_TOKENS.cityFill.dim),
 };
 
-/** 单块城市实体：挤出几何 + 极细分隔线。Hover 只轻微抬升与加深，不爆亮。 */
+/** 单块城市实体：挤出几何 + 极细分隔线。
+ *  Hover 的视觉权重按 V3 §45 分配：抬升为主，颜色极轻地插值过去，不再突然换色或描边（§43/§44）。 */
 export function CitySolidMesh({ city, emphasis, hovered, onHover, onSelect, reducedMotion, revealRef, revealDelay = 0 }: CitySolidMeshProps) {
   const group = useRef<THREE.Group>(null);
+  const material = useRef<THREE.MeshStandardMaterial>(null);
+  /** 首帧直接落到目标色，避免挂载时从初值淡入。 */
+  const seeded = useRef(false);
   const geometry = useMemo(() => {
     const shapes = ringsToShapes(city.rings);
     const extruded = new THREE.ExtrudeGeometry(shapes, { depth: SOLID_DEPTH, bevelEnabled: false, curveSegments: 1 });
@@ -57,14 +63,16 @@ export function CitySolidMesh({ city, emphasis, hovered, onHover, onSelect, redu
   }, [city.rings]);
 
   const target = hovered ? SOLID_DEPTH * 0.5 : 0;
+  /** 目标色是模块级常量，引用稳定，适合直接作为 lerp 的终点（§43）。 */
+  const targetFill = hovered ? FILL.focus : FILL[emphasis];
   /**
-   * 抬起是"由 hover 驱动"的插值。画布是 demand 帧循环：
-   * 没有帧就没有插值（第一次常常因为相机还在动而有帧，之后便只剩颜色跳变）。
-   * 每次目标变化都重新开一个有限时长的帧窗口。
+   * 抬起与换色都是"由 hover 驱动"的插值。画布是 demand 帧循环：
+   * 没有帧就没有插值（第一次常常因为相机还在动而有帧，之后便只剩一次跳变）。
+   * 每次目标位置或目标色变化都重新开一个有限时长的帧窗口。
    */
   const [liftNonce, setLiftNonce] = useState(0);
-  useEffect(() => { setLiftNonce((value) => value + 1); }, [target]);
-  useAnimationFrames(!reducedMotion && liftNonce > 0, MOTION_DURATION.slow * 2, liftNonce);
+  useEffect(() => { setLiftNonce((value) => value + 1); }, [target, emphasis]);
+  useAnimationFrames(!reducedMotion && liftNonce > 0, MOTION_DURATION.slow * 3, liftNonce);
 
   useFrame(() => {
     const mesh = group.current;
@@ -83,13 +91,18 @@ export function CitySolidMesh({ city, emphasis, hovered, onHover, onSelect, redu
       }
     }
 
+    // 颜色插值：不再瞬间换色（§43）。首帧直接落位，避免挂载淡入。
+    const instance = material.current;
+    if (instance) {
+      if (!seeded.current || reducedMotion) { instance.color.copy(targetFill); seeded.current = true; }
+      else instance.color.lerp(targetFill, COLOR_LERP);
+    }
+
     if (reducedMotion) { mesh.position.y = target; return; }
     const delta = target - mesh.position.y;
     if (Math.abs(delta) < LIFT_EPSILON) { mesh.position.y = target; return; }
     mesh.position.y += delta * LIFT_LERP;
   });
-
-  const fill = hovered ? FILL.focus : FILL[emphasis];
 
   return (
     <group ref={group}>
@@ -99,11 +112,12 @@ export function CitySolidMesh({ city, emphasis, hovered, onHover, onSelect, redu
         onPointerOut={() => onHover(null)}
         onClick={(event) => { event.stopPropagation(); onSelect(city.id); }}
       >
-        <meshStandardMaterial color={fill} roughness={0.92} metalness={0} flatShading={false} />
+        <meshStandardMaterial ref={material} color={SCENE_TOKENS.cityFill.base} roughness={0.92} metalness={0} flatShading={false} />
       </mesh>
       {edges.map((outline, index) => (
         <lineSegments key={index} geometry={outline}>
-          <lineBasicMaterial color={hovered ? SCENE_TOKENS.outlineStrong : SCENE_TOKENS.outline} transparent opacity={hovered ? 0.9 : 1} />
+          {/* 行政边界默认稳定存在，不随 hover 突然加强（V3 §44）。 */}
+          <lineBasicMaterial color={SCENE_TOKENS.outline} transparent opacity={1} />
         </lineSegments>
       ))}
     </group>

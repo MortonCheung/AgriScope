@@ -21,7 +21,6 @@ export const SCENE_TOKENS = {
     focus: '#c3b9a8',
     dim: '#efece5',
   },
-  /** 边界线：默认用近黑低透明度，强化时用近黑 */
+  /** 边界线：默认近黑低透明度，稳定存在；hover 不再突然加强（V3 §44） */
   outline: 'rgb(26 25 23 / 0.34)',
-  outlineStrong: '#1a1917',
 } as const;
