@@ -6,9 +6,19 @@ import { useCityResearch } from '../../services/useCityResearch';
 import { AsyncBoundary } from '../../components/AsyncState';
 import { ResearchSummary } from '../research/ResearchSummary';
 import { ROUTES } from '../../app/routes';
-import { MOTION_SPRING } from '../../design/motion';
+import { useAppHistory } from '../../app/appHistory';
+import { MOTION_DURATION, MOTION_EASE, MOTION_SPRING } from '../../design/motion';
 import type { CityResearchIndex } from '../../domain/research/types';
 import './city-space.css';
+
+/**
+ * 研究纸进入的原点（V3 §13）。
+ * 进入：从右下方铺到桌面；Back 返回（direction < 0）：更轻的回铺，读起来像"纸被重新摆回来"（V3 §12）。
+ */
+const PAPER_FROM = {
+  enter: { opacity: 0, x: 56, y: 20, scale: 0.975, rotate: 0.3 },
+  back: { opacity: 0, x: 18, y: 0, scale: 0.99, rotate: 0 },
+} as const;
 
 /**
  * 城市研究空间：以 ResearchTopic → ResearchPoint 呈现研究关系，
@@ -58,6 +68,7 @@ function CitySpaceBody({ cityShortName, index, selectedPointId, onSelect }: {
   onSelect: (pointId: string | null) => void;
 }) {
   const reducedMotion = Boolean(useReducedMotion());
+  const navDirection = useAppHistory()?.direction ?? 0;
   const sidebarRef = useRef<HTMLElement>(null);
   /** 默认全部展开（§35 的文献目录形态）；被收起过的专题记在这里。 */
   const [closedTopicIds, setClosedTopicIds] = useState<string[]>([]);
@@ -82,7 +93,15 @@ function CitySpaceBody({ cityShortName, index, selectedPointId, onSelect }: {
   }, [selectedPointId]);
 
   return (
-    <div className="city-space__panel" data-focused={selected ? true : undefined}>
+    <motion.div
+      className="city-space__panel"
+      data-focused={selected ? true : undefined}
+      initial={reducedMotion ? false : (navDirection < 0 ? PAPER_FROM.back : PAPER_FROM.enter)}
+      animate={{ opacity: 1, x: 0, y: 0, scale: 1, rotate: 0 }}
+      transition={reducedMotion
+        ? { duration: 0 }
+        : { ...MOTION_SPRING.paper, opacity: { duration: MOTION_DURATION.normal, ease: MOTION_EASE.out } }}
+    >
       <header className="city-space__head">
         <h1 className="ag-hero city-space__title">{cityShortName}</h1>
         <div className="city-space__entries">
@@ -164,6 +183,6 @@ function CitySpaceBody({ cityShortName, index, selectedPointId, onSelect }: {
           )}
         </aside>
       </div>
-    </div>
+    </motion.div>
   );
 }

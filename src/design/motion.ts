@@ -31,6 +31,8 @@ export const MOTION_EASE = {
 export const MOTION_SPRING = {
   direct: { type: 'spring', stiffness: 420, damping: 38, mass: 0.9 },
   soft: { type: 'spring', stiffness: 300, damping: 34, mass: 1 },
+  /** 研究纸铺到桌面：非常轻微的回弹，不夸张（V3 §13） */
+  paper: { type: 'spring', stiffness: 260, damping: 32, mass: 1 },
 } as const;
 
 export type MotionKey = keyof typeof MOTION_DURATION;
