@@ -14,7 +14,8 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const PAYLOAD = join(REPO, 'public/research/shenyang/v2');
+const PAYLOAD = join(REPO, 'public/research/shenyang');
+const SCENARIO_DIR = join(REPO, 'public/scenario/shenyang');
 const REQUIRED = ['A01', 'A02', 'A03', 'A04', 'A05', 'A06', 'A07', 'A08', 'A09'];
 const LEGACY_ID = /^[GC]\d+$/;
 /** v1 时代才有的索引字段，v2 载荷里出现即视为回退。 */
@@ -149,7 +150,7 @@ if (failures.length === 0) {
   /*
    * 6. 受控列名映射必须覆盖**界面会渲染的每一列**（V5 §36/§76）。
    *    否则会以原始英文 key 泄漏（YEAR / PRICE_MEDIAN / gate_min_r2 …）。
-   *    覆盖范围 = v2 载荷的全部表 + 推演页读取的 v1 情景表。
+   *    覆盖范围 = 研究载荷的全部表 + 推演页读取的情景表。
    */
   const metricsSource = readFileSync(join(REPO, 'src/domain/research/v2/metrics.ts'), 'utf8');
   const metaBlock = (metricsSource.split('export const COLUMN_META')[1] ?? '').split('export const VALUE_LABELS')[0];
@@ -157,12 +158,13 @@ if (failures.length === 0) {
 
   const tableDirs = [join(PAYLOAD, 'tables')];
   /*
-   * 推演页读取的是 v1 情景表；从页面源码里取出它真正渲染的文件名，
+   * 推演页读取的是情景表；从页面源码里取出它真正渲染的文件名，
    * 这样检查会跟着页面走，不会因为硬编码清单而失效。
    */
   const scenarioSource = readFileSync(join(REPO, 'src/features/scenario/ScenarioPage.tsx'), 'utf8');
   const scenarioFiles = [...scenarioSource.matchAll(/file: '([^']+\.csv)'/g)].map((match) => match[1]);
-  const v1TablesDir = join(REPO, 'public/research/shenyang/tables');
+  /** 推演表已与研究载荷分开目录（本轮 §30），这里跟着实际路径走。 */
+  const scenarioTablesDir = SCENARIO_DIR;
   const usedColumns = new Set();
   for (const dir of tableDirs) {
     if (!existsSync(dir)) continue;
@@ -172,7 +174,7 @@ if (failures.length === 0) {
     }
   }
   for (const name of scenarioFiles) {
-    const path = join(v1TablesDir, name);
+    const path = join(scenarioTablesDir, name);
     check(existsSync(path), `推演页引用的情景表不存在：${name}`);
     if (!existsSync(path)) continue;
     const header = readFileSync(path, 'utf8').split(/\r?\n/)[0].replace(/^\uFEFF/, '');
@@ -207,11 +209,11 @@ if (failures.length === 0) {
   /*
    * 8. 分类取值的受控中文必须覆盖**界面真实渲染的每一张表**里出现过的每一个取值（V5 §76/§77）。
    *    例如 exposure 有 18 个取值；漏掉一个就会在表里直接显示 heavy_rain_days。
-   *    扫描范围与第 6 条一致：v2 载荷的全部表 + 推演页真正读取的情景表。
+   *    扫描范围与第 6 条一致：研究载荷的全部表 + 推演页真正读取的情景表。
    */
   const renderedTables = [
     ...list(join(PAYLOAD, 'tables'), '.csv').map((name) => join(PAYLOAD, 'tables', name)),
-    ...scenarioFiles.map((name) => join(v1TablesDir, name)).filter((path) => existsSync(path)),
+    ...scenarioFiles.map((name) => join(scenarioTablesDir, name)).filter((path) => existsSync(path)),
   ];
   const valueLabels = parseValueLabels(metricsSource);
   const uncovered = [];

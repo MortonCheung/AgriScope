@@ -1,0 +1,648 @@
+{
+ "generatedBy": "scripts/sync-shenyang-v2.mjs",
+ "cityId": "shenyang",
+ "files": [
+  {
+   "kind": "tree",
+   "path": "public/research/shenyang/index.json",
+   "source": "src/domain/research/catalog/shenyang-tree.json",
+   "bytes": 39201,
+   "sha256": "3fc0616f0667515c0889d2ed44f188babc2c4932e1f7866ca7aedb031550a2a1"
+  },
+  {
+   "kind": "manifest",
+   "path": "public/research/shenyang/manifest.json",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/workspace/research_v2/exports/frontend/manifest.json",
+   "bytes": 2449,
+   "sha256": "2c1a142372a17ad8399211f164cf9a20f27a62da06de884ea56b6ac3879a9eab"
+  },
+  {
+   "kind": "sources",
+   "path": "public/research/shenyang/sources.json",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/workspace/research_v2/exports/frontend/sources.json",
+   "bytes": 7067,
+   "sha256": "94666ef0575d841531a61ec2cfbd25c95f96d535790080c01719899a4691a0bc"
+  },
+  {
+   "kind": "article",
+   "path": "public/research/shenyang/articles/A01.json",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/workspace/research_v2/exports/frontend/articles/A01.json",
+   "bytes": 12436,
+   "sha256": "cffa188031bb0fb4c7192be102ed3f990cd86b3c6bd90b2f5fce5e5b655fcf64"
+  },
+  {
+   "kind": "article",
+   "path": "public/research/shenyang/articles/A02.json",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/workspace/research_v2/exports/frontend/articles/A02.json",
+   "bytes": 12837,
+   "sha256": "cad71e6ea240bac37ab728a536e34ac48de60e579c729aba9ba7d8a602b2b32f"
+  },
+  {
+   "kind": "article",
+   "path": "public/research/shenyang/articles/A03.json",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/workspace/research_v2/exports/frontend/articles/A03.json",
+   "bytes": 10219,
+   "sha256": "36b228d9628686fd722b008694342fb3f3ff80b3ccb2a91dbe887084603c7bcf"
+  },
+  {
+   "kind": "article",
+   "path": "public/research/shenyang/articles/A04.json",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/workspace/research_v2/exports/frontend/articles/A04.json",
+   "bytes": 10587,
+   "sha256": "5662bed0ee857f687497b5f8da0c00c5824246a6a28e1a27478d9dbf8515f645"
+  },
+  {
+   "kind": "article",
+   "path": "public/research/shenyang/articles/A05.json",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/workspace/research_v2/exports/frontend/articles/A05.json",
+   "bytes": 9016,
+   "sha256": "6d39e22f51855d3e2637932e4319bc6c4304c3188ca182c3074408a69cd68fb4"
+  },
+  {
+   "kind": "article",
+   "path": "public/research/shenyang/articles/A06.json",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/workspace/research_v2/exports/frontend/articles/A06.json",
+   "bytes": 10511,
+   "sha256": "b6ef07ba8214282162bd81db614d1b8a98aa040c72100ec47a971b31046d69a6"
+  },
+  {
+   "kind": "article",
+   "path": "public/research/shenyang/articles/A07.json",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/workspace/research_v2/exports/frontend/articles/A07.json",
+   "bytes": 11439,
+   "sha256": "bff7615bcd56d09ee02fe13ac5db1858a2ddbd5efb7c80838a8ae044e75f7ad4"
+  },
+  {
+   "kind": "article",
+   "path": "public/research/shenyang/articles/A08.json",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/workspace/research_v2/exports/frontend/articles/A08.json",
+   "bytes": 14970,
+   "sha256": "84c0ef55130ea619a4ff88563c3cf25a204d9307da35164dc26ebb31e891ecfe"
+  },
+  {
+   "kind": "article",
+   "path": "public/research/shenyang/articles/A09.json",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/workspace/research_v2/exports/frontend/articles/A09.json",
+   "bytes": 17706,
+   "sha256": "524c2b677ad1562a80f3dcf80fcfe7ca7b4aef0b93247749f946b66feb78da64"
+  },
+  {
+   "kind": "table",
+   "path": "public/research/shenyang/tables/A01_seasonal_amplitude.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/reports/v2/tables/A01_seasonal_amplitude.csv",
+   "bytes": 697,
+   "sha256": "419e1e519428fecaefcff703521bb60c3e6cb26dfa476fb7f815c5afb2060c17",
+   "rows": 20,
+   "columns": 3,
+   "headers": [
+    "crop",
+    "variable",
+    "seasonal_range"
+   ]
+  },
+  {
+   "kind": "table",
+   "path": "public/research/shenyang/tables/A01_trend.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/reports/v2/tables/A01_trend.csv",
+   "bytes": 4501,
+   "sha256": "a06fe40e4a5e7b00d89efd5fc11695c2e73dbde86a31e1fbc4e56a449ba14093",
+   "rows": 20,
+   "columns": 13,
+   "headers": [
+    "crop",
+    "response",
+    "beta_per_year",
+    "se",
+    "p_raw",
+    "n",
+    "r2",
+    "ar1",
+    "n_eff",
+    "annual_pct",
+    "q_fdr",
+    "ci_low",
+    "ci_high"
+   ]
+  },
+  {
+   "kind": "table",
+   "path": "public/research/shenyang/tables/A02_daily_response.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/reports/v2/tables/A02_daily_response.csv",
+   "bytes": 56166,
+   "sha256": "bf31b00124b7d9bb2463f981b4cf3526ef0f7a8e7d9125dc7fd24f344e1e0850",
+   "rows": 220,
+   "columns": 16,
+   "headers": [
+    "outcome",
+    "exposure",
+    "crop",
+    "ar1_coef",
+    "beta_per_sd",
+    "beta_raw",
+    "se",
+    "p_raw",
+    "n",
+    "r2",
+    "ar1",
+    "n_eff",
+    "ci_low",
+    "ci_high",
+    "is_core",
+    "q_fdr"
+   ]
+  },
+  {
+   "kind": "table",
+   "path": "public/research/shenyang/tables/A03_accumulation.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/reports/v2/tables/A03_accumulation.csv",
+   "bytes": 11326,
+   "sha256": "8a2456d2bfb5bbe48d9f4cc02644d259d46d8e4a538942667fc51212199d77b0",
+   "rows": 80,
+   "columns": 10,
+   "headers": [
+    "outcome",
+    "cum_days",
+    "crop",
+    "beta_raw_per_mm",
+    "beta_per_sd",
+    "p_raw",
+    "n",
+    "x_sd",
+    "x_mean",
+    "q_fdr"
+   ]
+  },
+  {
+   "kind": "table",
+   "path": "public/research/shenyang/tables/A03_lag_windows.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/reports/v2/tables/A03_lag_windows.csv",
+   "bytes": 22755,
+   "sha256": "f81812de2a6b54bbb3087db11e22eb5e62e07e4def63c9cf2361aa4e7b15f9a5",
+   "rows": 160,
+   "columns": 11,
+   "headers": [
+    "outcome",
+    "exposure",
+    "window",
+    "window_key",
+    "crop",
+    "beta",
+    "se",
+    "p_raw",
+    "n",
+    "r2",
+    "q_fdr"
+   ]
+  },
+  {
+   "kind": "table",
+   "path": "public/research/shenyang/tables/A03_nonlinearity.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/reports/v2/tables/A03_nonlinearity.csv",
+   "bytes": 7477,
+   "sha256": "e850d4f008fad4cce5c242f3c12cc1aebb41f6bbbb1dde3da770da164c011d25",
+   "rows": 80,
+   "columns": 9,
+   "headers": [
+    "outcome",
+    "exposure",
+    "crop",
+    "wald_F",
+    "df1",
+    "p_raw",
+    "n",
+    "ar_control",
+    "q_fdr"
+   ]
+  },
+  {
+   "kind": "table",
+   "path": "public/research/shenyang/tables/A04_event_clusters.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/reports/v2/tables/A04_event_clusters.csv",
+   "bytes": 730,
+   "sha256": "b04843b966e6a580c09eaf9e08ce2ffbb52d1c8ebc9cbb991511b26b563483f7",
+   "rows": 13,
+   "columns": 6,
+   "headers": [
+    "hazard",
+    "start",
+    "end",
+    "n",
+    "ids",
+    "contaminated"
+   ]
+  },
+  {
+   "kind": "table",
+   "path": "public/research/shenyang/tables/A04_event_summary.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/reports/v2/tables/A04_event_summary.csv",
+   "bytes": 649,
+   "sha256": "b3d0453cd06aad6b4913c3306b706f23d2e5fc3d396ddf818f359cbad93461a9",
+   "rows": 4,
+   "columns": 10,
+   "headers": [
+    "hazard",
+    "response",
+    "n_events",
+    "post_mean",
+    "ci_low",
+    "ci_high",
+    "placebo_mean",
+    "placebo_sd",
+    "placebo_p",
+    "n_placebo"
+   ]
+  },
+  {
+   "kind": "table",
+   "path": "public/research/shenyang/tables/A05_heterogeneity.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/reports/v2/tables/A05_heterogeneity.csv",
+   "bytes": 393,
+   "sha256": "70bb30da896013f6474d57dfb993d73712e02e1d035a043ec048e3d867f15e95",
+   "rows": 4,
+   "columns": 7,
+   "headers": [
+    "outcome",
+    "exposure",
+    "F_crop_interaction",
+    "df1",
+    "p_raw",
+    "n",
+    "q_fdr"
+   ]
+  },
+  {
+   "kind": "table",
+   "path": "public/research/shenyang/tables/A05_recovery_by_crop.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/reports/v2/tables/A05_recovery_by_crop.csv",
+   "bytes": 494,
+   "sha256": "218f0cd7ee07abf550cea84f23f00306f833f6089384669702c3624f4816a57b",
+   "rows": 20,
+   "columns": 5,
+   "headers": [
+    "response",
+    "crop",
+    "n",
+    "censored",
+    "rec_median"
+   ]
+  },
+  {
+   "kind": "table",
+   "path": "public/research/shenyang/tables/A06_forecast_gain.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/reports/v2/tables/A06_forecast_gain.csv",
+   "bytes": 1929,
+   "sha256": "ba7542b9cce49218b9e20f2e85add121035d5e6c6b4849c05dc367239660b905",
+   "rows": 20,
+   "columns": 6,
+   "headers": [
+    "crop",
+    "test_year",
+    "baseline",
+    "weather",
+    "delta_rmse",
+    "rel_gain_pct"
+   ]
+  },
+  {
+   "kind": "table",
+   "path": "public/research/shenyang/tables/A06_price_volume.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/reports/v2/tables/A06_price_volume.csv",
+   "bytes": 2080,
+   "sha256": "bcb480fc00900a192c14fd06cf258cbce535b991c4aea5ef68610d9a6b64d797",
+   "rows": 11,
+   "columns": 10,
+   "headers": [
+    "model",
+    "crop",
+    "beta_volume",
+    "se",
+    "p_raw",
+    "n",
+    "r2",
+    "ci_low",
+    "ci_high",
+    "q_fdr"
+   ]
+  },
+  {
+   "kind": "table",
+   "path": "public/research/shenyang/tables/A07_district_crop_structure.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/reports/v2/tables/A07_district_crop_structure.csv",
+   "bytes": 3221,
+   "sha256": "8bc1a1456982b3fcd9d2e62294038d2f6a8488b08f3a8ba4bb1106a5b7819a20",
+   "rows": 72,
+   "columns": 6,
+   "headers": [
+    "crop",
+    "district",
+    "years",
+    "sown_area_median_ha",
+    "production_median_t",
+    "yield_median_kg_ha"
+   ]
+  },
+  {
+   "kind": "table",
+   "path": "public/research/shenyang/tables/A07_district_grain.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/reports/v2/tables/A07_district_grain.csv",
+   "bytes": 352,
+   "sha256": "c87dad40e230ab193610c9d28b6a8a2c62bfc10baa80eb89ab026069ba2db7b8",
+   "rows": 8,
+   "columns": 5,
+   "headers": [
+    "district",
+    "area_median",
+    "prod_median",
+    "yield_median",
+    "years"
+   ]
+  },
+  {
+   "kind": "table",
+   "path": "public/research/shenyang/tables/A08_panel_results.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/reports/v2/tables/A08_panel_results.csv",
+   "bytes": 10932,
+   "sha256": "879d6c6f58bd55fd27ef958dec015e3708e0a596f18b63fce3c0a007974b8367",
+   "rows": 54,
+   "columns": 13,
+   "headers": [
+    "crop",
+    "outcome",
+    "exposure",
+    "beta",
+    "se_cluster",
+    "t",
+    "p_raw",
+    "n",
+    "n_clusters",
+    "r2",
+    "ci_low",
+    "ci_high",
+    "q_fdr"
+   ]
+  },
+  {
+   "kind": "table",
+   "path": "public/research/shenyang/tables/A08_robustness_loo.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/reports/v2/tables/A08_robustness_loo.csv",
+   "bytes": 832,
+   "sha256": "936bd1b2116bde278287b0c48940c69a8dacbd329b8d55a6be5ff41b1a31046e",
+   "rows": 8,
+   "columns": 8,
+   "headers": [
+    "crop",
+    "exposure",
+    "mode",
+    "beta_full",
+    "beta_min",
+    "beta_max",
+    "same_sign",
+    "n_loo"
+   ]
+  },
+  {
+   "kind": "table",
+   "path": "public/research/shenyang/tables/A08_wild_bootstrap.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/reports/v2/tables/A08_wild_bootstrap.csv",
+   "bytes": 2508,
+   "sha256": "86fef8884f3f0bf894c1db1e8a23b084dc961992f2fa1b6f5e8885903179db25",
+   "rows": 36,
+   "columns": 5,
+   "headers": [
+    "crop",
+    "exposure",
+    "t_stat",
+    "p_wild_boot",
+    "n_clusters"
+   ]
+  },
+  {
+   "kind": "table",
+   "path": "public/research/shenyang/tables/A01_monthly.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/workspace/research_v2/results/tables/A01_monthly.csv",
+   "bytes": 4728,
+   "sha256": "31fc7185f0ba4027060bc09ee8bccefdddcbca32b9d9789dc8d3223ca4e40fa9",
+   "rows": 120,
+   "columns": 7,
+   "headers": [
+    "crop",
+    "month",
+    "n",
+    "price_median",
+    "price_p10",
+    "price_p90",
+    "volume_median"
+   ]
+  },
+  {
+   "kind": "table",
+   "path": "public/research/shenyang/tables/A01_seasonal_index.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/workspace/research_v2/results/tables/A01_seasonal_index.csv",
+   "bytes": 9355,
+   "sha256": "db88623c85245a6723439bc2e0257010f1ef7a2099dfaec6cfc60ddff68fce11",
+   "rows": 240,
+   "columns": 5,
+   "headers": [
+    "crop",
+    "variable",
+    "month",
+    "seasonal_index",
+    "n"
+   ]
+  },
+  {
+   "kind": "table",
+   "path": "public/research/shenyang/tables/A01_stl_strength.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/workspace/research_v2/results/tables/A01_stl_strength.csv",
+   "bytes": 1071,
+   "sha256": "ae352e820ecc9cc112255707fb3b0bd1993a0bac8bc7adbb16b94b53db43761b",
+   "rows": 20,
+   "columns": 4,
+   "headers": [
+    "crop",
+    "variable",
+    "seasonal_strength",
+    "trend_strength"
+   ]
+  },
+  {
+   "kind": "table",
+   "path": "public/research/shenyang/tables/A02_daily_response_Fwx.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/workspace/research_v2/results/tables/A02_daily_response_Fwx.csv",
+   "bytes": 9044,
+   "sha256": "ab5208406c8bd0921ed958d1dabe828a9ae5e43186757c275ea5e411bc6172d4",
+   "rows": 100,
+   "columns": 7,
+   "headers": [
+    "outcome",
+    "exposure",
+    "crop",
+    "beta_raw",
+    "p_raw",
+    "r2",
+    "n"
+   ]
+  },
+  {
+   "kind": "table",
+   "path": "public/research/shenyang/tables/A04_event_responses.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/workspace/research_v2/results/tables/A04_event_responses.csv",
+   "bytes": 7721,
+   "sha256": "ef181012fe83f42f38b79671bfdf145807a358d4aff5510f1e7b90cab270fd29",
+   "rows": 140,
+   "columns": 7,
+   "headers": [
+    "event",
+    "hazard",
+    "t0",
+    "crop",
+    "response",
+    "post_mean",
+    "n_post"
+   ]
+  },
+  {
+   "kind": "table",
+   "path": "public/research/shenyang/tables/A05_recovery.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/workspace/research_v2/results/tables/A05_recovery.csv",
+   "bytes": 6287,
+   "sha256": "5af6076881234ee32ecd98e2efd037fefdde811d1c3afe8fed7f9ec7a73ea339",
+   "rows": 140,
+   "columns": 7,
+   "headers": [
+    "event",
+    "hazard",
+    "crop",
+    "response",
+    "trough_abs",
+    "recovery_day",
+    "censored"
+   ]
+  },
+  {
+   "kind": "table",
+   "path": "public/research/shenyang/tables/A06_forecast_rolling.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/workspace/research_v2/results/tables/A06_forecast_rolling.csv",
+   "bytes": 2603,
+   "sha256": "a2c0c2cf16350e4ff569c64ce53c8d44212a65a2b20fc757e9f90e2418d63bda",
+   "rows": 40,
+   "columns": 6,
+   "headers": [
+    "crop",
+    "test_year",
+    "model",
+    "rmse",
+    "mae",
+    "n_test"
+   ]
+  },
+  {
+   "kind": "table",
+   "path": "public/research/shenyang/tables/A07_change_2018_2024.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/workspace/research_v2/results/tables/A07_change_2018_2024.csv",
+   "bytes": 6329,
+   "sha256": "8e84dbeed1ef940d99551406d888d7090d132ecef0a2b5ca774a1903b7863c6a",
+   "rows": 72,
+   "columns": 8,
+   "headers": [
+    "crop",
+    "district",
+    "area_2018",
+    "area_2024",
+    "area_chg_pct",
+    "prod_2018",
+    "prod_2024",
+    "prod_chg_pct"
+   ]
+  },
+  {
+   "kind": "figure",
+   "path": "public/research/shenyang/figures/A01_seasonal_amplitude.png",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/reports/v2/figures/A01_seasonal_amplitude.png",
+   "bytes": 45918,
+   "sha256": "213c6eb942d5d85a1ffeab282c0cfd0bcd183c2472eca6658c9a5f8ac6015444"
+  },
+  {
+   "kind": "figure",
+   "path": "public/research/shenyang/figures/A07_district_structure.png",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/reports/v2/figures/A07_district_structure.png",
+   "bytes": 70319,
+   "sha256": "6d12826ed0f20da9a15b4762e2ecb894d7e92561013cd8a585b752fe30ced0fb"
+  },
+  {
+   "kind": "references",
+   "path": "public/research/shenyang/references.md",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/reports/v2/references.md",
+   "bytes": 18244,
+   "sha256": "df1e11929e376c98e7ed0be2e7247ab080f643962b2982eb7a186a21770fab45"
+  },
+  {
+   "kind": "scenario",
+   "path": "public/scenario/shenyang/counterfactual_gate.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/reports/tables/counterfactual_gate.csv",
+   "bytes": 107,
+   "sha256": "fa47d7c045ebb45ab295da8411af8259f7a941d641f55628c794be0f349ce6d2",
+   "rows": 2,
+   "columns": 5,
+   "headers": [
+    "target",
+    "n",
+    "r2_sim_vs_actual",
+    "gate_min_r2",
+    "gate_pass"
+   ]
+  },
+  {
+   "kind": "scenario",
+   "path": "public/scenario/shenyang/counterfactual_severity.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/reports/tables/counterfactual_severity.csv",
+   "bytes": 3458,
+   "sha256": "935586b7b9217debd09a660dfa3aa5d44e310ee4b72aeb9c99a812656347bd37",
+   "rows": 44,
+   "columns": 6,
+   "headers": [
+    "crop",
+    "severity_mult",
+    "mean_gap_volume_z",
+    "mean_gap_price_z",
+    "mean_gap_volume_pct",
+    "mean_gap_price_pct"
+   ]
+  },
+  {
+   "kind": "scenario",
+   "path": "public/scenario/shenyang/counterfactual_buffer.csv",
+   "source": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/reports/tables/counterfactual_buffer.csv",
+   "bytes": 1778,
+   "sha256": "245aec5cfa72c2175f6e55bee2bd022c61ee2d3b5a36d3fefb78582034bb1b3c",
+   "rows": 33,
+   "columns": 5,
+   "headers": [
+    "crop",
+    "buffer_frac",
+    "price_gap_z_remaining",
+    "price_impact_avoided_z",
+    "avoided_fraction"
+   ]
+  }
+ ],
+ "counts": {
+  "articles": 9,
+  "sources": 16,
+  "figuresCopied": 2,
+  "tablesCopied": 25,
+  "scenarioTablesCopied": 3
+ },
+ "gaps": {
+  "figuresReferencedButMissing": [],
+  "tablesReferencedButMissing": [],
+  "scenarioReferencedButMissing": [],
+  "tablesPresentButUnreferenced": [
+   "A01_trend.csv",
+   "A04_event_clusters.csv",
+   "A04_event_responses.csv"
+  ],
+  "figuresPresentButUnreferenced": [],
+  "sourceConflicts": []
+ }
+}

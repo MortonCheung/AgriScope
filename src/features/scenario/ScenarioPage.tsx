@@ -11,7 +11,7 @@ import './scenario-page.css';
  * 研究侧的门控结论（未达可靠反事实预测门槛）原样保留在首屏。
  * 所有列名走受控中文映射，`gate_min_r2` / `severity_mult` 这类工程字段不出现在界面上。
  */
-const BASE = '/research/shenyang/tables';
+const BASE = '/scenario/shenyang';
 
 interface ScenarioTable {
   file: string;

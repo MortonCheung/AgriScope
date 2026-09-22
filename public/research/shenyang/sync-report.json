@@ -1,7 +1,18 @@
 {
   "generatedBy": "scripts/sync-shenyang-v2.mjs",
+  "cityId": "shenyang",
   "sourceRoot": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/workspace/research_v2/exports/frontend",
-  "outRoot": "public/research/shenyang/v2",
+  "outRoot": "public/research/shenyang",
+  "assetSources": {
+    "tables": [
+      "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/reports/v2/tables",
+      "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/workspace/research_v2/results/tables"
+    ],
+    "figures": [
+      "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/reports/v2/figures",
+      "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/workspace/research_v2/results/figures"
+    ]
+  },
   "articles": [
     {
       "id": "A01",
@@ -114,24 +125,20 @@
     "articles": 9,
     "sources": 16,
     "figuresCopied": 2,
-    "tablesCopied": 17
+    "tablesCopied": 25,
+    "scenarioTablesCopied": 3
   },
   "assets": {
     "figuresReferencedButMissing": [],
-    "tablesReferencedButMissing": [
-      "A01 / A01_monthly.csv",
-      "A01 / A01_seasonal_index.csv",
-      "A01 / A01_stl_strength.csv",
-      "A02 / A02_daily_response_Fwx.csv",
-      "A05 / A05_recovery.csv",
-      "A06 / A06_forecast_rolling.csv",
-      "A07 / A07_change_2018_2024.csv"
-    ],
+    "tablesReferencedButMissing": [],
+    "scenarioReferencedButMissing": [],
     "tablesPresentButUnreferenced": [
       "A01_trend.csv",
-      "A04_event_clusters.csv"
+      "A04_event_clusters.csv",
+      "A04_event_responses.csv"
     ],
-    "figuresPresentButUnreferenced": []
+    "figuresPresentButUnreferenced": [],
+    "sourceConflicts": []
   },
   "exportContracts": {
     "article_end_marker_required": true,

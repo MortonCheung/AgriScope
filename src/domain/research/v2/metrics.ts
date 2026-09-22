@@ -151,6 +151,35 @@ export const COLUMN_META: Record<string, ColumnMeta> = {
   baseline: { key: 'baseline', label: '基线 RMSE', kind: 'derived', valueType: 'number', precision: 4 },
   weather: { key: 'weather', label: '含天气模型 RMSE', kind: 'derived', valueType: 'number', precision: 4 },
   delta_rmse: { key: 'delta_rmse', label: 'RMSE 变化', kind: 'derived', valueType: 'number', precision: 4 },
+  rmse: { key: 'rmse', label: 'RMSE', kind: 'statistical', valueType: 'number', precision: 4 },
+  mae: { key: 'mae', label: 'MAE', kind: 'statistical', valueType: 'number', precision: 4 },
+  n_test: { key: 'n_test', label: '检验样本量', kind: 'derived', valueType: 'number', unit: '个' },
+
+  // ---- 本轮补齐的导出表（§20：研究侧真实存在、先前被错判为缺失）----
+  // A01 月度分布：价格单位由研究正文声明（元/500g）；成交量单位未公开，因此不写单位。
+  month: { key: 'month', label: '月份', kind: 'physical', valueType: 'number', unit: '月', precision: 0 },
+  price_median: { key: 'price_median', label: '价格中位数', kind: 'physical', valueType: 'number', unit: '元/500g', precision: 2 },
+  price_p10: { key: 'price_p10', label: '价格 P10', kind: 'physical', valueType: 'number', unit: '元/500g', precision: 2 },
+  price_p90: { key: 'price_p90', label: '价格 P90', kind: 'physical', valueType: 'number', unit: '元/500g', precision: 2 },
+  volume_median: { key: 'volume_median', label: '成交量中位数', kind: 'physical', valueType: 'number' },
+  // A01 季节指数与 STL 强度：研究侧未给单位（指数 / 强度），按 §11 不写「无量纲」。
+  seasonal_index: { key: 'seasonal_index', label: '季节指数', kind: 'derived', valueType: 'number', precision: 3 },
+  seasonal_strength: { key: 'seasonal_strength', label: '季节强度', kind: 'derived', valueType: 'number', precision: 3 },
+  trend_strength: { key: 'trend_strength', label: '趋势强度', kind: 'derived', valueType: 'number', precision: 3 },
+  // A04 事件明细：t0 是事件起始日（研究侧给定日期），不是度量。
+  event: { key: 'event', label: '事件序号', kind: 'derived', valueType: 'number', precision: 0 },
+  t0: { key: 't0', label: '事件起始日', kind: 'text', valueType: 'text' },
+  n_post: { key: 'n_post', label: '事件后样本量', kind: 'derived', valueType: 'number', unit: '个' },
+  // A05 恢复明细：谷底幅度是标准化异常（研究侧定义），恢复天数单位是天。
+  trough_abs: { key: 'trough_abs', label: '谷底幅度（标准化）', kind: 'statistical', valueType: 'number', precision: 3 },
+  recovery_day: { key: 'recovery_day', label: '恢复天数', kind: 'physical', valueType: 'number', unit: '天', precision: 0 },
+  // A07 端点变化：面积 公顷、产量 吨、变化 %（研究侧声明）。
+  area_2018: { key: 'area_2018', label: '2018 年播种面积', kind: 'physical', valueType: 'number', unit: '公顷', precision: 0 },
+  area_2024: { key: 'area_2024', label: '2024 年播种面积', kind: 'physical', valueType: 'number', unit: '公顷', precision: 0 },
+  area_chg_pct: { key: 'area_chg_pct', label: '播种面积变化', kind: 'derived', valueType: 'number', unit: UNIT_PERCENT, precision: 2 },
+  prod_2018: { key: 'prod_2018', label: '2018 年总产量', kind: 'physical', valueType: 'number', unit: '吨', precision: 0 },
+  prod_2024: { key: 'prod_2024', label: '2024 年总产量', kind: 'physical', valueType: 'number', unit: '吨', precision: 0 },
+  prod_chg_pct: { key: 'prod_chg_pct', label: '总产量变化', kind: 'derived', valueType: 'number', unit: UNIT_PERCENT, precision: 2 },
 
   // ---- 推演（平行情景）表：严格中文化，禁止露出 gate_min_r2 / severity_mult 这类工程字段（§47/§76/§78）----
   target: { key: 'target', label: '门控目标', kind: 'text', valueType: 'text' },
@@ -193,7 +222,12 @@ export const VALUE_LABELS: Record<string, Record<string, string>> = {
   /** §77：POOLED 面向用户写作「总体」。情景表里 target 同时出现 price / volume。 */
   target: { POOLED: '总体', price: '价格', volume: '成交量' },
   window_key: { w0: '当日', w13: '1–3 日', w47: '4–7 日', w814: '8–14 日' },
-  model: { 'price_z ~ volume_z + price_lag1': '价格 z ~ 成交量 z + 价格滞后 1 期' },
+  model: {
+    /** A06 预测增量：baseline = 仅历史量价+日历；weather = baseline + 天气（研究侧原话）。 */
+    baseline: '基线（仅历史量价）',
+    weather: '基线 + 天气',
+    'price_z ~ volume_z + price_lag1': '价格 z ~ 成交量 z + 价格滞后 1 期',
+  },
   exposure: {
     cloud_cover: '云量',
     dew_point: '露点温度',
