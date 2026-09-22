@@ -1,4 +1,5 @@
-/* 全站统一的细线：位置由宿主决定，观感由这里决定（V2 §41/§43）。 */
+/* 全站统一的细线：位置由宿主决定，观感由这里决定（V3 §8/§9）。
+   只表达"当前状态"，不为 Hover 画线。 */
 .ag-underline {
   position: absolute;
   left: 0;
@@ -10,16 +11,3 @@
 
 .ag-underline--ink { background: var(--ag-ink); }
 .ag-underline--soft { background: var(--ag-ink-soft); }
-
-/* 本地 hover 线：父级 hover 时从左侧展开；当前项不叠第二条线。 */
-.ag-underline--hover {
-  transform: scaleX(0);
-  transition: transform var(--ag-dur-underline) var(--ag-ease);
-}
-.ag-underline-host:hover .ag-underline--hover { transform: scaleX(1); }
-.ag-underline-host[data-active] .ag-underline--hover,
-.ag-underline-host[aria-current='page'] .ag-underline--hover { transform: scaleX(0); }
-
-@media (prefers-reduced-motion: reduce) {
-  .ag-underline--hover { transition: none; }
-}

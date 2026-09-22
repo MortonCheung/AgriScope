@@ -3,19 +3,18 @@ import { MOTION_SPRING } from '../design/motion';
 import './animated-underline.css';
 
 /**
- * 全站统一的“线”（V2 §41 / §43）。
+ * 全站统一的“线”（V3 §8/§9）。
  *
- * 只用 1px 细线表达层级，不用色块按钮。两种形态共用同一视觉：
- *   - 本地 hover 线：父级加 `ag-underline-host`，子级从左侧 scaleX(0)→scaleX(1)。
- *   - 共享指示线：传入 `layoutId`，跨元素连续滑动，而不是消失再出现（§42）。
+ * 线只表达"当前状态"，不再给 Hover 加下划线：
+ * 三种允许的线是信息结构线、当前状态指示线、数据/图表/注释线。
+ * 因此这里只保留共享指示线：传入 `layoutId`，在元素之间连续滑动，而不是消失再出现。
  */
-export function AnimatedUnderline({ layoutId, hover = false, tone = 'ink' }: {
+export function AnimatedUnderline({ layoutId, tone = 'ink' }: {
   layoutId?: string;
-  hover?: boolean;
   tone?: 'ink' | 'soft';
 }) {
   const reducedMotion = Boolean(useReducedMotion());
-  const className = ['ag-underline', `ag-underline--${tone}`, hover && 'ag-underline--hover'].filter(Boolean).join(' ');
+  const className = ['ag-underline', `ag-underline--${tone}`].join(' ');
 
   if (layoutId) {
     return (

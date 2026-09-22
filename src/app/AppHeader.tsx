@@ -64,13 +64,12 @@ export function AppHeader() {
               <NavLink
                 key={item.label}
                 to={item.to}
-                className="ag-header__link ag-underline-host"
+                className="ag-header__link"
                 aria-current={active ? 'page' : undefined}
                 data-active={active || undefined}
               >
                 {item.label}
-                {/* Hover 是本地临时下划线；Active 是共享指示线，两者不打架（V2 §42/§43/§44） */}
-                <AnimatedUnderline hover tone="soft" />
+                {/* 只保留一根 Active 共享指示线；Hover 仅改变文字颜色（V3 §8/§9） */}
                 {active && <AnimatedUnderline layoutId="main-nav-indicator" tone="ink" />}
               </NavLink>
             );

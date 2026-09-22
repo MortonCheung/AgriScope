@@ -34,8 +34,8 @@
   letter-spacing: 0.14em;
   color: var(--ag-ink-faint);
 }
-/* 地图侧 hover：与右下城市按钮是同一条下划线，双向共用一个状态（§57/§58） */
-.liaoning-label.is-active { color: var(--ag-ink); box-shadow: inset 0 -1px 0 var(--ag-ink); }
+/* 地图侧 hover：与右下城市入口共用同一个状态，只加深文字，不再画下划线（V3 §8/§46） */
+.liaoning-label.is-active { color: var(--ag-ink); }
 
 .spatial-notice {
   position: fixed;
