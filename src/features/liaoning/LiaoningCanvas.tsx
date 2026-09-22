@@ -18,11 +18,8 @@ export interface LiaoningCanvasProps {
   mode: 'opening' | 'province' | 'city';
   focusCityId: string | null;
   hoveredCityId: string | null;
-  dollyToken: number;
   onHoverCity: (cityId: string | null) => void;
   onSelectCity: (cityId: string) => void;
-  /** 相机一次移动结束（省域推近城市）后回调。 */
-  onCameraRest?: () => void;
   reducedMotion: boolean;
 }
 
@@ -149,13 +146,11 @@ function AssemblyDriver({ active, reducedMotion, assemblyRef, controlsRef, radiu
   return null;
 }
 
-function CameraRig({ mode, phase, focusCityId, dollyToken, reducedMotion, onCameraRest, targetPoint, provinceRadius, controlsRef }: {
+function CameraRig({ mode, phase, focusCityId, reducedMotion, targetPoint, provinceRadius, controlsRef }: {
   mode: LiaoningCanvasProps['mode'];
   phase: OpeningPhase;
   focusCityId: string | null;
-  dollyToken: number;
   reducedMotion: boolean;
-  onCameraRest?: () => void;
   targetPoint: THREE.Vector3;
   provinceRadius: number;
   controlsRef: RefObject<CameraControlsImpl | null>;
@@ -187,7 +182,7 @@ function CameraRig({ mode, phase, focusCityId, dollyToken, reducedMotion, onCame
       return;
     }
     move(provinceView(radius));
-  }, [controlsRef, dollyToken, focusCityId, mode, phase, provinceRadius, reducedMotion, targetPoint]);
+  }, [controlsRef, focusCityId, mode, phase, provinceRadius, reducedMotion, targetPoint]);
 
   return (
     <CameraControls
@@ -200,15 +195,12 @@ function CameraRig({ mode, phase, focusCityId, dollyToken, reducedMotion, onCame
       smoothTime={reducedMotion ? 0 : MOTION_DURATION.fast}
       draggingSmoothTime={MOTION_DURATION.fast}
       dollySpeed={0.7}
-      onRest={() => {
-        setDollying(false);
-        onCameraRest?.();
-      }}
+      onRest={() => setDollying(false)}
     />
   );
 }
 
-function SceneContents({ mode, focusCityId, hoveredCityId, dollyToken, onHoverCity, onSelectCity, onCameraRest, reducedMotion }: LiaoningCanvasProps) {
+function SceneContents({ mode, focusCityId, hoveredCityId, onHoverCity, onSelectCity, reducedMotion }: LiaoningCanvasProps) {
   const state = useLiaoningModel();
   const studyIds = useMemo(() => new Set<string>(STUDY_CITY_IDS), []);
   const model = state.status === 'ready' ? state.model : null;
@@ -265,9 +257,7 @@ function SceneContents({ mode, focusCityId, hoveredCityId, dollyToken, onHoverCi
         mode={mode}
         phase={phase}
         focusCityId={focusCityId}
-        dollyToken={dollyToken}
         reducedMotion={reducedMotion}
-        onCameraRest={onCameraRest}
         targetPoint={focusPoint}
         provinceRadius={model.radius}
         controlsRef={controlsRef}

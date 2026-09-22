@@ -8,8 +8,13 @@ import { usePageNavigate } from '../../app/pageNavigation';
 import { RouteTransition } from '../../app/RouteTransition';
 import { useAppHistory } from '../../app/appHistory';
 import { ROUTES } from '../../app/routes';
-import { MOTION_DURATION } from '../../design/motion';
 import './spatial-shell.css';
+
+/** 「省域 → 城市」导航随行携带的转场标记（V5 §65）。 */
+export const PROVINCE_TO_CITY = 'province-to-city';
+
+/** 城市页纸面展开动画名；`onAnimationEnd` 靠它区分是哪一个动画结束（V5 §67）。 */
+const PAPER_UNFOLD_ANIMATION = 'ag-paper-unfold';
 
 function stageModeForPath(pathname: string): SpatialStageMode {
   if (pathname === ROUTES.root) return 'opening';
@@ -33,7 +38,11 @@ export function useCitySelection() {
 
 /**
  * 空间外壳：一个 WebGL Canvas 服务全部路由，DOM 层在其上承载页面。
- * 从省域进入城市时由这里统一发起相机推近，避免出现"点击 → 白屏 → 新页面"。
+ *
+ * V5 §65/§66：进入城市**先导航**，然后相机与纸面同时动画。
+ * 相机不再控制路由提交 —— 那正是"点击 → 等相机 → 白屏 → 新页面"的生硬来源。
+ * 因此这里没有 pendingCityId、没有 onCameraRest、也没有超时兜底：
+ * 路由在点击那一帧就切好，Cursor Dolly 由路由推导出的 focusCity 触发。
  */
 export function SpatialShell() {
   const location = useLocation();
@@ -42,69 +51,43 @@ export function SpatialShell() {
   const mode = useSpatialStageStore((state) => state.mode);
   const focusCityId = useSpatialStageStore((state) => state.focusCityId);
   const hoveredCityId = useSpatialStageStore((state) => state.hoveredCityId);
-  const dollyToken = useSpatialStageStore((state) => state.dollyToken);
   const setMode = useSpatialStageStore((state) => state.setMode);
   const focusCity = useSpatialStageStore((state) => state.focusCity);
   const setHoveredCity = useSpatialStageStore((state) => state.setHoveredCity);
-  const requestDolly = useSpatialStageStore((state) => state.requestDolly);
   const history = useAppHistory();
+
   /**
-   * 已经选定、正在推近的城市。
-   * 非空时表示"相机正在为这个城市移动"，移动结束（onCameraRest）后才切换路由。
-   * 普通拖动地图时它始终为空，因此绝不会触发导航。
+   * 正在播放的「纸面展开」（V5 §67–§69）。
+   *
+   * 不放进 effect：effect 晚于首帧提交，会先无裁切地画一帧再突然收起，看起来像闪一下。
+   * 这里直接从 location.state + reducedMotion 同步推导，并且只在**这一次导航**
+   * （location.key）上生效；动画结束把自己记下来，因此回退（POP）回到同一条历史
+   * 记录时不会重播。
    */
-  const [pendingCityId, setPendingCityId] = useState<string | null>(null);
+  const [unfoldedKey, setUnfoldedKey] = useState<string | null>(null);
+  const navigationState = location.state as { transition?: string } | null;
+  const unfoldRequested = navigationState?.transition === PROVINCE_TO_CITY && !reducedMotion;
+  const paperUnfold = unfoldRequested && unfoldedKey !== location.key;
 
   const pathStage = useMemo(() => stageModeForPath(location.pathname), [location.pathname]);
 
   useEffect(() => {
     setMode(pathStage);
     focusCity(focusCityForPath(location.pathname));
-    // 路由已经变化（无论由谁发起）：放弃未完成的推近意图，避免"回退后又被相机带走"。
-    setPendingCityId(null);
   }, [focusCity, location.pathname, pathStage, setMode]);
 
   /**
-   * 六个城市一律可进入（V4 §十七）：先让相机聚焦，再切路由。
-   * 没有研究数据的城市同样进入 `/cities/:cityId`，由页面自己说明"研究内容待接入"，
-   * 而不是在这里静默 return —— 那会让点击看起来毫无反应。
+   * 六个城市一律可进入（V4 §十七）：路由立刻切换，相机与纸面随后同时动画。
+   * 没有研究数据的城市同样进入 `/cities/:cityId`，由页面自己说明「研究内容待接入」，
+   * 而不是静默 return —— 那会让点击看起来毫无反应。
    */
   const handleSelectCity = useCallback((cityId: string) => {
-    const city = getCity(cityId);
-    if (!city) return;
-    if (reducedMotion) {
-      navigate(ROUTES.city(cityId));
-      return;
-    }
-    // 相机已经在同一城市：没有可播放的空间移动，直接进入。
-    if (focusCityId === cityId) {
-      navigate(ROUTES.city(cityId));
-      return;
-    }
-    setPendingCityId(cityId);
-    requestDolly(cityId);
-  }, [focusCityId, navigate, reducedMotion, requestDolly]);
-
-  const handleCameraRest = useCallback(() => {
-    if (!pendingCityId) return;
-    const cityId = pendingCityId;
-    setPendingCityId(null);
-    navigate(ROUTES.city(cityId));
-  }, [navigate, pendingCityId]);
-
-  // 异常兜底：相机若因故没有报告 rest，也不能让用户卡在省域页。
-  // 上限刻意取得比任何正常转场都长，因此它只在"rest 真的没来"时才会生效。
-  useEffect(() => {
-    if (!pendingCityId) return;
-    const bound = MOTION_DURATION.camera * 2.5 * 1000;
-    const timer = window.setTimeout(() => {
-      setPendingCityId((current) => {
-        if (current) navigate(ROUTES.city(current));
-        return null;
-      });
-    }, bound);
-    return () => window.clearTimeout(timer);
-  }, [navigate, pendingCityId]);
+    if (!getCity(cityId)) return;
+    const target = ROUTES.city(cityId);
+    // 已经在这一页：再 push 一次只会多出一条无意义历史。
+    if (location.pathname === target) return;
+    navigate(target, { state: { transition: PROVINCE_TO_CITY } });
+  }, [location.pathname, navigate]);
 
   const canvasVisible = mode !== 'none';
 
@@ -116,16 +99,21 @@ export function SpatialShell() {
             mode={mode === 'city' ? 'city' : mode === 'opening' ? 'opening' : 'province'}
             focusCityId={focusCityId}
             hoveredCityId={hoveredCityId}
-            dollyToken={dollyToken}
             onHoverCity={setHoveredCity}
             onSelectCity={handleSelectCity}
-            onCameraRest={handleCameraRest}
             reducedMotion={reducedMotion}
           />
         </div>
-        <div className="spatial-shell__dom">
+        <div
+          className="spatial-shell__dom"
+          data-transition={paperUnfold ? PROVINCE_TO_CITY : undefined}
+          onAnimationEnd={(event) => {
+            if (event.animationName === PAPER_UNFOLD_ANIMATION) setUnfoldedKey(location.key);
+          }}
+        >
           <RouteTransition
             routeKey={location.key}
+            pathname={location.pathname}
             direction={history?.direction ?? 0}
             navigationType={history?.action ?? NavigationType.Pop}
           >

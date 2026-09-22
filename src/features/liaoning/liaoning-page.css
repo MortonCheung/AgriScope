@@ -19,9 +19,10 @@
 .liaoning-page__cities li { padding: 3px; }
 
 /*
-  城市入口（V4 §十五/§十六）：真的是按钮，看得见、点得到。
-  直角纸张：1px 暖灰细边 + 纸底；hover 只换底色与文字色。
-  不做 underline / glow / shadow / scale。
+  城市入口（V4 §十五/§十六，V5 §27）：真的是按钮，看得见、点得到。
+  直角纸张：1px 暖灰细边 + 纸底；hover 换底色与文字色。
+  另外补一条从左侧展开的下划线：地图 hover 与按钮 hover 共用 hoveredCityId，
+  所以指针停在地图城市上时，对应按钮的线也会同时展开（V5 §27）。
 */
 .liaoning-city {
   display: flex;
@@ -40,12 +41,29 @@
     color var(--ag-dur-fast) var(--ag-ease),
     border-color var(--ag-dur-fast) var(--ag-ease);
 }
-.liaoning-city__name { font-size: var(--ag-fs-small); }
+.liaoning-city__name { position: relative; font-size: var(--ag-fs-small); }
+.liaoning-city__name::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -5px;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 260ms cubic-bezier(.16, 1, .3, 1);
+}
 .liaoning-city:hover,
 .liaoning-city[data-hovered] {
   background: var(--ag-paper-deep);
   border-color: var(--ag-rule);
   color: var(--ag-ink);
+}
+.liaoning-city:hover .liaoning-city__name::after,
+.liaoning-city:focus-visible .liaoning-city__name::after,
+.liaoning-city[data-hovered] .liaoning-city__name::after {
+  transform: scaleX(1);
 }
 .liaoning-city:focus-visible { outline: 2px solid var(--ag-ink); outline-offset: 2px; }
 
