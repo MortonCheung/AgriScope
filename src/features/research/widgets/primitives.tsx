@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { useReducedMotion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import { CHART_TOKENS } from '../../../design/chartTokens';
-import { MOTION_DURATION } from '../../../design/motion';
+import { MOTION_DURATION, MOTION_SPRING } from '../../../design/motion';
 import { SourceCitation } from '../../../components/SourceCitation';
+import { useFocusable } from '../../../components/useFocusable';
 
 /**
  * 轻量 SVG 图表原语。全部支持真实交互（悬停读数 / 联动），
@@ -261,8 +262,8 @@ export function BarChart({ data, valueFormat = (value: number) => value.toFixed(
   );
 }
 
-/** 图表外框：标题 / 说明 / 来源 / 证据等级 / 控件。 */
-export function ChartFrame({ title, note, children, controls, provenance, sources, evidenceLevel, status }: {
+/** 图表外框：标题 / 说明 / 来源 / 证据等级 / 控件。可放大（V3 §26/§51/§52）。 */
+export function ChartFrame({ title, note, children, controls, provenance, sources, evidenceLevel, status, expandable = true }: {
   title: string;
   note?: string;
   children: ReactNode;
@@ -271,28 +272,47 @@ export function ChartFrame({ title, note, children, controls, provenance, source
   sources: string[];
   evidenceLevel?: string;
   status?: string;
+  /** 默认允许放大（V3 §26） */
+  expandable?: boolean;
 }) {
+  const reducedMotion = Boolean(useReducedMotion());
+  const focus = useFocusable(expandable);
+
   return (
-    <section className="chart-frame" data-provenance={provenance}>
-      <header className="chart-frame__head">
-        <div className="chart-frame__titles">
-          <h3 className="chart-frame__title">{title}</h3>
-          {note && <p className="chart-frame__note">{note}</p>}
-        </div>
-        <div className="chart-frame__tags">
-          <span className="ag-badge ag-badge--plain" data-provenance={provenance}>
-            {{ observed: '实际观测', model: '模型估计', scenario: '情景模拟' }[provenance]}
-          </span>
-          {evidenceLevel && <span className="ag-badge ag-badge--plain">{evidenceLevel}</span>}
-          {status && <span className="ag-badge ag-badge--plain">{status}</span>}
-        </div>
-      </header>
-      {controls && <div className="chart-frame__controls">{controls}</div>}
-      <div className="chart-frame__body">{children}</div>
-      {/* 来源统一走 SourceCitation（V3 §34）：找不到就如实说明，不编造（§32） */}
-      <footer className="chart-frame__foot">
-        <SourceCitation sources={sources} />
-      </footer>
-    </section>
+    <>
+      {focus.expanded && <div className="ag-focus-backdrop" onClick={focus.close} aria-hidden />}
+      <motion.section
+        layout
+        className="chart-frame"
+        data-provenance={provenance}
+        data-expanded={focus.expanded || undefined}
+        transition={reducedMotion ? { duration: 0 } : MOTION_SPRING.soft}
+      >
+        <header className="chart-frame__head">
+          <div className="chart-frame__titles">
+            <h3 className="chart-frame__title">{title}</h3>
+            {note && <p className="chart-frame__note">{note}</p>}
+          </div>
+          <div className="chart-frame__tags">
+            <span className="ag-badge ag-badge--plain" data-provenance={provenance}>
+              {{ observed: '实际观测', model: '模型估计', scenario: '情景模拟' }[provenance]}
+            </span>
+            {evidenceLevel && <span className="ag-badge ag-badge--plain">{evidenceLevel}</span>}
+            {status && <span className="ag-badge ag-badge--plain">{status}</span>}
+            {focus.canExpand && (
+              <button type="button" className="ag-focus-toggle" onClick={focus.toggle} aria-expanded={focus.expanded}>
+                {focus.expanded ? '×' : '放大'}
+              </button>
+            )}
+          </div>
+        </header>
+        {controls && <div className="chart-frame__controls">{controls}</div>}
+        <div className="chart-frame__body">{children}</div>
+        {/* 来源统一走 SourceCitation（V3 §34）：找不到就如实说明，不编造（§32）；放大时一起进入 Focus（§58） */}
+        <footer className="chart-frame__foot">
+          <SourceCitation sources={sources} />
+        </footer>
+      </motion.section>
+    </>
   );
 }

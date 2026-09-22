@@ -1,0 +1,42 @@
+/* 图表 Focus / 放大（V3 §27/§28/§58）。
+   当前元素自己进入 fixed focus 状态，不重新 mount 新图；
+   来源（SourceCitation）在 DOM 内，因此会一起进入 Focus。 */
+
+.ag-focus-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: color-mix(in srgb, var(--ag-ink) 22%, transparent);
+}
+
+.chart-frame[data-expanded],
+.research-figure[data-expanded] {
+  position: fixed;
+  inset: 24px;
+  z-index: 100;
+  margin: 0;
+  padding: clamp(20px, 3vw, 44px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--ag-rule);
+  background: var(--ag-paper-raised);
+}
+.chart-frame[data-expanded] { border-top: 1px solid var(--ag-rule); }
+.chart-frame[data-expanded] .chart-frame__body,
+.research-figure[data-expanded] .research-figure__media { min-height: 0; }
+
+/* 放大 / 关闭：普通文字按钮，不用胶囊（§5/§54） */
+.ag-focus-toggle {
+  padding: 0 2px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--ag-ink-muted);
+  font-size: var(--ag-fs-meta);
+  transition: color var(--ag-dur-fast) var(--ag-ease);
+}
+.ag-focus-toggle:hover { color: var(--ag-ink); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ag-focus-backdrop { background: color-mix(in srgb, var(--ag-ink) 30%, transparent); }
+}
