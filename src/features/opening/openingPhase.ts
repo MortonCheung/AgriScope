@@ -2,46 +2,34 @@ import { create } from 'zustand';
 import { hasSeenOpening } from './openingSession';
 
 /**
- * Opening 状态机（V4 §二十七）。
+ * Opening 状态机（V5 §58）。
  *
- * 只用一个阶段枚举，不堆布尔值：
- *   sketch     —— 草稿纸 + 手稿边界，页面初始状态（§二十三）
- *   assembling —— 用户点击「进入」后，14 块行政区从空间落下（§二十七/§三十）
- *   settling   —— 全部落地，相机收束到正式沙盘位姿（§三十三）
- *   exiting    —— 相机已就位，准备切到 /liaoning（§三十四）
- *   ready      —— 完成态：再次进入首页直接显示沙盘，不再重放（§三十六）
+ * 只有三个阶段：草稿 → 组装 → 完成。
+ * 「组装」内部由**同一个 progress（0→1）**同时驱动行政区下落与相机环绕，
+ * 因此不会出现"地图动完、镜头再动"的分裂感；相机也不再决定路由提交。
  */
-export type OpeningPhase = 'sketch' | 'assembling' | 'settling' | 'ready' | 'exiting';
+export type OpeningPhase = 'sketch' | 'assembling' | 'ready';
 
 function prefersReducedMotion(): boolean {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-/**
- * 首屏阶段（V4 §三十六/§三十七）：
- * 本次 session 已看过、或用户要求减少动效 → 直接给完成态，不砸第二次地图。
- */
+/** 首屏阶段（V5 §36/§37/§71）：看过本次版本、或要求减少动效 → 直接完成态。 */
 function initialPhase(): OpeningPhase {
   return hasSeenOpening() || prefersReducedMotion() ? 'ready' : 'sketch';
 }
 
 interface OpeningState {
   phase: OpeningPhase;
-  /** 用户点击「进入」才开始三维构建（§二十七）。 */
+  /** 用户点击「进入」才开始构建。 */
   begin: () => void;
-  /** 行政区全部落地（§三十）。 */
-  settle: () => void;
-  /** 相机已收敛到正式沙盘位姿（§三十三）。 */
-  exit: () => void;
-  /** 回到完成态（§三十六）。 */
+  /** 时间轴走完（行政区落定 + 相机到位）→ 完成态。 */
   finish: () => void;
 }
 
 export const useOpeningStore = create<OpeningState>((set, get) => ({
   phase: initialPhase(),
   begin: () => { if (get().phase === 'sketch') set({ phase: 'assembling' }); },
-  settle: () => { if (get().phase === 'assembling') set({ phase: 'settling' }); },
-  exit: () => { if (get().phase === 'settling') set({ phase: 'exiting' }); },
   finish: () => { if (get().phase !== 'ready') set({ phase: 'ready' }); },
 }));

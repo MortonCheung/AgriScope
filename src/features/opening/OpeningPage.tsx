@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'motion/react';
 import { ROUTES } from '../../app/routes';
@@ -8,32 +8,33 @@ import { useOpeningStore } from './openingPhase';
 import './opening.css';
 
 /**
- * 首页：一张当代研究草稿纸（V4 §二十二–§三十四）。
+ * 首页：一张当代研究草稿纸（V5 §22–§34、§57–§63）。
  *
- * 流程是 草稿研究图 → 用户点击「进入」→ 三维辽宁被构建出来，
- * 而不是旧版的"自动播放一遍动画"。阶段由 `openingPhase` 状态机统一管理。
+ * 流程：草稿研究图 → 用户点击「进入」→ 一条 3.6s 的时间轴同时驱动
+ * 「14 块行政区从空间落下」与「相机螺旋环绕一圈后落到省域机位」→ 切到 /liaoning。
  *
- * - 本次 session 已看过、或 reduced motion → 直接给完成态，不再重放（§三十六/§三十七）；
- * - 相机收束完成（settling → exiting）时才切路由，此时位姿已与 /liaoning 完全一致（§三十四）。
+ * 两个关键点：
+ *   - 只有真的点击过（assembleStarted）才会在组装结束后跳转，
+ *     否则"本次 session 已看过"的用户一进首页就会被自动带走；
+ *   - 相机不再决定路由提交：时间轴走完即完成态（§58/§67）。
  */
 export function OpeningPage() {
   const navigate = useNavigate();
   const reducedMotion = Boolean(useReducedMotion());
   const phase = useOpeningStore((state) => state.phase);
   const begin = useOpeningStore((state) => state.begin);
-  const finish = useOpeningStore((state) => state.finish);
+  const [assembleStarted, setAssembleStarted] = useState(false);
 
   useEffect(() => {
-    if (phase !== 'exiting') return;
+    if (!assembleStarted || phase !== 'ready') return;
     markOpeningSeen();
-    finish();
     navigate(ROUTES.liaoning, { viewTransition: true });
-  }, [finish, navigate, phase]);
+  }, [assembleStarted, navigate, phase]);
 
-  /** 完成态：直接显示沙盘，入口仍在，但不再触发组装。 */
+  /** 完成态：直接给沙盘，入口仍在，但不再触发组装（§36）。 */
   const settled = phase === 'ready';
-  /** 收束/离开：让首页文字先安静地退场，避免路由切换时闪白（§六十八）。 */
-  const leaving = phase === 'settling' || phase === 'exiting';
+  /** 组装一开始就让文字安静退场，让地图成为唯一焦点。 */
+  const leaving = phase === 'assembling';
 
   return (
     <main className="opening" data-phase={phase} data-leaving={leaving || undefined}>
@@ -45,15 +46,18 @@ export function OpeningPage() {
       >
         <h1 className="opening__wordmark">
           <span className="opening__cn">穹衡</span>
-          <span className="opening__en">AgriScope</span>
+          <span className="opening__brand">AgriScope</span>
         </h1>
-        {/* §二十六：只留一行说明，且不再重复"分析与情景研究" */}
         <p className="opening__subtitle">辽宁农业气候风险研究</p>
         <div className="opening__action">
           {settled ? (
             <Link className="ag-button ag-button--primary opening__cta" to={ROUTES.liaoning}>进入 →</Link>
           ) : (
-            <button type="button" className="ag-button ag-button--primary opening__cta" onClick={begin}>
+            <button
+              type="button"
+              className="ag-button ag-button--primary opening__cta"
+              onClick={() => { setAssembleStarted(true); begin(); }}
+            >
               进入 →
             </button>
           )}

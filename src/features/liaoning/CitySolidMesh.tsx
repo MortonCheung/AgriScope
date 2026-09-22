@@ -15,8 +15,8 @@ const LIFT_EPSILON = 0.001;
 const COLOR_LERP = 0.1;
 /** 下落起始倾角（V4 §三十）：±2°。 */
 const DROP_TILT_DEG = 2;
-/** 单块区块在组装时间轴上占的下降时长；其余留给错峰（§二十九）。 */
-export const DROP_SPAN = 0.45;
+/** 单块区块在组装时间轴上占的下降时长；配合错峰窗口让最后一批在 0.90 落定（V5 §59）。 */
+export const DROP_SPAN = 0.25;
 /** 边线相对实体底面的抬升量，用于避开共面 z-fighting。 */
 const EDGE_LIFT = 0.012;
 
