@@ -22,25 +22,6 @@
 .ag-keynumbers__item dt { color: var(--ag-ink-faint); font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); letter-spacing: 0.04em; }
 .ag-keynumbers__item dd { margin: 0; color: var(--ag-ink); font-size: 1.45rem; line-height: 1.15; }
 
-/* 研究点条目（专题内的节点） */
-.ag-point-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--ag-space-4);
-  width: 100%;
-  padding: var(--ag-space-4) var(--ag-space-3);
-  border-top: 1px solid var(--ag-rule-soft);
-  background: transparent;
-  text-align: left;
-  transition: background var(--ag-dur-fast) var(--ag-ease);
-}
-.ag-point-row:hover { background: color-mix(in srgb, var(--ag-ink) 4%, transparent); }
-.ag-point-row__main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.ag-point-row__id { color: var(--ag-ink-faint); font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); letter-spacing: 0.1em; }
-.ag-point-row__title { color: var(--ag-ink); font-size: 1.02rem; line-height: 1.4; }
-.ag-point-row__tags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
-
 /* 定义列表：研究问题 / 结论 等 */
 .ag-deflist { display: flex; flex-direction: column; gap: var(--ag-space-5); }
 .ag-deflist__item { display: flex; flex-direction: column; gap: 6px; }

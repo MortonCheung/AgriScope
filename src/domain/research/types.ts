@@ -138,6 +138,8 @@ export interface CityResearchIndex {
   counters: { crops: number; topics: number; studies: number };
   figures: string[];
   tables: string[];
+  /** 研究工程声明的来源（index.json 的 sourceOfTruth）；前端只转述，不新增来源（V3 §31/§32）。 */
+  provenance: string[];
 }
 
 /** 专题、研究点在研究空间中的空间化布局坐标（由布局算法生成，非研究数据）。 */

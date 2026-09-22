@@ -92,7 +92,12 @@ function toFigures(point: RawTopic): ResearchFigure[] {
       id: `${point.id}:${src.split('/').pop()}`,
       src,
       caption: point.frontendText,
-      source: `shenyang · ${point.id}`,
+      /**
+       * 研究索引没有逐图声明来源，因此这里**不编造**（V3 §32）。
+       * 空字符串会让 SourceCitation 如实显示"来源未在当前前端索引中声明"，
+       * 并记录到 docs/SOURCE_GAPS.md。
+       */
+      source: '',
       evidenceLevel: level,
     }));
 }
@@ -174,6 +179,8 @@ export function adaptCityIndex(raw: RawCityIndex, cityId: string): CityResearchI
     counters: raw.counters,
     figures,
     tables,
+    /** 只转述研究工程声明的来源；没有声明就是空数组，绝不猜（V3 §32）。 */
+    provenance: Object.values(raw.sourceOfTruth ?? {}).filter(Boolean),
   };
 }
 

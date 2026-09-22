@@ -1,10 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { motion, useReducedMotion } from 'motion/react';
 import { getCity } from '../../domain/geography/cities';
 import { useCityResearch } from '../../services/useCityResearch';
 import { AsyncBoundary } from '../../components/AsyncState';
 import { ResearchSummary } from '../research/ResearchSummary';
+import { ResearchTreeNav } from '../research/tree/ResearchTreeNav';
+import { ResearchWorkspace } from '../research/workspace/ResearchWorkspace';
+import { ResearchEvidenceRail } from '../research/workspace/ResearchEvidenceRail';
+import { useResearchTreeStore } from '../research/tree/researchTreeStore';
 import { ROUTES } from '../../app/routes';
 import { useAppHistory } from '../../app/appHistory';
 import { MOTION_DURATION, MOTION_EASE, MOTION_SPRING } from '../../design/motion';
@@ -21,14 +25,16 @@ const PAPER_FROM = {
 } as const;
 
 /**
- * 城市研究空间：以 ResearchTopic → ResearchPoint 呈现研究关系，
- * 而不是文章列表。点开研究点先给 Summary，再进入交互研究。
+ * 城市研究空间（V3 §16–§24）。
+ *
+ * 与 `/cities/:cityId/research/*` 共用同一个 ResearchTreeNav 与 ResearchWorkspace：
+ * 研究树在进入研究点之后依然存在，用户始终知道自己在 沈阳 → S5 → C5。
+ * 整壳固定不动，只有目录与正文各自内部滚动（§31/§32）。
  */
 export function CityResearchSpacePage() {
   const { cityId = '' } = useParams<{ cityId: string }>();
   const city = getCity(cityId);
   const state = useCityResearch(cityId);
-  const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
 
   if (!city) {
     return (
@@ -55,47 +61,29 @@ export function CityResearchSpacePage() {
   return (
     <main className="city-space" aria-label={`${city.name}研究空间`}>
       <AsyncBoundary state={state} label="正在读取城市研究索引">
-        {(index) => <CitySpaceBody cityShortName={city.shortName} index={index} selectedPointId={selectedPointId} onSelect={setSelectedPointId} />}
+        {(index) => <CitySpaceBody cityShortName={city.shortName} index={index} />}
       </AsyncBoundary>
     </main>
   );
 }
 
-function CitySpaceBody({ cityShortName, index, selectedPointId, onSelect }: {
+function CitySpaceBody({ cityShortName, index }: {
   cityShortName: string;
   index: CityResearchIndex;
-  selectedPointId: string | null;
-  onSelect: (pointId: string | null) => void;
 }) {
   const reducedMotion = Boolean(useReducedMotion());
   const navDirection = useAppHistory()?.direction ?? 0;
-  const sidebarRef = useRef<HTMLElement>(null);
-  /** 默认全部展开（§35 的文献目录形态）；被收起过的专题记在这里。 */
-  const [closedTopicIds, setClosedTopicIds] = useState<string[]>([]);
+  const selectedPointId = useResearchTreeStore((state) => state.selectedPointId);
+  const selectPoint = useResearchTreeStore((state) => state.selectPoint);
 
   const selected = useMemo(
     () => (selectedPointId ? index.points.find((point) => point.id === selectedPointId) ?? null : null),
     [index.points, selectedPointId],
   );
-  /** 当前选中的专题必须保持展开（§38）。 */
-  const activeTopicId = selected?.topicId ?? null;
-
-  const isExpanded = (topicId: string) => topicId === activeTopicId || !closedTopicIds.includes(topicId);
-  const toggleTopic = (topicId: string) => {
-    if (topicId === activeTopicId) return;
-    setClosedTopicIds((current) => (current.includes(topicId) ? current.filter((id) => id !== topicId) : [...current, topicId]));
-  };
-
-  // 选中研究点后把它带回视野：返回时用户仍知道刚才在哪里（§16）。
-  useEffect(() => {
-    if (!selectedPointId) return;
-    sidebarRef.current?.querySelector('[data-selected]')?.scrollIntoView({ block: 'nearest' });
-  }, [selectedPointId]);
 
   return (
     <motion.div
       className="city-space__panel"
-      data-focused={selected ? true : undefined}
       initial={reducedMotion ? false : (navDirection < 0 ? PAPER_FROM.back : PAPER_FROM.enter)}
       animate={{ opacity: 1, x: 0, y: 0, scale: 1, rotate: 0 }}
       transition={reducedMotion
@@ -111,77 +99,22 @@ function CitySpaceBody({ cityShortName, index, selectedPointId, onSelect }: {
       </header>
 
       <div className="city-space__body">
-        <nav className="city-space__topics" aria-label="研究专题" ref={sidebarRef}>
-          {index.topics.map((topic) => {
-            const expanded = isExpanded(topic.id);
-            return (
-              <section key={topic.id} className="city-topic">
-                <button
-                  type="button"
-                  className="city-topic__toggle"
-                  aria-expanded={expanded}
-                  aria-controls={`topic-points-${topic.id}`}
-                  onClick={() => toggleTopic(topic.id)}
-                >
-                  <span className="city-topic__id">{topic.id}</span>
-                  <span className="city-topic__title">{topic.title}</span>
-                  <span className="city-topic__count ag-number">{topic.points.length}</span>
-                </button>
-                {expanded && (
-                  <div className="city-topic__points" id={`topic-points-${topic.id}`}>
-                    {topic.points.map((point) => (
-                      <button
-                        key={point.id}
-                        type="button"
-                        className="ag-point-row"
-                        data-selected={point.id === selectedPointId || undefined}
-                        onClick={() => onSelect(point.id)}
-                      >
-                        {/* 选中态是一条会滑动的共享背景，而不是旧块消失、新块出现（§45） */}
-                        {point.id === selectedPointId && (
-                          <motion.span
-                            layoutId="reader-selection"
-                            className="ag-point-row__selection"
-                            aria-hidden
-                            transition={reducedMotion ? { duration: 0 } : MOTION_SPRING.soft}
-                          />
-                        )}
-                        <span className="ag-point-row__main">
-                          <span className="ag-point-row__id">{point.id}</span>
-                          <span className="ag-point-row__title">{point.title}</span>
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </section>
-            );
-          })}
-        </nav>
-
-        <aside className="city-space__detail" aria-live="polite">
+        <ResearchWorkspace
+          variant="fixed"
+          tree={<ResearchTreeNav index={index} onSelectPoint={() => undefined} />}
+          rail={selected ? <ResearchEvidenceRail point={selected} timeWindow={index.window} provenance={index.provenance} /> : undefined}
+        >
           {selected ? (
-            <>
-              <button type="button" className="city-space__close" onClick={() => onSelect(null)}>关闭摘要</button>
-              <ResearchSummary point={selected} />
-            </>
+            <ResearchSummary point={selected} onClose={() => selectPoint(null)} />
           ) : (
             <div className="city-space__overview">
               <p className="ag-label">城市结论</p>
               <p className="city-space__risk">{index.cityConclusion.riskProfile}</p>
               <p className="city-space__definition">{index.cityConclusion.definition}</p>
               <p className="city-space__hint">选择左侧任一研究点查看摘要。</p>
-              <ul className="city-space__blocks">
-                {index.topics.map((topic) => (
-                  <li key={topic.id}>
-                    <span className="city-topic__id">{topic.id}</span>
-                    <strong>{topic.title}</strong>
-                  </li>
-                ))}
-              </ul>
             </div>
           )}
-        </aside>
+        </ResearchWorkspace>
       </div>
     </motion.div>
   );

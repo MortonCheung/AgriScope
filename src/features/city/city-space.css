@@ -1,9 +1,10 @@
 /**
- * 城市研究阅读器外壳（V2 §30–§34）。
+ * 城市研究阅读器外壳（V3 §14/§15/§30–§32）。
  *
  * 结构参考 Apple Help：固定窗口、左目录、右正文、两侧各自内部滚动。
- * 关键约束：整张纸不滚 —— 滚动只发生在 .city-space__topics 与 .city-space__detail 内部。
+ * 关键约束：整张纸不滚 —— 滚动只发生在 ResearchWorkspace 的目录栏与正文栏内部。
  * 阅读器悬浮在聚焦后的城市地图之上，因此它必须稳定，不随相机移动（§70）。
+ * 目录与正文的排版权重由 research-tree.css / research-workspace.css 承担。
  */
 
 .city-space {
@@ -12,17 +13,18 @@
   padding: calc(var(--ag-nav-height) + 24px) var(--ag-gutter) 24px;
 }
 
+/* Paper：暖白、极细边、极轻阴影、直角（§14）。 */
 .city-space__panel {
   height: 100%;
-  max-width: 1320px;
+  max-width: 1440px;
   margin-inline: auto;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
   border: 1px solid var(--ag-rule);
-  border-radius: 0; /* V3 §14：研究纸直角 */
+  border-radius: 0;
   background: var(--ag-paper-raised);
-  box-shadow: 0 12px 40px rgb(26 25 23 / 0.06); /* 极轻，不与地图抢空间感 */
+  box-shadow: 0 12px 40px rgb(26 25 23 / 0.06);
 }
 
 /* 页眉：只放城市名与两个入口（§72） */
@@ -37,88 +39,16 @@
 .city-space__title { margin: 0; font-size: clamp(1.3rem, 1.9vw, 1.62rem); letter-spacing: 0.02em; }
 .city-space__entries { display: flex; gap: var(--ag-space-3); flex-wrap: wrap; }
 
-/* 左目录 + 右正文，双内部滚动 */
-.city-space__body {
-  min-height: 0;
-  display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
-  overflow: hidden;
-}
-
-.city-space__topics {
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  display: flex;
-  flex-direction: column;
-  gap: var(--ag-space-6);
-  padding: clamp(16px, 2.2vw, 26px) clamp(14px, 1.7vw, 22px);
-  background: color-mix(in srgb, var(--ag-paper-sunken) 74%, transparent);
-  border-right: 1px solid var(--ag-rule-soft);
-}
-
-.city-space__detail {
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: clamp(18px, 2.4vw, 34px) clamp(20px, 2.8vw, 42px);
-}
-
-/* 目录：一级专题（14–15px 中等字重）/ 二级研究点（13–14px 缩进弱色）/ 编号 mono 更小（§39） */
-.city-topic { display: flex; flex-direction: column; gap: 2px; }
-.city-topic__toggle {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: baseline;
-  gap: 8px;
-  width: 100%;
-  padding: 4px 2px;
-  text-align: left;
-}
-.city-topic__id { color: var(--ag-ink-ghost); font-family: var(--ag-font-mono); font-size: 0.625rem; letter-spacing: 0.14em; }
-.city-topic__title { color: var(--ag-ink); font-size: 0.9375rem; font-weight: 600; line-height: 1.45; }
-.city-topic__count { color: var(--ag-ink-ghost); font-size: 0.6875rem; }
-.city-topic__points { display: flex; flex-direction: column; margin-top: 3px; }
-
-.city-topic__points .ag-point-row { position: relative; }
-.city-topic__points .ag-point-row__main { position: relative; z-index: 1; }
-.city-topic__points .ag-point-row__id { color: var(--ag-ink-ghost); font-family: var(--ag-font-mono); font-size: 0.625rem; }
-.city-topic__points .ag-point-row__title { color: var(--ag-ink-muted); font-size: 0.8125rem; }
-.city-topic__points .ag-point-row[data-selected] .ag-point-row__title { color: var(--ag-ink); }
-
-/* 选中就是一个非常轻的暖灰背景，且在不同条目之间滑动（§40/§45） */
-.ag-point-row__selection {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  border-radius: var(--ag-radius-sm);
-  background: color-mix(in srgb, var(--ag-ink) 7%, transparent);
-}
-
-/* Focus：不再靠整体降低透明度表达（V3 §19 明令删除 0.72），
-   层级改由「选中项加深 + 结构线」承担。 */
-
-.city-space__close { align-self: flex-end; margin-left: auto; margin-bottom: var(--ag-space-3); color: var(--ag-ink-faint); font-size: var(--ag-fs-meta); }
-.city-space__close:hover { color: var(--ag-ink); }
+.city-space__body { min-height: 0; overflow: hidden; }
 
 .city-space__overview { display: flex; flex-direction: column; gap: var(--ag-space-5); }
-.city-space__risk { margin: 0; color: var(--ag-ink-soft); font-size: var(--ag-fs-lead); line-height: var(--ag-lh-body); }
-.city-space__definition { margin: 0; color: var(--ag-ink-soft); font-size: var(--ag-fs-body); line-height: var(--ag-lh-body); }
-.city-space__hint { margin: 0; color: var(--ag-ink-faint); font-size: var(--ag-fs-small); }
-.city-space__blocks { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
-.city-space__blocks li { display: flex; align-items: baseline; gap: 10px; }
-.city-space__blocks strong { color: var(--ag-ink-soft); font-size: var(--ag-fs-small); font-weight: 500; }
+.city-space__risk { margin: 0; max-width: 62ch; color: var(--ag-ink-soft); font-size: var(--ag-fs-lead); line-height: var(--ag-lh-body); }
+.city-space__definition { margin: 0; max-width: 62ch; color: var(--ag-ink-soft); font-size: var(--ag-fs-body); line-height: var(--ag-lh-body); }
+.city-space__hint { margin: 0; color: var(--ag-ink-muted); font-size: var(--ag-fs-small); }
 
-/* 手机与窄屏：两个内部滚动区不可用，交还给页面自然滚动（§87/§104） */
+/* 手机与窄屏：两个内部滚动区不可用，交还给页面自然滚动（§87） */
 @media (max-width: 1023px) {
   .city-space { height: auto; overflow: visible; padding-bottom: 32px; }
   .city-space__panel { height: auto; }
-  .city-space__body { grid-template-columns: minmax(0, 1fr); overflow: visible; }
-  .city-space__topics {
-    overflow: visible;
-    background: none;
-    border-right: none;
-    border-bottom: 1px solid var(--ag-rule-soft);
-  }
-  .city-space__detail { overflow: visible; }
+  .city-space__body { overflow: visible; }
 }

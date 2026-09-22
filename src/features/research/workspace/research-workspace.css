@@ -1,0 +1,73 @@
+/* 研究工作台三栏（V3 §21/§22/§47/§48）。 */
+
+.research-workspace {
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  max-width: 1440px;
+  margin-inline: auto;
+}
+.research-workspace[data-with-rail] { grid-template-columns: 230px minmax(0, 1fr) 230px; }
+
+.research-workspace__main { min-width: 0; }
+.research-workspace__prose { max-width: 66ch; }
+
+/* 右栏（§23）：概览，不是第二篇文章；控制在 3–5 项。 */
+.research-workspace__rail {
+  border-left: 1px solid var(--ag-rule-soft);
+  background: color-mix(in srgb, var(--ag-paper-sunken) 60%, transparent);
+}
+
+/* ---- page 变体：页面自然滚动，左右两栏 sticky ---- */
+.research-workspace[data-variant='page'] {
+  align-items: start;
+  border: 1px solid var(--ag-rule);
+  background: var(--ag-paper-raised);
+}
+.research-workspace[data-variant='page'] .research-workspace__main {
+  padding: clamp(20px, 2.6vw, 40px) clamp(20px, 2.8vw, 44px) clamp(32px, 4vw, 56px);
+}
+.research-workspace[data-variant='page'] .research-workspace__tree,
+.research-workspace[data-variant='page'] .research-workspace__rail {
+  position: sticky;
+  top: calc(var(--ag-nav-height) + 24px);
+  align-self: start;
+  max-height: calc(100dvh - var(--ag-nav-height) - 48px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* ---- fixed 变体：整壳固定，内部各自滚动（§31/§32） ---- */
+.research-workspace[data-variant='fixed'] {
+  height: 100%;
+  overflow: hidden;
+}
+.research-workspace[data-variant='fixed'] > * { min-height: 0; }
+.research-workspace[data-variant='fixed'] .research-workspace__tree,
+.research-workspace[data-variant='fixed'] .research-workspace__rail {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.research-workspace[data-variant='fixed'] .research-workspace__main {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: clamp(18px, 2.4vw, 34px) clamp(20px, 2.8vw, 42px) clamp(28px, 3.4vw, 48px);
+}
+
+/* ---- 断点（§48） ---- */
+@media (max-width: 1279px) {
+  /* 中屏：右栏折进主内容，只保留两栏 */
+  .research-workspace,
+  .research-workspace[data-with-rail] { grid-template-columns: 230px minmax(0, 1fr); }
+  .research-workspace__rail {
+    grid-column: 1 / -1;
+    border-left: 0;
+    border-top: 1px solid var(--ag-rule-soft);
+  }
+}
+@media (max-width: 1023px) {
+  /* 窄屏：目录变成顶部目录，正文单列 */
+  .research-workspace,
+  .research-workspace[data-with-rail] { grid-template-columns: minmax(0, 1fr); }
+  .research-workspace[data-variant='fixed'] { height: auto; overflow: visible; }
+  .research-workspace[data-variant='fixed'] .research-workspace__main { overflow: visible; }
+}

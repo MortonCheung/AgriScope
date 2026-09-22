@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { EvidenceBadge } from './EvidenceBadge';
+import { SourceCitation } from './SourceCitation';
 import type { EvidenceLevelCode } from '../domain/research/types';
 import './research-figure.css';
 
@@ -15,7 +16,10 @@ export interface ResearchFigureProps {
   children?: ReactNode;
 }
 
-/** 统一的研究图表容器：图片 / 可交互组件共用同一套 Caption 与来源标注。 */
+/**
+ * 统一的研究图表容器：图片 / 可交互组件共用同一套 Caption 与来源标注。
+ * 来源统一走 SourceCitation（V3 §35）；不再用"静态图"这种 Pill 长期占据视觉（§35）。
+ */
 export function ResearchFigure({ src, alt, caption, source, evidenceLevel, interactiveState = 'static', method, children }: ResearchFigureProps) {
   return (
     <figure className="research-figure" data-state={interactiveState}>
@@ -30,9 +34,8 @@ export function ResearchFigure({ src, alt, caption, source, evidenceLevel, inter
           </div>
         )}
         <div className="research-figure__meta">
-          {source && <span className="research-figure__source">{source}</span>}
+          <SourceCitation sources={source ? [source] : []} />
           {interactiveState === 'pending' && <span className="ag-badge ag-badge--plain">交互数据正在接入</span>}
-          {interactiveState === 'static' && !children && <span className="ag-badge ag-badge--plain">静态图</span>}
           {evidenceLevel && <EvidenceBadge level={evidenceLevel} compact />}
         </div>
       </figcaption>

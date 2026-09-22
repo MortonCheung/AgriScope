@@ -1,0 +1,16 @@
+/* 数据来源（V3 §33/§40）：小字号、mono、ink-muted，不要 badge / pill / 圆角容器。 */
+.source-citation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  color: var(--ag-ink-muted);
+  font-family: var(--ag-font-mono);
+  font-size: var(--ag-fs-micro);
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+}
+.source-citation[data-compact] { font-size: var(--ag-fs-micro); }
+.source-citation__prefix { flex: none; color: var(--ag-ink-muted); }
+.source-citation__prefix::after { content: '｜'; margin-left: 2px; }
+.source-citation[data-missing] { color: var(--ag-ink-muted); font-style: italic; }

@@ -1,0 +1,86 @@
+/* 研究树（V3 §16–§19）：同一套目录同时服务城市页与研究点页。 */
+
+.research-tree {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ag-space-5);
+  min-height: 0;
+  padding: clamp(16px, 2.2vw, 26px) clamp(14px, 1.7vw, 22px);
+  background: color-mix(in srgb, var(--ag-paper-sunken) 74%, transparent);
+  border-right: 1px solid var(--ag-rule-soft);
+}
+
+.research-tree__topic { display: flex; flex-direction: column; gap: 2px; }
+
+/* Topic（§19）：14–15px / 中等字重 / 接近墨色 */
+.research-tree__toggle {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  padding: 4px 2px;
+  text-align: left;
+}
+.research-tree__toggle:disabled { cursor: default; }
+.research-tree__topic-id { color: var(--ag-ink-faint); font-family: var(--ag-font-mono); font-size: 0.625rem; letter-spacing: 0.14em; }
+.research-tree__topic-title { color: var(--ag-ink); font-size: 0.9375rem; font-weight: 600; line-height: 1.45; }
+
+/* 结构线（§18）：很浅、很细、很克制；├ / └ 由伪元素画出来 */
+.research-tree__points {
+  display: flex;
+  flex-direction: column;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.research-tree__point { position: relative; padding-left: 22px; }
+.research-tree__point::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 0;
+  width: 9px;
+  height: 50%;
+  border-left: 1px solid var(--ag-rule-soft);
+  border-bottom: 1px solid var(--ag-rule-soft);
+}
+.research-tree__point:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  bottom: 0;
+  border-left: 1px solid var(--ag-rule-soft);
+}
+
+/* ResearchPoint（§19）：13–14px / 正常字重 / ink-muted；当前选中 ink */
+.research-tree__link {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 6px 0;
+  text-align: left;
+}
+.research-tree__point-id { color: var(--ag-ink-faint); font-family: var(--ag-font-mono); font-size: 0.625rem; letter-spacing: 0.06em; }
+.research-tree__point-title { color: var(--ag-ink-muted); font-size: 0.8125rem; line-height: 1.5; transition: color var(--ag-dur-fast) var(--ag-ease); }
+.research-tree__link:hover .research-tree__point-title { color: var(--ag-ink); }
+.research-tree__link[data-selected] .research-tree__point-title { color: var(--ag-ink); }
+/* 选中状态：非常轻的暖灰底 + 左侧细线，不使用大色块（§40/§45） */
+.research-tree__link[data-selected] {
+  background: color-mix(in srgb, var(--ag-ink) 6%, transparent);
+  box-shadow: inset 2px 0 0 var(--ag-ink);
+}
+
+/* 窄屏：目录回到自然文档流（§48） */
+@media (max-width: 1023px) {
+  .research-tree {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--ag-space-4) var(--ag-space-6);
+    border-right: 0;
+    border-bottom: 1px solid var(--ag-rule-soft);
+  }
+  .research-tree__points { display: none; }
+}

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useReducedMotion } from 'motion/react';
 import { CHART_TOKENS } from '../../../design/chartTokens';
 import { MOTION_DURATION } from '../../../design/motion';
+import { SourceCitation } from '../../../components/SourceCitation';
 
 /**
  * 轻量 SVG 图表原语。全部支持真实交互（悬停读数 / 联动），
@@ -288,8 +289,9 @@ export function ChartFrame({ title, note, children, controls, provenance, source
       </header>
       {controls && <div className="chart-frame__controls">{controls}</div>}
       <div className="chart-frame__body">{children}</div>
+      {/* 来源统一走 SourceCitation（V3 §34）：找不到就如实说明，不编造（§32） */}
       <footer className="chart-frame__foot">
-        {sources.map((source) => <span key={source} className="chart-frame__source">{source}</span>)}
+        <SourceCitation sources={sources} />
       </footer>
     </section>
   );
