@@ -48,7 +48,6 @@ export function SpatialShell() {
   const setHoveredCity = useSpatialStageStore((state) => state.setHoveredCity);
   const requestDolly = useSpatialStageStore((state) => state.requestDolly);
   const history = useAppHistory();
-  const [notice, setNotice] = useState<string | null>(null);
   /**
    * 已经选定、正在推近的城市。
    * 非空时表示"相机正在为这个城市移动"，移动结束（onCameraRest）后才切换路由。
@@ -65,19 +64,14 @@ export function SpatialShell() {
     setPendingCityId(null);
   }, [focusCity, location.pathname, pathStage, setMode]);
 
-  useEffect(() => {
-    if (!notice) return;
-    const timer = window.setTimeout(() => setNotice(null), 3200);
-    return () => window.clearTimeout(timer);
-  }, [notice]);
-
+  /**
+   * 六个城市一律可进入（V4 §十七）：先让相机聚焦，再切路由。
+   * 没有研究数据的城市同样进入 `/cities/:cityId`，由页面自己说明"研究内容待接入"，
+   * 而不是在这里静默 return —— 那会让点击看起来毫无反应。
+   */
   const handleSelectCity = useCallback((cityId: string) => {
     const city = getCity(cityId);
     if (!city) return;
-    if (!city.hasResearch) {
-      setNotice(`${city.shortName}研究尚未接入`);
-      return;
-    }
     if (reducedMotion) {
       navigate(ROUTES.city(cityId));
       return;
@@ -138,7 +132,6 @@ export function SpatialShell() {
             <Outlet />
           </RouteTransition>
         </div>
-        {notice && <div className="spatial-notice" role="status">{notice}</div>}
       </div>
     </CitySelectionContext.Provider>
   );

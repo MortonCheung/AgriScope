@@ -4,8 +4,8 @@ import { useCitySelection } from '../spatial/SpatialShell';
 import './liaoning-page.css';
 
 /**
- * 省域空间：内容极少，主体是 3D 沙盘。
- * 城市列表与地图点击共用同一套选择逻辑，键盘与移动端可用。
+ * 省域空间：内容极少，主体是 3D 沙盘。最终左下只留「辽宁」一个词（V4 §十九/§七十）。
+ * 城市列表与地图点击共用同一套选择逻辑，六个地级市全部可点击（V4 §十七）。
  */
 export function LiaoningPage() {
   const selectCity = useCitySelection();
@@ -17,11 +17,6 @@ export function LiaoningPage() {
     <main className="liaoning-page">
       <div className="liaoning-page__panel">
         <h1 className="ag-hero liaoning-page__title">{LIAONING.shortName}</h1>
-        <p className="liaoning-page__hint">
-          {hoveredCityId
-            ? (LIAONING_CITIES.find((city) => city.id === hoveredCityId)?.hasResearch ? '点击进入研究' : '研究尚未接入')
-            : '拖动可旋转沙盘，点击城市进入'}
-        </p>
       </div>
 
       <div className="liaoning-page__index" role="group" aria-label="研究城市入口">
@@ -35,7 +30,6 @@ export function LiaoningPage() {
               <button
                 type="button"
                 className="liaoning-city"
-                data-ready={city.hasResearch || undefined}
                 data-hovered={hoveredCityId === city.id || undefined}
                 onFocus={() => setHoveredCity(city.id)}
                 onBlur={() => setHoveredCity(null)}

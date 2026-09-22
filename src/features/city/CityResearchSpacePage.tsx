@@ -47,12 +47,12 @@ export function CityResearchSpacePage() {
   }
 
   if (!city.hasResearch) {
+    // 六城都可进入（V4 §十七）；没有研究内容时只留城市名与一句状态，不写开发状态文案。
     return (
-      <main className="ag-page ag-container">
-        <h1 className="ag-hero">{city.shortName}研究尚未接入</h1>
-        <div className="ag-row">
-          <Link className="ag-button ag-button--primary" to={ROUTES.city('shenyang')}>查看沈阳研究</Link>
-          <Link className="ag-button" to={ROUTES.liaoning}>返回辽宁</Link>
+      <main className="city-space">
+        <div className="city-space__panel city-space__panel--empty">
+          <h1 className="ag-hero">{city.shortName}</h1>
+          <p className="city-space__hint">研究内容待接入</p>
         </div>
       </main>
     );

@@ -30,15 +30,9 @@ export function CityReportPage() {
 
   if (!city.hasResearch) {
     return (
-      <main className="ag-page ag-container ag-container--prose">
-        <h1 className="ag-hero">{city.name}</h1>
-        <p className="ag-lead">
-          {city.shortName}的研究尚未开放。当前阶段的完整样板为沈阳，其余城市沿用同一套研究方法与页面模板。
-        </p>
-        <div className="ag-row">
-          <Link className="ag-button ag-button--primary" to={ROUTES.report('shenyang')}>查看沈阳城市综合研究</Link>
-          <Link className="ag-button" to={ROUTES.city(cityId)}>返回城市研究空间</Link>
-        </div>
+      <main className="ag-page ag-container">
+        <h1 className="ag-hero">{city.shortName}</h1>
+        <p className="ag-lead">研究内容待接入</p>
       </main>
     );
   }

@@ -41,6 +41,14 @@
 
 .city-space__body { min-height: 0; overflow: hidden; }
 
+/* 无研究内容城市的空态（V4 §十七）：只留城市名 + 一句状态，不要开发状态文案。 */
+.city-space__panel--empty {
+  grid-template-rows: auto;
+  align-content: center;
+  gap: var(--ag-space-4);
+  padding: clamp(28px, 4vw, 56px);
+}
+
 .city-space__overview { display: flex; flex-direction: column; gap: var(--ag-space-5); }
 .city-space__risk { margin: 0; max-width: 62ch; color: var(--ag-ink-soft); font-size: var(--ag-fs-lead); line-height: var(--ag-lh-body); }
 .city-space__definition { margin: 0; max-width: 62ch; color: var(--ag-ink-soft); font-size: var(--ag-fs-body); line-height: var(--ag-lh-body); }
