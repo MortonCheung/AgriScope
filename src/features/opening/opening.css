@@ -35,6 +35,16 @@
 .opening__action { pointer-events: auto; margin-top: var(--ag-space-3); }
 .opening__cta { padding: 0 var(--ag-space-6); min-height: 48px; }
 
+/* 收束阶段：首页文字先安静退场，路由切换发生在已经"停下来"的画面上，
+   避免出现页面闪白（V4 §六十八）。 */
+.opening[data-leaving] .opening__inner {
+  opacity: 0;
+  transition: opacity 420ms var(--ag-ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  .opening[data-leaving] .opening__inner { transition: none; }
+}
+
 @media (max-width: 720px) {
   .opening__inner { max-width: none; }
   .opening__wordmark { flex-direction: column; gap: 6px; }

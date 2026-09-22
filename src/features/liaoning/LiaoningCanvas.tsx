@@ -3,14 +3,15 @@ import { CameraControls, CameraControlsImpl, ContactShadows, Html, PerspectiveCa
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { STUDY_CITY_IDS } from '../../domain/geography/cities';
-import { CitySolidMesh, SOLID_DEPTH } from './CitySolidMesh';
+import { CitySolidMesh, DROP_SPAN, SOLID_DEPTH } from './CitySolidMesh';
 import { PaperGround } from './PaperGround';
 import { useLiaoningModel } from './useLiaoningModel';
 import { useAnimationFrames } from './useAnimationFrames';
 import { QUALITY_CONFIG, resolveAutoQualityTier, resolveDpr, readRuntimeQualitySignals } from '../../performance/qualityPolicy';
 import { SCENE_TOKENS } from '../../design/sceneTokens';
 import { MOTION_DURATION } from '../../design/motion';
-import { hasSeenOpening } from '../opening/openingSession';
+import { SketchPaper } from '../opening/SketchPaper';
+import { useOpeningStore, type OpeningPhase } from '../opening/openingPhase';
 
 export interface LiaoningCanvasProps {
   mode: 'opening' | 'province' | 'city';
@@ -42,6 +43,9 @@ const PARALLAX_DEG = { opening: 1.5, province: 0.7 } as const;
 const PARALLAX_LERP = 0.08;
 const PARALLAX_EPSILON = 0.0002;
 
+/** 错峰窗口：最后一块行政区在时间轴的 STAGGER_SPAN 处开始下落（V4 §二十九）。 */
+const STAGGER_SPAN = 1 - DROP_SPAN;
+
 /**
  * 极轻的鼠标视差（V4 §二十）。
  *
@@ -52,7 +56,6 @@ const PARALLAX_EPSILON = 0.0002;
  * 新实现不依赖任何固定时长：
  *   pointermove → 更新 target → 立即 invalidate()
  *   useFrame    → 向 target 收敛 → 未收敛继续 invalidate() → 收敛即停
- * 关闭时（进入城市 Reader）同样收敛回 0，不会把倾斜留在地图上。
  */
 function ParallaxGroup({ strength, enabled, children }: {
   strength: keyof typeof PARALLAX_DEG;
@@ -102,23 +105,26 @@ function ParallaxGroup({ strength, enabled, children }: {
 }
 
 /**
- * Opening 揭示时间轴（V2 §61）：把 0–1 的进度写进一个引用，每帧由各城市自己读取，
- * 因此整段编排不触发任何 React 渲染。
- * 只在首次进入时完整播放；session 内再次回到首页、或 reduced motion 时直接给最终状态（§63/§64）。
+ * 组装驱动（V4 §二十七/§三十）。
+ *
+ * 只有用户点击「进入」之后（phase 进入 assembling）才跑一条 0→1 的时间轴：
+ * 每帧把进度写进引用并 invalidate()，因此整段编排不触发任何 React 渲染。
+ * 时间轴走完即通知状态机进入 settling，不重播（§三十六）。
  */
-function OpeningRevealDriver({ mode, reducedMotion, progressRef }: {
-  mode: LiaoningCanvasProps['mode'];
+function AssemblyDriver({ active, reducedMotion, assemblyRef }: {
+  active: boolean;
   reducedMotion: boolean;
-  progressRef: RefObject<number>;
+  assemblyRef: RefObject<number>;
 }) {
   const invalidate = useThree((state) => state.invalidate);
-  const [seen] = useState(() => hasSeenOpening());
+  const settle = useOpeningStore((state) => state.settle);
 
   useEffect(() => {
-    const playing = mode === 'opening' && !reducedMotion && !seen;
-    if (!playing) {
-      progressRef.current = 1;
+    if (!active) return;
+    if (reducedMotion) {
+      assemblyRef.current = 1;
       invalidate();
+      settle();
       return;
     }
     const total = MOTION_DURATION.opening * 1000;
@@ -126,19 +132,21 @@ function OpeningRevealDriver({ mode, reducedMotion, progressRef }: {
     let frame = 0;
     const step = () => {
       const progress = Math.min(1, (performance.now() - start) / total);
-      progressRef.current = progress;
+      assemblyRef.current = progress;
       invalidate();
       if (progress < 1) frame = requestAnimationFrame(step);
+      else settle();
     };
     frame = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame);
-  }, [invalidate, mode, progressRef, reducedMotion, seen]);
+  }, [active, assemblyRef, invalidate, reducedMotion, settle]);
 
   return null;
 }
 
-function CameraRig({ mode, focusCityId, dollyToken, reducedMotion, onCameraRest, targetPoint, provinceRadius }: {
+function CameraRig({ mode, phase, focusCityId, dollyToken, reducedMotion, onCameraRest, targetPoint, provinceRadius }: {
   mode: LiaoningCanvasProps['mode'];
+  phase: OpeningPhase;
   focusCityId: string | null;
   dollyToken: number;
   reducedMotion: boolean;
@@ -147,6 +155,7 @@ function CameraRig({ mode, focusCityId, dollyToken, reducedMotion, onCameraRest,
   provinceRadius: number;
 }) {
   const controls = useRef<CameraControlsImpl>(null);
+  const exit = useOpeningStore((state) => state.exit);
   /**
    * 相机是否正在移动。
    * 为真时逐帧请求渲染：否则画布静止时下达的 setLookAt 不会开始，也不会结束。
@@ -159,28 +168,33 @@ function CameraRig({ mode, focusCityId, dollyToken, reducedMotion, onCameraRest,
     if (!instance) return;
     const smooth = !reducedMotion;
     const radius = Math.max(12, provinceRadius);
-    if (mode === 'opening') {
+    const move = (x: number, y: number, z: number, tx: number, ty: number, tz: number) => {
       if (smooth) setDollying(true);
-      void instance.setLookAt(radius * 0.1, radius * 0.86, radius * 1.78, 0, 2, 0, smooth);
+      void instance.setLookAt(x, y, z, tx, ty, tz, smooth);
       if (!smooth) setDollying(false);
+    };
+
+    if (mode === 'opening') {
+      /**
+       * Camera 编舞（V4 §三十三）：
+       *   sketch     —— 接近垂直俯视，像在看一张研究图纸；
+       *   assembling —— 略后退 + 稍抬，让用户看到区块从空间落下来；
+       *   settling 之后 —— 收敛到与 /liaoning **完全一致**的位姿（§三十四：切路由相机不跳）。
+       */
+      if (phase === 'sketch') { move(0, radius * 3.4, radius * 0.55, 0, 0, 0); return; }
+      if (phase === 'assembling') { move(radius * 0.85, radius * 2.35, radius * 2.1, 0, 1.5, 0); return; }
+      move(radius * 0.04, radius * 1.08, radius * 1.36, 0, 2, 0);
       return;
     }
+
     // 城市模式，或省域模式下已经选定了目标城市：都真正推近到该城市。
     if (mode === 'city' || focusCityId) {
       const view = cityView(targetPoint, radius);
-      if (smooth) setDollying(true);
-      void instance.setLookAt(
-        view.position[0], view.position[1], view.position[2],
-        view.target[0], view.target[1], view.target[2],
-        smooth,
-      );
-      if (!smooth) setDollying(false);
+      move(view.position[0], view.position[1], view.position[2], view.target[0], view.target[1], view.target[2]);
       return;
     }
-    if (smooth) setDollying(true);
-    void instance.setLookAt(radius * 0.04, radius * 1.08, radius * 1.36, 0, 2, 0, smooth);
-    if (!smooth) setDollying(false);
-  }, [mode, focusCityId, dollyToken, reducedMotion, targetPoint, provinceRadius]);
+    move(radius * 0.04, radius * 1.08, radius * 1.36, 0, 2, 0);
+  }, [mode, phase, focusCityId, dollyToken, reducedMotion, targetPoint, provinceRadius]);
 
   return (
     <CameraControls
@@ -196,6 +210,8 @@ function CameraRig({ mode, focusCityId, dollyToken, reducedMotion, onCameraRest,
       onRest={() => {
         setDollying(false);
         onCameraRest?.();
+        // 收束完成 → 交给状态机去切路由（§三十三/§三十四）。
+        exit();
       }}
     />
   );
@@ -205,8 +221,14 @@ function SceneContents({ mode, focusCityId, hoveredCityId, dollyToken, onHoverCi
   const state = useLiaoningModel();
   const studyIds = useMemo(() => new Set<string>(STUDY_CITY_IDS), []);
   const model = state.status === 'ready' ? state.model : null;
-  /** Opening 揭示进度由驱动组件写、由每座城市读，中间不经过 React state。 */
-  const revealRef = useRef(1);
+  const openingPhase = useOpeningStore((store) => store.phase);
+  /** 组装进度由驱动组件写、由每块行政区读，中间不经过 React state。 */
+  const assemblyRef = useRef(0);
+  /**
+   * Opening 阶段只在本路由生效：直接深链到 /liaoning 时，即使状态机还没被标记为"看过"，
+   * 也必须给出完整沙盘，而不是一张空草稿。
+   */
+  const phase: OpeningPhase = mode === 'opening' ? openingPhase : 'ready';
 
   const focusPoint = useMemo(() => {
     if (!model) return new THREE.Vector3();
@@ -214,6 +236,24 @@ function SceneContents({ mode, focusCityId, hoveredCityId, dollyToken, onHoverCi
     if (!city) return new THREE.Vector3(0, 0, 0);
     return new THREE.Vector3(city.centroid.x, 0, -city.centroid.y);
   }, [model, focusCityId]);
+
+  /**
+   * 落下顺序与高度（V4 §二十九/§三十）：
+   * 按"到沈阳重心距离"确定性排序，不用 Math.random()（随机像小游戏）；
+   * 起始高度由省域与城市比例决定，不写死一个固定值。
+   */
+  const dropPlan = useMemo(() => {
+    if (!model) return [];
+    const origin = model.cities.find((city) => city.id === 'shenyang')?.centroid ?? model.centroid;
+    const ordered = model.cities
+      .map((city) => ({ city, distance: city.centroid.distanceTo(origin) }))
+      .sort((a, b) => a.distance - b.distance);
+    return ordered.map((entry, index) => ({
+      ...entry,
+      delay: ordered.length > 1 ? (index / (ordered.length - 1)) * STAGGER_SPAN : 0,
+      dropHeight: model.radius * 0.5 + entry.city.radius * 1.3,
+    }));
+  }, [model]);
 
   if (!model) return null;
 
@@ -227,6 +267,7 @@ function SceneContents({ mode, focusCityId, hoveredCityId, dollyToken, onHoverCi
     <>
       <CameraRig
         mode={mode}
+        phase={phase}
         focusCityId={focusCityId}
         dollyToken={dollyToken}
         reducedMotion={reducedMotion}
@@ -237,25 +278,35 @@ function SceneContents({ mode, focusCityId, hoveredCityId, dollyToken, onHoverCi
       {/* 承载平面在最底层：辽宁实体 → 接触阴影 → 纸面（V3 §41） */}
       <PaperGround radius={model.radius} />
       {/*
-        接触阴影：目标是"让辽宁像真的从纸面浮起来"，不是真实光影（V2 §53/§54）。
-        frames={1} 只烘焙一次，因此没有逐帧成本；若日后发现它变贵，删掉即可。
-        注意：drei 烘焙时会临时把 scene.background 置空后写进自己的 render target，
-        因此 Canvas 必须是 alpha:true，否则 render target 会被不透明清屏，
-        这块阴影平面会变成一块实心方块、在纸面上留下一条方形边缘（V3 §64 明令禁止）。
+        草稿纸（V4 §二十三–§二十五、§三十二）：极浅暖灰方格 + 手稿边界始终留在下面，
+        实体像落在自己的设计图上。这不是科技网格，也不做旧。
       */}
-      <ContactShadows
-        frames={1}
-        position={[0, -0.02, 0]}
-        scale={Math.max(200, model.radius * 6)}
-        far={8}
-        blur={2.5}
-        opacity={0.16}
-        resolution={512}
-      />
-      <OpeningRevealDriver mode={mode} reducedMotion={reducedMotion} progressRef={revealRef} />
-      {/* 视差只服务 Opening 与正式省域沙盘；城市 Reader 会收敛回 0（V4 §二十一） */}
-      <ParallaxGroup strength={mode === 'opening' ? 'opening' : 'province'} enabled={mode === 'opening' || mode === 'province'}>
-        {model.cities.map((city, index) => (
+      <SketchPaper radius={model.radius} cities={model.cities} phase={phase} />
+      {/*
+        接触阴影：目标是"让辽宁像真的从纸面浮起来"，不是真实光影（V2 §53/§54）。
+        frames={1} 只在挂载首帧烘焙一次，因此**必须等区块落定后再挂载**：
+        否则草稿阶段还没有实体，会烘出一块"没有对象的阴影"。
+        注意：drei 烘焙时会临时把 scene.background 置空后写进自己的 render target，
+        因此 Canvas 必须是 alpha:true，否则那块阴影平面会变成实心方块（V3 §64 明令禁止）。
+      */}
+      {(phase === 'settling' || phase === 'ready') && (
+        <ContactShadows
+          frames={1}
+          position={[0, -0.02, 0]}
+          scale={Math.max(200, model.radius * 6)}
+          far={8}
+          blur={2.5}
+          opacity={0.16}
+          resolution={512}
+        />
+      )}
+      <AssemblyDriver active={mode === 'opening' && phase === 'assembling'} reducedMotion={reducedMotion} assemblyRef={assemblyRef} />
+      {/* 视差只服务正式沙盘（V4 §二十一/§三十七）：组装过程中关闭，避免与下落抢控制权 */}
+      <ParallaxGroup
+        strength={mode === 'opening' ? 'opening' : 'province'}
+        enabled={!reducedMotion && (mode === 'province' || (mode === 'opening' && phase === 'ready'))}
+      >
+        {dropPlan.map(({ city, delay, dropHeight }) => (
           <CitySolidMesh
             key={city.id}
             city={city}
@@ -264,11 +315,14 @@ function SceneContents({ mode, focusCityId, hoveredCityId, dollyToken, onHoverCi
             onHover={onHoverCity}
             onSelect={onSelectCity}
             reducedMotion={reducedMotion}
-            revealRef={revealRef}
-            revealDelay={index * 0.02}
+            phase={phase}
+            assemblyRef={assemblyRef}
+            dropDelay={delay}
+            dropHeight={dropHeight}
           />
         ))}
       </ParallaxGroup>
+      {/* 草稿阶段不出现任何城市 Label / 按钮 / 研究状态（V4 §二十五） */}
       {mode !== 'opening' && model.cities.map((city) => {
         const active = hoveredCityId === city.id || focusCityId === city.id;
         if (!city.hasResearch && !studyIds.has(city.id) && !active) return null;
