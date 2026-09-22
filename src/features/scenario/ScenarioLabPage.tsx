@@ -46,7 +46,7 @@ export function ScenarioLabPage() {
         <p className="ag-label">情景实验</p>
         <h1 className="ag-hero scenario-lab__title">平行世界实验室</h1>
         <p className="ag-lead">
-          把 2026 暴雨事件放进四个平行世界：实际世界、无灾害、灾害增强、供应缓冲增强。
+          把 2026 暴雨事件放进四个平行情景：基准情景、无灾害情景、冲击增强情景、供应缓冲情景。
           所有数字来自反事实研究表，用于展示模型在门控未过时的行为，不作为对未来的判断。
         </p>
       </header>
@@ -69,14 +69,11 @@ function ScenarioLabBody({ tables }: { tables: ResearchTable[] }) {
   const windowOptions = useMemo(() => numericOptions(gaps.filter((row) => row.method === 'A').map((row) => row.nDays)), [gaps]);
 
   const [target, setTarget] = useState<Target>('price');
-  const [rain, setRain] = useState(1.5);
-  const [heat, setHeat] = useState(1.0);
+  const [severityMult, setSeverityMult] = useState(1.5);
   const [days, setDays] = useState(5);
   const [bufferFrac, setBufferFrac] = useState(0.2);
 
-  const rainClamped = clampToNearest(rain, severityOptions);
-  const heatClamped = clampToNearest(heat, severityOptions);
-  const effectiveSeverity = Math.max(rainClamped, heatClamped);
+  const effectiveSeverity = clampToNearest(severityMult, severityOptions);
   const daysClamped = clampToNearest(days, windowOptions);
   const bufferClamped = clampToNearest(bufferFrac, bufferOptions);
 
@@ -149,47 +146,34 @@ function ScenarioLabBody({ tables }: { tables: ResearchTable[] }) {
       <section className="ag-section" aria-labelledby="scenario-params">
         <div className="ag-section__head">
           <p className="ag-label">情景参数</p>
-          <h2 className="ag-section-title" id="scenario-params">四个可调项</h2>
+          <h2 className="ag-section-title" id="scenario-params">三个可调项</h2>
           <p className="ag-body">
             每项的可选集合都来自真实研究表。若取值不在表中，界面对齐到最接近的真实取值并明确标注，不做插值。
           </p>
         </div>
         <div className="scenario-lab__params">
           <ParamSlider
-            label="降雨强度"
+            label="事件强度倍率"
             min={0.4}
             max={1.7}
             step={0.05}
-            value={rain}
+            value={severityMult}
             options={severityOptions}
-            clamped={rainClamped}
-            affects="世界三 · 灾害增强"
-            hint="严重度倍率（与高温程度共同决定 severity_mult）"
-            onChange={setRain}
+            clamped={effectiveSeverity}
+            affects="冲击增强情景"
+            hint="事件严重度倍率 severity_mult（表中只有单一强度轴，未拆分降雨与高温）"
+            onChange={setSeverityMult}
             format={(value) => value.toFixed(2)}
           />
           <ParamSlider
-            label="高温程度"
-            min={0.4}
-            max={1.7}
-            step={0.05}
-            value={heat}
-            options={severityOptions}
-            clamped={heatClamped}
-            affects="世界三 · 灾害增强"
-            hint="严重度倍率（表中只有单一 severity_mult 轴，未区分降雨与高温）"
-            onChange={setHeat}
-            format={(value) => value.toFixed(2)}
-          />
-          <ParamSlider
-            label="持续时间"
+            label="持续窗口"
             min={1}
             max={14}
             step={1}
             value={days}
             options={windowOptions}
             clamped={daysClamped}
-            affects="世界二 · 无灾害"
+            affects="无灾害情景"
             hint="反事实缺口窗口（表中只有过程内 5 日与过程后 10 日）"
             onChange={setDays}
             format={(value) => `${value} 日`}
@@ -202,7 +186,7 @@ function ScenarioLabBody({ tables }: { tables: ResearchTable[] }) {
             value={bufferFrac}
             options={bufferOptions}
             clamped={bufferClamped}
-            affects="世界四 · 供应缓冲增强"
+            affects="供应缓冲情景"
             hint="缓冲比例 buffer_frac"
             onChange={setBufferFrac}
             format={(value) => value.toFixed(2)}
@@ -218,14 +202,14 @@ function ScenarioLabBody({ tables }: { tables: ResearchTable[] }) {
 
       <section className="ag-section" aria-labelledby="scenario-worlds">
         <div className="ag-section__head">
-          <p className="ag-label">四个世界</p>
+          <p className="ag-label">四个情景</p>
           <h2 className="ag-section-title" id="scenario-worlds">同一事件的四种反事实呈现</h2>
           <p className="ag-body">缺口均为相对均值的稳健 z；价格单位为元/500g，成交量单位未知，只使用相对口径。</p>
         </div>
         <div className="ag-grid ag-grid--2 scenario-lab__worlds">
           <ChartFrame
-            title="世界一 · 实际世界（基准）"
-            note="反事实框架把实际发生的事件作为基准世界：严重度倍率 1.00 时缺口按定义为 0。观测侧证据见 2026 暴雨专题。"
+            title="基准情景"
+            note="反事实框架把实际发生的事件作为基准情景：严重度倍率 1.00 时缺口按定义为 0。观测侧证据见 2026 暴雨专题。"
             provenance="scenario"
             sources={['counterfactual_severity.csv']}
           >
@@ -237,7 +221,7 @@ function ScenarioLabBody({ tables }: { tables: ResearchTable[] }) {
           </ChartFrame>
 
           <ChartFrame
-            title="世界二 · 无灾害"
+            title="无灾害情景"
             note={`去除 2026 事件的反事实世界（world0），缺口来自反事实缺口汇总表，窗口 ${daysClamped} 日（${daysClamped === 5 ? '过程内' : '过程后'}）。`}
             provenance="scenario"
             sources={['counterfactual_gap_summary.csv']}
@@ -269,8 +253,8 @@ function ScenarioLabBody({ tables }: { tables: ResearchTable[] }) {
           </ChartFrame>
 
           <ChartFrame
-            title="世界三 · 灾害增强"
-            note={`按严重度倍率 ${effectiveSeverity.toFixed(2)} 缩放事件强度后的反事实缺口。目标变量：${TARGET_LABEL[target]}。`}
+            title="冲击增强情景"
+            note={`按事件强度倍率 ${effectiveSeverity.toFixed(2)} 缩放事件强度后的反事实缺口。目标变量：${TARGET_LABEL[target]}。`}
             provenance="scenario"
             sources={['counterfactual_severity.csv']}
           >
@@ -287,7 +271,7 @@ function ScenarioLabBody({ tables }: { tables: ResearchTable[] }) {
           </ChartFrame>
 
           <ChartFrame
-            title="世界四 · 供应缓冲增强"
+            title="供应缓冲情景"
             note={`按缓冲比例 ${bufferClamped.toFixed(2)} 增强供应缓冲后，价格缺口的剩余部分。该表只有价格口径。`}
             provenance="scenario"
             sources={['counterfactual_buffer.csv']}
@@ -309,7 +293,7 @@ function ScenarioLabBody({ tables }: { tables: ResearchTable[] }) {
       <section className="ag-section" aria-labelledby="scenario-detail">
         <div className="ag-section__head">
           <p className="ag-label">缺口明细</p>
-          <h2 className="ag-section-title" id="scenario-detail">无灾害世界 · {TARGET_LABEL[target]}分品种缺口</h2>
+          <h2 className="ag-section-title" id="scenario-detail">无灾害情景 · {TARGET_LABEL[target]}分品种缺口</h2>
           <p className="ag-body">含 POOLED 汇总行；置信区间仅分品种提供，POOLED 行在源表中为空。</p>
         </div>
         <div className="scenario-lab__table-wrap">
@@ -342,7 +326,7 @@ function ScenarioLabBody({ tables }: { tables: ResearchTable[] }) {
 
       <footer className="scenario-lab__foot">
         <p className="ag-body">
-          以上四个世界共享同一套门控未过的模型；缺口的量级与方向都来自研究表，不代表真实因果，也不构成任何预测。
+          以上四个情景共享同一套门控未过的模型；缺口的量级与方向都来自研究表，不代表真实因果，也不构成任何预测。
         </p>
         <div className="ag-row">
           <Link className="ag-button" to={ROUTES.rainstorm}>2026 暴雨专题</Link>

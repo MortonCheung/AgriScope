@@ -52,14 +52,4 @@
   white-space: pre-wrap;
   word-break: break-word;
 }
-.insight-dock__ask { display: flex; flex-direction: column; gap: var(--ag-space-3); padding-top: var(--ag-space-3); border-top: 1px solid var(--ag-rule-soft); }
-.insight-dock__ask-row { display: flex; gap: 6px; }
-.insight-dock__ask-row input {
-  flex: 1;
-  min-height: 36px;
-  padding: 0 10px;
-  border: 1px solid var(--ag-rule);
-  border-radius: var(--ag-radius-sm);
-  background: transparent;
-}
 .insight-dock__note { margin: 0; color: var(--ag-ink-faint); font-size: var(--ag-fs-micro); line-height: 1.6; }
