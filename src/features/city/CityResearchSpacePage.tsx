@@ -1,11 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { motion, useReducedMotion } from 'motion/react';
 import { getCity } from '../../domain/geography/cities';
 import { useCityResearch } from '../../services/useCityResearch';
 import { AsyncBoundary } from '../../components/AsyncState';
-import { EvidenceBadge } from '../../components/EvidenceBadge';
 import { ResearchSummary } from '../research/ResearchSummary';
 import { ROUTES } from '../../app/routes';
+import { MOTION_SPRING } from '../../design/motion';
 import type { CityResearchIndex } from '../../domain/research/types';
 import './city-space.css';
 
@@ -56,13 +57,32 @@ function CitySpaceBody({ cityShortName, index, selectedPointId, onSelect }: {
   selectedPointId: string | null;
   onSelect: (pointId: string | null) => void;
 }) {
+  const reducedMotion = Boolean(useReducedMotion());
+  const sidebarRef = useRef<HTMLElement>(null);
+  /** 默认全部展开（§35 的文献目录形态）；被收起过的专题记在这里。 */
+  const [closedTopicIds, setClosedTopicIds] = useState<string[]>([]);
+
   const selected = useMemo(
     () => (selectedPointId ? index.points.find((point) => point.id === selectedPointId) ?? null : null),
     [index.points, selectedPointId],
   );
+  /** 当前选中的专题必须保持展开（§38）。 */
+  const activeTopicId = selected?.topicId ?? null;
+
+  const isExpanded = (topicId: string) => topicId === activeTopicId || !closedTopicIds.includes(topicId);
+  const toggleTopic = (topicId: string) => {
+    if (topicId === activeTopicId) return;
+    setClosedTopicIds((current) => (current.includes(topicId) ? current.filter((id) => id !== topicId) : [...current, topicId]));
+  };
+
+  // 选中研究点后把它带回视野：返回时用户仍知道刚才在哪里（§16）。
+  useEffect(() => {
+    if (!selectedPointId) return;
+    sidebarRef.current?.querySelector('[data-selected]')?.scrollIntoView({ block: 'nearest' });
+  }, [selectedPointId]);
 
   return (
-    <div className="city-space__panel">
+    <div className="city-space__panel" data-focused={selected ? true : undefined}>
       <header className="city-space__head">
         <h1 className="ag-hero city-space__title">{cityShortName}</h1>
         <div className="city-space__entries">
@@ -72,36 +92,52 @@ function CitySpaceBody({ cityShortName, index, selectedPointId, onSelect }: {
       </header>
 
       <div className="city-space__body">
-        <nav className="city-space__topics" aria-label="研究专题">
-          {index.topics.map((topic) => (
-            <section key={topic.id} className="city-topic">
-              <header className="city-topic__head">
-                <span className="city-topic__id">{topic.id}</span>
-                <h2 className="city-topic__title">{topic.title}</h2>
-                <span className="city-topic__count">{topic.points.length} 个研究点</span>
-              </header>
-              <p className="city-topic__summary">{topic.summary}</p>
-              <div className="city-topic__points">
-                {topic.points.map((point) => (
-                  <button
-                    key={point.id}
-                    type="button"
-                    className="ag-point-row"
-                    data-selected={point.id === selectedPointId || undefined}
-                    onClick={() => onSelect(point.id)}
-                  >
-                    <span className="ag-point-row__main">
-                      <span className="ag-point-row__id">{point.id}</span>
-                      <span className="ag-point-row__title">{point.title}</span>
-                    </span>
-                    <span className="ag-point-row__tags">
-                      <EvidenceBadge level={point.evidenceLevel} compact />
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </section>
-          ))}
+        <nav className="city-space__topics" aria-label="研究专题" ref={sidebarRef}>
+          {index.topics.map((topic) => {
+            const expanded = isExpanded(topic.id);
+            return (
+              <section key={topic.id} className="city-topic">
+                <button
+                  type="button"
+                  className="city-topic__toggle"
+                  aria-expanded={expanded}
+                  aria-controls={`topic-points-${topic.id}`}
+                  onClick={() => toggleTopic(topic.id)}
+                >
+                  <span className="city-topic__id">{topic.id}</span>
+                  <span className="city-topic__title">{topic.title}</span>
+                  <span className="city-topic__count ag-number">{topic.points.length}</span>
+                </button>
+                {expanded && (
+                  <div className="city-topic__points" id={`topic-points-${topic.id}`}>
+                    {topic.points.map((point) => (
+                      <button
+                        key={point.id}
+                        type="button"
+                        className="ag-point-row"
+                        data-selected={point.id === selectedPointId || undefined}
+                        onClick={() => onSelect(point.id)}
+                      >
+                        {/* 选中态是一条会滑动的共享背景，而不是旧块消失、新块出现（§45） */}
+                        {point.id === selectedPointId && (
+                          <motion.span
+                            layoutId="reader-selection"
+                            className="ag-point-row__selection"
+                            aria-hidden
+                            transition={reducedMotion ? { duration: 0 } : MOTION_SPRING.soft}
+                          />
+                        )}
+                        <span className="ag-point-row__main">
+                          <span className="ag-point-row__id">{point.id}</span>
+                          <span className="ag-point-row__title">{point.title}</span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </section>
+            );
+          })}
         </nav>
 
         <aside className="city-space__detail" aria-live="polite">
