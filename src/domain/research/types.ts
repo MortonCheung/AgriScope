@@ -6,6 +6,8 @@
  * 前端不新增、不修改任何研究结论。
  */
 
+import type { LineageRef, SourceRef } from './sourceRef';
+
 /** 证据等级：A 直接观测 / B 统计关联 / C 机制一致 / D 模型或情景 / Unsupported 数据不支持 */
 export type EvidenceLevelCode = 'A' | 'B' | 'C' | 'D' | 'Unsupported';
 
@@ -34,7 +36,8 @@ export interface ResearchFigure {
   id: string;
   src: string;
   caption: string | null;
-  source: string;
+  /** 技术血缘（figure 文件名）：只在开发模式显示，正式界面不出现（V4 §五十三/§五十四）。 */
+  lineage: string;
   evidenceLevel: EvidenceLevelCode;
 }
 
@@ -138,8 +141,16 @@ export interface CityResearchIndex {
   counters: { crops: number; topics: number; studies: number };
   figures: string[];
   tables: string[];
-  /** 研究工程声明的来源（index.json 的 sourceOfTruth）；前端只转述，不新增来源（V3 §31/§32）。 */
-  provenance: string[];
+  /**
+   * 正式界面展示的数据来源（V4 §五十三）。
+   * 索引没有声明来源时就是空数组 —— 前端绝不猜机构、绝不编链接（§五十五）。
+   */
+  sources: SourceRef[];
+  /**
+   * 技术血缘（artifact / table / figure 文件名）。
+   * 只在开发模式或技术折叠区出现，正式界面不展示（V4 §五十四）。
+   */
+  lineage: LineageRef[];
 }
 
 /** 专题、研究点在研究空间中的空间化布局坐标（由布局算法生成，非研究数据）。 */

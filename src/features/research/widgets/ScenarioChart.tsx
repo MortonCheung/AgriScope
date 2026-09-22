@@ -91,7 +91,7 @@ export function ScenarioChart({
       title="反事实情景：门控与情景演示"
       note={note ?? '先用 World0 门控判断模型能否复现现实（模拟 vs 实测 R²）；门控未通过时，这些缺口、严重度与缓冲数字只作情景演示，不对应现实。'}
       provenance="scenario"
-      sources={[gateSource.split('/').pop() ?? '', severitySource.split('/').pop() ?? '', bufferSource.split('/').pop() ?? '', gapSummarySource.split('/').pop() ?? '']}
+      lineage={[gateSource.split('/').pop() ?? '', severitySource.split('/').pop() ?? '', bufferSource.split('/').pop() ?? '', gapSummarySource.split('/').pop() ?? '']}
       evidenceLevel={`证据 ${evidenceLevel}`}
       status="实验性"
       controls={

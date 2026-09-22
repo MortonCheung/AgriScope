@@ -5,7 +5,6 @@ import { ROUTES } from '../../app/routes';
 import { usePageNavigate } from '../../app/pageNavigation';
 import { AsyncBoundary } from '../../components/AsyncState';
 import { KeyNumberGrid } from '../../components/KeyNumberGrid';
-import { SourceCitation } from '../../components/SourceCitation';
 import { MOTION_SPRING } from '../../design/motion';
 import type { CityResearchIndex, ResearchArticle, ResearchPoint } from '../../domain/research/types';
 import { useCityResearch, type AsyncState } from '../../services/useCityResearch';
@@ -146,7 +145,7 @@ function ResearchPointBody({ index, point, mode, onModeChange, articleState }: {
         <ResearchWorkspace
           variant="fixed"
           tree={<ResearchTreeNav index={index} onSelectPoint={(id) => navigate(ROUTES.research(point.cityId, id))} />}
-          rail={<ResearchEvidenceRail point={point} timeWindow={index.window} provenance={index.provenance} />}
+          rail={<ResearchEvidenceRail point={point} timeWindow={index.window} sources={index.sources} lineage={index.lineage} />}
         >
           <header className="research-point__head">
             <p className="ag-label">{point.id} · {point.topicTitle}</p>
@@ -158,8 +157,6 @@ function ResearchPointBody({ index, point, mode, onModeChange, articleState }: {
             <section className="research-point__numbers">
               <p className="ag-label">核心数据</p>
               <KeyNumberGrid numbers={point.keyNumbers} />
-              {/* 核心数字在前端索引里没有逐项来源，按 §32 如实标注并记入 SOURCE_GAPS.md */}
-              <SourceCitation sources={[]} />
             </section>
           )}
 

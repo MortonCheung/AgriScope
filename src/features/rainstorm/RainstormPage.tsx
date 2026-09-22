@@ -319,7 +319,7 @@ function buildSteps({ index, days, summary, vsHistory, rank, analog }: StepInput
           title="事件窗口逐日降水与 3 日累计"
           note="横轴为 2026 年 7 月日期，纵轴为降水量（mm）。降水为 ERA5 再分析网格均值，非气象站实测。"
           provenance="observed"
-          sources={['case2026_weather.csv', 'case2026_rank.csv']}
+          lineage={['case2026_weather.csv', 'case2026_rank.csv']}
           evidenceLevel="证据 A"
         >
           <XYChart
@@ -352,7 +352,7 @@ function buildSteps({ index, days, summary, vsHistory, rank, analog }: StepInput
           title="逐日降水 vs 气候基线均值 ± 1 SD"
           note="阴影为基线 ± 1 个标准差的波动带；虚线为基线均值。冲出波动带即代表当日降水相对同期气候异常。"
           provenance="observed"
-          sources={['case2026_weather.csv']}
+          lineage={['case2026_weather.csv']}
           evidenceLevel="证据 A"
         >
           <XYChart
@@ -388,7 +388,7 @@ function buildSteps({ index, days, summary, vsHistory, rank, analog }: StepInput
           title="事件窗口近地面相对湿度"
           note="案例事件表未含事件期土壤水分时间序列；此处以近地面相对湿度作为水分条件的观测代理，土壤结论以类比日汇总与全局三层分析为准。"
           provenance="observed"
-          sources={['case2026_weather.csv', 'counterfactual_analog.csv']}
+          lineage={['case2026_weather.csv', 'counterfactual_analog.csv']}
           evidenceLevel="证据 A（湿度）/ B（土壤）"
         >
           <XYChart
@@ -423,7 +423,7 @@ function buildSteps({ index, days, summary, vsHistory, rank, analog }: StepInput
           title="事件后窗口成交量偏离（z 口径）"
           note="横条为各品种在事件后第 3–14 日的成交量偏离（z），虚线为零偏离。"
           provenance="observed"
-          sources={['case2026_summary.csv']}
+          lineage={['case2026_summary.csv']}
           evidenceLevel="证据 A"
         >
           <BarChart
@@ -452,7 +452,7 @@ function buildSteps({ index, days, summary, vsHistory, rank, analog }: StepInput
             title="事件后窗口价格偏离（z 口径）"
             note="横条为各品种在事件后第 3–14 日的价格偏离（z），虚线为零偏离。"
             provenance="observed"
-            sources={['case2026_summary.csv']}
+            lineage={['case2026_summary.csv']}
             evidenceLevel="证据 A"
           >
             <BarChart
@@ -465,12 +465,12 @@ function buildSteps({ index, days, summary, vsHistory, rank, analog }: StepInput
             title="分品种案例响应（F28）"
             note="研究工程输出的分品种案例响应图，供与上面 z 口径读数对照。"
             provenance="observed"
-            sources={['F28_case2026_percrop.png']}
+            lineage={['F28_case2026_percrop.png']}
           >
             <ResearchFigure
               src={`${FIGURES}/F28_case2026_percrop.png`}
               alt="2026 暴雨案例分品种价格与成交量响应图"
-              source="shenyang · case2026"
+              lineage="shenyang · case2026"
               evidenceLevel="A"
             />
           </ChartFrame>
@@ -496,13 +496,13 @@ function buildSteps({ index, days, summary, vsHistory, rank, analog }: StepInput
             title="案例后均值 vs 历史区间（F27）"
             note="案例后均值与 8 个历史清洁雨簇的分布区间对照。区间含案例值即说明该次冲击未超出常规波动。"
             provenance="observed"
-            sources={['case2026_vs_history.csv', 'F27_case2026_vs_history.png']}
+            lineage={['case2026_vs_history.csv', 'F27_case2026_vs_history.png']}
             evidenceLevel="证据 A"
           >
             <ResearchFigure
               src={`${FIGURES}/F27_case2026_vs_history.png`}
               alt="2026 暴雨案例后均值与历史雨簇区间对照图"
-              source="shenyang · case2026"
+              lineage="shenyang · case2026"
               evidenceLevel="A"
             />
           </ChartFrame>
@@ -510,13 +510,13 @@ function buildSteps({ index, days, summary, vsHistory, rank, analog }: StepInput
             title="安慰剂分布（F24）"
             note="把 500 次随机事件作为对照，案例值在其中并不突出。"
             provenance="observed"
-            sources={['event_study_placebo.csv', 'F24_event_placebo.png']}
+            lineage={['event_study_placebo.csv', 'F24_event_placebo.png']}
             evidenceLevel="证据 A"
           >
             <ResearchFigure
               src={`${FIGURES}/F24_event_placebo.png`}
               alt="事件研究安慰剂分布图"
-              source="shenyang · C3"
+              lineage="shenyang · C3"
               evidenceLevel="A"
             />
           </ChartFrame>
@@ -540,13 +540,13 @@ function buildSteps({ index, days, summary, vsHistory, rank, analog }: StepInput
           title="传导链第一阶段（F30）"
           note="传导链第一阶段：各品种 × 窗口的估计结果。"
           provenance="model"
-          sources={['transmission_stage1.csv', 'F30_transmission_stage1_heatmap.png']}
+          lineage={['transmission_stage1.csv', 'F30_transmission_stage1_heatmap.png']}
           evidenceLevel="证据 B"
         >
           <ResearchFigure
             src={`${FIGURES}/F30_transmission_stage1_heatmap.png`}
             alt="传导链第一阶段估计热力图"
-            source="shenyang · C4"
+            lineage="shenyang · C4"
             evidenceLevel="B"
           />
         </ChartFrame>
@@ -570,12 +570,12 @@ function buildSteps({ index, days, summary, vsHistory, rank, analog }: StepInput
           title="事件总览"
           note="该图汇总 2026 案例的天气与市场基本面貌，供结论步骤回看。"
           provenance="observed"
-          sources={['F26_case2026_weather.png']}
+          lineage={['F26_case2026_weather.png']}
         >
           <ResearchFigure
             src={`${FIGURES}/F26_case2026_weather.png`}
             alt="2026 案例天气总览图"
-            source="shenyang · case2026"
+            lineage="shenyang · case2026"
             evidenceLevel="A"
           />
         </ChartFrame>

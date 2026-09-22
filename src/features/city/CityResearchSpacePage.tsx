@@ -102,7 +102,7 @@ function CitySpaceBody({ cityShortName, index }: {
         <ResearchWorkspace
           variant="fixed"
           tree={<ResearchTreeNav index={index} onSelectPoint={() => undefined} />}
-          rail={selected ? <ResearchEvidenceRail point={selected} timeWindow={index.window} provenance={index.provenance} /> : undefined}
+          rail={selected ? <ResearchEvidenceRail point={selected} timeWindow={index.window} sources={index.sources} lineage={index.lineage} /> : undefined}
         >
           {selected ? (
             <ResearchSummary point={selected} onClose={() => selectPoint(null)} />

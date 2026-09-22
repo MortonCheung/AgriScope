@@ -73,6 +73,30 @@ describe('adaptCityIndex', () => {
     expect(index.figures).toEqual(['/research/shenyang/figures/F08.png']);
     expect(index.tables).toEqual(['/research/shenyang/tables/stl_strength.csv']);
   });
+
+  it('索引未声明来源时保持为空，绝不猜（V4 §五十五）', () => {
+    expect(index.sources).toEqual([]);
+  });
+
+  it('sourceOfTruth 归入血缘而不是来源（V4 §五十三）', () => {
+    const withTruth = adaptCityIndex({ ...raw, sourceOfTruth: { research_doc: 'SHENYANG_RESEARCH.md' } }, 'shenyang');
+    expect(withTruth.lineage).toEqual([{ artifact: 'SHENYANG_RESEARCH.md' }]);
+    expect(withTruth.sources).toEqual([]);
+  });
+
+  it('索引声明了来源就逐字段转述，缺 organization 的条目被丢弃', () => {
+    const declared = adaptCityIndex({
+      ...raw,
+      sources: [
+        { organization: '某机构', dataset: '某数据集', type: 'official' },
+        { dataset: '缺机构名', type: 'statistics' },
+        { organization: '另一机构', type: '未知类型' },
+      ],
+    }, 'shenyang');
+    expect(declared.sources).toHaveLength(2);
+    expect(declared.sources[0]).toEqual({ organization: '某机构', dataset: '某数据集', title: undefined, url: undefined, accessedAt: undefined, type: 'official' });
+    expect(declared.sources[1].type).toBe('other');
+  });
 });
 
 describe('adaptArticle', () => {

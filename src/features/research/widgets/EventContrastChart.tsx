@@ -99,7 +99,7 @@ export function EventContrastChart({ source, evidenceLevel }: {
       title={`极端日与普通日的市场异常差（${VARIABLE_LABEL[variable]}）`}
       note={`横条为极端日与普通日 z 均值的差（正值代表极端日更高），阴影口径由研究表给出；极端日仅 ${model?.nExtreme ?? '—'} 天，逐品种极端日样本 n=19。`}
       provenance="observed"
-      sources={[source.split('/').pop() ?? '']}
+      lineage={[source.split('/').pop() ?? '']}
       evidenceLevel={`证据 ${evidenceLevel}`}
       controls={
         <VariableSelector<Variable>

@@ -119,7 +119,7 @@ export function PhenologyChart({ source, evidenceLevel }: {
           : '正在读取物候交互表。'
       }
       provenance="observed"
-      sources={[source.split('/').pop() ?? '']}
+      lineage={[source.split('/').pop() ?? '']}
       evidenceLevel={`证据 ${evidenceLevel}`}
       controls={
         <>

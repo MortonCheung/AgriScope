@@ -1,9 +1,13 @@
-/* 数据来源（V3 §33/§40）：小字号、mono、ink-muted，不要 badge / pill / 圆角容器。 */
+/* 数据来源（V3 §33/§40；V4 §五十三–§五十五）：小字号、mono、ink-muted，
+   不要 badge / pill / 圆角容器。只呈现 Source（机构 / 数据集 / 链接），
+   技术血缘文件名不走这里。 */
 .source-citation {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 6px var(--ag-space-5);
   margin: 0;
+  padding: 0;
+  list-style: none;
   color: var(--ag-ink-muted);
   font-family: var(--ag-font-mono);
   font-size: var(--ag-fs-micro);
@@ -11,6 +15,14 @@
   letter-spacing: 0.02em;
 }
 .source-citation[data-compact] { font-size: var(--ag-fs-micro); }
-.source-citation__prefix { flex: none; color: var(--ag-ink-muted); }
-.source-citation__prefix::after { content: '｜'; margin-left: 2px; }
 .source-citation[data-missing] { color: var(--ag-ink-muted); font-style: italic; }
+
+.source-citation__item { display: inline-flex; align-items: baseline; gap: 6px; }
+.source-citation__org { color: var(--ag-ink-soft); }
+.source-citation__link {
+  color: var(--ag-ink-muted);
+  border-bottom: 1px solid var(--ag-rule);
+  transition: color var(--ag-dur-fast) var(--ag-ease), border-color var(--ag-dur-fast) var(--ag-ease);
+}
+.source-citation__link:hover { color: var(--ag-ink); border-bottom-color: var(--ag-ink); }
+.source-citation__accessed { color: var(--ag-ink-muted); }

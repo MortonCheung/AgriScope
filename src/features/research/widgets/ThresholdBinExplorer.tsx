@@ -106,7 +106,7 @@ export function ThresholdBinExplorer({ binsSource, powerSource, breakpointSource
       title="降雨阈值分箱与样本量"
       note="阈值档来自研究表的真实分箱，不做插值；每档同时给出样本数量与 95% 区间。"
       provenance="observed"
-      sources={[binsSource.split('/').pop() ?? '', ...(powerSource ? [powerSource.split('/').pop() ?? ''] : [])]}
+      lineage={[binsSource.split('/').pop() ?? '', ...(powerSource ? [powerSource.split('/').pop() ?? ''] : [])]}
       evidenceLevel={`证据 ${evidenceLevel}`}
       controls={
         <>

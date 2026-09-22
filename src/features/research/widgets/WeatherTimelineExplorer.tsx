@@ -101,7 +101,7 @@ export function WeatherTimelineExplorer({ source, evidenceLevel, note }: { sourc
       title="事件窗口逐日序列"
       note={note ?? '曲线沿真实日期逐渐绘制；图表、标注、事件状态与关键数字随日期同步更新。'}
       provenance="observed"
-      sources={[source.split('/').pop() ?? '']}
+      lineage={[source.split('/').pop() ?? '']}
       evidenceLevel={`证据 ${evidenceLevel}`}
       controls={
         <>

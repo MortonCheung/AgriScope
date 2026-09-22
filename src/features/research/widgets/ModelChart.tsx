@@ -107,7 +107,7 @@ export function ModelChart({
       title="模型 R² 与 SHAP 贡献结构"
       note={note ?? 'R² 为样本外（验证集）统计表现：“只用天气”的模型并没有预测力，而“照抄昨日值”的持续性基线最强。'}
       provenance="model"
-      sources={[metricsSource.split('/').pop() ?? '', shapSource.split('/').pop() ?? '', baselineSource.split('/').pop() ?? '']}
+      lineage={[metricsSource.split('/').pop() ?? '', shapSource.split('/').pop() ?? '', baselineSource.split('/').pop() ?? '']}
       evidenceLevel={`证据 ${evidenceLevel}`}
       controls={
         <>

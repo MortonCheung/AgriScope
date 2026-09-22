@@ -151,7 +151,7 @@ export function Case2026Chart({
       title="2026 案例：事后均值与历史同期区间"
       note={note ?? '横轴为品种；阴影为历史同期事后均值的 95% 区间。案例均值落在区间内表示与历史同期不可区分；标红的品种落在区间外（多重比较下需谨慎解读）。'}
       provenance="observed"
-      sources={[summarySource.split('/').pop() ?? '', vsHistorySource.split('/').pop() ?? '', percropSource.split('/').pop() ?? '', weatherSource ? weatherSource.split('/').pop() ?? '' : ''].filter(Boolean)}
+      lineage={[summarySource.split('/').pop() ?? '', vsHistorySource.split('/').pop() ?? '', percropSource.split('/').pop() ?? '', weatherSource ? weatherSource.split('/').pop() ?? '' : ''].filter(Boolean)}
       evidenceLevel={`证据 ${evidenceLevel}`}
       controls={
         <>

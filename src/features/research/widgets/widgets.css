@@ -18,6 +18,11 @@
 .chart-frame__titles { display: flex; flex-direction: column; gap: 6px; }
 .chart-frame__title { margin: 0; color: var(--ag-ink); font-size: 1.05rem; font-weight: 600; }
 .chart-frame__note { margin: 0; max-width: 68ch; color: var(--ag-ink-muted); font-size: var(--ag-fs-small); line-height: 1.7; }
+
+/* 技术血缘只给开发模式看（V4 §五十四）：正式构建不会渲染这块 */
+.chart-frame__lineage { color: var(--ag-ink-muted); font-size: var(--ag-fs-micro); }
+.chart-frame__lineage summary { cursor: pointer; }
+.chart-frame__lineage p { margin: 6px 0 0; font-family: var(--ag-font-mono); }
 .chart-frame__tags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 .chart-frame__controls { display: flex; flex-direction: column; gap: var(--ag-space-3); padding-top: var(--ag-space-3); border-top: 1px solid var(--ag-rule-soft); }
 .chart-frame__body { display: flex; flex-direction: column; gap: var(--ag-space-4); }

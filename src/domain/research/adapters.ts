@@ -1,4 +1,5 @@
 import { parseEvidenceLevel, parseStatus } from './evidence';
+import { reportMissingSource, toLineage, toSourceRefs, type RawSourceDecl } from './sourceRef';
 import type {
   CityConclusion,
   CityResearchIndex,
@@ -70,6 +71,8 @@ export interface RawCityIndex {
   methodologyNotes: string[];
   redLines: string[];
   sourceOfTruth?: Record<string, string>;
+  /** 数据来源声明（V4 §五十三）。索引尚未提供时，正式界面如实显示「来源待补充」。 */
+  sources?: RawSourceDecl[];
   counters: { crops: number; topics: number; studies: number };
 }
 
@@ -93,11 +96,10 @@ function toFigures(point: RawTopic): ResearchFigure[] {
       src,
       caption: point.frontendText,
       /**
-       * 研究索引没有逐图声明来源，因此这里**不编造**（V3 §32）。
-       * 空字符串会让 SourceCitation 如实留空并标注「来源待补充」，
-       * 并记录到 docs/SOURCE_GAPS.md。
+       * 研究索引没有逐图声明数据来源，因此这里**不写来源**（V4 §五十三/§五十五）。
+       * 图中只保留技术血缘（文件名），且只在开发模式展示。
        */
-      source: '',
+      lineage: '',
       evidenceLevel: level,
     }));
 }
@@ -159,6 +161,23 @@ export function adaptCityIndex(raw: RawCityIndex, cityId: string): CityResearchI
   };
   const figures = [...new Set(points.flatMap((point) => point.figures.map((figure) => figure.src)))];
   const tables = [...new Set(points.flatMap((point) => point.tables.map((table) => table.src)))];
+
+  /**
+   * 来源契约（V4 §五十三–§五十五）：
+   * 索引声明了来源就转述；没声明就**保持为空**并只在开发期登记缺口，
+   * 绝不猜机构、绝不编链接，正式界面也不显示开发文案。
+   */
+  const sources = toSourceRefs(raw.sources);
+  if (sources.length === 0) {
+    reportMissingSource(cityId);
+    for (const point of points) {
+      reportMissingSource(`${cityId} / ${point.id}`);
+      for (const figure of point.figures) {
+        reportMissingSource(`${cityId} / ${point.id} / figure ${figure.src.split('/').pop()}`);
+      }
+    }
+  }
+
   return {
     cityId,
     cityName: raw.city,
@@ -179,8 +198,8 @@ export function adaptCityIndex(raw: RawCityIndex, cityId: string): CityResearchI
     counters: raw.counters,
     figures,
     tables,
-    /** 只转述研究工程声明的来源；没有声明就是空数组，绝不猜（V3 §32）。 */
-    provenance: Object.values(raw.sourceOfTruth ?? {}).filter(Boolean),
+    sources,
+    lineage: toLineage(raw.sourceOfTruth),
   };
 }
 

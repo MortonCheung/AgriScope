@@ -110,7 +110,7 @@ export function CropVolatilityChart({ source, evidenceLevel }: {
       title={`${VARIABLE_LABEL[variable]}波动的品种分层`}
       note={`按 ${METRIC_LABEL[metric]} 从大到小排列；该表为描述统计，不含任何显著性检验，排序只说明本观测窗口内的差异。`}
       provenance="observed"
-      sources={[source.split('/').pop() ?? '']}
+      lineage={[source.split('/').pop() ?? '']}
       evidenceLevel={`证据 ${evidenceLevel}`}
       controls={
         <>

@@ -78,7 +78,7 @@ export function ResilienceChart({
       title="暴雨后的恢复天数与删失"
       note={note ?? '恢复定义：去季节化 z 回到谷底的 90% 以上。T+42 未恢复记为删失。'}
       provenance="observed"
-      sources={[summarySource.split('/').pop() ?? '', eventCropSource.split('/').pop() ?? '']}
+      lineage={[summarySource.split('/').pop() ?? '', eventCropSource.split('/').pop() ?? '']}
       evidenceLevel={`证据 ${evidenceLevel}`}
       controls={
         <>

@@ -59,7 +59,7 @@ export function MonthlyIndexChart({ crops, evidenceLevel, sources }: { crops: st
       title="月份季节指数与季节强度"
       note={'指数以全年均值为 1；价格与成交量在“节奏”上存在错位。'}
       provenance="observed"
-      sources={[sources.price.split('/').pop() ?? '', sources.stl.split('/').pop() ?? '']}
+      lineage={[sources.price.split('/').pop() ?? '', sources.stl.split('/').pop() ?? '']}
       evidenceLevel={`证据 ${evidenceLevel}`}
       controls={
         <>

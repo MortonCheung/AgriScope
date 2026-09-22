@@ -29,3 +29,10 @@
   font-family: var(--ag-font-mono);
   font-size: 0.625rem;
 }
+
+/* 来源待补充：如实标注，不用开发文案（V4 §五十五） */
+.evidence-rail__pending { color: var(--ag-ink-muted); font-style: italic; }
+/* 技术血缘只在开发模式出现（V4 §五十四） */
+.evidence-rail__lineage { color: var(--ag-ink-muted); font-size: var(--ag-fs-micro); }
+.evidence-rail__lineage summary { cursor: pointer; }
+.evidence-rail__lineage p { margin: 6px 0 0; font-family: var(--ag-font-mono); }

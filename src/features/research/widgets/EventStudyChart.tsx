@@ -72,7 +72,7 @@ export function EventStudyChart({ curvesSource, summarySource, evidenceLevel, no
       title="事件研究：事件前后响应"
       note={note ?? '横轴为相对事件日的偏移天数；阴影为 95% 区间。区间跨过零线表示与"无变化"不可区分。'}
       provenance="observed"
-      sources={[curvesSource.split('/').pop() ?? '', summarySource.split('/').pop() ?? '']}
+      lineage={[curvesSource.split('/').pop() ?? '', summarySource.split('/').pop() ?? '']}
       evidenceLevel={`证据 ${evidenceLevel}`}
       controls={
         <>

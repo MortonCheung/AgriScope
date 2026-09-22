@@ -1,34 +1,45 @@
+import type { SourceRef } from '../domain/research/sourceRef';
 import './source-citation.css';
 
 export interface SourceCitationProps {
-  sources: string[];
-  prefix?: string;
+  sources: SourceRef[];
+  /**
+   * 无来源声明时的处理（V4 §五十五）：
+   *   - `none`：整块不渲染（图表页脚默认，避免每张图都重复一句提示）；
+   *   - `pending`：如实写「来源待补充」，用于页面级的来源区块。
+   */
+  fallback?: 'none' | 'pending';
   compact?: boolean;
 }
 
 /**
- * 统一数据来源（V3 §29–§40）。
+ * 统一数据来源（V4 §五十三–§五十五）。
  *
- * 来源不是装饰，但字号可以小；必须是 ink-muted 级别，不能用 ink-ghost；
- * 无 Badge、无 Pill、无圆角容器。
- * 找不到确切来源时不猜、不编：留空并写「来源待补充」，
- * 并记录到 docs/SOURCE_GAPS.md（§32）。
+ * 只渲染 `SourceRef`（机构 / 数据集 / 链接）；**技术血缘文件名绝不进这里**。
+ * 没有来源时不猜、不编网站，也不显示"来源未在当前前端索引中声明"这类开发文案。
  */
-export function SourceCitation({ sources, prefix = '数据来源', compact }: SourceCitationProps) {
-  const list = sources.map((source) => source.trim()).filter(Boolean);
-
-  if (list.length === 0) {
-    return (
-      <p className="source-citation" data-compact={compact || undefined} data-missing>
-        来源待补充
-      </p>
-    );
+export function SourceCitation({ sources, fallback = 'none', compact }: SourceCitationProps) {
+  if (sources.length === 0) {
+    if (fallback === 'none') return null;
+    return <p className="source-citation" data-compact={compact || undefined} data-missing>来源待补充</p>;
   }
 
   return (
-    <p className="source-citation" data-compact={compact || undefined}>
-      <span className="source-citation__prefix">{prefix}</span>
-      <span className="source-citation__list">{list.join('；')}</span>
-    </p>
+    <ul className="source-citation" data-compact={compact || undefined}>
+      {sources.map((source) => {
+        const label = source.dataset ?? source.title ?? source.organization;
+        return (
+          <li className="source-citation__item" key={`${source.organization}｜${label}`}>
+            <span className="source-citation__org">{source.organization}</span>
+            <span className="source-citation__dataset">
+              {source.url
+                ? <a className="source-citation__link" href={source.url} target="_blank" rel="noreferrer noopener">{label} ↗</a>
+                : label}
+            </span>
+            {source.accessedAt && <span className="source-citation__accessed">访问于 {source.accessedAt}</span>}
+          </li>
+        );
+      })}
+    </ul>
   );
 }

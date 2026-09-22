@@ -89,7 +89,7 @@ export function LagScanChart({ crops, response, scanSource, summarySource, evide
       title={`滞后 ${response === 'price' ? '价格' : '成交量'}响应`}
       note={note ?? '横轴为滞后天数，纵轴为每 1 个标准差的效应。虚线为零效应；红色标记为通过 FDR 校正的滞后天数。'}
       provenance="observed"
-      sources={[sourceLabel ?? scanSource.split('/').pop() ?? '', summarySource.split('/').pop() ?? '']}
+      lineage={[sourceLabel ?? scanSource.split('/').pop() ?? '', summarySource.split('/').pop() ?? '']}
       evidenceLevel={`证据 ${evidenceLevel}`}
       controls={
         <>

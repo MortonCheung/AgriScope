@@ -86,7 +86,7 @@ export function ThresholdChart({
       title="降雨风险阈值的非线性检验"
       note={note ?? '横轴为暴露变量（降水/气温/VPD/土壤水分），纵轴为自然样条对线性的 Wald-F 统计量。所有变量经 FDR 校正后均不显著，说明观测不到稳定的非线性拐点。'}
       provenance="observed"
-      sources={[gamSource.split('/').pop() ?? '', powerSource.split('/').pop() ?? '']}
+      lineage={[gamSource.split('/').pop() ?? '', powerSource.split('/').pop() ?? '']}
       evidenceLevel={`证据 ${evidenceLevel}`}
       controls={
         <>

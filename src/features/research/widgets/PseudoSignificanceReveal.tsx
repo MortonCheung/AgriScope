@@ -110,7 +110,7 @@ export function PseudoSignificanceReveal({ summarySource, response, keyNumbers, 
       title="深层土壤的伪显著诊断"
       note="按步骤推进：先看到显著性，再检查序列自相关，最后看带宽放大后的结果。"
       provenance="observed"
-      sources={[summarySource.split('/').pop() ?? '']}
+      lineage={[summarySource.split('/').pop() ?? '']}
       evidenceLevel={`证据 ${evidenceLevel}`}
       controls={
         <div className="selector">

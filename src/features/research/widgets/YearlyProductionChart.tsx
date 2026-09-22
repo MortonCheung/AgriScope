@@ -150,7 +150,7 @@ export function YearlyProductionChart({ panelSource, corrSource, evidenceLevel }
         title={`年度生产序列（${model?.activeCrop ?? ''}）`}
         note="年度生产数据不可插值为日度：这里只有年粒度，不与日度市场序列对齐；折线只在连续年份之间连接，跨年缺口处断开。"
         provenance="observed"
-        sources={[panelSource.split('/').pop() ?? '']}
+        lineage={[panelSource.split('/').pop() ?? '']}
         evidenceLevel={`证据 ${evidenceLevel}`}
         controls={
           <>
@@ -214,7 +214,7 @@ export function YearlyProductionChart({ panelSource, corrSource, evidenceLevel }
         title={`年度天气相关清单（${model?.activeCrop ?? ''}）`}
         note="n_years 均小于 8，interpretation_allowed 为假：这些相关系数只作方向性描述，不作统计推断。"
         provenance="observed"
-        sources={[corrSource.split('/').pop() ?? '']}
+        lineage={[corrSource.split('/').pop() ?? '']}
         evidenceLevel={`证据 ${evidenceLevel}`}
         controls={
           model ? (

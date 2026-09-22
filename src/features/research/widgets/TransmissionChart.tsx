@@ -97,7 +97,7 @@ export function TransmissionChart({
       title="天气 → 成交量 → 价格：两环链式传导"
       note={note ?? '第一环为逐品种「天气→成交量」系数，第二环与中介乘积来自汇总中介分析。两环的区间均跨零时，该尺度上观测不到稳定传导。'}
       provenance="observed"
-      sources={[stage1Source.split('/').pop() ?? '', stage2Source.split('/').pop() ?? '', mediationSource.split('/').pop() ?? '']}
+      lineage={[stage1Source.split('/').pop() ?? '', stage2Source.split('/').pop() ?? '', mediationSource.split('/').pop() ?? '']}
       evidenceLevel={`证据 ${evidenceLevel}`}
       controls={
         <>

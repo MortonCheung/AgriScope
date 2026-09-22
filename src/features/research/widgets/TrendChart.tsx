@@ -96,7 +96,7 @@ export function TrendChart({ sources, evidenceLevel }: {
       title={`${VARIABLE_LABEL[variable]}年化趋势（按品种）`}
       note={`横条为 log ${VARIABLE_LABEL[variable]} 对时间 t 的回归斜率年化后的百分比（HAC-14）；p<0.05 标注为显著，未达显著的品种以浅色显示。`}
       provenance="observed"
-      sources={[sources.price.split('/').pop() ?? '', sources.volume.split('/').pop() ?? '']}
+      lineage={[sources.price.split('/').pop() ?? '', sources.volume.split('/').pop() ?? '']}
       evidenceLevel={`证据 ${evidenceLevel}`}
       controls={
         <VariableSelector<Variable>

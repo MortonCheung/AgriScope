@@ -27,7 +27,7 @@ export function InteractiveResearchBody({ index, point }: { index: CityResearchI
               src={figure.src}
               alt={point.title}
               caption={figure.caption}
-              source={figure.source}
+              lineage={figure.lineage}
               evidenceLevel={figure.evidenceLevel}
             />
           ))}

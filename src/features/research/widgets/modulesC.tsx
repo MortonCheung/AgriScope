@@ -111,7 +111,7 @@ function PrecipWindowChart({
       title="降水窗口对比：累积脉冲与每毫米口径"
       note="每 1 SD 的峰值效应会随窗口变大，但那是因为累积量的标准差随窗口放大；换算成每毫米口径反而递减。全部窗口均无品种通过 FDR。"
       provenance="observed"
-      sources={[comparisonSource.split('/').pop() ?? '', summarySource.split('/').pop() ?? '']}
+      lineage={[comparisonSource.split('/').pop() ?? '', summarySource.split('/').pop() ?? '']}
       evidenceLevel={`证据 ${evidenceLevel}`}
       controls={
         <>

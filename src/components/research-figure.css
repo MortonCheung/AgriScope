@@ -18,6 +18,9 @@
 .research-figure__method { margin: 0; max-width: 78ch; color: var(--ag-ink-muted); font-size: var(--ag-fs-meta); line-height: 1.7; }
 .research-figure__meta { display: flex; align-items: center; gap: var(--ag-space-3); flex-wrap: wrap; }
 
+/* 技术血缘只在开发模式出现（V4 §五十四） */
+.research-figure__lineage { color: var(--ag-ink-muted); font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); }
+
 /* 点击图片本体放大（V4 §四十七）：不提供「放大」专门按钮 */
 .research-figure[data-clickable] .research-figure__media { cursor: zoom-in; }
 .research-figure[data-clickable][data-expanded] .research-figure__media { cursor: zoom-out; }

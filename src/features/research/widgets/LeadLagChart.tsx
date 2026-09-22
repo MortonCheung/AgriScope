@@ -53,7 +53,7 @@ export function LeadLagChart({ crops, source, evidenceLevel, note }: {
       title="量价同日的领先 / 滞后结构"
       note={note ?? 'k=0 为同日；负 k 表示成交量领先价格，正 k 表示价格领先成交量。剖面平坦意味着领先方向不可识别。'}
       provenance="observed"
-      sources={[source.split('/').pop() ?? '']}
+      lineage={[source.split('/').pop() ?? '']}
       evidenceLevel={`证据 ${evidenceLevel}`}
       controls={<CropSelector crops={crops} value={crop} onChange={setCrop} />}
     >

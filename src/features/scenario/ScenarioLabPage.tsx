@@ -210,7 +210,7 @@ function ScenarioLabBody({ tables }: { tables: ResearchTable[] }) {
             title="基准情景"
             note="反事实框架把实际发生的事件作为基准情景：严重度倍率 1.00 时缺口按定义为 0。观测侧证据见 2026 暴雨专题。"
             provenance="scenario"
-            sources={['counterfactual_severity.csv']}
+            lineage={['counterfactual_severity.csv']}
           >
             <dl className="readout-row">
               <div className="readout-row__item"><dt>严重度倍率</dt><dd className="ag-number">{(baseline?.severityMult ?? 1).toFixed(2)}</dd></div>
@@ -223,7 +223,7 @@ function ScenarioLabBody({ tables }: { tables: ResearchTable[] }) {
             title="无灾害情景"
             note={`去除 2026 事件的反事实世界（world0），缺口来自反事实缺口汇总表，窗口 ${daysClamped} 日（${daysClamped === 5 ? '过程内' : '过程后'}）。`}
             provenance="scenario"
-            sources={['counterfactual_gap_summary.csv']}
+            lineage={['counterfactual_gap_summary.csv']}
           >
             {noDisaster.length > 0 ? (
               <>
@@ -255,7 +255,7 @@ function ScenarioLabBody({ tables }: { tables: ResearchTable[] }) {
             title="冲击增强情景"
             note={`按事件强度倍率 ${effectiveSeverity.toFixed(2)} 缩放事件强度后的反事实缺口。目标变量：${TARGET_LABEL[target]}。`}
             provenance="scenario"
-            sources={['counterfactual_severity.csv']}
+            lineage={['counterfactual_severity.csv']}
           >
             <BarChart
               ariaLabel={`灾害增强世界中各品种${TARGET_LABEL[target]}缺口`}
@@ -273,7 +273,7 @@ function ScenarioLabBody({ tables }: { tables: ResearchTable[] }) {
             title="供应缓冲情景"
             note={`按缓冲比例 ${bufferClamped.toFixed(2)} 增强供应缓冲后，价格缺口的剩余部分。该表只有价格口径。`}
             provenance="scenario"
-            sources={['counterfactual_buffer.csv']}
+            lineage={['counterfactual_buffer.csv']}
           >
             <BarChart
               ariaLabel="供应缓冲增强世界中各品种价格缺口剩余"

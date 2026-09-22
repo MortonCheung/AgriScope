@@ -4,6 +4,7 @@ import { CHART_TOKENS } from '../../../design/chartTokens';
 import { MOTION_DURATION, MOTION_SPRING } from '../../../design/motion';
 import { SourceCitation } from '../../../components/SourceCitation';
 import { useFocusable } from '../../../components/useFocusable';
+import type { SourceRef } from '../../../domain/research/sourceRef';
 
 /**
  * 轻量 SVG 图表原语。全部支持真实交互（悬停读数 / 联动），
@@ -339,14 +340,17 @@ function ExpandIcon() {
   );
 }
 
-/** 图表外框：标题 / 说明 / 来源 / 证据等级 / 控件。可放大（V3 §26/§51/§52）。 */
-export function ChartFrame({ title, note, children, controls, provenance, sources, evidenceLevel, status, expandable = true }: {
+/** 图表外框：标题 / 说明 / 数据来源 / 证据等级 / 控件。可放大（V3 §26/§51/§52）。 */
+export function ChartFrame({ title, note, children, controls, provenance, sources = [], lineage = [], evidenceLevel, status, expandable = true }: {
   title: string;
   note?: string;
   children: ReactNode;
   controls?: ReactNode;
   provenance: 'observed' | 'model' | 'scenario';
-  sources: string[];
+  /** 正式界面展示的数据来源（V4 §五十三）。为空时**不渲染**来源块，避免每张图重复一句提示。 */
+  sources?: SourceRef[];
+  /** 技术血缘（artifact / figure 文件名）：只在开发模式出现，正式界面不展示（V4 §五十四）。 */
+  lineage?: string[];
   evidenceLevel?: string;
   status?: string;
   /** 默认允许放大（V3 §26） */
@@ -388,10 +392,18 @@ export function ChartFrame({ title, note, children, controls, provenance, source
         </header>
         {controls && <div className="chart-frame__controls">{controls}</div>}
         <div className="chart-frame__body">{children}</div>
-        {/* 来源统一走 SourceCitation（V3 §34）：找不到就如实说明，不编造（§32）；放大时一起进入 Focus（§58） */}
-        <footer className="chart-frame__foot">
-          <SourceCitation sources={sources} />
-        </footer>
+        {/* 来源：只展示 Source（V4 §五十三/§五十四）；技术血缘只在开发模式的技术折叠区 */}
+        {(sources.length > 0 || (import.meta.env.DEV && lineage.length > 0)) && (
+          <footer className="chart-frame__foot">
+            <SourceCitation sources={sources} />
+            {import.meta.env.DEV && lineage.length > 0 && (
+              <details className="chart-frame__lineage">
+                <summary>技术血缘（仅开发模式）</summary>
+                <p>{lineage.join('；')}</p>
+              </details>
+            )}
+          </footer>
+        )}
       </motion.section>
     </>
   );

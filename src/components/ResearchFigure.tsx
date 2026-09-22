@@ -5,13 +5,17 @@ import { SourceCitation } from './SourceCitation';
 import { useFocusable } from './useFocusable';
 import { MOTION_SPRING } from '../design/motion';
 import type { EvidenceLevelCode } from '../domain/research/types';
+import type { SourceRef } from '../domain/research/sourceRef';
 import './research-figure.css';
 
 export interface ResearchFigureProps {
   src: string;
   alt: string;
   caption?: string | null;
-  source?: string;
+  /** 正式界面展示的数据来源（V4 §五十三）；为空则不显示来源块。 */
+  sources?: SourceRef[];
+  /** 技术血缘（figure 文件名）：只在开发模式显示（V4 §五十四）。 */
+  lineage?: string;
   evidenceLevel?: EvidenceLevelCode;
   method?: string | null;
   /** 默认允许放大（V3 §26） */
@@ -28,7 +32,7 @@ export interface ResearchFigureProps {
  *   - 关闭只走 背景 / ESC / ×，绝不复用页面层级的 ‹（那属于 History 语义）；
  *   - 放大不重新 mount：当前元素进入 fixed focus，图片 / 标题 / 来源一起进入（§27/§58）。
  */
-export function ResearchFigure({ src, alt, caption, source, evidenceLevel, method, expandable = true, children }: ResearchFigureProps) {
+export function ResearchFigure({ src, alt, caption, sources = [], lineage, evidenceLevel, method, expandable = true, children }: ResearchFigureProps) {
   const reducedMotion = Boolean(useReducedMotion());
   const focus = useFocusable(expandable);
   const media = children ?? <img src={src} alt={alt} loading="lazy" decoding="async" />;
@@ -76,7 +80,8 @@ export function ResearchFigure({ src, alt, caption, source, evidenceLevel, metho
             </div>
           )}
           <div className="research-figure__meta">
-            <SourceCitation sources={source ? [source] : []} />
+            <SourceCitation sources={sources} />
+            {import.meta.env.DEV && lineage && <span className="research-figure__lineage">血缘 {lineage}</span>}
             {evidenceLevel && <EvidenceBadge level={evidenceLevel} compact />}
             {focus.canExpand && !clickable && (
               <button type="button" className="ag-focus-toggle" onClick={focus.toggle} aria-expanded={focus.expanded}>

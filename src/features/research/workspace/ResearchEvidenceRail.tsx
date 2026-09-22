@@ -1,22 +1,28 @@
 import { EVIDENCE_LEVELS } from '../../../domain/research';
 import type { ResearchPoint } from '../../../domain/research/types';
+import type { LineageRef, SourceRef } from '../../../domain/research/sourceRef';
+import { SourceCitation } from '../../../components/SourceCitation';
 import './evidence-rail.css';
 
 /**
- * 右栏研究信息（V3 §23/§37）。
+ * 右栏研究信息（V3 §23/§37；V4 §五十三–§五十五）。
  *
  * 不是第二篇文章，只给 3–5 项：证据等级、时间范围、来源、研究方法、关键限制。
- * 这里只转述研究工程在 index.json 里声明的来源（sourceOfTruth），前端不新增、不猜测（§31/§32）。
- * 每个具体数据块下方仍然必须有自己来源（§37）。
+ *
+ * 来源与血缘严格分开：
+ *   - 「来源」只展示 `SourceRef`（机构 / 数据集），索引没声明就如实写「来源待补充」；
+ *   - 技术血缘（.md / .csv 文件名）只在开发模式作为技术折叠区出现，正式界面不展示。
+ * 每个具体数据块下方仍然必须有自己的来源（§37）。
  */
-export function ResearchEvidenceRail({ point, timeWindow, provenance }: {
+export function ResearchEvidenceRail({ point, timeWindow, sources, lineage }: {
   point: ResearchPoint;
   timeWindow: string;
-  provenance: string[];
+  sources: SourceRef[];
+  lineage: LineageRef[];
 }) {
   const evidence = EVIDENCE_LEVELS[point.evidenceLevel];
-  const sources = provenance.filter(Boolean);
   const limit = point.limitations[0]?.text ?? null;
+  const artifacts = lineage.map((entry) => entry.artifact).filter((artifact): artifact is string => Boolean(artifact));
 
   return (
     <div className="evidence-rail">
@@ -35,7 +41,12 @@ export function ResearchEvidenceRail({ point, timeWindow, provenance }: {
         </div>
         <div className="evidence-rail__item">
           <dt>来源</dt>
-          <dd>{sources.length > 0 ? sources.join('；') : '来源待补充'}</dd>
+          <dd>
+            {/* §五十五：没有声明就不猜、不编，只如实标注待补充 */}
+            {sources.length > 0
+              ? <SourceCitation sources={sources} compact />
+              : <span className="evidence-rail__pending">来源待补充</span>}
+          </dd>
         </div>
         {point.method && (
           <div className="evidence-rail__item">
@@ -50,6 +61,13 @@ export function ResearchEvidenceRail({ point, timeWindow, provenance }: {
           </div>
         )}
       </dl>
+      {/* §五十四：技术血缘只在开发模式出现 */}
+      {import.meta.env.DEV && artifacts.length > 0 && (
+        <details className="evidence-rail__lineage">
+          <summary>技术血缘（仅开发模式）</summary>
+          <p>{artifacts.join('；')}</p>
+        </details>
+      )}
     </div>
   );
 }
