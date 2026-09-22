@@ -33,8 +33,14 @@
 /*
  * 正文切换（V4 §四十四）：只做 150ms 透明度 crossfade。
  * 不做位移、不做缩放、不换容器尺寸 —— 那些都会读成"页面刷新了一遍"。
+ *
+ * 注意：这里**不能**用 `animation-fill-mode: both`。动画填充会让这个包裹层
+ * 长期保留 opacity 动画，从而永久成为层叠上下文，把整个正文（含 Focus 放大层
+ * 的遮罩）压到 z-index 0 —— 结果 z-index 90 的遮罩会被 z-index 60 的浮层反压，
+ * 放大图片时页面文字还会叠在图片上。用 `backwards` 只在播放期间生效，
+ * 150ms 后该层不再是层叠上下文（V4 §四十八）。
  */
-.ag-crossfade { animation: ag-crossfade-in 150ms var(--ag-ease) both; }
+.ag-crossfade { animation: ag-crossfade-in 150ms var(--ag-ease) backwards; }
 @keyframes ag-crossfade-in {
   from { opacity: 0; }
   to { opacity: 1; }

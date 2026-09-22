@@ -1,4 +1,4 @@
-/* 图表 Focus / 放大（V3 §27/§28/§58）。
+/* 图表 Focus / 放大（V3 §27/§28/§58；V4 §四十八/§四十九）。
    当前元素自己进入 fixed focus 状态，不重新 mount 新图；
    来源（SourceCitation）在 DOM 内，因此会一起进入 Focus。 */
 
@@ -9,33 +9,91 @@
   background: color-mix(in srgb, var(--ag-ink) 22%, transparent);
 }
 
-.chart-frame[data-expanded],
-.research-figure[data-expanded] {
+/* 放大态：整块居中，尺寸受视口上限约束，绝不裁切（V4 §四十八）。
+   用 inset + margin:auto 居中，避免与 motion 的 layout transform 相互覆盖。
+   视口留白与自身 padding 都记成变量：图片上限必须把它们一起扣掉，
+   否则图片会撑出放大框、出现横向滚动条。 */
+.research-figure[data-expanded],
+.chart-frame[data-expanded] {
+  --ag-focus-gutter: 64px;
+  --ag-focus-vspace: 80px;
+  --ag-focus-pad: clamp(16px, 2.4vw, 32px);
   position: fixed;
   inset: 24px;
   z-index: 100;
-  margin: 0;
-  padding: clamp(20px, 3vw, 44px);
+  max-width: calc(100vw - var(--ag-focus-gutter));
+  max-height: calc(100vh - var(--ag-focus-vspace));
+  margin: auto;
   overflow: auto;
   overscroll-behavior: contain;
   border: 1px solid var(--ag-rule);
   background: var(--ag-paper-raised);
 }
-.chart-frame[data-expanded] { border-top: 1px solid var(--ag-rule); }
+
+/* 静态图：整块收缩到图片自身尺寸后居中；图片完整、标题与来源随之一并进入 */
+.research-figure[data-expanded] {
+  width: fit-content;
+  height: fit-content;
+  padding: var(--ag-focus-pad);
+}
+
+/* 交互图表：需要完整可用面积，保留整框铺开 */
+.chart-frame[data-expanded] {
+  --ag-focus-pad: clamp(20px, 3vw, 44px);
+  padding: var(--ag-focus-pad);
+  border-top: 1px solid var(--ag-rule);
+}
 .chart-frame[data-expanded] .chart-frame__body,
 .research-figure[data-expanded] .research-figure__media { min-height: 0; }
 
-/* 放大 / 关闭：普通文字按钮，不用胶囊（§5/§54） */
-.ag-focus-toggle {
-  padding: 0 2px;
+/* 放大后不得再裁切：去掉 overflow:hidden 与边框，按 contain 完整呈现（V4 §四十八） */
+.research-figure[data-expanded] .research-figure__media {
+  overflow: visible;
+  border: 0;
+  background: none;
+}
+.research-figure[data-expanded] .research-figure__media > img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: calc(100vw - var(--ag-focus-gutter) - 2 * var(--ag-focus-pad));
+  max-height: calc(100vh - var(--ag-focus-vspace) - 2 * var(--ag-focus-pad));
+  object-fit: contain;
+}
+
+/* 关闭：只用 背景 / ESC / ×（V4 §四十九）；‹ 属于页面 History，不得混用 */
+.ag-focus-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  z-index: 1;
+  padding: 0 4px;
   border: 0;
   border-radius: 0;
   background: none;
   color: var(--ag-ink-muted);
   font-size: var(--ag-fs-meta);
+  line-height: 1;
+  cursor: pointer;
+  transition: color var(--ag-dur-fast) var(--ag-ease);
+}
+.ag-focus-close:hover { color: var(--ag-ink); }
+
+/* 交互图表的展开入口：极小图标按钮，不占视觉（V4 §四十七） */
+.ag-focus-toggle {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 2px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--ag-ink-muted);
+  line-height: 1;
+  cursor: pointer;
   transition: color var(--ag-dur-fast) var(--ag-ease);
 }
 .ag-focus-toggle:hover { color: var(--ag-ink); }
+.ag-focus-toggle svg { display: block; }
 
 @media (prefers-reduced-motion: reduce) {
   .ag-focus-backdrop { background: color-mix(in srgb, var(--ag-ink) 30%, transparent); }

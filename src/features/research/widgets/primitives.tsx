@@ -262,6 +262,22 @@ export function BarChart({ data, valueFormat = (value: number) => value.toFixed(
   );
 }
 
+/**
+ * 交互图表的展开入口图标（V4 §四十七）。
+ * 图表本身的点击已经用于选点，所以这里保留一个极小图标入口，
+ * 而不是把「放大」做成一个专门按钮，也不是抢走图表点击。
+ */
+function ExpandIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="square" aria-hidden focusable="false">
+      <path d="M4 10V4h6" />
+      <path d="M20 14v6h-6" />
+      <path d="M4 4l7 7" />
+      <path d="M20 20l-7-7" />
+    </svg>
+  );
+}
+
 /** 图表外框：标题 / 说明 / 来源 / 证据等级 / 控件。可放大（V3 §26/§51/§52）。 */
 export function ChartFrame({ title, note, children, controls, provenance, sources, evidenceLevel, status, expandable = true }: {
   title: string;
@@ -288,6 +304,9 @@ export function ChartFrame({ title, note, children, controls, provenance, source
         data-expanded={focus.expanded || undefined}
         transition={reducedMotion ? { duration: 0 } : MOTION_SPRING.soft}
       >
+        {focus.expanded && (
+          <button type="button" className="ag-focus-close" onClick={focus.close} aria-label="关闭放大">×</button>
+        )}
         <header className="chart-frame__head">
           <div className="chart-frame__titles">
             <h3 className="chart-frame__title">{title}</h3>
@@ -299,9 +318,9 @@ export function ChartFrame({ title, note, children, controls, provenance, source
             </span>
             {evidenceLevel && <span className="ag-badge ag-badge--plain">{evidenceLevel}</span>}
             {status && <span className="ag-badge ag-badge--plain">{status}</span>}
-            {focus.canExpand && (
-              <button type="button" className="ag-focus-toggle" onClick={focus.toggle} aria-expanded={focus.expanded}>
-                {focus.expanded ? '×' : '放大'}
+            {focus.canExpand && !focus.expanded && (
+              <button type="button" className="ag-focus-toggle" onClick={focus.toggle} aria-label="放大图表">
+                <ExpandIcon />
               </button>
             )}
           </div>
