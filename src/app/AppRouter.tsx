@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react';
-import { createBrowserRouter, createRoutesFromElements, Navigate, Route, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, createRoutesFromElements, Navigate, Route, RouterProvider, useParams } from 'react-router-dom';
 import { AppShell } from './AppShell';
 import { ROUTES } from './routes';
 
@@ -9,26 +9,43 @@ const load = (loader: () => Promise<Record<string, unknown>>, name: string) => a
 };
 
 const openingPage = load(() => import('../features/opening/OpeningPage'), 'OpeningPage');
-const liaoningPage = load(() => import('../features/liaoning/LiaoningPage'), 'LiaoningPage');
-const citySpacePage = load(() => import('../features/city/CityResearchSpacePage'), 'CityResearchSpacePage');
-const researchPointPage = load(() => import('../features/research/ResearchPointPage'), 'ResearchPointPage');
-const cityReportPage = load(() => import('../features/report/CityReportPage'), 'CityReportPage');
-const provinceResearchPage = load(() => import('../features/research/ProvinceResearchPage'), 'ProvinceResearchPage');
-const rainstormPage = load(() => import('../features/rainstorm/RainstormPage'), 'RainstormPage');
-const scenarioLabPage = load(() => import('../features/scenario/ScenarioLabPage'), 'ScenarioLabPage');
+const researchHomePage = load(() => import('../features/liaoning/LiaoningPage'), 'LiaoningPage');
+const cityResearchPage = load(() => import('../features/research-v2/CityResearchPage'), 'CityResearchPage');
+const researchNotePage = load(() => import('../features/research-v2/ResearchNotePage'), 'ResearchNotePage');
+const reportsIndexPage = load(() => import('../features/report/ReportsIndexPage'), 'ReportsIndexPage');
+const cityReportPage = load(() => import('../features/report/ReportPage'), 'ReportPage');
+const scenarioPage = load(() => import('../features/scenario/ScenarioPage'), 'ScenarioPage');
 const aboutPage = load(() => import('../features/about/AboutPage'), 'AboutPage');
 
+/** 旧 `/cities/:cityId/report` → `/reports/:cityId`（V5 §22：不要 404）。 */
+function LegacyCityReportRedirect() {
+  const { cityId } = useParams();
+  return <Navigate to={ROUTES.cityReport(cityId ?? 'shenyang')} replace />;
+}
+
+/**
+ * 路由总表（V5 §21/§22）。
+ *
+ * 正式入口：/ · /liaoning · /cities/:cityId · /cities/:cityId/research/:articleId ·
+ *           /reports · /reports/:cityId · /scenario-lab · /about
+ * 旧路径一律 Redirect，不保留独立产品入口。
+ */
 const router = createBrowserRouter(createRoutesFromElements(
   <Route element={<AppShell />} hydrateFallbackElement={<div aria-hidden />}>
     <Route path={ROUTES.root} lazy={openingPage} />
-    <Route path={ROUTES.liaoning} lazy={liaoningPage} />
-    <Route path="/cities/:cityId" lazy={citySpacePage} />
-    <Route path="/cities/:cityId/research/:researchId" lazy={researchPointPage} />
-    <Route path="/cities/:cityId/report" lazy={cityReportPage} />
-    <Route path={ROUTES.provinceResearch} lazy={provinceResearchPage} />
-    <Route path={ROUTES.rainstorm} lazy={rainstormPage} />
-    <Route path={ROUTES.scenarioLab} lazy={scenarioLabPage} />
+    <Route path={ROUTES.researchHome} lazy={researchHomePage} />
+    <Route path="/cities/:cityId" lazy={cityResearchPage} />
+    <Route path="/cities/:cityId/research/:articleId" lazy={researchNotePage} />
+    <Route path={ROUTES.reports} lazy={reportsIndexPage} />
+    <Route path="/reports/:cityId" lazy={cityReportPage} />
+    <Route path={ROUTES.scenario} lazy={scenarioPage} />
     <Route path={ROUTES.about} lazy={aboutPage} />
+
+    {/* 旧路径 → 新路径 */}
+    <Route path={ROUTES.legacyProvinceResearch} element={<Navigate to={ROUTES.reports} replace />} />
+    <Route path="/cities/:cityId/report" element={<LegacyCityReportRedirect />} />
+    <Route path={ROUTES.legacyRainstorm} element={<Navigate to={ROUTES.scenario} replace />} />
+
     <Route path="*" element={<Navigate to={ROUTES.root} replace />} />
   </Route>,
 ));

@@ -1,0 +1,9 @@
+/* 推演（V5 §43–§48）：情景表 + 明确的门控说明，不用仪表盘。 */
+.scenario { display: flex; flex-direction: column; gap: clamp(28px, 4vw, 56px); width: min(100%, 1000px); margin: 0 auto; padding: clamp(96px, 12vh, 160px) clamp(28px, 6vw, 72px) clamp(72px, 12vh, 140px); }
+.scenario__head { display: flex; flex-direction: column; gap: var(--ag-space-4); padding-bottom: var(--ag-space-6); border-bottom: 1px solid var(--ag-rule); }
+.scenario__title { margin: 0; font-family: var(--ag-font-display); font-size: clamp(1.9rem, 3.6vw, 2.7rem); font-weight: 400; }
+.scenario__lead { margin: 0; max-width: 62ch; color: var(--ag-ink-soft); font-size: var(--ag-fs-body); line-height: 1.8; }
+.scenario__caveat { margin: 0; max-width: 62ch; color: var(--ag-ink); font-size: var(--ag-fs-small); line-height: 1.75; }
+.scenario__note { margin: 0; max-width: 68ch; color: var(--ag-ink-muted); font-size: var(--ag-fs-micro); line-height: 1.7; }
+.scenario__block { display: flex; flex-direction: column; gap: var(--ag-space-4); }
+.scenario__pending { margin: 0; color: var(--ag-ink-muted); font-size: var(--ag-fs-small); }

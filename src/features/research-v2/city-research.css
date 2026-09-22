@@ -1,0 +1,35 @@
+/* 城市研究页（V5 §25/§26）：城市名 + 研究树，没有别的入口。 */
+.city-research {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(24px, 4vw, 56px);
+  width: min(100%, 960px);
+  margin: 0 auto;
+  padding: clamp(96px, 12vh, 160px) clamp(28px, 6vw, 72px) clamp(72px, 12vh, 140px);
+}
+.city-research__head { display: flex; align-items: baseline; gap: var(--ag-space-4); }
+.city-research__city { margin: 0; font-family: var(--ag-font-display); font-size: clamp(2.2rem, 4.4vw, 3.4rem); font-weight: 400; letter-spacing: 0.02em; }
+
+.city-research__list { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--ag-rule); }
+.city-research__item { border-bottom: 1px solid var(--ag-rule-soft); }
+.city-research__link {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 2px var(--ag-space-4);
+  width: 100%;
+  padding: var(--ag-space-5) 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: color var(--ag-dur-fast) var(--ag-ease);
+}
+.city-research__id { color: var(--ag-ink-muted); font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); letter-spacing: 0.06em; padding-top: 0.35em; }
+.city-research__title { color: var(--ag-ink); font-size: clamp(1.05rem, 1.5vw, 1.2rem); line-height: 1.4; }
+.city-research__summary { grid-column: 2; max-width: 62ch; color: var(--ag-ink-muted); font-size: var(--ag-fs-small); line-height: 1.75; }
+.city-research__link:hover .city-research__title { color: var(--ag-accent-ink, var(--ag-ink)); text-decoration: underline; text-underline-offset: 5px; text-decoration-thickness: 1px; }
+.city-research__link:focus-visible { outline: 2px solid var(--ag-ink); outline-offset: 2px; }
+.city-research__empty { margin: 0; color: var(--ag-ink-muted); font-size: var(--ag-fs-body); }

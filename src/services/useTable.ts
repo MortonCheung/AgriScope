@@ -1,7 +1,7 @@
-import { ResearchRepository } from '../../../services/ResearchRepository';
-import type { AsyncState } from '../../../services/useCityResearch';
-import { useCachedResource } from '../../../services/useCachedResource';
-import type { ResearchTable } from '../../../domain/research/types';
+import { ResearchRepository } from './ResearchRepository';
+import type { AsyncState } from './useCityResearch';
+import { useCachedResource } from './useCachedResource';
+import type { ResearchTable } from '../domain/research/types';
 
 /**
  * 按需读取一张研究表；同一路径全应用共享缓存。

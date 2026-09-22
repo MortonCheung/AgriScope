@@ -1,0 +1,10 @@
+/* 来源区块（V5 §51）：编辑式列表，不用卡片、不用徽标堆叠。 */
+.research-sources { display: flex; flex-direction: column; gap: var(--ag-space-3); }
+.research-sources__title { margin: 0; color: var(--ag-ink-muted); font-size: var(--ag-fs-micro); font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
+.research-sources__list { display: flex; flex-direction: column; gap: var(--ag-space-2); margin: 0; padding: 0; list-style: none; }
+.research-sources__item { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px var(--ag-space-3); color: var(--ag-ink-soft); font-size: var(--ag-fs-small); line-height: 1.7; }
+.research-sources__publisher { color: var(--ag-ink); }
+.research-sources__dataset a { color: var(--ag-ink-soft); border-bottom: 1px solid var(--ag-rule); }
+.research-sources__dataset a:hover { color: var(--ag-ink); border-bottom-color: var(--ag-ink); }
+.research-sources__period, .research-sources__grade { color: var(--ag-ink-muted); font-size: var(--ag-fs-micro); }
+.research-sources__pending { margin: 0; color: var(--ag-ink-muted); font-size: var(--ag-fs-small); font-style: italic; }

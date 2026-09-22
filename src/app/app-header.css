@@ -25,7 +25,9 @@
 .ag-header__lead { display: flex; align-items: center; gap: var(--ag-space-5); min-width: 0; }
 
 .ag-header__brand { display: inline-flex; align-items: baseline; gap: 10px; color: var(--ag-ink); }
-.ag-header__brand-cn { font-family: var(--ag-font-display); font-size: 1.05rem; letter-spacing: 0.02em; }
+/* Logo slot（V5 §19）：正式品牌 Logo 未指定，这里只**预留位形**：
+   不自行设计图形，也不放占位方块，避免出现一个假的品牌符号。 */
+.ag-header__brand-mark { width: 18px; height: 18px; flex: none; }
 .ag-header__brand-en {
   color: var(--ag-ink-faint);
   font-family: var(--ag-font-mono);

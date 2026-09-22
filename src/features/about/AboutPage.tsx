@@ -1,84 +1,130 @@
-import { ROUTES } from '../../app/routes';
-import { Link } from 'react-router-dom';
-import { EVIDENCE_LEVELS, STATUS_META, EVIDENCE_ORDER, STATUS_ORDER } from '../../domain/research';
+import { REPORT_ARTICLE_ID } from '../../domain/research/v2/repository';
+import { METRIC_DEFINITIONS, REANALYSIS_NOTE, VOLUME_UNIT_NOTE } from '../../domain/research/v2/metrics';
+import { MarkdownBlocks } from '../research-v2/ResearchNotePage';
+import { renderInline } from '../research-v2/markdown';
+import { useV2Article, useV2References, useV2Sources } from '../research-v2/useV2';
 import './about.css';
 
-/** 关于：研究定位、证据等级规范、方法学红线。 */
+/**
+ * 关于（V5 §49–§53）：把「关于」做成**研究溯源索引**，而不是开发说明。
+ *
+ * 结构：项目 / 数据来源 / 研究与知识来源 / 指标定义 / 证据规范 / 研究边界 / 求索研究系列。
+ * §51：数据来源从研究侧真正的 source table 读，不显示 `weather.csv` 这类文件。
+ * §52：知识来源只展示研究侧已给引用的条目；没有引用的记入 KNOWLEDGE_SOURCE_GAPS，不编 DOI。
+ * §82：数据来源与指标定义都带 anchor，文章里可以跳过来。
+ */
 export function AboutPage() {
+  const sourcesState = useV2Sources();
+  const referencesState = useV2References();
+  const reportState = useV2Article(REPORT_ARTICLE_ID);
+
+  const sources = sourcesState.status === 'ready' ? sourcesState.data : [];
+  /** references.md 的「一、数据来源」与上面的表格重复，只取「二、参考文献」。 */
+  const knowledge = referencesState.status === 'ready'
+    ? referencesState.data.split('## 二、参考文献')[1]?.trim() ?? referencesState.data
+    : '';
+  const limitations = reportState.status === 'ready' ? reportState.data.limitations : [];
+
   return (
-    <main className="ag-page ag-container ag-container--prose about-page">
-      <header className="ag-stack ag-stack--tight">
-        <h1 className="ag-hero">AgriScope 穹衡</h1>
-        <p className="ag-lead">
-          面向辽宁农业场景的交互式数据研究产品。核心问题：不同城市的农业与市场如何面对气象风险？
-          哪些风险会真正传导、哪些会被市场系统吸收？改变天气条件或市场缓冲条件，可能发生什么？
+    <main className="about">
+      <header className="about__head">
+        <h1 className="about__title">关于 AgriScope</h1>
+        <p className="about__lead">
+          辽宁省农业气候风险研究：以沈阳为主的农产品批发市场与农业生产在气象条件下的表现，
+          以及极端天气事件的市场响应。研究成果以「研究」逐条呈现，以「报告」整体成文，以「推演」做平行情景实验。
         </p>
       </header>
 
-      <section className="ag-section">
-        <div className="ag-section__head">
-          <h2 className="ag-section-title">证据等级</h2>
-          <p className="ag-body">证据等级描述结论的来源强度。阴性结果不降级，它同样是正式结论。</p>
-        </div>
-        <dl className="about-evidence">
-          {EVIDENCE_ORDER.map((code) => (
-            <div key={code} className="about-evidence__item">
-              <dt><span className="about-evidence__code">{code === 'Unsupported' ? '—' : code}</span>{EVIDENCE_LEVELS[code].label}</dt>
-              <dd>{EVIDENCE_LEVELS[code].description}</dd>
+      <section className="about__section" id="project">
+        <h2 className="about__section-title">项目</h2>
+        <p className="about__paragraph">
+          研究覆盖 10 种主要蔬菜的日度批发价格与成交量、ERA5 再分析气象与分层土壤条件、
+          算法派生的极端天气事件，以及 8 个农业区县的生产数据。
+          所有数字来自研究工程重新执行的分析，并逐条对应到可追溯的来源。
+        </p>
+        <p className="about__paragraph">
+          <strong>读数口径</strong>：{VOLUME_UNIT_NOTE} {REANALYSIS_NOTE}
+        </p>
+      </section>
+
+      <section className="about__section" id="data">
+        <h2 className="about__section-title">数据来源</h2>
+        {sources.length === 0
+          ? <p className="about__paragraph">来源待补充</p>
+          : (
+            <ul className="about__source-list">
+              {sources.map((source) => (
+                <li className="about__source" id={`data-${source.source_id.toLowerCase()}`} key={source.source_id}>
+                  <span className="about__source-publisher">{source.publisher}</span>
+                  <span className="about__source-dataset">
+                    {source.url ? <a href={source.url} target="_blank" rel="noreferrer noopener">{source.title} ↗</a> : source.title}
+                  </span>
+                  <span className="about__source-meta">
+                    {source.data_period}{source.source_grade ? ` · 等级 ${source.source_grade}` : ''}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+      </section>
+
+      <section className="about__section" id="knowledge">
+        <h2 className="about__section-title">研究与知识来源</h2>
+        <p className="about__paragraph">
+          方法、统计工具与参考框架的出处，逐条来自研究工程自己的参考文献清单（含已核验 DOI）。
+        </p>
+        {knowledge ? <MarkdownBlocks source={knowledge} /> : <p className="about__paragraph">来源待补充</p>}
+      </section>
+
+      <section className="about__section" id="metrics">
+        <h2 className="about__section-title">指标定义</h2>
+        <dl className="about__metrics">
+          {METRIC_DEFINITIONS.map((metric) => (
+            <div className="about__metric" id={`metric-${metric.id}`} key={metric.id}>
+              <dt>
+                {metric.label}
+                {metric.unit && <span className="about__metric-unit">（{metric.unit}）</span>}
+              </dt>
+              {metric.definition && <dd>{metric.definition}</dd>}
+              {metric.formula && <dd className="about__metric-formula">计算：{metric.formula}</dd>}
+              {metric.interpretation && <dd className="about__metric-note">解读：{metric.interpretation}</dd>}
+              {metric.sourceIds && metric.sourceIds.length > 0 && (
+                <dd className="about__metric-source">出处：{metric.sourceIds.join('、')}</dd>
+              )}
             </div>
           ))}
         </dl>
+        <p className="about__paragraph about__paragraph--muted">
+          仅收录研究正文与方法中明确写过的定义；尚未给出定义的自定义指标记入 METRIC_GAPS，前端不自行补写。
+        </p>
       </section>
 
-      <section className="ag-section">
-        <div className="ag-section__head">
-          <h2 className="ag-section-title">研究状态</h2>
-        </div>
-        <dl className="about-evidence">
-          {STATUS_ORDER.map((status) => (
-            <div key={status} className="about-evidence__item">
-              <dt>{STATUS_META[status].label}</dt>
-              <dd>{status === 'null_result' ? '统计上未发现稳定关系；这是对该数据集的正式结论，不等于"证明不存在"。' : '按研究索引中记录的原始状态呈现。'}</dd>
-            </div>
-          ))}
-        </dl>
-      </section>
-
-      <section className="ag-section">
-        <div className="ag-section__head">
-          <h2 className="ag-section-title">方法学红线</h2>
-          <p className="ag-body">
-            限制已写入内容层规范，前端不得为了页面效果突破：
-          </p>
-        </div>
-        <ul className="about-redlines">
-          {[
-            '不把相关性写成因果',
-            '不把再分析天气写成沈阳气象站实测',
-            '不把成交量写成吨（单位未知，仅相对口径）',
-            '不把年度生产数据插值成日度生产数据',
-            '不把批发市场蔬菜直接称作沈阳本地产蔬菜',
-            '不把算法派生极端天气与官方事件混为一谈',
-            '不把实验性情景实验写成可靠预测',
-            '不删除阴性结果',
-            '不为了页面好看制造不存在的数值',
-          ].map((line) => <li key={line}>{line}</li>)}
+      <section className="about__section" id="evidence">
+        <h2 className="about__section-title">证据规范</h2>
+        <ul className="about__list">
+          <li>气象为 ERA5 再分析，<strong>不写作</strong>气象站实测。</li>
+          <li>成交量原始单位未公开，所有成交量结论只作相对口径，<strong>禁止</strong>换算为吨或箱。</li>
+          <li>算法派生的极端天气事件与官方通报**分开**呈现，不互相替代。</li>
+          <li>阴性结果与不显著结果按原样保留，不做筛选展示。</li>
+          <li>平行情景实验未达到可靠反事实预测门槛，只作情景演示，不作预测。</li>
         </ul>
       </section>
 
-      <section className="ag-section">
-        <div className="ag-section__head">
-          <h2 className="ag-section-title">内容来源</h2>
-          <p className="ag-body">
-            前端只读取研究成果，不修改研究结论。数据采集与模型工程位于外部研究工程，
-            前端通过同步脚本把研究索引、选定图表与研究正文接入本站。
-          </p>
-        </div>
-        <div className="ag-row">
-          <Link className="ag-button" to={ROUTES.city('shenyang')}>沈阳研究</Link>
-          <Link className="ag-button" to={ROUTES.liaoning}>辽宁</Link>
-        </div>
-      </section>
+      {limitations.length > 0 && (
+        <section className="about__section" id="boundary">
+          <h2 className="about__section-title">研究边界</h2>
+          <ul className="about__list">
+            {limitations.slice(0, 6).map((item, index) => (
+              <li key={index}>{renderInline(item, `bound-${index}`)}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <footer className="about__foot">
+        <span>求索研究系列 / 001</span>
+        <span>AgriScope</span>
+      </footer>
     </main>
   );
 }

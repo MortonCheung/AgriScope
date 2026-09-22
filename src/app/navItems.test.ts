@@ -1,42 +1,55 @@
 import { describe, expect, it } from 'vitest';
-import { ROUTES } from './routes';
 import { NAV_ITEMS, activeNavItem } from './navItems';
 
-describe('顶部导航 Active 语义（V4 §十四）', () => {
-  it.each([
-    [ROUTES.liaoning, '辽宁'],
-    [ROUTES.city('shenyang'), '辽宁'],
-    [ROUTES.city('tieling'), '辽宁'],
-    [ROUTES.report('shenyang'), '辽宁'],
-    [ROUTES.research('shenyang', 'C5'), '辽宁'],
-    [ROUTES.rainstorm, '辽宁'],
-    [ROUTES.provinceResearch, '研究'],
-    [`${ROUTES.provinceResearch}/anything`, '研究'],
-    [ROUTES.scenarioLab, '情景实验'],
-    [ROUTES.about, '关于'],
-  ])('%s 高亮「%s」', (path, label) => {
-    expect(activeNavItem(path)?.label).toBe(label);
+const labelOf = (path: string) => activeNavItem(path)?.label ?? null;
+
+const PATHS = [
+  '/liaoning',
+  '/cities/shenyang',
+  '/cities/shenyang/research/A03',
+  '/reports',
+  '/reports/shenyang',
+  '/reports/liaoning',
+  '/scenario-lab',
+  '/about',
+  '/',
+];
+
+describe('导航 Active 语义（V5 §23）', () => {
+  it('研究高亮 /liaoning 与 /cities/*', () => {
+    expect(labelOf('/liaoning')).toBe('研究');
+    expect(labelOf('/cities/shenyang')).toBe('研究');
+    expect(labelOf('/cities/shenyang/research/A03')).toBe('研究');
   });
 
-  it('「研究」不再被单城市报告点亮（V4 §十三：研究 ≠ 沈阳报告）', () => {
-    expect(activeNavItem(ROUTES.report('shenyang'))?.label).not.toBe('研究');
-    expect(activeNavItem(ROUTES.research('shenyang', 'C5'))?.label).not.toBe('研究');
+  it('报告高亮 /reports 与 /reports/*', () => {
+    expect(labelOf('/reports')).toBe('报告');
+    expect(labelOf('/reports/shenyang')).toBe('报告');
+    expect(labelOf('/reports/liaoning')).toBe('报告');
   });
 
-  it('一条路径最多点亮一项，且首页不点亮任何项', () => {
-    const paths = [
-      ROUTES.liaoning,
-      ROUTES.city('shenyang'),
-      ROUTES.report('shenyang'),
-      ROUTES.research('shenyang', 'C5'),
-      ROUTES.rainstorm,
-      ROUTES.provinceResearch,
-      ROUTES.scenarioLab,
-      ROUTES.about,
-    ];
-    for (const path of paths) {
-      expect(NAV_ITEMS.filter((item) => item.match(path))).toHaveLength(1);
+  it('报告前缀不得抢走城市路径的高亮（§23 明确除外）', () => {
+    expect(labelOf('/cities/shenyang')).not.toBe('报告');
+    expect(labelOf('/cities/shenyang/research/A03')).not.toBe('报告');
+  });
+
+  it('推演与关于各自独立', () => {
+    expect(labelOf('/scenario-lab')).toBe('推演');
+    expect(labelOf('/about')).toBe('关于');
+  });
+
+  it('首页不高亮任何一项', () => {
+    expect(labelOf('/')).toBeNull();
+  });
+
+  it('任一时刻最多只有一项高亮', () => {
+    for (const path of PATHS) {
+      const matched = NAV_ITEMS.filter((item) => item.match(path));
+      expect(matched.length, path).toBeLessThanOrEqual(1);
     }
-    expect(activeNavItem(ROUTES.root)).toBeNull();
+  });
+
+  it('导航顺序冻结为 研究 / 报告 / 推演 / 关于', () => {
+    expect(NAV_ITEMS.map((item) => item.label)).toEqual(['研究', '报告', '推演', '关于']);
   });
 });
