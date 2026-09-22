@@ -51,7 +51,5 @@
   .ag-header__nav { gap: 14px; }
   .ag-header__link { font-size: 0.8125rem; }
   .ag-header__brand-en { display: none; }
-  /* 窄屏优先保住导航，返回只留箭头 */
   .ag-header__lead { gap: var(--ag-space-4); }
-  .ag-back__label { display: none; }
 }

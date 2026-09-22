@@ -1,0 +1,31 @@
+/* 页面导航控件（V4 §十二）：无背景、无圆角、无边框框体，细线图标。 */
+.ag-nav-controls { display: inline-flex; align-items: center; gap: 2px; }
+
+.ag-nav-control {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--ag-ink-muted);
+  transition:
+    opacity var(--ag-dur-fast) var(--ag-ease),
+    color var(--ag-dur-fast) var(--ag-ease),
+    transform var(--ag-dur-fast) var(--ag-ease);
+}
+
+.ag-nav-control:hover:not(:disabled) { color: var(--ag-ink); }
+.ag-nav-control[data-dir='back']:hover:not(:disabled) { transform: translateX(-2px); }
+.ag-nav-control[data-dir='forward']:hover:not(:disabled) { transform: translateX(2px); }
+.ag-nav-control[data-dir='up']:hover:not(:disabled) { transform: translateY(-2px); }
+
+/* 禁用：变淡但图标仍在，不突然消失（V4 §十二） */
+.ag-nav-control:disabled { opacity: 0.24; pointer-events: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ag-nav-control { transition: opacity var(--ag-dur-fast) var(--ag-ease); }
+  .ag-nav-control:hover:not(:disabled) { transform: none; }
+}

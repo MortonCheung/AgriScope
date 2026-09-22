@@ -30,7 +30,9 @@ interface AppHistoryValue {
   direction: RouteDirection;
   action: NavigationType;
   canGoBack: boolean;
+  canGoForward: boolean;
   goBack: (fallback: AppBackTarget) => void;
+  goForward: () => void;
 }
 
 const AppHistoryContext = createContext<AppHistoryValue | null>(null);
@@ -120,12 +122,30 @@ export function AppHistoryProvider({ children }: { children: ReactNode }) {
     else navigate(fallback.to, { replace: true, state: fallback.state, viewTransition: true });
   }, [navigate]);
 
+  /**
+   * 前进（V4 §九）：与浏览器 / 资源管理器一致。
+   * 前进栈由 recordAppLocation 维护——主动 PUSH 时会 slice(0, index+1)，
+   * 因此"从沈阳又进了 G3"之后，原来的 forward 栈自动废弃。
+   */
+  const goForward = useCallback(() => {
+    const current = state.current!;
+    if (current.index >= current.entries.length - 1) return;
+    current.pending = {
+      sourceKey: current.entries[current.index].key,
+      action: NavigationType.Pop,
+      direction: 1,
+    };
+    navigate(1);
+  }, [navigate]);
+
   const value = useMemo<AppHistoryValue>(() => ({
     direction: snapshot.direction,
     action: snapshot.action,
     canGoBack: snapshot.index > 0,
+    canGoForward: snapshot.index < snapshot.entries.length - 1,
     goBack,
-  }), [goBack, snapshot.action, snapshot.direction, snapshot.index]);
+    goForward,
+  }), [goBack, goForward, snapshot.action, snapshot.direction, snapshot.entries.length, snapshot.index]);
 
   return <AppHistoryContext.Provider value={value}>{children}</AppHistoryContext.Provider>;
 }

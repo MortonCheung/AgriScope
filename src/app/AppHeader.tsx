@@ -1,8 +1,8 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, useReducedMotion } from 'motion/react';
-import { ROUTES, structuralParent } from './routes';
+import { ROUTES } from './routes';
 import { AnimatedUnderline } from '../components/AnimatedUnderline';
-import { AppBackButton } from '../components/AppBackButton';
+import { NavigationControls } from '../components/NavigationControls';
 import { MOTION_DURATION } from '../design/motion';
 import './app-header.css';
 
@@ -47,15 +47,12 @@ export function AppHeader() {
     >
       <div className="ag-header__inner">
         <div className="ag-header__lead">
-          {/* 返回（V3 §10/§11）：优先回真实上一站，URL 直达时走结构 fallback。
-              Opening 页不出现。 */}
-          {!concealed && (
-            <AppBackButton fallback={{ to: structuralParent(pathname) ?? ROUTES.root }} label="返回" />
-          )}
           <NavLink to={ROUTES.root} className="ag-header__brand" aria-label="AgriScope 穹衡">
             <span className="ag-header__brand-cn">穹衡</span>
             <span className="ag-header__brand-en">AgriScope</span>
           </NavLink>
+          {/* ‹ › ^（V4 §八/§九/§十）：始终渲染，保证 Header 的 DOM 在路由切换时稳定 */}
+          <NavigationControls />
         </div>
         <nav className="ag-header__nav" aria-label="主导航">
           {NAV_ITEMS.map((item) => {
