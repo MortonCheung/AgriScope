@@ -12,25 +12,19 @@ export function LiaoningPage() {
   const hoveredCityId = useSpatialStageStore((state) => state.hoveredCityId);
   const setHoveredCity = useSpatialStageStore((state) => state.setHoveredCity);
   const studyCities = STUDY_CITY_IDS.map((id) => LIAONING_CITIES.find((city) => city.id === id)!).filter(Boolean);
-  const researchReady = LIAONING_CITIES.filter((city) => city.hasResearch);
 
   return (
     <main className="liaoning-page">
       <div className="liaoning-page__panel">
-        <p className="ag-label">省域空间</p>
-        <h1 className="ag-hero liaoning-page__title">{LIAONING.name}</h1>
-        <p className="liaoning-page__lead">
-          {LIAONING_CITIES.length} 个地级市 · 计划研究 {studyCities.length} 城 · 当前已开放研究 {researchReady.length} 城。
-        </p>
+        <h1 className="ag-hero liaoning-page__title">{LIAONING.shortName}</h1>
         <p className="liaoning-page__hint">
           {hoveredCityId
-            ? (LIAONING_CITIES.find((city) => city.id === hoveredCityId)?.hasResearch ? '点击进入研究空间' : '该城市研究尚未开放')
+            ? (LIAONING_CITIES.find((city) => city.id === hoveredCityId)?.hasResearch ? '点击进入研究' : '研究尚未接入')
             : '拖动可旋转沙盘，点击城市进入'}
         </p>
       </div>
 
       <div className="liaoning-page__index" role="group" aria-label="研究城市入口">
-        <p className="ag-label">研究城市</p>
         {/*
           进入城市只在"项"上设置，清空只在"整个列表"离开时做。
           否则鼠标穿过两项之间的间隙会先经过 null，地图会闪一下。
@@ -47,7 +41,6 @@ export function LiaoningPage() {
                 onClick={() => selectCity(city.id)}
               >
                 <span className="liaoning-city__name">{city.shortName}</span>
-                <span className="liaoning-city__state">{city.hasResearch ? '研究已开放' : '待开放'}</span>
               </button>
             </li>
           ))}
