@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { motion, useReducedMotion } from 'motion/react';
 import { ROUTES } from '../../app/routes';
@@ -8,8 +8,8 @@ import { KeyNumberGrid } from '../../components/KeyNumberGrid';
 import { SourceCitation } from '../../components/SourceCitation';
 import { MOTION_SPRING } from '../../design/motion';
 import type { CityResearchIndex, ResearchArticle, ResearchPoint } from '../../domain/research/types';
-import { ResearchRepository } from '../../services/ResearchRepository';
 import { useCityResearch, type AsyncState } from '../../services/useCityResearch';
+import { useResearchArticle } from './data/useResearchArticle';
 import { ResearchArticleView } from './ResearchArticleView';
 import { InteractiveResearchBody } from './widgets/ResearchModules';
 import { ResearchTreeNav } from './tree/ResearchTreeNav';
@@ -21,20 +21,6 @@ import { useResearchContextStore } from '../insight/researchContextStore';
 import './research-point.css';
 
 type Mode = 'interactive' | 'article';
-
-function useArticle(cityId: string, articleId: string | null): AsyncState<ResearchArticle> {
-  const [state, setState] = useState<AsyncState<ResearchArticle>>({ status: 'loading' });
-  useEffect(() => {
-    if (!articleId) { setState({ status: 'error', error: '该研究点没有可用的研究原文' }); return; }
-    let alive = true;
-    setState({ status: 'loading' });
-    ResearchRepository.getResearchArticle(cityId, articleId)
-      .then((data) => { if (alive) setState({ status: 'ready', data }); })
-      .catch((error: unknown) => { if (alive) setState({ status: 'error', error: error instanceof Error ? error.message : '加载失败' }); });
-    return () => { alive = false; };
-  }, [cityId, articleId]);
-  return state;
-}
 
 /**
  * 交互研究页（V3 §47/§49/§50）。
@@ -57,7 +43,7 @@ export function ResearchPointPage() {
   };
 
   const point = state.status === 'ready' ? state.data.points.find((entry) => entry.id === researchId) ?? null : null;
-  const article = useArticle(cityId, point?.articleId ?? null);
+  const article = useResearchArticle(cityId, point?.articleId ?? null);
 
   if (state.status === 'ready' && !point) {
     return (
@@ -177,13 +163,16 @@ function ResearchPointBody({ index, point, mode, onModeChange, articleState }: {
             </section>
           )}
 
-          {mode === 'interactive' ? (
-            <InteractiveResearchBody index={index} point={point} />
-          ) : (
-            <AsyncBoundary state={articleState}>
-              {(article) => <ResearchArticleView article={article} />}
-            </AsyncBoundary>
-          )}
+          {/* 正文切换只做 150ms crossfade：不位移、不缩放、不换骨架（V4 §四十四） */}
+          <div className="ag-crossfade" key={`${point.id}:${mode}`}>
+            {mode === 'interactive' ? (
+              <InteractiveResearchBody index={index} point={point} />
+            ) : (
+              <AsyncBoundary state={articleState}>
+                {(article) => <ResearchArticleView article={article} />}
+              </AsyncBoundary>
+            )}
+          </div>
         </ResearchWorkspace>
       </div>
 
