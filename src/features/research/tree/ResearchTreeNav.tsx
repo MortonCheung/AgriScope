@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 import type { CityResearchIndex } from '../../../domain/research/types';
+import { MOTION_SPRING } from '../../../design/motion';
 import { useResearchTreeStore } from './researchTreeStore';
 import './research-tree.css';
 
@@ -25,6 +27,7 @@ export function ResearchTreeNav({ index, onSelectPoint }: {
   const setTreeScrollTop = useResearchTreeStore((state) => state.setTreeScrollTop);
 
   const navRef = useRef<HTMLElement>(null);
+  const reducedMotion = Boolean(useReducedMotion());
   /** 只在进入时恢复一次滚动位置，之后由用户滚动接管（§60）。 */
   const restored = useRef(false);
 
@@ -78,6 +81,15 @@ export function ResearchTreeNav({ index, onSelectPoint }: {
                       aria-current={point.id === selectedPointId ? 'true' : undefined}
                       onClick={() => { selectPoint(point.id); onSelectPoint(point.id); }}
                     >
+                      {/* 选中态是共享背景块：在目录项之间滑动，而不是旧块消失、新块出现（§45） */}
+                      {point.id === selectedPointId && (
+                        <motion.span
+                          layoutId="reader-selection"
+                          className="research-tree__selection"
+                          aria-hidden
+                          transition={reducedMotion ? { duration: 0 } : MOTION_SPRING.soft}
+                        />
+                      )}
                       <span className="research-tree__point-id">{point.id}</span>
                       <span className="research-tree__point-title">{point.title}</span>
                     </button>
