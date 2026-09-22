@@ -128,7 +128,7 @@ export function CropVolatilityChart({ source, evidenceLevel }: {
         </>
       }
     >
-      <AsyncBoundary state={state} label="正在读取描述统计表">
+      <AsyncBoundary state={state}>
         {() => (model && model.entries.length > 0 ? (
           <>
             <BarChart
@@ -141,7 +141,6 @@ export function CropVolatilityChart({ source, evidenceLevel }: {
             />
 
             <div className="selector">
-              <span className="selector__label">悬停 / 点选品种查看完整读数</span>
               <ul className="compare-list" aria-label="逐品种波动读数">
                 {model.entries.map((entry) => (
                   <li
@@ -170,7 +169,7 @@ export function CropVolatilityChart({ source, evidenceLevel }: {
                 <div className="readout-row__item"><dt>最小 – 最大</dt><dd className="ag-number">{formatRange(focus.min, focus.max)}</dd></div>
                 <div className="readout-row__item"><dt>交易日样本</dt><dd className="ag-number">{focus.nObs ?? '—'}</dd></div>
               </div>
-            ) : <p className="ag-meta">悬停或点选任一品种，查看该品种的完整描述统计。</p>}
+            ) : <p className="ag-meta">尚未选择品种。</p>}
 
             <p className="chart-frame__note">
               波动存在清晰的品类分层，但品种间异质性缺乏统计支持：本表只给出描述统计，未做检验，不能据此给出作物风险分组。

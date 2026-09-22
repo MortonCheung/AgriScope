@@ -108,7 +108,7 @@ export function ThresholdChart({
         </>
       }
     >
-      <AsyncBoundary state={state} label="正在读取非线性检验表">
+      <AsyncBoundary state={state}>
         {() => (model && model.rows.length > 0 ? (
           <>
             <BarChart

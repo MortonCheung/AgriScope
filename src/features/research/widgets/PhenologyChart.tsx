@@ -147,7 +147,7 @@ export function PhenologyChart({ source, evidenceLevel }: {
         </>
       }
     >
-      <AsyncBoundary state={state} label="正在读取物候交互表">
+      <AsyncBoundary state={state}>
         {() => (model && model.list.length > 0 ? (
           <>
             <BarChart
@@ -159,7 +159,6 @@ export function PhenologyChart({ source, evidenceLevel }: {
             />
 
             <div className="selector">
-              <span className="selector__label">悬停 / 点选品种查看完整读数</span>
               <ul className="compare-list" aria-label="逐品种交互系数读数">
                 {model.list.map((row) => (
                   <li
@@ -189,7 +188,7 @@ export function PhenologyChart({ source, evidenceLevel }: {
                 <div className="readout-row__item"><dt>R²</dt><dd className="ag-number">{formatNumber(focus.r2, 4)}</dd></div>
                 <div className="readout-row__item"><dt>样本</dt><dd className="ag-number">{focus.n ?? '—'}</dd></div>
               </div>
-            ) : <p className="ag-meta">悬停或点选任一品种，查看交互项系数、p 值与 FDR。</p>}
+            ) : <p className="ag-meta">尚未选择品种。</p>}
 
             <div className="readout-row">
               <div className="readout-row__item"><dt>FDR 显著计数（本口径）</dt><dd className="ag-number">{model.familySig} / {model.family.length}</dd></div>

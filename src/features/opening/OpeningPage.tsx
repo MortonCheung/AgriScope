@@ -57,7 +57,7 @@ export function OpeningPage() {
         <motion.p className="opening__subtitle" {...rise(0.16)}>辽宁农业气候风险分析与情景研究</motion.p>
         <motion.div className="opening__action" {...rise(0.3)}>
           <Link className="ag-button ag-button--primary opening__cta" to={ROUTES.liaoning}>
-            查看辽宁
+            进入
           </Link>
         </motion.div>
       </div>

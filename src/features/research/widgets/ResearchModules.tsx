@@ -29,7 +29,6 @@ export function InteractiveResearchBody({ index, point }: { index: CityResearchI
               caption={figure.caption}
               source={figure.source}
               evidenceLevel={figure.evidenceLevel}
-              interactiveState="static"
             />
           ))}
         </div>
@@ -40,20 +39,16 @@ export function InteractiveResearchBody({ index, point }: { index: CityResearchI
           <span className="research-modules__step-index">02</span>
           <h2 className="research-modules__step-title">分析</h2>
         </header>
-        <p className="research-modules__step-note">
-          下面的图表数据来自本研究点真正使用的研究表；可以切换品种、变量或滞后窗，重新观察研究过程。
-        </p>
         {modules.length > 0 ? modules.map((module) => (
           <div key={module.id} className="research-modules__module">{module.node}</div>
         )) : fallback ? (
           <TableExplorer
             title="支撑该研究点的研究表"
-            note="该研究点的图形交互正在接入，先以真实研究表呈现过程数据。"
             source={fallback}
             evidenceLevel={point.evidenceLevel}
           />
         ) : (
-          <p className="ag-meta">交互数据正在接入。</p>
+          <p className="ag-meta">该研究点没有登记可交互的研究表。</p>
         )}
       </section>
 

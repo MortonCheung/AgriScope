@@ -125,7 +125,7 @@ function PrecipWindowChart({
         </>
       }
     >
-      <AsyncBoundary state={state} label="正在读取降水窗口研究表">
+      <AsyncBoundary state={state}>
         {() => (model && model.summaryRows.length > 0 ? (
           <>
             <p className="ag-label">各窗口平均峰值效应（每 1 SD）</p>

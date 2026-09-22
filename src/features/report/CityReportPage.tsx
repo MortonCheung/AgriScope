@@ -39,7 +39,7 @@ export function CityReportPage() {
 
   return (
     <main className="ag-page ag-container ag-container--prose city-report">
-      <AsyncBoundary state={state} label="正在读取城市研究索引">
+      <AsyncBoundary state={state}>
         {(index) => <CityReportBody index={index} />}
       </AsyncBoundary>
     </main>
@@ -88,7 +88,6 @@ function CityReportBody({ index }: { index: CityResearchIndex }) {
         <div className="ag-section__head">
           <p className="ag-label">整城问答</p>
           <h2 className="ag-section-title" id="city-report-questions">{conclusion.title}</h2>
-          <p className="ag-body">以下 {conclusion.questions.length} 问来自城市研究索引，问题与答案原文呈现，未做改写。</p>
         </div>
         <div className="city-report__qa-list">
           {conclusion.questions.map((qa, position) => (
@@ -114,7 +113,6 @@ function CityReportBody({ index }: { index: CityResearchIndex }) {
         <div className="ag-section__head">
           <p className="ag-label">专题结构</p>
           <h2 className="ag-section-title" id="city-report-topics">{index.topics.length} 个专题 · {index.points.length} 个研究点</h2>
-          <p className="ag-body">进入研究点可查看交互研究表与原始图表。</p>
         </div>
         <div className="city-report__topics">
           {index.topics.map((topic) => (
@@ -148,7 +146,6 @@ function CityReportBody({ index }: { index: CityResearchIndex }) {
         <div className="ag-section__head">
           <p className="ag-label">方法与红线</p>
           <h2 className="ag-section-title" id="city-report-method">研究限制与方法学红线</h2>
-          <p className="ag-body">以下条目来自城市研究索引，是本研究在方法层面的自我约束与不可逾越的红线。</p>
         </div>
         <div className="ag-grid ag-grid--2 city-report__method">
           <div>

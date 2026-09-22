@@ -13,8 +13,6 @@ export interface ResearchFigureProps {
   caption?: string | null;
   source?: string;
   evidenceLevel?: EvidenceLevelCode;
-  /** 该图暂时无法交互时，如实标注前端开发状态，而不是改写研究结论 */
-  interactiveState?: 'interactive' | 'static' | 'pending';
   method?: string | null;
   /** 默认允许放大（V3 §26） */
   expandable?: boolean;
@@ -26,7 +24,7 @@ export interface ResearchFigureProps {
  * 来源统一走 SourceCitation（V3 §35）；不再用"静态图"这种 Pill 长期占据视觉（§35）。
  * 放大不重新 mount：当前元素进入 fixed focus 状态，来源随之一起进入（§27/§58）。
  */
-export function ResearchFigure({ src, alt, caption, source, evidenceLevel, interactiveState = 'static', method, expandable = true, children }: ResearchFigureProps) {
+export function ResearchFigure({ src, alt, caption, source, evidenceLevel, method, expandable = true, children }: ResearchFigureProps) {
   const reducedMotion = Boolean(useReducedMotion());
   const focus = useFocusable(expandable);
 
@@ -36,7 +34,6 @@ export function ResearchFigure({ src, alt, caption, source, evidenceLevel, inter
       <motion.figure
         layout
         className="research-figure"
-        data-state={interactiveState}
         data-expanded={focus.expanded || undefined}
         transition={reducedMotion ? { duration: 0 } : MOTION_SPRING.soft}
       >
@@ -52,7 +49,6 @@ export function ResearchFigure({ src, alt, caption, source, evidenceLevel, inter
           )}
           <div className="research-figure__meta">
             <SourceCitation sources={source ? [source] : []} />
-            {interactiveState === 'pending' && <span className="ag-badge ag-badge--plain">交互数据正在接入</span>}
             {evidenceLevel && <EvidenceBadge level={evidenceLevel} compact />}
             {focus.canExpand && (
               <button type="button" className="ag-focus-toggle" onClick={focus.toggle} aria-expanded={focus.expanded}>

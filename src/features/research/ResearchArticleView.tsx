@@ -100,15 +100,11 @@ function renderLines(lines: string[], keyPrefix: string): ReactNode[] {
   return nodes;
 }
 
-export function ResearchArticleView({ article, onOpenInteractive }: { article: ResearchArticle; onOpenInteractive?: () => void }) {
+export function ResearchArticleView({ article }: { article: ResearchArticle }) {
   return (
     <article className="research-article">
       <header className="research-article__head">
-        <p className="ag-label">研究原文</p>
         <h2 className="ag-section-title">{article.title}</h2>
-        {onOpenInteractive && (
-          <button type="button" className="article-backlink" onClick={onOpenInteractive}>打开交互图 →</button>
-        )}
       </header>
       <div className="research-article__body">
         {article.blocks.map((block, index) => (

@@ -57,7 +57,7 @@ export function MonthlyIndexChart({ crops, evidenceLevel, sources }: { crops: st
   return (
     <ChartFrame
       title="月份季节指数与季节强度"
-      note={'指数以全年均值为 1。切换品种与变量，可以看到价格与成交量在“节奏”上的错位。'}
+      note={'指数以全年均值为 1；价格与成交量在“节奏”上存在错位。'}
       provenance="observed"
       sources={[sources.price.split('/').pop() ?? '', sources.stl.split('/').pop() ?? '']}
       evidenceLevel={`证据 ${evidenceLevel}`}
@@ -72,7 +72,7 @@ export function MonthlyIndexChart({ crops, evidenceLevel, sources }: { crops: st
         </>
       }
     >
-      <AsyncBoundary state={state} label="正在读取季节指数">
+      <AsyncBoundary state={state}>
         {() => (
           <>
             <svg viewBox="0 0 760 300" className="chart__svg" role="img" aria-label={`${crop}${variable === 'price' ? '价格' : '成交量'}月度季节指数`}>

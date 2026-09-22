@@ -1,8 +1,6 @@
 /* 原文模式：研究出版物排版，无卡片 */
 .research-article { display: flex; flex-direction: column; gap: var(--ag-space-6); }
 .research-article__head { display: flex; flex-direction: column; gap: var(--ag-space-3); padding-bottom: var(--ag-space-5); border-bottom: 1px solid var(--ag-rule); }
-.article-backlink { align-self: flex-start; color: var(--ag-ink-muted); font-size: var(--ag-fs-small); }
-.article-backlink:hover { color: var(--ag-ink); }
 
 .research-article__body { display: flex; flex-direction: column; gap: var(--ag-space-6); max-width: 82ch; }
 .article-block { display: flex; flex-direction: column; gap: var(--ag-space-4); }

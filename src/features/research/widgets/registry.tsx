@@ -51,7 +51,6 @@ function seasonalModules(ctx: ModuleContext): ResearchModuleRender[] {
   const modules: ResearchModuleRender[] = [{
     id: 'seasonal-index',
     title: '月份节奏：价格与成交量',
-    note: '同一个研究页面上切换品种与变量，不需要为每个品种复制十个页面。',
     node: <MonthlyIndexChart crops={ctx.crops} evidenceLevel={ctx.point.evidenceLevel} sources={{ price, volume, stl }} />,
   }];
   const annual = ctx.table('annual_market_by_year.csv');
@@ -72,7 +71,7 @@ function weatherLagModules(ctx: ModuleContext, response: 'price' | 'volume'): Re
   return [{
     id: `weather-lag-${response}`,
     title: '逐变量滞后扫描',
-    note: '把 15 个天气变量逐一和响应配对；切换暴露变量查看每一条滞后曲线。',
+    note: '15 个天气变量与响应逐一配对的滞后曲线。',
     node: <LagScanChart crops={ctx.crops} response={response} scanSource={scan} summarySource={summary} evidenceLevel={ctx.point.evidenceLevel} />,
   }];
 }
@@ -123,7 +122,7 @@ function baseModules(ctx: ModuleContext): ResearchModuleRender[] {
       return [{
         id: 'threshold-bins',
         title: '阈值分箱与样本量',
-        note: '在真实分箱之间切换，同时看到样本数量与结果稳定性。',
+        note: '研究表的真实分箱，以及各档样本数量与结果稳定性。',
         node: (
           <ThresholdBinExplorer
             binsSource={bins}
@@ -140,7 +139,7 @@ function baseModules(ctx: ModuleContext): ResearchModuleRender[] {
       return source ? [{
         id: 'g7-timeline',
         title: '事件窗口时间线',
-        note: '拖动时间或播放，逐日重看 2026 事件窗口的气象序列。',
+        note: '2026 事件窗口的逐日气象序列。',
         node: <WeatherTimelineExplorer source={source} evidenceLevel={ctx.point.evidenceLevel} />,
       }] : [];
     }

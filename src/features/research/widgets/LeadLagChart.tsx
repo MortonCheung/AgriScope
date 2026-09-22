@@ -57,7 +57,7 @@ export function LeadLagChart({ crops, source, evidenceLevel, note }: {
       evidenceLevel={`证据 ${evidenceLevel}`}
       controls={<CropSelector crops={crops} value={crop} onChange={setCrop} />}
     >
-      <AsyncBoundary state={state} label="正在读取量价领先滞后表">
+      <AsyncBoundary state={state}>
         {() => (rows.length > 0 ? (
           <>
             <XYChart

@@ -93,7 +93,7 @@ export function EventStudyChart({ curvesSource, summarySource, evidenceLevel, no
         </>
       }
     >
-      <AsyncBoundary state={state} label="正在读取事件研究曲线">
+      <AsyncBoundary state={state}>
         {() => (model && model.rows.length > 0 ? (
           <>
             <XYChart

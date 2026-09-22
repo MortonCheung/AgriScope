@@ -27,7 +27,7 @@ function g1(ctx: ModuleContext): ResearchModuleRender[] {
   return [{
     id: 'g1-trend',
     title: '逐年趋势：逐品种年化斜率',
-    note: '切换价格与成交量，逐个品种核对斜率、区间与显著性。',
+    note: '价格与成交量的逐品种斜率、区间与显著性。',
     node: <TrendChart sources={{ price, volume }} evidenceLevel={ctx.point.evidenceLevel} />,
   }];
 }
@@ -49,7 +49,7 @@ function g8(ctx: ModuleContext): ResearchModuleRender[] {
   return [{
     id: 'g8-volatility',
     title: '品种波动分层',
-    note: '在年化波动率与变异系数之间切换，查看逐品种描述统计。',
+    note: '年化波动率与变异系数的逐品种描述统计。',
     node: <CropVolatilityChart source={source} evidenceLevel={ctx.point.evidenceLevel} />,
   }];
 }
@@ -60,7 +60,7 @@ function g9(ctx: ModuleContext): ResearchModuleRender[] {
   return [{
     id: 'g9-phenology',
     title: '物候窗口交互系数',
-    note: '切换口径、天气变量与响应变量，核对交互项与 FDR 显著计数。',
+    note: '不同口径与天气变量下的交互项与 FDR 显著计数。',
     node: <PhenologyChart source={source} evidenceLevel={ctx.point.evidenceLevel} />,
   }];
 }

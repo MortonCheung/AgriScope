@@ -71,7 +71,7 @@ export function ResearchPointPage() {
 
   return (
     <main className="research-point">
-      <AsyncBoundary state={state} label="正在读取研究索引">
+      <AsyncBoundary state={state}>
         {(index) => (point ? (
           <ResearchPointBody index={index} point={point} mode={mode} onModeChange={setMode} articleState={article} />
         ) : null)}
@@ -151,7 +151,7 @@ function ResearchPointBody({ index, point, mode, onModeChange, articleState }: {
                 transition={reducedMotion ? { duration: 0 } : MOTION_SPRING.soft}
               />
             )}
-            <span className="research-point__tab-label">查看原文</span>
+            <span className="research-point__tab-label">原文</span>
           </button>
         </div>
       </header>
@@ -178,17 +178,10 @@ function ResearchPointBody({ index, point, mode, onModeChange, articleState }: {
           )}
 
           {mode === 'interactive' ? (
-            <>
-              <InteractiveResearchBody index={index} point={point} />
-              {point.articleId && (
-                <button type="button" className="research-point__backlink" onClick={() => onModeChange('article')}>
-                  查看研究依据 →
-                </button>
-              )}
-            </>
+            <InteractiveResearchBody index={index} point={point} />
           ) : (
-            <AsyncBoundary state={articleState} label="正在读取研究原文">
-              {(article) => <ResearchArticleView article={article} onOpenInteractive={() => onModeChange('interactive')} />}
+            <AsyncBoundary state={articleState}>
+              {(article) => <ResearchArticleView article={article} />}
             </AsyncBoundary>
           )}
         </ResearchWorkspace>

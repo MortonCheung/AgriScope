@@ -128,9 +128,9 @@ export function RainstormPage() {
 
   return (
     <main className="rainstorm">
-      <AsyncBoundary state={indexState} label="正在读取城市研究索引">
+      <AsyncBoundary state={indexState}>
         {(index) => (
-          <AsyncBoundary state={tableState} label="正在读取 2026 案例研究表">
+          <AsyncBoundary state={tableState}>
             {(tables) => <RainstormBody index={index} tables={tables} />}
           </AsyncBoundary>
         )}
@@ -179,14 +179,14 @@ function RainstormBody({ index, tables }: { index: CityResearchIndex; tables: Re
         <h1 className="ag-hero rainstorm__title">2026 沈阳强降雨</h1>
         <p className="rainstorm__question">为什么一次显著天气冲击没有转化为同等量级的市场冲击？</p>
         <p className="ag-lead">
-          由 {index.cityName} {index.window} 日度面板得出。以下 8 步中，事实来自 case2026 系列研究表，
+          由 {index.cityName} {index.window} 日度面板得出。8 个步骤中，事实来自 case2026 系列研究表，
           假说与因果解释严格分开，不作为结论。
         </p>
         <div className="ag-row rainstorm__lede">
           <span className="ag-badge ag-badge--plain">观测峰值 {peak.label} · {peak.precip} mm</span>
           <span className="ag-badge ag-badge--plain">证据等级 A 表示直接观测</span>
           <Link className="ag-button" to={ROUTES.report('shenyang')}>城市综合研究</Link>
-          <Link className="ag-button" to={ROUTES.scenarioLab}>平行世界实验室</Link>
+          <Link className="ag-button" to={ROUTES.scenarioLab}>情景实验</Link>
         </div>
       </header>
 
@@ -305,7 +305,7 @@ function buildSteps({ index, days, summary, vsHistory, rank, analog }: StepInput
       id: 'event',
       index: '01',
       title: '事件发生',
-      lead: '2026-07 中旬，一次强降雨过程落在沈阳。以下为事件窗口的逐日与 3 日累计降水。',
+      lead: '2026-07 中旬，一次强降雨过程落在沈阳。事件窗口的逐日与 3 日累计降水。',
       provenance: 'observed',
       provenanceLabel: '实际观测',
       facts: [
@@ -327,7 +327,7 @@ function buildSteps({ index, days, summary, vsHistory, rank, analog }: StepInput
             series={precipSeries}
             markers={peakMarker}
             zeroLine
-            yLabel="悬停查看某日降水"
+            yLabel="某日降水"
             xTickFormat={(value) => `${value}日`}
             yTickFormat={(value) => value.toFixed(0)}
             describeX={describe}
@@ -361,7 +361,7 @@ function buildSteps({ index, days, summary, vsHistory, rank, analog }: StepInput
             bands={baselineBand}
             markers={peakMarker}
             zeroLine
-            yLabel="悬停查看某日降水与基线"
+            yLabel="某日降水与基线"
             xTickFormat={(value) => `${value}日`}
             yTickFormat={(value) => value.toFixed(0)}
             describeX={describe}
@@ -380,7 +380,7 @@ function buildSteps({ index, days, summary, vsHistory, rank, analog }: StepInput
         analog ? `类比日汇总（${numeric(analog.n_analog_days) ?? 0} 天匹配）：表层（0–7cm）土壤含水量 ${numeric(analog.soil_moisture_0_7)?.toFixed(3) ?? '—'} m³/m³` : '',
         analog ? `类比日匹配口径：降水 ${numeric(analog.precipitation)?.toFixed(1) ?? '—'} mm、最高气温 ${numeric(analog.temp_max)?.toFixed(1) ?? '—'} ℃、VPD ${numeric(analog.vpd)?.toFixed(2) ?? '—'}` : '',
         pointG4?.frontendText
-          ? `${pointG4.frontendText}${soilAr1 && soilNeff ? `（研究索引记录：${soilAr1.label} = ${soilAr1.value}，${soilNeff.label} ≈ ${soilNeff.value}）` : ''}`
+          ? `${pointG4.frontendText}${soilAr1 && soilNeff ? `（${soilAr1.label} = ${soilAr1.value}，${soilNeff.label} ≈ ${soilNeff.value}）` : ''}`
           : '',
       ].filter(Boolean),
       media: (
@@ -395,7 +395,7 @@ function buildSteps({ index, days, summary, vsHistory, rank, analog }: StepInput
             ariaLabel="2026 年 7 月事件窗口近地面相对湿度"
             series={humiditySeries}
             markers={peakMarker}
-            yLabel="悬停查看湿度与 VPD"
+            yLabel="湿度与 VPD"
             xTickFormat={(value) => `${value}日`}
             yTickFormat={(value) => `${value.toFixed(0)}%`}
             describeX={(value) => {
@@ -538,7 +538,7 @@ function buildSteps({ index, days, summary, vsHistory, rank, analog }: StepInput
       media: (
         <ChartFrame
           title="传导链第一阶段（F30）"
-          note="研究工程输出的传导第一阶段热力图，用于查看各品种 × 窗口的估计结果。"
+          note="传导链第一阶段：各品种 × 窗口的估计结果。"
           provenance="model"
           sources={['transmission_stage1.csv', 'F30_transmission_stage1_heatmap.png']}
           evidenceLevel="证据 B"

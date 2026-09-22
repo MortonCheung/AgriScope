@@ -42,7 +42,7 @@ export function TableExplorer({ title, note, source, provenance = 'observed', ev
   return (
     <ChartFrame
       title={title}
-      note={note ?? '这是研究过程中实际使用的数据表，前端只做展示与排序。'}
+      note={note ?? '研究过程中实际使用的数据表。'}
       provenance={provenance}
       sources={[source.split('/').pop() ?? '']}
       evidenceLevel={evidenceLevel ? `证据 ${evidenceLevel}` : undefined}
@@ -63,7 +63,7 @@ export function TableExplorer({ title, note, source, provenance = 'observed', ev
         </div>
       }
     >
-      <AsyncBoundary state={state} label="正在读取研究表">
+      <AsyncBoundary state={state}>
         {() => (view ? (
           <div className="table-explorer">
             <div className="table-explorer__bar">

@@ -76,7 +76,7 @@ export function ResilienceChart({
   return (
     <ChartFrame
       title="暴雨后的恢复天数与删失"
-      note={note ?? '恢复定义：去季节化 z 回到谷底的 90% 以上。T+42 未恢复记为删失。切换变量查看价格与成交量的恢复量级。'}
+      note={note ?? '恢复定义：去季节化 z 回到谷底的 90% 以上。T+42 未恢复记为删失。'}
       provenance="observed"
       sources={[summarySource.split('/').pop() ?? '', eventCropSource.split('/').pop() ?? '']}
       evidenceLevel={`证据 ${evidenceLevel}`}
@@ -92,7 +92,7 @@ export function ResilienceChart({
         </>
       }
     >
-      <AsyncBoundary state={state} label="正在读取市场韧性研究表">
+      <AsyncBoundary state={state}>
         {() => (model && model.summaryRows.length > 0 ? (
           <>
             <p className="ag-label">各品种恢复天数（{response === 'price' ? '价格' : '成交量'}）</p>

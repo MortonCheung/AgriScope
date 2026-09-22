@@ -106,7 +106,7 @@ export function TrendChart({ sources, evidenceLevel }: {
         />
       }
     >
-      <AsyncBoundary state={state} label="正在读取趋势表">
+      <AsyncBoundary state={state}>
         {() => (model && model.rows.length > 0 ? (
           <>
             <BarChart
@@ -118,7 +118,6 @@ export function TrendChart({ sources, evidenceLevel }: {
             />
 
             <div className="selector">
-              <span className="selector__label">悬停 / 点选品种查看完整读数</span>
               <ul className="compare-list" aria-label="逐品种年化趋势读数">
                 {model.rows.map((row) => (
                   <li

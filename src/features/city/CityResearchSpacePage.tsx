@@ -60,7 +60,7 @@ export function CityResearchSpacePage() {
 
   return (
     <main className="city-space" aria-label={`${city.name}研究空间`}>
-      <AsyncBoundary state={state} label="正在读取城市研究索引">
+      <AsyncBoundary state={state}>
         {(index) => <CitySpaceBody cityShortName={city.shortName} index={index} />}
       </AsyncBoundary>
     </main>
@@ -111,7 +111,6 @@ function CitySpaceBody({ cityShortName, index }: {
               <p className="ag-label">城市结论</p>
               <p className="city-space__risk">{index.cityConclusion.riskProfile}</p>
               <p className="city-space__definition">{index.cityConclusion.definition}</p>
-              <p className="city-space__hint">选择左侧任一研究点查看摘要。</p>
             </div>
           )}
         </ResearchWorkspace>

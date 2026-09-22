@@ -104,7 +104,7 @@ export function ThresholdBinExplorer({ binsSource, powerSource, breakpointSource
   return (
     <ChartFrame
       title="降雨阈值分箱与样本量"
-      note="阈值档来自研究表的真实分箱。拖动只在既有分箱之间切换，不做插值；每档同时给出样本数量与 95% 区间。"
+      note="阈值档来自研究表的真实分箱，不做插值；每档同时给出样本数量与 95% 区间。"
       provenance="observed"
       sources={[binsSource.split('/').pop() ?? '', ...(powerSource ? [powerSource.split('/').pop() ?? ''] : [])]}
       evidenceLevel={`证据 ${evidenceLevel}`}
@@ -139,7 +139,7 @@ export function ThresholdBinExplorer({ binsSource, powerSource, breakpointSource
         </>
       }
     >
-      <AsyncBoundary state={state} label="正在读取阈值分箱表">
+      <AsyncBoundary state={state}>
         {() => (bins.length > 0 ? (
           <>
             <BarChart

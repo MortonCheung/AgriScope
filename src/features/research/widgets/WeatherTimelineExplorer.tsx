@@ -99,7 +99,7 @@ export function WeatherTimelineExplorer({ source, evidenceLevel, note }: { sourc
   return (
     <ChartFrame
       title="事件窗口逐日序列"
-      note={note ?? '曲线沿真实日期逐渐绘制。拖动时间轴或播放，图表、标注、事件状态与关键数字同步更新。'}
+      note={note ?? '曲线沿真实日期逐渐绘制；图表、标注、事件状态与关键数字随日期同步更新。'}
       provenance="observed"
       sources={[source.split('/').pop() ?? '']}
       evidenceLevel={`证据 ${evidenceLevel}`}
@@ -137,7 +137,7 @@ export function WeatherTimelineExplorer({ source, evidenceLevel, note }: { sourc
         </>
       }
     >
-      <AsyncBoundary state={state} label="正在读取案例天气表">
+      <AsyncBoundary state={state}>
         {() => (days.length > 0 ? (
           <>
             <XYChart

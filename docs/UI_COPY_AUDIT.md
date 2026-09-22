@@ -1,0 +1,127 @@
+# UI_COPY_AUDIT
+
+V4 §三十八–§四十三 的前端文案审计。扫描范围：`src/**/*.tsx`、`src/**/*.ts`（含 `.css` 中的伪元素文案，结果为空）。
+
+分类定义：
+
+| 分类 | 含义 |
+|---|---|
+| KEEP | 研究内容本体或用户完成任务必需的信息，保留原文 |
+| REMOVE | 前端自造的「解释界面」文案与开发状态文案，直接删除 |
+| REWRITE | 意图保留但措辞违规（内部字段名、冗余动词、操作说明），改写 |
+| INTERNAL_ONLY | 只应存在于代码/数据里的字段名与注释，绝不进入 DOM |
+
+判据：§五（内容 > 结构 > 空间 > 动效）、§三十九（禁用词表）、§四十一（删除前端生成的无效介绍）、§七十五 三问。
+
+---
+
+## 1. REMOVE — 已删除
+
+| 文件 | 文案 | 依据 |
+|---|---|---|
+| `features/liaoning/LiaoningPage.tsx` | 拖动可旋转沙盘，点击城市进入 | §三十九（Phase 1 删除） |
+| `features/liaoning/LiaoningPage.tsx` | 点击进入研究 | §三十九（Phase 1 删除） |
+| `features/liaoning/LiaoningPage.tsx` | 研究尚未接入（`data-ready` 属性） | §三十九（Phase 1 删除） |
+| `features/spatial/SpatialShell.tsx` | `spatial-notice` 整块提示 | §十七（Phase 1 删除） |
+| `features/city/CityResearchSpacePage.tsx` | 选择左侧任一研究点查看摘要。 | §三十九 |
+| `features/research/ResearchPointPage.tsx` | 查看研究依据 →（正文底部重复入口） | §四十二 |
+| `features/research/ResearchArticleView.tsx` | 打开交互图 →（正文底部重复入口） | §四十二 |
+| `features/research/ResearchArticleView.tsx` | 研究原文（与「原文」Tab 重复的模式标签） | §四十二/§四十三 |
+| `features/research/widgets/ResearchModules.tsx` | 下面的图表数据来自本研究点真正使用的研究表；可以切换品种、变量或滞后窗，重新观察研究过程。 | §四十一 原文点名的例子 |
+| `features/report/CityReportPage.tsx` | 以下 N 问来自城市研究索引，问题与答案原文呈现，未做改写。 | §四十一（以下……） |
+| `features/report/CityReportPage.tsx` | 进入研究点可查看交互研究表与原始图表。 | §四十一 |
+| `widgets/CropVolatilityChart.tsx`、`PhenologyChart.tsx`、`TrendChart.tsx`、`EventContrastChart.tsx` | 悬停 / 点选品种查看完整读数 ×4 | §四十一（控件自明，不需要说明控件） |
+| `widgets/registry.tsx` | 同一个研究页面上切换品种与变量，不需要为每个品种复制十个页面。 | §四十一（前端工程理由，对用户无意义） |
+| `components/ResearchFigure.tsx` | 交互数据正在接入（Badge） | §十七（不得显示开发状态） |
+| `components/ResearchFigure.tsx` | `interactiveState` prop 与 `data-state` 属性 | 删掉 Badge 后成为死抽象，一并删除 |
+| `features/research/article.css`、`research-point.css` | `.article-backlink`、`.research-point__backlink` | 随入口删除，避免死样式 |
+
+## 2. REWRITE — 已改写
+
+| 文件 | 原文案 | 现文案 | 依据 |
+|---|---|---|---|
+| `components/AsyncState.tsx` + 全仓 25 处 `AsyncBoundary` 调用点 | `label="正在读取城市研究索引 / 研究原文 / 研究表 / …"` | 加载态改为**无文字骨架条**（`role=status` + `aria-label="加载中"`），`label` 参数整体移除 | §三十九 + §四十四 |
+| `workspace/ResearchEvidenceRail.tsx` | 来源声明 | 来源 | §四十（内部字段名） |
+| `workspace/ResearchEvidenceRail.tsx`、`components/SourceCitation.tsx` | 来源未在当前前端索引中声明 | 来源待补充 | §五十四（Phase 9 再改结构） |
+| `features/research/ResearchPointPage.tsx` | 查看原文（Tab） | 原文 | §四十三（「查看」是冗余动词） |
+| `features/opening/OpeningPage.tsx` | 查看辽宁 | 进入 | §三十七（Opening = 品牌 + 进入）、§四十三 |
+| `widgets/ResearchModules.tsx` | 交互数据正在接入。 | 该研究点没有登记可交互的研究表。 | §三十九/§四十一 |
+| `widgets/ResearchModules.tsx` | TableExplorer 的「图形交互正在接入…」note | 删除该 prop（`note` 本身可选） | §四十一 |
+| `features/rainstorm/RainstormPage.tsx` | （研究索引记录：A = x，B ≈ y） | （A = x，B ≈ y） | §四十 |
+| `features/rainstorm/RainstormPage.tsx` | 研究工程输出的传导第一阶段热力图，用于查看各品种 × 窗口的估计结果。 | 传导链第一阶段：各品种 × 窗口的估计结果。 | §四十一（用于查看……） |
+| `widgets/modulesG.tsx` ×3 | 切换价格与成交量，逐个品种核对……／在年化波动率与变异系数之间切换，查看……／切换口径、天气变量与响应变量，核对…… | 价格与成交量的逐品种斜率、区间与显著性。／年化波动率与变异系数的逐品种描述统计。／不同口径与天气变量下的交互项与 FDR 显著计数。 | §四十一 |
+| `widgets/registry.tsx` ×3 | 把 15 个天气变量逐一和响应配对；切换暴露变量查看……／在真实分箱之间切换，同时看到……／拖动时间或播放，逐日重看…… | 15 个天气变量与响应逐一配对的滞后曲线。／研究表的真实分箱，以及各档样本数量与结果稳定性。／2026 事件窗口的逐日气象序列。 | §四十一 |
+| `widgets/ThresholdBinExplorer.tsx` | 阈值档来自研究表的真实分箱。**拖动只在既有分箱之间切换**，不做插值；…… | 阈值档来自研究表的真实分箱，不做插值；……（保留实质结论，去掉操作说明） | §四十一 |
+| `widgets/CropVolatilityChart.tsx`、`PhenologyChart.tsx` | 悬停或点选任一品种，查看…… | 尚未选择品种。 | §四十一（空态陈述状态，不下指令） |
+| `widgets/YearlyProductionChart.tsx` | 悬停任一行查看该组合的相关系数读数。 | 尚未选择组合。 | §四十一 |
+| `features/rainstorm/RainstormPage.tsx` ×3、`features/scenario/ScenarioLabPage.tsx` ×1 | yLabel「悬停查看某日降水 / 某日降水与基线 / 湿度与 VPD / 某品种的缺口与置信区间」 | 去掉「悬停查看」前缀：某日降水 / 某日降水与基线 / 湿度与 VPD / 某品种的缺口与置信区间 | §四十一（坐标轴标签不是操作说明） |
+| `domain/research/adapters.ts` | 注释里的旧文案 | 同步为「来源待补充」 | 一致性 |
+
+## 3. KEEP — 保留（含理由）
+
+| 位置 | 文案 | 理由 |
+|---|---|---|
+| Opening | 穹衡 / AgriScope / 辽宁农业气候风险分析与情景研究 / 进入 | 品牌与唯一入口，§三十七 明确保留 |
+| Header | 辽宁 / 研究 / 情景实验 / 关于 | §七 固定结构 |
+| 辽宁页 | 六个城市名 | 唯一导航内容 |
+| 研究点页 Tab | 交互研究 / 原文 | §四十三 推荐模式名 |
+| 研究树 | 城市 → 专题 → 研究点编号与标题 | 研究结构本体 |
+| 正文分节 | 现象 / 分析 / 方法与限制 / 核心数据 | 渐进披露骨架，不是界面解释 |
+| Evidence Rail | 证据 / 时间 / 来源 / 方法 / 限制 | §四十 允许的中文短标签（非字段名） |
+| 图表 note | 陈述研究结论的句子（如「正值代表极端日更高；多数单元并不显著，且显著者多为负向。」「波动存在清晰的品类分层，但品种间异质性缺乏统计支持……」） | 属研究结论陈述，不是前端介绍；§一 禁止前端改写结论 |
+| 图表读数区 | 品种 / 单位 / 均值 / 标准差 / 变异系数 CV / 年化波动率 / IQR / P05–P95 / p 值 / R² / 样本 …… | 读数的语义标签，删掉即失去可读性 |
+| 证据徽标 | 实际观测 / 模型估计 / 情景模拟 | 数据性质的中文表述 |
+| Error 态 | 错误信息 + 重试 / 未知城市 / 研究点不存在 | §五：错误必须可理解、可恢复 |
+| Empty 态 | 研究内容待接入（`/cities/:id`）/ 内容待接入（`/research`）/ 尚未选择品种 | §十七 要求六城可进入并如实说明；§十三 禁止 `/research` 造内容 |
+| 城市页按钮 | 综合报告 / 暴雨专题 / 城市研究空间 / 2026 暴雨专题 | 唯一正式入口 |
+
+## 4. INTERNAL_ONLY — 不得进入 DOM
+
+| 名称 | 现状 |
+|---|---|
+| `前端一句话` | 代码中不存在任何渲染点（仅数据字段 `frontendText` 作为研究内容被渲染，标题永不显示） |
+| `frontendText` | 仅作数据取值；字面量不出现在 UI |
+| `sourceOfTruth` | 仅 `adapters.ts` 内部取值；不渲染 |
+| `provenance` | 仅用于取中文标签与 `data-*` 属性；字段名不渲染 |
+| `Lineage`（`.csv` / `.md` 文件名） | 仍由 `SourceCitation` 渲染 → **转 Phase 9** 按 Source/Lineage 契约分离 |
+| 全部 JSDoc 与 `//` 注释 | 不进入 bundle 输出 |
+
+## 5. 遗留问题（转后续 Phase）
+
+1. `放大` 按钮仍存在于 `ResearchFigure.tsx` / `widgets/primitives.tsx` → Phase 7 删除，改为点击图片本体放大。
+2. `SourceCitation` 仍以字符串数组接收来源，会把 `.csv` / `.md` 血缘当来源显示 → Phase 9。
+3. `LoadingState` 已无文字，但切换研究点时仍是**整块替换**（刷新感的根源）→ Phase 6 预取 + crossfade。
+
+## 6. 验收（§六十七 E2E 4 词表）
+
+页面文本中不得出现：`拖动可旋转`、`点击进入`、`正在读取研究`、`选择左侧`、`查看研究依据`、`打开交互图`。
+另加 §四十 字段名：`前端一句话`、`来源声明`、`sourceOfTruth`、`frontendText`、`provenance`。
+
+### 6.1 静态扫描
+
+`src/**/*.tsx` 中上述词表命中数为 0（仅剩注释里的历史说明，不进入 DOM）。
+
+### 6.2 浏览器实测（同源 iframe 加载真实路由并读取 `document.body.innerText`）
+
+| 路由 | 命中 | 文本长度 | 备注 |
+|---|---|---|---|
+| `/liaoning` | 无 | 68 | 只剩 Header + 六城名，无任何提示文案 |
+| `/cities/tieling` | 无 | 56 | 铁岭 + 研究内容待接入 |
+| `/research` | 无 | 80 | 辽宁综合研究 + 内容待接入 + 六城 |
+| `/cities/shenyang` | 无 | 644 | |
+| `/cities/shenyang/report` | 无 | 2576 | 删掉两处「以下…／进入研究点可查看…」 |
+| `/shenyang-rainstorm` | 无 | 2294 | |
+| `/scenario-lab` | 无 | 2187 | |
+| `/about` | 无 | 718 | |
+| `/cities/shenyang/research/C5` | 无 | 2311 | Tab = 交互研究 / 原文 |
+| `/cities/shenyang/research/C5?mode=article` | 无 | 2624 | 「前端一句话」heading 已不渲染 |
+| `/cities/shenyang/research/G1` | 无 | 8685 | |
+| `/cities/shenyang/research/G1?mode=article` | 无 | 3397 | |
+
+只有 `放大` 仍命中（`C5` 4 处、`G1` 8 处、`scenario-lab` 4 处），属 §四十七，按计划在 **Phase 7** 删除按钮并改为点击图片本体放大。
+
+### 6.3 附带发现（非文案，已记录）
+
+- `ROUTES.scenarioLab = '/scenario-lab'`；直接访问 `/scenario` 会被 `*` 兜底重定向到 `/`。这是路由表既有行为，不是缺陷，但说明核对路径时必须用真实路由常量。
+- `放大` 之外的按钮命名已统一：`情景实验`（原「平行世界实验室」）与顶部导航一致。
+

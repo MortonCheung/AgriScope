@@ -11,6 +11,25 @@
 }
 .ag-state--error { color: var(--ag-danger); }
 
+/* 加载态只给骨架条，不给过程文案（V4 §三十九/§四十四） */
+.ag-state--loading { gap: 10px; padding: var(--ag-space-6) 0; }
+.ag-skeleton {
+  display: block;
+  height: 10px;
+  width: 100%;
+  background: color-mix(in srgb, var(--ag-rule) 55%, transparent);
+  animation: ag-skeleton-pulse 1.4s var(--ag-ease) infinite;
+}
+.ag-skeleton:nth-child(2) { width: 72%; }
+.ag-skeleton:nth-child(3) { width: 46%; }
+@keyframes ag-skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ag-skeleton { animation: none; }
+}
+
 .ag-keynumbers {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));

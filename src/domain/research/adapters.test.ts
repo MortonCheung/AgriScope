@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { adaptCityIndex } from './adapters';
-import type { RawCityIndex } from './adapters';
+import { adaptArticle, adaptCityIndex } from './adapters';
+import type { RawArticle, RawCityIndex } from './adapters';
 
 const raw: RawCityIndex = {
   city: '沈阳',
@@ -72,5 +72,29 @@ describe('adaptCityIndex', () => {
   it('汇总图表清单是去重后的并集', () => {
     expect(index.figures).toEqual(['/research/shenyang/figures/F08.png']);
     expect(index.tables).toEqual(['/research/shenyang/tables/stl_strength.csv']);
+  });
+});
+
+describe('adaptArticle', () => {
+  const article: RawArticle = {
+    id: 'G1',
+    title: '标题',
+    blocks: [
+      { heading: '研究问题', lines: ['问题正文'] },
+      { heading: '前端一句话', lines: ['一句话正文'] },
+      { heading: null, lines: ['无标题正文'] },
+    ],
+  };
+
+  it('不把内部字段名当 heading 渲染，但正文照旧保留（V4 §四十）', () => {
+    const adapted = adaptArticle(article);
+    expect(adapted.blocks.map((block) => block.heading)).toEqual(['研究问题', null, null]);
+    expect(adapted.blocks[1].lines).toEqual(['一句话正文']);
+  });
+
+  it('不修改原标题与块顺序', () => {
+    const adapted = adaptArticle(article);
+    expect(adapted.title).toBe('标题');
+    expect(adapted.blocks).toHaveLength(3);
   });
 });

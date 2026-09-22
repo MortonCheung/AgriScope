@@ -123,7 +123,7 @@ export function PseudoSignificanceReveal({ summarySource, response, keyNumbers, 
         </div>
       }
     >
-      <AsyncBoundary state={state} label="正在读取土壤层汇总表">
+      <AsyncBoundary state={state}>
         {() => (layers.length > 0 ? (
           <>
             <ol className="reveal-steps">

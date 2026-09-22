@@ -89,7 +89,7 @@ export function ScenarioChart({
   return (
     <ChartFrame
       title="反事实情景：门控与情景演示"
-      note={note ?? '先用 World0 门控判断模型能否复现现实（模拟 vs 实测 R²）；门控未通过时，以下缺口、严重度与缓冲数字只作情景演示，不对应现实。'}
+      note={note ?? '先用 World0 门控判断模型能否复现现实（模拟 vs 实测 R²）；门控未通过时，这些缺口、严重度与缓冲数字只作情景演示，不对应现实。'}
       provenance="scenario"
       sources={[gateSource.split('/').pop() ?? '', severitySource.split('/').pop() ?? '', bufferSource.split('/').pop() ?? '', gapSummarySource.split('/').pop() ?? '']}
       evidenceLevel={`证据 ${evidenceLevel}`}
@@ -121,7 +121,7 @@ export function ScenarioChart({
         </>
       }
     >
-      <AsyncBoundary state={state} label="正在读取反事实情景表">
+      <AsyncBoundary state={state}>
         {() => (model && model.gateRows.length > 0 ? (
           <>
             <p className="ag-label">World0 门控：模拟 vs 实测 R²</p>

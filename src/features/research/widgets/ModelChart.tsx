@@ -105,7 +105,7 @@ export function ModelChart({
   return (
     <ChartFrame
       title="模型 R² 与 SHAP 贡献结构"
-      note={note ?? 'R² 为样本外（验证集）统计表现。切换目标与特征口径，可以看到“只用天气”的模型并没有预测力，而“照抄昨日值”的持续性基线最强。'}
+      note={note ?? 'R² 为样本外（验证集）统计表现：“只用天气”的模型并没有预测力，而“照抄昨日值”的持续性基线最强。'}
       provenance="model"
       sources={[metricsSource.split('/').pop() ?? '', shapSource.split('/').pop() ?? '', baselineSource.split('/').pop() ?? '']}
       evidenceLevel={`证据 ${evidenceLevel}`}
@@ -136,7 +136,7 @@ export function ModelChart({
         </>
       }
     >
-      <AsyncBoundary state={state} label="正在读取模型评价表">
+      <AsyncBoundary state={state}>
         {() => (model && model.metricRows.length > 0 ? (
           <>
             <p className="ag-label">各模型样本外 R²（{model.activeSplit} · overall）</p>

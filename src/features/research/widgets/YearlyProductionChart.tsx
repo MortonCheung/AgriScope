@@ -170,7 +170,7 @@ export function YearlyProductionChart({ panelSource, corrSource, evidenceLevel }
           </>
         }
       >
-        <AsyncBoundary state={state} label="正在读取年度生产面板">
+        <AsyncBoundary state={state}>
           {() => (model && model.points.length > 0 ? (
             <>
               <XYChart
@@ -212,7 +212,7 @@ export function YearlyProductionChart({ panelSource, corrSource, evidenceLevel }
 
       <ChartFrame
         title={`年度天气相关清单（${model?.activeCrop ?? ''}）`}
-        note="n_years 均小于 8，interpretation_allowed 为假：以下相关系数只作方向性描述，不作统计推断。"
+        note="n_years 均小于 8，interpretation_allowed 为假：这些相关系数只作方向性描述，不作统计推断。"
         provenance="observed"
         sources={[corrSource.split('/').pop() ?? '']}
         evidenceLevel={`证据 ${evidenceLevel}`}
@@ -222,7 +222,7 @@ export function YearlyProductionChart({ panelSource, corrSource, evidenceLevel }
           ) : undefined
         }
       >
-        <AsyncBoundary state={state} label="正在读取年度相关表">
+        <AsyncBoundary state={state}>
           {() => (model && model.correlations.length > 0 ? (
             <>
               {hoveredCorr ? (
@@ -234,7 +234,7 @@ export function YearlyProductionChart({ panelSource, corrSource, evidenceLevel }
                   <div className="readout-row__item"><dt>Spearman r</dt><dd className="ag-number">{formatCorrelation(hoveredCorr.spearman)}</dd></div>
                   <div className="readout-row__item"><dt>能否推断</dt><dd>{hoveredCorr.interpretationAllowed ? '可推断' : '不作推断'}</dd></div>
                 </div>
-              ) : <p className="ag-meta">悬停任一行查看该组合的相关系数读数。</p>}
+              ) : <p className="ag-meta">尚未选择组合。</p>}
 
               <div className="table-explorer">
                 <div className="table-explorer__scroll">

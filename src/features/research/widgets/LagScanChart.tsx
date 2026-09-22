@@ -105,7 +105,7 @@ export function LagScanChart({ crops, response, scanSource, summarySource, evide
         </>
       }
     >
-      <AsyncBoundary state={state} label="正在读取滞后扫描表">
+      <AsyncBoundary state={state}>
         {() => (model && model.rows.length > 0 ? (
           <>
             <XYChart
@@ -114,7 +114,7 @@ export function LagScanChart({ crops, response, scanSource, summarySource, evide
               bands={bands}
               markers={markers}
               zeroLine
-              yLabel="悬停查看某个滞后天数的效应"
+              yLabel="某个滞后天数的效应"
               xTickFormat={(value) => `L${value}`}
               describeX={(value) => {
                 const nearest = model.rows.reduce((a, b) => (Math.abs(b.lag - value) < Math.abs(a.lag - value) ? b : a));

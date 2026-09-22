@@ -121,7 +121,7 @@ export function TransmissionChart({
         </>
       }
     >
-      <AsyncBoundary state={state} label="正在读取传导机制研究表">
+      <AsyncBoundary state={state}>
         {() => (model ? (
           <>
             <p className="ag-label">第一环：天气 → 成交量（汇总中介 β_WV · {model.activeWindow}）</p>

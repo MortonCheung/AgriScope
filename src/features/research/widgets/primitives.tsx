@@ -200,7 +200,7 @@ export function XYChart({
         )}
       </svg>
       <div className="chart__readout" aria-live="polite">
-        {readout ? <span>{readout}</span> : <span className="chart__readout-hint">{yLabel ?? '悬停查看读数'}</span>}
+        {readout ? <span>{readout}</span> : <span className="chart__readout-hint">{yLabel ?? '读数'}</span>}
       </div>
       <ul className="chart__legend">
         {series.map((entry) => (

@@ -165,7 +165,7 @@ export function Case2026Chart({
         </>
       }
     >
-      <AsyncBoundary state={state} label="正在读取 2026 案例研究表">
+      <AsyncBoundary state={state}>
         {() => (model && model.compare.length > 0 ? (
           <>
             <XYChart
@@ -175,7 +175,7 @@ export function Case2026Chart({
               bands={bands}
               markers={markers}
               zeroLine
-              yLabel="悬停查看品种读数"
+              yLabel="品种读数"
               xTickFormat={(value) => model.compare[Math.round(value)]?.crop ?? String(value)}
               describeX={(value) => {
                 const nearest = model.compare[Math.round(Math.max(0, Math.min(model.compare.length - 1, value)))];
@@ -206,7 +206,7 @@ export function Case2026Chart({
                   height={260}
                   series={windowSeries}
                   zeroLine
-                  yLabel="悬停查看窗口读数"
+                  yLabel="窗口读数"
                   xTickFormat={(value) => model.detail?.windows[Math.round(value)]?.label ?? String(value)}
                   describeX={(value) => {
                     const entry = model.detail?.windows[Math.round(Math.max(0, Math.min(model.detail.windows.length - 1, value)))];
@@ -232,7 +232,7 @@ export function Case2026Chart({
                   height={260}
                   series={weatherSeries}
                   markers={[{ x: weatherMaxIndex, label: '过程最大降水', color: 'var(--ag-data-extreme)' }]}
-                  yLabel="悬停查看逐日降水读数"
+                  yLabel="逐日降水读数"
                   xTickFormat={(value) => model.weatherPoints[Math.round(value)]?.date?.slice(5) ?? String(value)}
                   describeX={(value) => {
                     const entry = model.weatherPoints[Math.round(Math.max(0, Math.min(model.weatherPoints.length - 1, value)))];

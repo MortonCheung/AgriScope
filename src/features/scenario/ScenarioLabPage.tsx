@@ -43,14 +43,14 @@ export function ScenarioLabPage() {
   return (
     <main className="ag-page ag-container scenario-lab">
       <header className="scenario-lab__head">
-        <h1 className="ag-hero scenario-lab__title">平行世界实验室</h1>
+        <h1 className="ag-hero scenario-lab__title">情景实验</h1>
         <p className="ag-lead">
           把 2026 暴雨事件放进四个平行情景：基准情景、无灾害情景、冲击增强情景、供应缓冲情景。
-          所有数字来自反事实研究表，用于展示模型在门控未过时的行为，不作为对未来的判断。
+          所有数字来自反事实研究表，反映模型在门控未过时的行为，不作为对未来的判断。
         </p>
       </header>
 
-      <AsyncBoundary state={state} label="正在读取反事实研究表">
+      <AsyncBoundary state={state}>
         {(tables) => <ScenarioLabBody tables={tables} />}
       </AsyncBoundary>
     </main>
@@ -138,7 +138,7 @@ function ScenarioLabBody({ tables }: { tables: ResearchTable[] }) {
           ))}
         </dl>
         <p className="scenario-lab__gate-statement">
-          当前模型未达到可靠反事实预测门槛，以下为情景演示而非预测。
+          当前模型未达到可靠反事实预测门槛，本节为情景演示而非预测。
         </p>
       </section>
 
@@ -232,7 +232,7 @@ function ScenarioLabBody({ tables }: { tables: ResearchTable[] }) {
                   series={gapSeries}
                   bands={gapBands}
                   zeroLine
-                  yLabel="悬停查看某品种的缺口与置信区间"
+                  yLabel="某品种的缺口与置信区间"
                   yTickFormat={(value) => value.toFixed(2)}
                   xTickFormat={(value) => noDisaster[Math.round(value)]?.crop ?? ''}
                   describeX={(value) => {

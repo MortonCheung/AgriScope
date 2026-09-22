@@ -94,7 +94,7 @@ function toFigures(point: RawTopic): ResearchFigure[] {
       caption: point.frontendText,
       /**
        * 研究索引没有逐图声明来源，因此这里**不编造**（V3 §32）。
-       * 空字符串会让 SourceCitation 如实显示"来源未在当前前端索引中声明"，
+       * 空字符串会让 SourceCitation 如实留空并标注「来源待补充」，
        * 并记录到 docs/SOURCE_GAPS.md。
        */
       source: '',
@@ -184,6 +184,27 @@ export function adaptCityIndex(raw: RawCityIndex, cityId: string): CityResearchI
   };
 }
 
+/**
+ * 研究正文里以内部字段名作为 heading 的块（V4 §四十）。
+ * 前端**只停止渲染这个 UI heading**，正文内容照旧呈现；
+ * 不修改 SHENYANG_RESEARCH.md / articles/*.json（§一）。
+ */
+const INTERNAL_HEADINGS = new Set([
+  '前端一句话',
+  '来源声明',
+  'sourceOfTruth',
+  'frontendText',
+  'provenance',
+]);
+
 export function adaptArticle(raw: RawArticle): ResearchArticle {
-  return { id: raw.id, title: raw.title, blocks: raw.blocks };
+  return {
+    id: raw.id,
+    title: raw.title,
+    blocks: raw.blocks.map((block) => (
+      block.heading && INTERNAL_HEADINGS.has(block.heading.trim())
+        ? { ...block, heading: null }
+        : block
+    )),
+  };
 }

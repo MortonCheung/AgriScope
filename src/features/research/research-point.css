@@ -68,9 +68,6 @@
 }
 .research-point__tab-label { position: relative; z-index: 1; }
 
-.research-point__backlink { align-self: flex-start; margin-top: var(--ag-space-6); color: var(--ag-ink-muted); font-size: var(--ag-fs-small); }
-.research-point__backlink:hover { color: var(--ag-ink); }
-
 @media (max-width: 1023px) {
   .research-point { height: auto; overflow: visible; padding-bottom: 32px; }
   .research-point__shell { height: auto; }

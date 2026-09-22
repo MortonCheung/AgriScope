@@ -48,7 +48,7 @@ export function AboutPage() {
         <div className="ag-section__head">
           <h2 className="ag-section-title">方法学红线</h2>
           <p className="ag-body">
-            以下限制写入了内容层规范，前端不得为了页面效果突破：
+            限制已写入内容层规范，前端不得为了页面效果突破：
           </p>
         </div>
         <ul className="about-redlines">
