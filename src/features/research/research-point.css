@@ -16,24 +16,27 @@
 .research-point__numbers { display: flex; flex-direction: column; gap: var(--ag-space-3); padding-top: var(--ag-space-4); border-top: 1px solid var(--ag-rule-soft); }
 .research-point__topic { margin: 0; max-width: 74ch; color: var(--ag-ink-muted); font-size: var(--ag-fs-small); line-height: 1.75; }
 
-.research-point__switch { display: inline-flex; gap: 2px; align-self: flex-start; padding: 3px; border: 1px solid var(--ag-rule); border-radius: var(--ag-radius-pill); }
+/* 模式切换（V3 §7）：不是胶囊按钮组，而是一根在两项之间连续滑动的底线。 */
+.research-point__switch { display: inline-flex; gap: var(--ag-space-6); align-self: flex-start; padding: 0; border: 0; border-bottom: 1px solid var(--ag-rule); }
 .research-point__tab {
   position: relative;
-  padding: 7px 16px;
-  border-radius: var(--ag-radius-pill);
+  padding: 6px 0 10px;
+  border-radius: 0;
   color: var(--ag-ink-muted);
   font-size: var(--ag-fs-small);
   transition: color var(--ag-dur-fast) var(--ag-ease);
 }
 .research-point__tab:hover:not(:disabled) { color: var(--ag-ink); }
-.research-point__tab:disabled { color: var(--ag-ink-ghost); cursor: not-allowed; }
-.research-point__tab[data-active] { color: var(--ag-paper); }
-/* 共享指示块：两块 tab 之间连续滑动，视觉与侧栏选中态同源（§45/§103）。 */
+.research-point__tab:disabled { color: var(--ag-ink-faint); cursor: not-allowed; }
+.research-point__tab[data-active] { color: var(--ag-ink); }
+/* 共享指示线：两块 tab 之间连续滑动，而不是瞬间换底（V3 §7）。 */
 .research-point__tab-pill {
   position: absolute;
-  inset: 0;
-  z-index: 0;
-  border-radius: var(--ag-radius-pill);
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  z-index: 1;
+  height: 1px;
   background: var(--ag-ink);
 }
 .research-point__tab-label { position: relative; z-index: 1; }

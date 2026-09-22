@@ -45,9 +45,11 @@
   --ag-evidence-d: #6b6670;
   --ag-evidence-unsupported: #9c968c;
 
+  /* 直角优先（V3 §5）：文字型 UI 一律直角，不允许胶囊。
+     pill 仅保留给圆点、Slider thumb、真正圆形的标记，不要用于 Button/Chip/Badge/Tab。 */
   --ag-radius-none: 0px;
-  --ag-radius-sm: 3px;
-  --ag-radius-md: 6px;
+  --ag-radius-sm: 0px;
+  --ag-radius-md: 0px;
   --ag-radius-pill: 999px;
 
   --ag-ease: cubic-bezier(0.16, 1, 0.3, 1);
@@ -62,6 +64,6 @@
   --ag-dur-selection: 320ms;
   --ag-dur-hover-lift: 200ms;
 
-  /* 只用于 Research Reader 的外壳窗口，不要全站卡片通用。 */
-  --ag-radius-window: 14px;
+  /* 只用于 Research Reader 的外壳窗口；V3 §14 起为直角。 */
+  --ag-radius-window: 0px;
 }

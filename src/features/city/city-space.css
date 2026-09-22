@@ -20,9 +20,9 @@
   grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
   border: 1px solid var(--ag-rule);
-  border-radius: var(--ag-radius-window);
+  border-radius: 0; /* V3 §14：研究纸直角 */
   background: var(--ag-paper-raised);
-  box-shadow: 0 30px 80px rgb(26 25 23 / 0.08);
+  box-shadow: 0 12px 40px rgb(26 25 23 / 0.06); /* 极轻，不与地图抢空间感 */
 }
 
 /* 页眉：只放城市名与两个入口（§72） */
@@ -95,9 +95,8 @@
   background: color-mix(in srgb, var(--ag-ink) 7%, transparent);
 }
 
-/* Focus：降低其他信息权重，而不是放大当前对象（§13/§14） */
-.city-space__topics { transition: opacity var(--ag-dur-normal) var(--ag-ease); }
-.city-space__panel[data-focused] .city-space__topics { opacity: 0.72; }
+/* Focus：不再靠整体降低透明度表达（V3 §19 明令删除 0.72），
+   层级改由「选中项加深 + 结构线」承担。 */
 
 .city-space__close { align-self: flex-end; margin-left: auto; margin-bottom: var(--ag-space-3); color: var(--ag-ink-faint); font-size: var(--ag-fs-meta); }
 .city-space__close:hover { color: var(--ag-ink); }

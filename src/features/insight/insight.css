@@ -4,7 +4,7 @@
   min-height: 42px;
   padding: 0 18px;
   border: 1px solid var(--ag-rule-strong);
-  border-radius: var(--ag-radius-pill);
+  border-radius: 0;
   background: var(--ag-paper-raised);
   color: var(--ag-ink);
   font-size: var(--ag-fs-small);
@@ -30,16 +30,18 @@
 .insight-dock__close { color: var(--ag-ink-muted); font-size: var(--ag-fs-meta); }
 .insight-dock__close:hover { color: var(--ag-ink); }
 .insight-dock__tags { display: flex; gap: 6px; flex-wrap: wrap; }
-.insight-dock__topics { display: flex; gap: 6px; flex-wrap: wrap; margin: 0; padding: 0; list-style: none; }
+.insight-dock__topics { display: flex; gap: var(--ag-space-4); flex-wrap: wrap; margin: 0; padding: 0; list-style: none; }
+/* 与全站选择器一致：文字 + 底部细线，不用胶囊（V3 §5/§6）。 */
 .insight-dock__topics button {
-  min-height: 30px;
-  padding: 0 10px;
-  border: 1px solid var(--ag-rule);
-  border-radius: var(--ag-radius-pill);
+  min-height: 26px;
+  padding: 2px 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
   color: var(--ag-ink-muted);
   font-size: var(--ag-fs-meta);
 }
-.insight-dock__topics button[data-active] { border-color: var(--ag-ink); background: var(--ag-ink); color: var(--ag-paper); }
+.insight-dock__topics button[data-active] { color: var(--ag-ink); border-bottom-color: var(--ag-ink); }
 .insight-dock__answer {
   margin: 0;
   padding: var(--ag-space-4);

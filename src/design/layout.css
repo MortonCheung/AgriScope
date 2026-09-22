@@ -104,30 +104,34 @@ img, svg { display: block; max-width: 100%; }
 .ag-button--quiet { border-color: transparent; }
 .ag-button--quiet:hover { border-color: transparent; background: var(--ag-paper-sunken); }
 
+/* 数据选择器（V3 §6/§53）：不是胶囊，而是「文字 + 底部细线」的当前状态线。
+   未选中：普通文字；选中：墨色文字 + 墨色下划线。 */
 .ag-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 34px;
-  padding: 0 var(--ag-space-3);
-  border: 1px solid var(--ag-rule);
-  border-radius: var(--ag-radius-pill);
+  min-height: 28px;
+  padding: 2px 1px;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
   background: transparent;
   color: var(--ag-ink-muted);
   font-size: var(--ag-fs-meta);
   white-space: nowrap;
-  transition: border-color var(--ag-dur-fast) var(--ag-ease), color var(--ag-dur-fast) var(--ag-ease), background var(--ag-dur-fast) var(--ag-ease);
+  transition: color var(--ag-dur-fast) var(--ag-ease), border-color var(--ag-dur-fast) var(--ag-ease);
 }
-.ag-chip:hover { border-color: var(--ag-rule-strong); color: var(--ag-ink); }
-.ag-chip[aria-pressed="true"], .ag-chip[data-active="true"] { border-color: var(--ag-ink); background: var(--ag-ink); color: var(--ag-paper); }
+.ag-chip:hover { color: var(--ag-ink); border-bottom-color: var(--ag-rule-strong); }
+.ag-chip[aria-pressed="true"], .ag-chip[data-active="true"] { color: var(--ag-ink); border-bottom-color: var(--ag-ink); }
 
+/* Badge：直角标签，只保留状态圆点作为唯一圆形元素（V3 §5）。 */
 .ag-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 9px;
+  padding: 3px 8px;
   border: 1px solid var(--ag-rule);
-  border-radius: var(--ag-radius-pill);
+  border-radius: 0;
   color: var(--ag-ink-muted);
   font-family: var(--ag-font-mono);
   font-size: var(--ag-fs-micro);

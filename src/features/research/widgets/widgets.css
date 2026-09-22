@@ -42,8 +42,9 @@
 .scrubber__input { flex: 1; min-width: 120px; accent-color: var(--ag-ink); }
 .scrubber__bound { color: var(--ag-ink-faint); }
 .scrubber__value { color: var(--ag-ink); font-size: var(--ag-fs-small); min-width: 8ch; text-align: right; }
-.scrubber__play { min-height: 30px; padding: 0 12px; border: 1px solid var(--ag-rule); border-radius: var(--ag-radius-pill); color: var(--ag-ink-muted); font-size: var(--ag-fs-meta); }
-.scrubber__play:hover { border-color: var(--ag-rule-strong); color: var(--ag-ink); }
+/* 播放按钮（V3 §54）：普通文字按钮，不用胶囊。 */
+.scrubber__play { min-height: 28px; padding: 0 2px; border: 0; border-radius: 0; background: transparent; color: var(--ag-ink-muted); font-size: var(--ag-fs-meta); transition: color var(--ag-dur-fast) var(--ag-ease); }
+.scrubber__play:hover { color: var(--ag-ink); }
 
 /* 研究表浏览器 */
 .table-explorer { display: flex; flex-direction: column; gap: var(--ag-space-3); }
