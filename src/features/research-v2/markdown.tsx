@@ -147,6 +147,20 @@ const BARE_FLAG = /(?<![A-Za-z0-9_])[A-Za-z_][A-Za-z_0-9]*=[A-Za-z_][A-Za-z_0-9]
 
 /** 研究写成「`标识符`（中文定义）」时，直接留下中文定义（V5 §76）。 */
 const TERM_WITH_GLOSS = /`([^`\n]+)`（([^（）\n]{1,140})）/g;
+/**
+ * 研究常写「（表 `A03_lag_windows.csv`）」/「图 `x.png`」。
+ * 文件名换成编号后会出现「（表 表 2）」这种重复，所以当反引号资产前面已经写着
+ * 「表」/「图」时，只补编号；对不上任何已渲染资产时，连那个名词一起不渲染。
+ */
+const ASSET_WITH_NOUN = /([表图])\s*`([^`\n]+)`/g;
+
+function collapseAssetNoun(text: string, refs?: Map<string, string>): string {
+  return text.replace(ASSET_WITH_NOUN, (whole, noun: string, file: string) => {
+    const label = refs?.get(file.trim());
+    if (!label) return '';
+    return `${noun} ${label.replace(/^[表图]\s*/, '')}`;
+  });
+}
 
 function applyProseEnums(text: string): string {
   let out = text;
@@ -223,7 +237,10 @@ function inlineCode(inner: string, refs?: Map<string, string>): ReactNode {
  *   - 对应不上 → 直接不渲染，绝不把文件名露给用户。
  */
 export function renderInline(rawText: string, keyPrefix = 'i', refs?: Map<string, string>): ReactNode[] {
-  const prepared = dropInternalParentheticals(unwrapGlosses(applyProseEnums(rawText)), refs);
+  const prepared = collapseAssetNoun(
+    dropInternalParentheticals(unwrapGlosses(applyProseEnums(rawText)), refs),
+    refs,
+  );
   return renderPrepared(prepared, keyPrefix, refs);
 }
 

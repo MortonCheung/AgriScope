@@ -55,6 +55,14 @@ describe('renderInline 不泄漏数据文件名', () => {
     expect(html).toContain('图 1');
   });
 
+  it('前面已经写了「表 / 图」时不重复名词', () => {
+    // 研究原句是「（表 `A03_lag_windows.csv`）」，直接替换会得到「（表 表 2）」。
+    const refs = new Map([['A03_lag_windows.csv', '表 2']]);
+    expect(prose(inline('显著 11 项（表 `A03_lag_windows.csv`）。', refs))).toBe('显著 11 项（表 2）。');
+    // 对不上资产时，连那个名词和括号一起不渲染，不留半句。
+    expect(prose(inline('见（表 `A03_missing.csv`）结束。'))).toBe('见结束。');
+  });
+
   it('括号包住的、能对上号的文件名保留括号', () => {
     const refs = new Map([['A01_monthly.csv', '表 2']]);
     const html = inline('（`A01_monthly.csv`）', refs);
@@ -158,6 +166,7 @@ describe('真实研究正文渲染后不泄漏工程字段', () => {
     /\bpartly_supported\b/,
     /\bnot_supported\b/,
     /\b(log_yield|heavy_rain_days|et0_sum|vpd_mean|growing_season_[a-z_]+|max_1d_precip|hot_days|price_z|volume_z|z_rel|sown_area|precip_w[0-9]+)\b/,
+    /(表|图)\s*\1/,
     /\bPOOLED\b/,
   ];
 
