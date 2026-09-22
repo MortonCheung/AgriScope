@@ -83,7 +83,6 @@ function CitySpaceBody({ cityName, cityShortName, index, selectedPointId, onSele
         <div className="city-space__entries">
           <Link className="ag-button" to={ROUTES.report(index.cityId)}>城市综合研究</Link>
           <Link className="ag-button" to={ROUTES.rainstorm}>2026 暴雨专题</Link>
-          <Link className="ag-button" to={ROUTES.scenarioLab}>平行世界实验室</Link>
         </div>
       </header>
 

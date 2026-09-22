@@ -1,13 +1,28 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, useReducedMotion } from 'motion/react';
 import { ROUTES } from './routes';
-import { MOTION_DURATION } from '../design/motion';
+import { MOTION_DURATION, MOTION_SPRING } from '../design/motion';
 import './app-header.css';
 
+/**
+ * 导航职责（V2 §25）：
+ *   辽宁      地理与城市探索：/liaoning 与 /cities/:cityId
+ *   研究      正式研究内容：/cities/:cityId/report、/cities/:cityId/research/*、暴雨专题
+ *   情景实验  只代表 Scenario Lab（暴雨专题本身属于研究）
+ *   关于      不变
+ */
 const NAV_ITEMS = [
-  { to: ROUTES.liaoning, label: '辽宁', match: (path: string) => path === ROUTES.liaoning },
-  { to: ROUTES.city('shenyang'), label: '研究', match: (path: string) => path.startsWith('/cities/') },
-  { to: ROUTES.scenarioLab, label: '情景实验', match: (path: string) => path === ROUTES.scenarioLab || path === ROUTES.rainstorm },
+  {
+    to: ROUTES.liaoning,
+    label: '辽宁',
+    match: (path: string) => path === ROUTES.liaoning || /^\/cities\/[^/]+\/?$/.test(path),
+  },
+  {
+    to: ROUTES.report('shenyang'),
+    label: '研究',
+    match: (path: string) => path.endsWith('/report') || path.includes('/research/') || path === ROUTES.rainstorm,
+  },
+  { to: ROUTES.scenarioLab, label: '情景实验', match: (path: string) => path === ROUTES.scenarioLab },
   { to: ROUTES.about, label: '关于', match: (path: string) => path === ROUTES.about },
 ] as const;
 
@@ -34,17 +49,30 @@ export function AppHeader() {
           <span className="ag-header__brand-en">AgriScope</span>
         </NavLink>
         <nav className="ag-header__nav" aria-label="主导航">
-          {NAV_ITEMS.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className="ag-header__link"
-              aria-current={item.match(pathname) ? 'page' : undefined}
-              data-active={item.match(pathname) || undefined}
-            >
-              {item.label}
-            </NavLink>
-          ))}
+          {NAV_ITEMS.map((item) => {
+            const active = item.match(pathname);
+            return (
+              <NavLink
+                key={item.label}
+                to={item.to}
+                className="ag-header__link"
+                aria-current={active ? 'page' : undefined}
+                data-active={active || undefined}
+              >
+                {item.label}
+                {/* Hover 是本地临时下划线；Active 是共享指示线，两者不打架（V2 §43/§44） */}
+                <span className="ag-header__hover-line" aria-hidden />
+                {active && (
+                  <motion.span
+                    layoutId="main-nav-indicator"
+                    className="ag-header__indicator"
+                    aria-hidden
+                    transition={reducedMotion ? { duration: 0 } : MOTION_SPRING.direct}
+                  />
+                )}
+              </NavLink>
+            );
+          })}
         </nav>
       </div>
     </motion.header>
