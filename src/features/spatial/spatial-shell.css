@@ -1,0 +1,53 @@
+.spatial-shell { position: relative; min-height: 100dvh; background: var(--ag-paper); }
+
+.spatial-shell__canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  opacity: 1;
+  transition: opacity 440ms var(--ag-ease);
+}
+.spatial-shell__canvas:not([data-visible]) { opacity: 0; pointer-events: none; }
+.spatial-shell__canvas canvas { display: block; width: 100% !important; height: 100% !important; touch-action: none; }
+
+.spatial-shell__dom { position: relative; z-index: 1; }
+
+/* 省域沙盘标签：克制、无发光，研究城市略深 */
+.liaoning-label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 2px 4px;
+  color: var(--ag-ink-muted);
+  font-family: var(--ag-font-text);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  user-select: none;
+  transition: color 180ms var(--ag-ease), opacity 180ms var(--ag-ease);
+}
+.liaoning-label.is-research { color: var(--ag-ink); font-weight: 600; }
+.liaoning-label.is-research em {
+  font-family: var(--ag-font-mono);
+  font-style: normal;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--ag-ink-faint);
+}
+.liaoning-label.is-active { color: var(--ag-ink); }
+
+.spatial-notice {
+  position: fixed;
+  left: 50%;
+  bottom: max(28px, env(safe-area-inset-bottom));
+  z-index: 60;
+  transform: translateX(-50%);
+  max-width: min(560px, calc(100vw - 40px));
+  padding: 12px 18px;
+  border: 1px solid var(--ag-rule-strong);
+  border-radius: var(--ag-radius-sm);
+  background: var(--ag-paper-raised);
+  color: var(--ag-ink-soft);
+  font-size: var(--ag-fs-small);
+  box-shadow: 0 18px 40px rgb(26 25 23 / 0.08);
+}

@@ -1,0 +1,36 @@
+/* 原文模式：研究出版物排版，无卡片 */
+.research-article { display: flex; flex-direction: column; gap: var(--ag-space-6); }
+.research-article__head { display: flex; flex-direction: column; gap: var(--ag-space-3); padding-bottom: var(--ag-space-5); border-bottom: 1px solid var(--ag-rule); }
+.article-backlink { align-self: flex-start; color: var(--ag-ink-muted); font-size: var(--ag-fs-small); }
+.article-backlink:hover { color: var(--ag-ink); }
+
+.research-article__body { display: flex; flex-direction: column; gap: var(--ag-space-6); max-width: 82ch; }
+.article-block { display: flex; flex-direction: column; gap: var(--ag-space-4); }
+.article-h3 {
+  margin: 0;
+  color: var(--ag-ink);
+  font-family: var(--ag-font-text);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.article-p { margin: 0; color: var(--ag-ink-soft); font-size: var(--ag-fs-body); line-height: 1.85; }
+.article-p strong { color: var(--ag-ink); font-weight: 600; }
+.article-p code, .article-table code {
+  padding: 1px 5px;
+  border: 1px solid var(--ag-rule-soft);
+  border-radius: var(--ag-radius-sm);
+  background: var(--ag-paper-sunken);
+  font-family: var(--ag-font-mono);
+  font-size: 0.85em;
+}
+.article-list { display: flex; flex-direction: column; gap: 8px; margin: 0; padding-left: 20px; color: var(--ag-ink-soft); font-size: var(--ag-fs-small); line-height: 1.8; }
+
+.article-table-wrap { overflow-x: auto; }
+.article-table { min-width: 520px; }
+.article-table th, .article-table td { white-space: nowrap; }
+
+.article-figures { display: flex; flex-direction: column; gap: var(--ag-space-5); }
+.article-figures figure { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.article-figures img { width: 100%; border: 1px solid var(--ag-rule-soft); border-radius: var(--ag-radius-sm); background: var(--ag-paper-raised); }
+.article-figures figcaption { color: var(--ag-ink-faint); font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); letter-spacing: 0.04em; }

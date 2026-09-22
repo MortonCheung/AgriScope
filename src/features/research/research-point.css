@@ -1,0 +1,32 @@
+.research-point {
+  min-height: 100dvh;
+  padding: calc(var(--ag-nav-height) + clamp(28px, 6vh, 64px)) var(--ag-gutter) var(--ag-space-10);
+  background: var(--ag-paper);
+}
+.research-point__inner { display: flex; flex-direction: column; gap: var(--ag-space-6); }
+
+.research-point__crumb { display: flex; align-items: center; gap: 8px; color: var(--ag-ink-faint); font-size: var(--ag-fs-meta); }
+.research-point__crumb a { color: var(--ag-ink-muted); }
+.research-point__crumb a:hover { color: var(--ag-ink); }
+
+.research-point__head { display: flex; flex-direction: column; gap: var(--ag-space-4); }
+.research-point__title { max-width: 26ch; }
+.research-point__question { margin: 0; max-width: 60ch; color: var(--ag-ink-soft); font-size: var(--ag-fs-lead); line-height: 1.6; }
+.research-point__tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.research-point__numbers { display: flex; flex-direction: column; gap: var(--ag-space-3); padding-top: var(--ag-space-4); border-top: 1px solid var(--ag-rule-soft); }
+.research-point__topic { margin: 0; max-width: 74ch; color: var(--ag-ink-muted); font-size: var(--ag-fs-small); line-height: 1.75; }
+
+.research-point__switch { display: inline-flex; gap: 2px; align-self: flex-start; padding: 3px; border: 1px solid var(--ag-rule); border-radius: var(--ag-radius-pill); }
+.research-point__tab {
+  padding: 7px 16px;
+  border-radius: var(--ag-radius-pill);
+  color: var(--ag-ink-muted);
+  font-size: var(--ag-fs-small);
+  transition: background 180ms var(--ag-ease), color 180ms var(--ag-ease);
+}
+.research-point__tab:hover:not(:disabled) { color: var(--ag-ink); }
+.research-point__tab[data-active] { background: var(--ag-ink); color: var(--ag-paper); }
+
+.research-point__body { display: flex; flex-direction: column; gap: var(--ag-space-7); padding-top: var(--ag-space-5); border-top: 1px solid var(--ag-rule); }
+.research-point__backlink { align-self: flex-start; color: var(--ag-ink-muted); font-size: var(--ag-fs-small); }
+.research-point__backlink:hover { color: var(--ag-ink); }

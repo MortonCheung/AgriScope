@@ -1,0 +1,19 @@
+/* 研究摘要与研究点的共享排版 */
+.research-summary { display: flex; flex-direction: column; gap: var(--ag-space-5); }
+.research-summary__head { display: flex; flex-direction: column; gap: var(--ag-space-3); }
+.research-summary__tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.research-summary__lead { margin: 0; color: var(--ag-ink); font-family: var(--ag-font-display); font-size: clamp(1.15rem, 1.8vw, 1.5rem); line-height: 1.5; }
+.research-summary__block { display: flex; flex-direction: column; gap: var(--ag-space-3); padding-top: var(--ag-space-4); border-top: 1px solid var(--ag-rule-soft); }
+
+.research-summary__more { border-top: 1px solid var(--ag-rule-soft); padding-top: var(--ag-space-3); }
+.research-summary__more > summary { cursor: pointer; color: var(--ag-ink-muted); font-size: var(--ag-fs-small); list-style: none; }
+.research-summary__more > summary::-webkit-details-marker { display: none; }
+.research-summary__more > summary::before { content: "＋ "; color: var(--ag-ink-faint); }
+.research-summary__more[open] > summary::before { content: "－ "; }
+.research-summary__more > summary:hover { color: var(--ag-ink); }
+.research-summary__more-body { display: flex; flex-direction: column; gap: 10px; padding-top: var(--ag-space-3); }
+.research-summary__more-body p { margin: 0; color: var(--ag-ink-soft); font-size: var(--ag-fs-small); line-height: 1.75; }
+.research-summary__more-body strong { display: inline-block; min-width: 3.5em; color: var(--ag-ink-faint); font-weight: 500; }
+.research-summary__limits { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: var(--ag-space-3) 0 0 18px; color: var(--ag-ink-soft); font-size: var(--ag-fs-small); line-height: 1.7; }
+
+.research-summary__actions { display: flex; gap: var(--ag-space-3); flex-wrap: wrap; padding-top: var(--ag-space-2); }

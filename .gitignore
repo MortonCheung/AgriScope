@@ -1,0 +1,9 @@
+node_modules/
+dist/
+output/
+*.local
+.DS_Store
+
+# 同步产出的研究内容由 scripts/sync-shenyang-content.mjs 生成；
+# 如需版本化，取消下面一行的注释。
+# public/research/

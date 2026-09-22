@@ -1,0 +1,48 @@
+.route-page {
+  min-height: 100dvh;
+  view-transition-name: route-page;
+}
+
+/* 浏览器只负责快照；同一时刻永远只有一个活的 Canvas。 */
+::view-transition { pointer-events: none; }
+::view-transition-group(root) { animation: none; }
+::view-transition-old(root) { display: none; }
+::view-transition-new(root) { animation: none; }
+::view-transition-group(route-page) {
+  animation-duration: 390ms;
+  animation-timing-function: cubic-bezier(.22, .68, .18, 1);
+}
+::view-transition-image-pair(route-page) { isolation: isolate; }
+::view-transition-old(route-page),
+::view-transition-new(route-page) {
+  mix-blend-mode: normal;
+  transform-origin: 50% 50%;
+  animation-duration: 390ms;
+  animation-timing-function: cubic-bezier(.22, .68, .18, 1);
+  animation-fill-mode: both;
+}
+:root[data-route-direction="forward"]::view-transition-old(route-page) { z-index: 1; animation-name: page-recede; }
+:root[data-route-direction="forward"]::view-transition-new(route-page) { z-index: 2; animation-name: page-arrive; }
+:root[data-route-direction="back"]::view-transition-old(route-page) { z-index: 2; animation-name: page-arrive; animation-direction: reverse; }
+:root[data-route-direction="back"]::view-transition-new(route-page) { z-index: 1; animation-name: page-recede; animation-direction: reverse; }
+:root[data-route-direction="lateral"]::view-transition-old(route-page) { animation: page-dissolve 180ms ease both; }
+:root[data-route-direction="lateral"]::view-transition-new(route-page) { animation: page-dissolve 180ms ease reverse both; }
+
+/* 导航是稳定宿主：提交后立刻显示当前控件。 */
+::view-transition-group(ag-header) { z-index: 3; animation: none; }
+::view-transition-old(ag-header) { display: none; }
+::view-transition-new(ag-header) { animation: none; }
+
+@keyframes page-arrive {
+  from { opacity: 0; transform: translate3d(16px, 0, 0) scale(.994); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+@keyframes page-recede {
+  from { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  to { opacity: 0; transform: translate3d(-16px, 0, 0) scale(.994); }
+}
+@keyframes page-dissolve { from { opacity: 1; } to { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}

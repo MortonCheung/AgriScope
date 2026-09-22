@@ -1,0 +1,55 @@
+/**
+ * AgriScope 设计令牌 · 暖白研究出版物体系。
+ *
+ * 非数据元素只用暖白 / 近黑 / 暖灰与极浅分隔色；
+ * 彩色首先承担数据变量语义（降雨、温度、价格、成交量、极端事件……），
+ * 不因为页面空而添加装饰性彩色。
+ */
+:root {
+  /* 纸面与墨色 */
+  --ag-paper: #f7f5f1;
+  --ag-paper-raised: #fcfbf8;
+  --ag-paper-sunken: #f0ede7;
+  --ag-paper-deep: #e8e4dc;
+
+  --ag-ink: #1a1917;
+  --ag-ink-soft: #4a4641;
+  --ag-ink-muted: #736d65;
+  --ag-ink-faint: #9c968c;
+  --ag-ink-ghost: #bdb7ad;
+
+  --ag-rule: rgb(26 25 23 / 0.12);
+  --ag-rule-soft: rgb(26 25 23 / 0.07);
+  --ag-rule-strong: rgb(26 25 23 / 0.26);
+
+  --ag-focus: rgb(26 25 23 / 0.72);
+  --ag-danger: #a8402e;
+
+  /* 数据变量语义色（低饱和，稳定复用） */
+  --ag-data-rain: #4e6e8e;
+  --ag-data-temp: #b4633a;
+  --ag-data-humidity: #6e8a85;
+  --ag-data-soil: #8a6f4a;
+  --ag-data-wind: #7e8ca0;
+  --ag-data-radiation: #bf9a4a;
+  --ag-data-price: #1f1d1b;
+  --ag-data-volume: #7c8a63;
+  --ag-data-extreme: #a8402e;
+  --ag-data-model: #6b6670;
+  --ag-data-null: #9c968c;
+
+  /* 证据 / 状态语义 */
+  --ag-evidence-a: #2f3b33;
+  --ag-evidence-b: #4a5460;
+  --ag-evidence-c: #6d6152;
+  --ag-evidence-d: #6b6670;
+  --ag-evidence-unsupported: #9c968c;
+
+  --ag-radius-none: 0px;
+  --ag-radius-sm: 3px;
+  --ag-radius-md: 6px;
+  --ag-radius-pill: 999px;
+
+  --ag-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --ag-ease-standard: cubic-bezier(0.22, 0.61, 0.36, 1);
+}

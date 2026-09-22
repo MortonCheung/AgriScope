@@ -1,0 +1,76 @@
+/* 城市综合研究页：整城问答为主体的长文档版式。 */
+
+.city-report__inner { display: flex; flex-direction: column; gap: var(--ag-section-gap); }
+
+.city-report__head { display: flex; flex-direction: column; gap: var(--ag-space-4); padding-bottom: var(--ag-space-6); border-bottom: 1px solid var(--ag-rule); }
+.city-report__title { max-width: 22ch; }
+.city-report__headline { margin: 0; max-width: 60ch; color: var(--ag-ink-soft); font-size: var(--ag-fs-lead); line-height: 1.55; }
+.city-report__risk { display: flex; align-items: center; gap: var(--ag-space-3); margin: 0; color: var(--ag-ink); font-size: 1.05rem; }
+.city-report__definition { max-width: 66ch; }
+
+.city-report__meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ag-space-4) var(--ag-space-6); padding-top: var(--ag-space-4); border-top: 1px solid var(--ag-rule-soft); }
+.city-report__meta .ag-deflist__item dt { text-transform: none; letter-spacing: 0.08em; }
+.city-report__meta .ag-deflist__item dd { font-size: 0.95rem; line-height: 1.6; }
+
+.city-report__entries { padding-top: var(--ag-space-2); }
+
+/* 整城问答 */
+.city-report__qa-list { display: flex; flex-direction: column; border-top: 1px solid var(--ag-rule); }
+.report-qa { border-bottom: 1px solid var(--ag-rule-soft); }
+.report-qa__summary {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ag-space-4);
+  padding: var(--ag-space-5) var(--ag-space-2);
+  cursor: pointer;
+  list-style: none;
+  transition: background 160ms var(--ag-ease);
+}
+.report-qa__summary::-webkit-details-marker { display: none; }
+.report-qa__summary:hover { background: color-mix(in srgb, var(--ag-ink) 3%, transparent); }
+.report-qa__index { flex: none; color: var(--ag-ink-ghost); font-family: var(--ag-font-mono); font-size: var(--ag-fs-meta); letter-spacing: 0.1em; }
+.report-qa__question { color: var(--ag-ink); font-family: var(--ag-font-text); font-size: 1.1rem; font-weight: 600; line-height: 1.45; }
+.report-qa[open] .report-qa__index { color: var(--ag-ink-muted); }
+.report-qa__answer { margin: 0 0 var(--ag-space-6); padding-left: calc(var(--ag-space-4) + 1.9em); max-width: var(--ag-measure); color: var(--ag-ink-soft); font-size: var(--ag-fs-body); line-height: var(--ag-lh-body); }
+
+.city-report__caveats { display: flex; flex-direction: column; gap: var(--ag-space-4); padding-top: var(--ag-space-6); border-top: 1px solid var(--ag-rule-soft); }
+
+/* 通用列表 */
+.report-list { display: flex; flex-direction: column; gap: 10px; margin: 0; padding-left: 20px; color: var(--ag-ink-soft); font-size: var(--ag-fs-small); line-height: 1.75; }
+.report-list--numbered { list-style: decimal; }
+.report-list--redline { list-style: none; padding-left: 0; }
+.report-list--redline li { position: relative; padding-left: 22px; }
+.report-list--redline li::before { content: ""; position: absolute; left: 0; top: 0.72em; width: 10px; height: 1px; background: var(--ag-data-extreme); }
+
+/* 专题与研究点 */
+.city-report__topics { display: flex; flex-direction: column; gap: var(--ag-space-8); }
+.report-topic { display: flex; flex-direction: column; gap: var(--ag-space-3); }
+.report-topic__head { display: flex; align-items: baseline; gap: var(--ag-space-3); flex-wrap: wrap; }
+.report-topic__id { color: var(--ag-ink-faint); font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); letter-spacing: 0.14em; }
+.report-topic__title { margin: 0; color: var(--ag-ink); font-size: 1.1rem; font-weight: 600; }
+.report-topic__summary { max-width: 74ch; }
+
+.report-points { display: flex; flex-direction: column; margin: var(--ag-space-2) 0 0; padding: 0; list-style: none; border-top: 1px solid var(--ag-rule-soft); }
+.report-point {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ag-space-4);
+  padding: var(--ag-space-4) var(--ag-space-2);
+  border-bottom: 1px solid var(--ag-rule-soft);
+  transition: background 160ms var(--ag-ease);
+}
+.report-point:hover { background: color-mix(in srgb, var(--ag-ink) 4%, transparent); }
+.report-point__id { color: var(--ag-ink-faint); font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); letter-spacing: 0.1em; }
+.report-point__title { min-width: 0; color: var(--ag-ink); font-size: 1rem; line-height: 1.45; }
+.report-point__tags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+
+.city-report__method { align-items: start; }
+.city-report__method > div { display: flex; flex-direction: column; gap: var(--ag-space-4); }
+
+@media (max-width: 767px) {
+  .city-report__meta { grid-template-columns: minmax(0, 1fr); }
+  .report-qa__answer { padding-left: 0; }
+  .report-point { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .report-point__tags { justify-content: flex-start; }
+}

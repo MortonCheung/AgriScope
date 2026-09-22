@@ -1,0 +1,107 @@
+/**
+ * AgriScope 排版体系。
+ *
+ * 大型标题允许非常大（参考 Claude / Apple）；
+ * 展示层用衬线（出版物感），正文与控件用系统无衬线。
+ */
+:root {
+  --ag-font-display: "Songti SC", "Noto Serif SC", "Source Han Serif SC", "STSong", Georgia, "Times New Roman", serif;
+  --ag-font-text: -apple-system, BlinkMacSystemFont, "PingFang SC", "Noto Sans SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+  --ag-font-mono: "SFMono-Regular", "SF Mono", Consolas, "Liberation Mono", monospace;
+
+  --ag-fs-display: clamp(3.4rem, 10vw, 8.5rem);
+  --ag-fs-hero: clamp(2.4rem, 5.6vw, 4.6rem);
+  --ag-fs-section: clamp(1.75rem, 3.2vw, 2.75rem);
+  --ag-fs-title: clamp(1.25rem, 1.6vw, 1.5rem);
+  --ag-fs-lead: clamp(1.05rem, 1.5vw, 1.3rem);
+  --ag-fs-body: 1rem;
+  --ag-fs-small: 0.875rem;
+  --ag-fs-meta: 0.75rem;
+  --ag-fs-micro: 0.6875rem;
+
+  --ag-lh-tight: 1.06;
+  --ag-lh-heading: 1.18;
+  --ag-lh-body: 1.78;
+  --ag-lh-relaxed: 1.9;
+
+  --ag-tracking-display: -0.02em;
+  --ag-tracking-label: 0.16em;
+  --ag-tracking-loosen: 0.06em;
+}
+
+.ag-display {
+  margin: 0;
+  font-family: var(--ag-font-display);
+  font-weight: 400;
+  font-size: var(--ag-fs-display);
+  line-height: var(--ag-lh-tight);
+  letter-spacing: var(--ag-tracking-display);
+}
+
+.ag-hero {
+  margin: 0;
+  font-family: var(--ag-font-display);
+  font-weight: 400;
+  font-size: var(--ag-fs-hero);
+  line-height: var(--ag-lh-heading);
+  letter-spacing: var(--ag-tracking-display);
+}
+
+.ag-section-title {
+  margin: 0;
+  font-family: var(--ag-font-display);
+  font-weight: 400;
+  font-size: var(--ag-fs-section);
+  line-height: var(--ag-lh-heading);
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.ag-title {
+  margin: 0;
+  font-family: var(--ag-font-text);
+  font-weight: 600;
+  font-size: var(--ag-fs-title);
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+.ag-lead {
+  margin: 0;
+  max-width: 46ch;
+  color: var(--ag-ink-soft);
+  font-size: var(--ag-fs-lead);
+  line-height: 1.6;
+}
+
+.ag-body {
+  margin: 0;
+  max-width: var(--ag-measure, 68ch);
+  color: var(--ag-ink-soft);
+  font-size: var(--ag-fs-body);
+  line-height: var(--ag-lh-body);
+}
+
+.ag-label {
+  display: block;
+  margin: 0;
+  color: var(--ag-ink-faint);
+  font-family: var(--ag-font-mono);
+  font-size: var(--ag-fs-micro);
+  letter-spacing: var(--ag-tracking-label);
+  text-transform: uppercase;
+}
+
+.ag-meta {
+  margin: 0;
+  color: var(--ag-ink-muted);
+  font-family: var(--ag-font-mono);
+  font-size: var(--ag-fs-meta);
+  letter-spacing: 0.02em;
+}
+
+.ag-number {
+  font-family: var(--ag-font-display);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
