@@ -45,6 +45,13 @@ export interface ColumnMeta {
   valueType: ColumnValueType;
   unit?: string;
   precision?: number;
+  /**
+   * 内部机读列（§8/§10：不把数据库字段搬进界面）。
+   * 典型是 `window_key`：它和 `window` 表达同一件事，而 `window` 已经是研究自己写的
+   * 「0日 / 1-3日 / 4-7日 / 8-14日」。两张都渲染会得到两个同名「滞后窗口」列。
+   * 这类列仍然**必须登记**（否则 verify 会报未覆盖），但不显示。
+   */
+  internal?: boolean;
 }
 
 /** 成交量红线（V5 §14）：单位未公开，写一次、不逐格重复。 */
@@ -70,7 +77,8 @@ export const COLUMN_META: Record<string, ColumnMeta> = {
   model: { key: 'model', label: '模型口径', kind: 'text', valueType: 'text' },
   mode: { key: 'mode', label: '检验模式', kind: 'text', valueType: 'text' },
   window: { key: 'window', label: '滞后窗口', kind: 'text', valueType: 'text' },
-  window_key: { key: 'window_key', label: '滞后窗口', kind: 'text', valueType: 'text' },
+  // 机读窗口编号（w0 / w13 / w47 / w814）：与 window 同义，登记但不显示，避免两个「滞后窗口」。
+  window_key: { key: 'window_key', label: '窗口编号', kind: 'text', valueType: 'text', internal: true },
   start: { key: 'start', label: '起始', kind: 'text', valueType: 'text' },
   end: { key: 'end', label: '结束', kind: 'text', valueType: 'text' },
   ids: { key: 'ids', label: '事件编号', kind: 'text', valueType: 'text' },
@@ -182,8 +190,8 @@ export const VALUE_LABELS: Record<string, Record<string, string>> = {
   outcome: { price: '价格', volume: '成交量', log_yield: '单产（对数）' },
   hazard: { heat: '高温', rain: '降雨' },
   mode: { lodo: '留一天', loyo: '留一年' },
-  /** §77：POOLED 面向用户写作「总体」。 */
-  target: { POOLED: '总体' },
+  /** §77：POOLED 面向用户写作「总体」。情景表里 target 同时出现 price / volume。 */
+  target: { POOLED: '总体', price: '价格', volume: '成交量' },
   window_key: { w0: '当日', w13: '1–3 日', w47: '4–7 日', w814: '8–14 日' },
   model: { 'price_z ~ volume_z + price_lag1': '价格 z ~ 成交量 z + 价格滞后 1 期' },
   exposure: {
@@ -321,7 +329,16 @@ export function columnLabel(key: string): string | null {
 
 /** 分类取值的受控中文；没有映射就返回原值（不猜）。 */
 export function valueLabel(columnKey: string, raw: string): string {
-  return VALUE_LABELS[columnKey]?.[raw] ?? GLOBAL_VALUE_LABELS[raw] ?? raw;
+  const label = VALUE_LABELS[columnKey]?.[raw] ?? GLOBAL_VALUE_LABELS[raw];
+  if (label !== undefined) return label;
+  /*
+   * 没登记过的取值：这里保留原值而不是显示「—」。
+   * 取值是**内容**，不是列名 —— 把它藏起来会让读者以为这一格没有数据（§2 不伪造、不改写），
+   * 而 §36 禁止的是泄漏英文列名，列名已由 DataTable 的受控映射挡住。
+   * 但这是映射缺口，开发期必须能看见（生产构建里 import.meta.env.DEV 为假，整段被去掉）。
+   */
+  if (import.meta.env.DEV) console.info(`未登记的取值（需补 VALUE_LABELS）：${columnKey} = ${raw}`);
+  return raw;
 }
 
 export function formatNumber(value: number, precision?: number): string {

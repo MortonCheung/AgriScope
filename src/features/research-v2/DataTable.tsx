@@ -28,7 +28,11 @@ export function DataTable({ table, caption, filterColumn, maxRows = 24, note }: 
   const [filter, setFilter] = useState<string>('');
 
   const columns = useMemo(
-    () => table.columns.filter((key) => columnMeta(key) !== null),
+    () => table.columns.filter((key) => {
+      const meta = columnMeta(key);
+      // 未登记的列不渲染；标记为 internal 的机读列（如 window_key）登记但不显示（§8/§10）。
+      return meta !== null && meta.internal !== true;
+    }),
     [table.columns],
   );
   const unregistered = useMemo(
@@ -56,7 +60,7 @@ export function DataTable({ table, caption, filterColumn, maxRows = 24, note }: 
           {caption && <span className="data-table__caption">{caption}</span>}
           {filterOptions.length > 0 && (
             <label className="data-table__filter">
-              <span>{columnMeta(filterColumn ?? '')?.label ?? filterColumn}</span>
+              <span>{columnMeta(filterColumn ?? '')?.label ?? '筛选'}</span>
               <select value={filter} onChange={(event) => setFilter(event.target.value)}>
                 <option value="">全部</option>
                 {filterOptions.map((option) => (
