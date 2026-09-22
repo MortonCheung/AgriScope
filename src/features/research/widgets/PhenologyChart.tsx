@@ -116,7 +116,8 @@ export function PhenologyChart({ source, evidenceLevel }: {
       note={
         model
           ? `模型 y ~ z_hazard + z_hazard×in_window + in_window + 控制（HAC-14）；横条为交互项 b2。口径：${scopeLabel}，暴露变量：${hazardLabel}。`
-          : '正在读取物候交互表。'
+          /* 表格未就绪时不输出任何过程文案（V4 §三十九）：图表区的局部骨架已经说明在加载（§四十六）。 */
+          : undefined
       }
       provenance="observed"
       lineage={[source.split('/').pop() ?? '']}
