@@ -37,54 +37,65 @@ function cityView(targetPoint: THREE.Vector3, radius: number) {
   };
 }
 
-/** Opening 专用：极轻的鼠标视差（±1.5°），不进省域交互，避免影响拖动（V2 §56）。 */
-const PARALLAX_LIMIT_DEG = 1.5;
-const PARALLAX_LERP = 0.1;
+/** 视差强度（V4 §二十一）：Opening 更明显，正式省域沙盘更轻；城市 Reader 关闭。 */
+const PARALLAX_DEG = { opening: 1.5, province: 0.7 } as const;
+const PARALLAX_LERP = 0.08;
+const PARALLAX_EPSILON = 0.0002;
 
-function ParallaxGroup({ enabled, children }: { enabled: boolean; children: ReactNode }) {
+/**
+ * 极轻的鼠标视差（V4 §二十）。
+ *
+ * 旧实现把 useAnimationFrames(moving, MOTION_DURATION.slow) 当作生命周期：
+ * 帧窗口只有 0.44s，窗口结束后即使指针还在持续移动也不会再开新窗口，
+ * 于是表现为"一开始会倾斜，约半秒后就不再响应"。
+ *
+ * 新实现不依赖任何固定时长：
+ *   pointermove → 更新 target → 立即 invalidate()
+ *   useFrame    → 向 target 收敛 → 未收敛继续 invalidate() → 收敛即停
+ * 关闭时（进入城市 Reader）同样收敛回 0，不会把倾斜留在地图上。
+ */
+function ParallaxGroup({ strength, enabled, children }: {
+  strength: keyof typeof PARALLAX_DEG;
+  enabled: boolean;
+  children: ReactNode;
+}) {
   const group = useRef<THREE.Group>(null);
   const pointer = useRef({ x: 0, y: 0 });
-  const running = useRef(false);
-  const [moving, setMoving] = useState(false);
-  useAnimationFrames(moving, MOTION_DURATION.slow);
+  const invalidate = useThree((state) => state.invalidate);
 
   useEffect(() => {
     if (!enabled) return;
-    const wake = () => {
-      if (!running.current) { running.current = true; setMoving(true); }
-    };
     const onMove = (event: PointerEvent) => {
       pointer.current = {
         x: (event.clientX / window.innerWidth) * 2 - 1,
         y: (event.clientY / window.innerHeight) * 2 - 1,
       };
-      wake();
+      invalidate();
     };
-    const onLeave = () => { pointer.current = { x: 0, y: 0 }; wake(); };
+    const onLeave = () => { pointer.current = { x: 0, y: 0 }; invalidate(); };
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerleave', onLeave);
     return () => {
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerleave', onLeave);
-      running.current = false;
     };
-  }, [enabled]);
+  }, [enabled, invalidate]);
 
   useFrame(() => {
     const instance = group.current;
     if (!instance) return;
-    const limit = THREE.MathUtils.degToRad(PARALLAX_LIMIT_DEG);
-    const targetZ = -pointer.current.x * limit;
-    const targetX = pointer.current.y * limit;
+    const limit = enabled ? THREE.MathUtils.degToRad(PARALLAX_DEG[strength]) : 0;
+    const targetZ = enabled ? -pointer.current.x * limit : 0;
+    const targetX = enabled ? pointer.current.y * limit : 0;
     const deltaZ = targetZ - instance.rotation.z;
     const deltaX = targetX - instance.rotation.x;
-    if (Math.abs(deltaZ) < 0.0004 && Math.abs(deltaX) < 0.0004) {
+    if (Math.abs(deltaZ) < PARALLAX_EPSILON && Math.abs(deltaX) < PARALLAX_EPSILON) {
       instance.rotation.set(targetX, 0, targetZ);
-      if (running.current) { running.current = false; setMoving(false); }
       return;
     }
     instance.rotation.z += deltaZ * PARALLAX_LERP;
     instance.rotation.x += deltaX * PARALLAX_LERP;
+    invalidate();
   });
 
   return <group ref={group}>{children}</group>;
@@ -242,7 +253,8 @@ function SceneContents({ mode, focusCityId, hoveredCityId, dollyToken, onHoverCi
         resolution={512}
       />
       <OpeningRevealDriver mode={mode} reducedMotion={reducedMotion} progressRef={revealRef} />
-      <ParallaxGroup enabled={mode === 'opening'}>
+      {/* 视差只服务 Opening 与正式省域沙盘；城市 Reader 会收敛回 0（V4 §二十一） */}
+      <ParallaxGroup strength={mode === 'opening' ? 'opening' : 'province'} enabled={mode === 'opening' || mode === 'province'}>
         {model.cities.map((city, index) => (
           <CitySolidMesh
             key={city.id}
