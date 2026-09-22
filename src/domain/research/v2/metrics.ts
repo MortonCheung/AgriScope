@@ -322,7 +322,6 @@ const COLUMN_INDEX = new Map(Object.entries(COLUMN_META));
 export function columnMeta(key: string): ColumnMeta | null {
   return COLUMN_INDEX.get(key) ?? null;
 }
-
 export function columnLabel(key: string): string | null {
   return columnMeta(key)?.label ?? null;
 }
@@ -378,3 +377,101 @@ export function formatMetricValue(value: number | string | null | undefined, met
   if (meta.unit === UNIT_PERCENT) return `${text}%`;
   return `${text} ${meta.unit}`;
 }
+
+/* ------------------------------------------------------------------ *
+ * 正文术语（V5 §76）
+ *
+ * 研究正文里会出现英文标识符。§76 的要求是：英文工程字段清理掉，
+ * 只允许保留标准名称（STL / HAC / SHAP / ALE / R² / z / ERA5），且必须处在中文语境。
+ *
+ * 下面三件事一起构成这条规则，全部只作用于**反引号里的标识符**（研究自己标记的术语）：
+ *   1. REGISTERED —— 列名与分类取值直接复用表里的中文名，两边永远一致；
+ *   2. PROSE_TERMS —— 只在叙述里出现、不进任何表格的指标名；每条都能追到研究的同义表述（见注释）；
+ *   3. GLOSS_UNWRAP —— 研究写成「`标识符`（中文定义）」的，直接留下中文定义，
+ *      因为标识符本身就是冗余的英文工程名（例：`growing_season_precip`（生长季累计降水，mm））。
+ * 其余不认识的标识符一律不渲染，绝不把英文工程名露给读者；
+ * 只有公式与统计记号（含 = → ~ · β ε Σ 等，或 `y_(t-1)` 这类下标）原样保留。
+ * ------------------------------------------------------------------ */
+
+/**
+ * 只出现在研究叙述里、不进表格的指标名。
+ * 每条都抄自研究自己的同义表述，前端没有新增术语：
+ *   A02 §2「价格异常 `price_z` / 成交量异常 `volume_z`」
+ *   A04 §2「事件相对化异常 z `z_rel`」
+ *   A08 §2「次要结局 `production`：总产量」「结构变量 `sown_area`：播种面积」
+ */
+export const PROSE_TERMS: Record<string, string> = {
+  price_z: '价格异常',
+  volume_z: '成交量异常',
+  z_rel: '事件相对化异常',
+  production: '总产量',
+  sown_area: '播种面积',
+  // A03 §4 的四个降水窗口，与研究里 window_key 的中文一一对应。
+  precip_w0: '当日',
+  precip_w13: '1–3 日',
+  precip_w47: '4–7 日',
+  precip_w814: '8–14 日',
+};
+
+/**
+ * 研究写成「`标识符`（中文定义）」的标识符。
+ * 只登记**已逐条核对过括号里确实是该标识符的定义**的那些；
+ * 括号里如果是别的东西（例如 A03 的 `precip_7d`（韭菜、黄瓜）是品种清单），
+ * 绝不能展开，否则会把变量名换成品种名。
+ */
+export const GLOSS_UNWRAP = new Set([
+  'growing_season_temp_mean',
+  'growing_season_precip',
+  'max_1d_precip',
+  'heavy_rain_days',
+  'vpd_mean',
+  'et0_sum',
+  'hot_days',
+  'precip_w0',
+]);
+
+/** 研究自己的证据状态词表（A09 §1）与合并口径（§77）；出现在正文与正文表格里。 */
+export const PROSE_ENUM_REPLACEMENTS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/\bPOOLED\b/g, '总体'],
+  [/\bdescriptive_only\b/g, '仅描述'],
+  [/\bpartly_supported\b/g, '部分支持'],
+  [/\bnot_supported\b/g, '未获支持'],
+  [/\bsupported\b/g, '支持'],
+];
+
+const VALUE_INDEX = new Map<string, string>();
+for (const [key, label] of Object.entries(GLOBAL_VALUE_LABELS)) VALUE_INDEX.set(key, label);
+for (const mapping of Object.values(VALUE_LABELS)) {
+  for (const [key, label] of Object.entries(mapping)) {
+    if (!VALUE_INDEX.has(key)) VALUE_INDEX.set(key, label);
+  }
+}
+
+/**
+ * 正文里的术语 → 中文；返回 null 表示前端没有可信译名（调用方不得回退成英文）。
+ * 列名优先于取值：两者同名时以列名为准（列名描述"这是什么"）。
+ */
+export function proseTerm(token: string): string | null {
+  const column = COLUMN_INDEX.get(token);
+  if (column) return column.label;
+  const prose = PROSE_TERMS[token];
+  if (prose) return prose;
+  return VALUE_INDEX.get(token) ?? null;
+}
+
+/**
+ * 正文里可以**裸替换**的标识符（没有加反引号的那些，例如 `**sown_area**：播种面积`）。
+ *
+ * 刻意收得很窄：只收「一眼就是字段名」的形状 —— 带下划线的、全大写的、
+ * 或已登记在 PROSE_TERMS 里的。像 `note` / `start` / `window` 这类普通英文单词
+ * 即使登记为列名也不裸替换，否则可能动到正文里正常的英文表述。
+ * 按长度降序，供 markdown.tsx 直接拼成一个交替正则。
+ */
+export const PROSE_TOKEN_CANDIDATES: readonly string[] = [...new Set([
+  ...COLUMN_INDEX.keys(),
+  ...VALUE_INDEX.keys(),
+  ...Object.keys(PROSE_TERMS),
+])]
+  .filter((key) => /^[A-Za-z][A-Za-z0-9_]*$/.test(key) && key.length >= 3)
+  .filter((key) => key.includes('_') || /^[A-Z][A-Z0-9_]*$/.test(key) || key in PROSE_TERMS)
+  .sort((a, b) => b.length - a.length);

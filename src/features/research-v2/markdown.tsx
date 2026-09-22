@@ -1,4 +1,5 @@
 import { Fragment, type ReactNode } from 'react';
+import { GLOSS_UNWRAP, PROSE_ENUM_REPLACEMENTS, PROSE_TOKEN_CANDIDATES, proseTerm } from '../../domain/research/v2/metrics';
 
 /**
  * 有限 markdown 解析（V5 §33 的现实退化）。
@@ -110,46 +111,128 @@ export function parseMarkdownBlocks(source: string): MdBlock[] {
 }
 
 /** 数据文件名（含扩展名）：可见文本里绝不能出现（V5 §38）。 */
-const FILE_LIKE = /\.(csv|md|png|json|txt)$/i;
+const FILE_LIKE = /\.(csv|md|png|json|txt|parquet)$/i;
 /** 正文里**没有加反引号**的文件名同样要处理（研究正文两种写法都有）。 */
-const FILE_IN_TEXT = /[A-Za-z0-9_./-]+\.(?:csv|md|png|json|txt)\b/gi;
-/** 括号里只装了一个文件名 —— 研究正文最常见的写法。 */
-const BRACKETED_FILE = /[（(]\s*`?([A-Za-z0-9_./-]+\.(?:csv|md|png|json|txt))`?\s*[）)]/gi;
+const FILE_IN_TEXT = /[A-Za-z0-9_./-]+\.(?:csv|md|png|json|txt|parquet)\b/gi;
+/** 内部路径与 URL：`results/metrics/…`、`data/x.parquet`、`https://…`（§37/§38 红线）。 */
+const PATH_LIKE = /(:\/\/)|(^[A-Za-z0-9_.-]+\/[A-Za-z0-9_./-]+$)/;
+/** 内部标记：`is_core=False`、`volume_unit=unknown` 这类键值对。 */
+const FLAG_LIKE = /^[A-Za-z_][A-Za-z_0-9]*\s*=\s*[A-Za-z_][A-Za-z_0-9]*$/;
+/** 公式与统计记号：这些是标准写法，按 §76 允许保留（且必须处在中文语境）。 */
+const NOTATION = /[=→←~·×±÷≤≥≠∑ΣαβγδεζηθκλμνξπρσςτφχψωΩ]|_\*|_\(|_[a-zA-Z]\b|_[0-9]|^(mean|median|log|exp|sd|max|min)\(/;
+/** 判断"这一段像不像公式"：有数学符号又没有中文，就不动它。 */
+const MATH_SYMBOL = /[=→←~·×±÷≤≥∑ΣαβγδεζηθκλμνξπρσςτφχψωΩ]/;
+const CJK = /[\u4e00-\u9fff]/;
+/** 丢弃内部标记后可能留下空括号，一并收掉。 */
+const EMPTY_BRACKETS = /[（(]\s*[）)]/g;
+/** 括号组（不含嵌套）；研究用括号承载内部交接说明与术语定义。 */
+const BRACKET_GROUP = /[（(]([^（）\n]{1,240})[）)]/g;
+/** 每组里的反引号标识符。 */
+const BACKTICK_IN_GROUP = /`([^`\n]+)`/g;
+/** 裸标识符（没有加反引号）的替换式：由受控词表拼出，长词优先。 */
+const BARE_TERM = new RegExp(`(?<![A-Za-z0-9_])(${PROSE_TOKEN_CANDIDATES.join('|')})(?![A-Za-z0-9_])`, 'g');
+/**
+ * 正文里没加反引号的内部键值标记（例：`robust=True`）。
+ * 值必须以字母开头，因此 `p=0.057`、`k=1..14` 这类统计记号不会被误删。
+ */
+const BARE_FLAG = /(?<![A-Za-z0-9_])[A-Za-z_][A-Za-z_0-9]*=[A-Za-z_][A-Za-z_0-9]*(?![A-Za-z0-9_])/g;
+
+/** 研究写成「`标识符`（中文定义）」时，直接留下中文定义（V5 §76）。 */
+const TERM_WITH_GLOSS = /`([^`\n]+)`（([^（）\n]{1,140})）/g;
+
+function applyProseEnums(text: string): string {
+  let out = text;
+  for (const [pattern, label] of PROSE_ENUM_REPLACEMENTS) out = out.replace(pattern, label);
+  return out;
+}
+
+function unwrapGlosses(text: string): string {
+  return text.replace(TERM_WITH_GLOSS, (whole, token: string, gloss: string) =>
+    (GLOSS_UNWRAP.has(token.trim()) ? gloss : whole));
+}
+
+/** 内部交接标记：路径 / URL / 键值对 / 无编号可用的文件名 / 以下划线开头的片段。 */
+function isInternalToken(token: string, refs?: Map<string, string>): boolean {
+  if (FILE_LIKE.test(token)) return !(refs?.has(token) ?? false);
+  return PATH_LIKE.test(token) || FLAG_LIKE.test(token) || token.startsWith('_');
+}
 
 /**
- * 文件名被丢弃时，包住它的括号也必须一起走。
- * 否则「证据登记表（`evidence/claim_evidence.csv`）」会渲染成「证据登记表（）」，
- * 留下一个指向空白处的括号 —— 那比不显示更糟。
- * 只有该文件能对应到已渲染资产（有编号可用）时才保留括号。
+ * 裸标识符（没有加反引号的英文工程名）→ 中文。
+ * 只替换受控词表里的词，且用词边界卡住下划线，所以 `weather_t`、`price_lag1`
+ * 这类公式记号不会被拆开；整段像公式的（有数学符号且没有中文）直接跳过。
  */
-function dropOrphanBrackets(text: string, refs?: Map<string, string>): string {
-  return text.replace(BRACKETED_FILE, (whole, file: string) => (refs?.has(file) ? whole : ''));
+function translateBare(text: string): string {
+  const withoutFlags = text.replace(BARE_FLAG, '');
+  if (MATH_SYMBOL.test(withoutFlags) && !CJK.test(withoutFlags)) return withoutFlags;
+  return withoutFlags.replace(BARE_TERM, (whole, token: string) => proseTerm(token) ?? whole);
+}
+
+/**
+ * 处理括号组（V5 §38/§76）。
+ *
+ * 研究正文的括号有两种用途，必须分开处理：
+ *   · 「（表 `x.csv` 的 `_loo` 对照见 `data/….parquet`）」这类是**内部交接说明**，
+ *     读者不需要它；只删掉内部标记会留下半句话（「的 对照见 」），所以整组一起去掉；
+ *   · 「（生长季累计降水，mm）」这类是**术语定义**，要留下。
+ * 判据很简单：组里出现了内部标记就整组去掉，否则原样保留。
+ */
+function dropInternalParentheticals(text: string, refs?: Map<string, string>): string {
+  return text.replace(BRACKET_GROUP, (whole, inner: string) => {
+    const tokens = [...inner.matchAll(BACKTICK_IN_GROUP)].map((match) => match[1].trim());
+    if (tokens.some((token) => isInternalToken(token, refs))) return '';
+    return whole;
+  });
+}
+
+/**
+ * 一个反引号标识符该变成什么（V5 §76）：
+ *   · 文件名 → 已渲染资产的编号（`表 2` / `图 1`），对不上就不渲染；
+ *   · 内部路径 / URL / 键值对 → 不渲染；
+ *   · 有受控中文名的列名或取值 → 中文名；
+ *   · 公式与统计记号 → 原样保留（`<code>`）；
+ *   · 其余不认识的英文工程名 → 不渲染，绝不让它进界面。
+ */
+function inlineCode(inner: string, refs?: Map<string, string>): ReactNode {
+  if (FILE_LIKE.test(inner)) return refs?.get(inner) ?? null;
+  if (isInternalToken(inner, refs)) return null;
+  const term = proseTerm(inner);
+  if (term) return <span className="md-term">{term}</span>;
+  if (NOTATION.test(inner)) return <code>{inner}</code>;
+  if (import.meta.env.DEV) console.info(`正文里未登记的英文标识符（需补 COLUMN_META / PROSE_TERMS）：${inner}`);
+  return null;
 }
 
 /**
  * 行内语法：只认 `**加粗**` 与 `` `代码` ``，其余原样。
+ *
+ * 预处理只做一次；加粗内部再递归一次，因为研究会写成
+ * `**主结局 \`log_yield\`**：…` —— 反引号被包在粗体里，
+ * 不递归的话那层标识符就绕过了全部规则。
  *
  * 数据文件名（V5 §38 红线）在两种写法下都不许进界面：
  *   - 能对应到已渲染资产 → 换成编号（`表 2` / `图 1`），引用仍然可读；
  *   - 对应不上 → 直接不渲染，绝不把文件名露给用户。
  */
 export function renderInline(rawText: string, keyPrefix = 'i', refs?: Map<string, string>): ReactNode[] {
-  const text = dropOrphanBrackets(rawText, refs);
+  const prepared = dropInternalParentheticals(unwrapGlosses(applyProseEnums(rawText)), refs);
+  return renderPrepared(prepared, keyPrefix, refs);
+}
+
+function renderPrepared(text: string, keyPrefix: string, refs?: Map<string, string>): ReactNode[] {
   const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).filter((part) => part !== '');
   return parts.map((part, index) => {
     const key = `${keyPrefix}-${index}`;
-    if (part.startsWith('**') && part.endsWith('**')) return <strong key={key}>{part.slice(2, -2)}</strong>;
-    if (part.startsWith('`') && part.endsWith('`')) {
-      const inner = part.slice(1, -1);
-      if (FILE_LIKE.test(inner)) {
-        const label = refs?.get(inner);
-        return label ? <span key={key} className="md-ref">{label}</span> : null;
-      }
-      return <code key={key}>{inner}</code>;
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={key}>{renderPrepared(part.slice(2, -2), `${key}s`, refs)}</strong>;
     }
-    const matches = part.match(FILE_IN_TEXT) ?? [];
-    if (matches.length === 0) return <span key={key}>{part}</span>;
-    const segments = part.split(FILE_IN_TEXT);
+    if (part.startsWith('`') && part.endsWith('`')) {
+      return <Fragment key={key}>{inlineCode(part.slice(1, -1), refs)}</Fragment>;
+    }
+    const plain = translateBare(part).replace(EMPTY_BRACKETS, '');
+    const matches = plain.match(FILE_IN_TEXT) ?? [];
+    if (matches.length === 0) return <span key={key}>{plain}</span>;
+    const segments = plain.split(FILE_IN_TEXT);
     return (
       <span key={key}>
         {segments.map((segment, segmentIndex) => (
