@@ -41,7 +41,13 @@ const resource = createResource();
 
 async function fetchTable(file: string): Promise<ScenarioTable> {
   const response = await fetch(`${BASE}/${file}`);
-  if (!response.ok) throw new Error(`加载失败 ${response.status}：${file}`);
+  // 对外文案不带文件名 / 路径（V5 §38）；具体地址只在开发期通过 cause 附带。
+  if (!response.ok) {
+    const error = new Error(`研究资源读取失败：情景表（HTTP ${response.status}）`);
+    error.name = 'PayloadError';
+    error.cause = import.meta.env.DEV ? file : undefined;
+    throw error;
+  }
   const parsed = parseCsv(await response.text());
   return { file, columns: parsed.columns, rows: parsed.rows };
 }
@@ -63,7 +69,7 @@ function ScenarioBlock({ file, caption }: { file: string; caption: string }) {
   return (
     <section className="scenario__block">
       {state.status === 'ready' && <DataTable table={state.data} caption={caption} filterColumn="crop" maxRows={20} />}
-      {state.status === 'error' && <p className="scenario__pending">情景结果待接入</p>}
+      {state.status === 'error' && <p className="scenario__pending">研究内容待接入</p>}
     </section>
   );
 }

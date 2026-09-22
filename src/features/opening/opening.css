@@ -9,22 +9,22 @@
 }
 .opening__inner { display: flex; flex-direction: column; gap: var(--ag-space-5); justify-self: start; align-self: end; max-width: min(680px, 62vw); }
 
-.opening__wordmark { display: flex; align-items: baseline; gap: clamp(14px, 2vw, 32px); flex-wrap: wrap; }
-.opening__cn {
-  font-family: var(--ag-font-display);
-  font-size: var(--ag-fs-display);
-  line-height: 0.94;
-  letter-spacing: 0.04em;
-  color: var(--ag-ink);
+.opening__wordmark { display: flex; align-items: center; gap: clamp(12px, 1.6vw, 22px); flex-wrap: wrap; }
+/* Logo slot（V5 §19）：正式品牌 Logo 未指定，只预留位形，不由前端自行设计。 */
+.opening__mark {
+  width: clamp(28px, 4vw, 44px);
+  aspect-ratio: 1;
+  border: 1px solid var(--ag-rule);
+  background: color-mix(in srgb, var(--ag-paper) 70%, transparent);
 }
 .opening__en {
   font-family: var(--ag-font-mono);
-  font-size: clamp(0.9rem, 1.6vw, 1.35rem);
-  letter-spacing: 0.34em;
+  font-size: var(--ag-fs-display);
+  line-height: 0.94;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--ag-ink-faint);
+  color: var(--ag-ink);
 }
-
 .opening__subtitle {
   max-width: 32ch;
   color: var(--ag-ink-soft);

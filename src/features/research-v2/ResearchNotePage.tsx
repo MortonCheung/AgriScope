@@ -196,7 +196,7 @@ export function ResearchNotePage() {
         <article className="research-note__body">
           <header className="research-note__header">
             <p className="research-note__meta">{articleId} · {city.shortName}</p>
-            <h1 className="research-note__title">{article?.title ?? '读取中'}</h1>
+            <h1 className="research-note__title">{article?.title ?? ''}</h1>
             {article && <p className="research-note__lead">{article.frontend_summary}</p>}
             <div className="research-note__modes" role="tablist" aria-label="阅读模式">
               <button type="button" role="tab" aria-selected={mode === 'interactive'} onClick={() => setParams({})}>交互研究</button>
@@ -211,7 +211,7 @@ export function ResearchNotePage() {
               <h2 className="research-note__section-title">{section.title}</h2>
               <MarkdownBlocks source={section.content} refs={assetRefs} />
               {(assets.perSection.get(section.number)?.tables ?? []).map((file) => (
-                <TableAsset key={file} file={file} caption={`表 · ${section.title}`} />
+                <TableAsset key={file} file={file} caption={`表 ${tableOrder.get(file) ?? ''} · ${section.title}`} />
               ))}
               {(assets.perSection.get(section.number)?.figures ?? []).map((file) => (
                 <V2Figure key={file} src={v2AssetUrl.figure(file)} alt={`${article?.title ?? ''} 配图`} index={figureOrder.get(file) ?? 1} />
@@ -222,7 +222,7 @@ export function ResearchNotePage() {
           {assets.tables.length + assets.figures.length > 0 && (
             <section className="research-note__section">
               <h2 className="research-note__section-title">数据与图表</h2>
-              {assets.tables.map((file) => <TableAsset key={file} file={file} caption={`表 · ${file.split('_')[0]} ${file.split('_').slice(1).join(' ').replace('.csv', '')}`} />)}
+              {assets.tables.map((file) => <TableAsset key={file} file={file} caption={`表 ${tableOrder.get(file) ?? ''} · ${article?.title ?? ''}`} />)}
               {assets.figures.map((file) => (
                 <V2Figure key={file} src={v2AssetUrl.figure(file)} alt={`${article?.title ?? ''} 配图`} index={figureOrder.get(file) ?? 1} />
               ))}
@@ -232,7 +232,7 @@ export function ResearchNotePage() {
           {article && (
             <section className="research-note__section research-note__conclusion">
               <h2 className="research-note__section-title">结论与边界</h2>
-              <p className="research-note__paragraph">{article.conclusion}</p>
+              <MarkdownBlocks source={article.conclusion} refs={assetRefs} />
               {mode === 'article' && article.limitations.length > 0 && (
                 <>
                   <h3 className="research-note__subheading">研究限制</h3>

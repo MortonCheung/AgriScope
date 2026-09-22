@@ -113,6 +113,18 @@ export function parseMarkdownBlocks(source: string): MdBlock[] {
 const FILE_LIKE = /\.(csv|md|png|json|txt)$/i;
 /** 正文里**没有加反引号**的文件名同样要处理（研究正文两种写法都有）。 */
 const FILE_IN_TEXT = /[A-Za-z0-9_./-]+\.(?:csv|md|png|json|txt)\b/gi;
+/** 括号里只装了一个文件名 —— 研究正文最常见的写法。 */
+const BRACKETED_FILE = /[（(]\s*`?([A-Za-z0-9_./-]+\.(?:csv|md|png|json|txt))`?\s*[）)]/gi;
+
+/**
+ * 文件名被丢弃时，包住它的括号也必须一起走。
+ * 否则「证据登记表（`evidence/claim_evidence.csv`）」会渲染成「证据登记表（）」，
+ * 留下一个指向空白处的括号 —— 那比不显示更糟。
+ * 只有该文件能对应到已渲染资产（有编号可用）时才保留括号。
+ */
+function dropOrphanBrackets(text: string, refs?: Map<string, string>): string {
+  return text.replace(BRACKETED_FILE, (whole, file: string) => (refs?.has(file) ? whole : ''));
+}
 
 /**
  * 行内语法：只认 `**加粗**` 与 `` `代码` ``，其余原样。
@@ -121,7 +133,8 @@ const FILE_IN_TEXT = /[A-Za-z0-9_./-]+\.(?:csv|md|png|json|txt)\b/gi;
  *   - 能对应到已渲染资产 → 换成编号（`表 2` / `图 1`），引用仍然可读；
  *   - 对应不上 → 直接不渲染，绝不把文件名露给用户。
  */
-export function renderInline(text: string, keyPrefix = 'i', refs?: Map<string, string>): ReactNode[] {
+export function renderInline(rawText: string, keyPrefix = 'i', refs?: Map<string, string>): ReactNode[] {
+  const text = dropOrphanBrackets(rawText, refs);
   const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).filter((part) => part !== '');
   return parts.map((part, index) => {
     const key = `${keyPrefix}-${index}`;

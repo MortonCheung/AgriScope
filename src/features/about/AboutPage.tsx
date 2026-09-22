@@ -95,7 +95,7 @@ export function AboutPage() {
           ))}
         </dl>
         <p className="about__paragraph about__paragraph--muted">
-          仅收录研究正文与方法中明确写过的定义；尚未给出定义的自定义指标记入 METRIC_GAPS，前端不自行补写。
+          仅收录研究正文与方法中明确写过的定义；尚未给出定义的自定义指标不在此列出，也不由前端补写。
         </p>
       </section>
 
@@ -104,7 +104,7 @@ export function AboutPage() {
         <ul className="about__list">
           <li>气象为 ERA5 再分析，<strong>不写作</strong>气象站实测。</li>
           <li>成交量原始单位未公开，所有成交量结论只作相对口径，<strong>禁止</strong>换算为吨或箱。</li>
-          <li>算法派生的极端天气事件与官方通报**分开**呈现，不互相替代。</li>
+          <li>算法派生的极端天气事件与官方通报<strong>分开</strong>呈现，不互相替代。</li>
           <li>阴性结果与不显著结果按原样保留，不做筛选展示。</li>
           <li>平行情景实验未达到可靠反事实预测门槛，只作情景演示，不作预测。</li>
         </ul>
