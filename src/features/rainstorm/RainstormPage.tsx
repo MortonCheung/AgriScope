@@ -295,6 +295,9 @@ function buildSteps({ index, days, summary, vsHistory, rank, analog }: StepInput
   const vsVolume = vsHistory.find((row) => row.response === 'volume');
   const pointC3 = index.points.find((point) => point.id === 'C3');
   const pointC4 = index.points.find((point) => point.id === 'C4');
+  const pointG4 = index.points.find((point) => point.id === 'G4');
+  const soilAr1 = pointG4?.keyNumbers.find((entry) => entry.label.includes('AR(1)'));
+  const soilNeff = pointG4?.keyNumbers.find((entry) => entry.label.includes('n_eff'));
   const rainQuestion = index.cityConclusion.questions.find((qa) => qa.question.includes('2026'));
 
   return [
@@ -341,7 +344,7 @@ function buildSteps({ index, days, summary, vsHistory, rank, analog }: StepInput
       provenanceLabel: '实际观测',
       facts: [
         `${peak.label} 相对 1991–2020 同期基线偏离约 z≈${peak.climZ.toFixed(1)}`,
-        '7 月总额远超历年（历年 7 月：2021=111、2022=267、2023=210、2024=355、2025=171）',
+        julyTotal?.reference ? `历年 7 月降水对比（研究表记录：${julyTotal.reference}）` : '',
         '基线与标准差来自 1991–2020 同期气候值，以 ERA5 网格均值口径给出',
       ],
       media: (
@@ -376,7 +379,9 @@ function buildSteps({ index, days, summary, vsHistory, rank, analog }: StepInput
       facts: [
         analog ? `类比日汇总（${numeric(analog.n_analog_days) ?? 0} 天匹配）：表层（0–7cm）土壤含水量 ${numeric(analog.soil_moisture_0_7)?.toFixed(3) ?? '—'} m³/m³` : '',
         analog ? `类比日匹配口径：降水 ${numeric(analog.precipitation)?.toFixed(1) ?? '—'} mm、最高气温 ${numeric(analog.temp_max)?.toFixed(1) ?? '—'} ℃、VPD ${numeric(analog.vpd)?.toFixed(2) ?? '—'}` : '',
-        '全局分析（G4）三层土壤与批发价格、成交量的 FDR 结论均为阴性；深层土壤 AR(1)≈0.994 属伪显著',
+        pointG4?.frontendText
+          ? `${pointG4.frontendText}${soilAr1 && soilNeff ? `（研究索引记录：${soilAr1.label} = ${soilAr1.value}，${soilNeff.label} ≈ ${soilNeff.value}）` : ''}`
+          : '',
       ].filter(Boolean),
       media: (
         <ChartFrame

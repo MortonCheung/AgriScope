@@ -4,6 +4,9 @@ import { MonthlyIndexChart } from './MonthlyIndexChart';
 import { LagScanChart } from './LagScanChart';
 import { LeadLagChart } from './LeadLagChart';
 import { EventStudyChart } from './EventStudyChart';
+import { WeatherTimelineExplorer } from './WeatherTimelineExplorer';
+import { PseudoSignificanceReveal } from './PseudoSignificanceReveal';
+import { ThresholdBinExplorer } from './ThresholdBinExplorer';
 import { TableExplorer } from './TableExplorer';
 import { buildGModules } from './modulesG';
 import { buildCModules } from './modulesC';
@@ -83,6 +86,18 @@ function soilLagModules(ctx: ModuleContext, response: 'price' | 'volume'): Resea
     title: '三层土壤水分的滞后响应',
     note: '注意三层的自相关强度差异：越慢变的序列越容易在有限带宽 HAC 下产生伪显著。',
     node: <LagScanChart crops={ctx.crops} response={response} scanSource={scan} summarySource={summary} evidenceLevel={ctx.point.evidenceLevel} />,
+  }, {
+    id: `soil-pseudo-${response}`,
+    title: '伪显著诊断：从"显著"到"假阳性"',
+    note: '研究方法展示：逐步揭开深层土壤"显著"是怎么消失的。',
+    node: (
+      <PseudoSignificanceReveal
+        summarySource={summary}
+        response={response}
+        keyNumbers={ctx.point.keyNumbers}
+        evidenceLevel={ctx.point.evidenceLevel}
+      />
+    ),
   }];
 }
 
@@ -100,6 +115,33 @@ function baseModules(ctx: ModuleContext): ResearchModuleRender[] {
         id: 'leadlag',
         title: '同日与跨日结构',
         node: <LeadLagChart crops={ctx.crops} source={source} evidenceLevel={ctx.point.evidenceLevel} />,
+      }] : [];
+    }
+    case 'C2': {
+      const bins = ctx.table('threshold_bins_explanatory.csv');
+      if (!bins) return [];
+      return [{
+        id: 'threshold-bins',
+        title: '阈值分箱与样本量',
+        note: '在真实分箱之间切换，同时看到样本数量与结果稳定性。',
+        node: (
+          <ThresholdBinExplorer
+            binsSource={bins}
+            powerSource={ctx.table('threshold_power.csv')}
+            breakpointSource={ctx.table('threshold_breakpoint.csv')}
+            crops={ctx.crops}
+            evidenceLevel={ctx.point.evidenceLevel}
+          />
+        ),
+      }];
+    }
+    case 'G7': {
+      const source = ctx.table('case2026_weather.csv');
+      return source ? [{
+        id: 'g7-timeline',
+        title: '事件窗口时间线',
+        note: '拖动时间或播放，逐日重看 2026 事件窗口的气象序列。',
+        node: <WeatherTimelineExplorer source={source} evidenceLevel={ctx.point.evidenceLevel} />,
       }] : [];
     }
     case 'C3': {

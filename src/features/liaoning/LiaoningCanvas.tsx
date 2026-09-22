@@ -6,6 +6,7 @@ import { STUDY_CITY_IDS } from '../../domain/geography/cities';
 import { CitySolidMesh, SOLID_DEPTH } from './CitySolidMesh';
 import { useLiaoningModel } from './useLiaoningModel';
 import { QUALITY_CONFIG, resolveAutoQualityTier, resolveDpr, readRuntimeQualitySignals } from '../../performance/qualityPolicy';
+import { SCENE_TOKENS } from '../../design/sceneTokens';
 
 export interface LiaoningCanvasProps {
   mode: 'opening' | 'province' | 'city';
@@ -146,9 +147,9 @@ export function LiaoningCanvas(props: LiaoningCanvasProps) {
         gl.domElement.setAttribute('aria-label', '辽宁省农业气候研究空间 · 三维行政区域沙盘');
       }}
     >
-      <color attach="background" args={['#f7f5f1']} />
+      <color attach="background" args={[SCENE_TOKENS.paper]} />
       <PerspectiveCamera makeDefault fov={38} near={1} far={1200} position={[0, 70, 110]} />
-      <hemisphereLight args={['#ffffff', '#d9d3c8', 1.05]} />
+      <hemisphereLight args={[SCENE_TOKENS.lightKey, SCENE_TOKENS.lightFill, 1.05]} />
       <directionalLight position={[-40, 70, 40]} intensity={0.85} />
       <directionalLight position={[30, 40, -50]} intensity={0.25} />
       <SceneContents {...props} />

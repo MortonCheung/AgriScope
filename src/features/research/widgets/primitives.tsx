@@ -1,5 +1,7 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useReducedMotion } from 'motion/react';
 import { CHART_TOKENS } from '../../../design/chartTokens';
+import { MOTION_DURATION } from '../../../design/motion';
 
 /**
  * 轻量 SVG 图表原语。全部支持真实交互（悬停读数 / 联动），
@@ -44,6 +46,8 @@ export interface XYChartProps {
   describeX?: (value: number) => string;
   yLabel?: string;
   ariaLabel: string;
+  /** 沿时间轴逐渐绘制曲线，事件标注按真实顺序出现（时间序列动画）。 */
+  reveal?: boolean;
 }
 
 const WIDTH = 760;
@@ -74,9 +78,27 @@ function niceTicks(min: number, max: number, count: number): number[] {
 export function XYChart({
   height = 300, series, bands = [], markers = [], zeroLine = false, yTicks = 4,
   xTickFormat = (value) => String(value), yTickFormat = (value) => String(Number(value.toFixed(2))),
-  highlightX = null, onHoverX, describeX, yLabel, ariaLabel,
+  highlightX = null, onHoverX, describeX, yLabel, ariaLabel, reveal = false,
 }: XYChartProps) {
   const [hover, setHover] = useState<number | null>(null);
+  const reducedMotion = Boolean(useReducedMotion());
+  const [revealProgress, setRevealProgress] = useState(reveal ? 0 : 1);
+  const revealKey = useMemo(() => series.map((entry) => `${entry.id}:${entry.points.length}`).join('|'), [series]);
+
+  useEffect(() => {
+    if (!reveal || reducedMotion) { setRevealProgress(1); return; }
+    setRevealProgress(0);
+    const started = performance.now();
+    const duration = MOTION_DURATION.chartReveal * 1000;
+    let frame = 0;
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - started) / duration);
+      setRevealProgress(progress);
+      if (progress < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [reveal, reducedMotion, revealKey]);
 
   const xs = useMemo(() => series.flatMap((entry) => entry.points.map((point) => point.x)), [series]);
   const ys = useMemo(() => series.flatMap((entry) => entry.points.map((point) => point.y)), [series]);
@@ -106,6 +128,16 @@ export function XYChart({
 
   const linePath = (points: XYPoint[]) => points.map((point, index) => `${index === 0 ? 'M' : 'L'}${sx(point.x).toFixed(2)},${sy(point.y).toFixed(2)}`).join(' ');
 
+  // 时间序列动画：只在 x ≤ 当前揭示位置的部分可见，标注按真实顺序出现。
+  const revealLimit = revealProgress >= 1 ? xMax : xMin + (xMax - xMin) * revealProgress;
+  const slicePoints = (points: XYPoint[]) => {
+    const boundary = points.findIndex((point) => point.x > revealLimit);
+    return boundary === -1 ? points : points.slice(0, Math.min(points.length, boundary + 1));
+  };
+  const visibleSeries = series.map((entry) => ({ ...entry, points: slicePoints(entry.points) }));
+  const visibleBands = bands.map((band) => ({ ...band, upper: slicePoints(band.upper), lower: slicePoints(band.lower) }));
+  const visibleMarkers = markers.filter((marker) => marker.x <= revealLimit);
+
   const hovered = hover ?? highlightX;
   const activeX = hovered ?? null;
   const readout = activeX !== null ? describeX?.(activeX) : undefined;
@@ -133,7 +165,7 @@ export function XYChart({
             <text x={PAD.left - 8} y={sy(tick) + 3.5} textAnchor="end" fontSize={CHART_TOKENS.fontSize} fill={CHART_TOKENS.label} fontFamily={CHART_TOKENS.fontFamily}>{yTickFormat(tick)}</text>
           </g>
         ))}
-        {bands.map((band) => (
+        {visibleBands.map((band) => (
           <path
             key={band.id}
             d={`${linePath(band.upper)} L${sx(band.lower[band.lower.length - 1]?.x ?? xMax)},${sy(band.lower[band.lower.length - 1]?.y ?? 0)} ${band.lower.slice().reverse().map((point) => `L${sx(point.x).toFixed(2)},${sy(point.y).toFixed(2)}`).join(' ')} Z`}
@@ -144,13 +176,13 @@ export function XYChart({
         {zeroLine && yMin <= 0 && yMax >= 0 && (
           <line x1={PAD.left} x2={WIDTH - PAD.right} y1={sy(0)} y2={sy(0)} stroke={CHART_TOKENS.axis} strokeDasharray="3 3" />
         )}
-        {markers.map((marker) => (
+        {visibleMarkers.map((marker) => (
           <g key={`m-${marker.label}-${marker.x}`}>
             <line x1={sx(marker.x)} x2={sx(marker.x)} y1={PAD.top} y2={PAD.top + innerH} stroke={marker.color ?? CHART_TOKENS.annotationStrong} strokeDasharray={marker.dash ?? '4 3'} />
             <text x={sx(marker.x) + 4} y={PAD.top + 10} fontSize={CHART_TOKENS.fontSize} fill={marker.color ?? CHART_TOKENS.annotationStrong} fontFamily={CHART_TOKENS.fontFamily}>{marker.label}</text>
           </g>
         ))}
-        {series.map((entry) => (
+        {visibleSeries.map((entry) => (
           <g key={entry.id}>
             <path d={linePath(entry.points)} fill="none" stroke={entry.color} strokeWidth={entry.width ?? 1.8} strokeDasharray={entry.dash} strokeLinejoin="round" strokeLinecap="round" />
             {entry.dots && entry.points.map((point) => (

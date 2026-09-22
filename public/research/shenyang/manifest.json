@@ -1,7 +1,9 @@
 {
   "generatedFrom": {
-    "index": "shenyang/SHENYANG_RESEARCH_INDEX.json",
-    "doc": "shenyang/SHENYANG_RESEARCH.md",
+    "index": "../shenyang/reports/03_沈阳研究索引.json",
+    "doc": "../shenyang/reports/01_沈阳研究总报告.md",
+    "figuresDir": "../shenyang/reports/figures",
+    "tablesDir": "../shenyang/reports/tables",
     "researchWindow": "2021-01-01 ~ 2026-09-14"
   },
   "counters": {

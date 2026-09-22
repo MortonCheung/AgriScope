@@ -2,6 +2,7 @@ import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { ringsToShapes, type CitySolid } from './liaoningGeometry';
+import { SCENE_TOKENS } from '../../design/sceneTokens';
 
 export const SOLID_DEPTH = 1.8;
 
@@ -15,10 +16,10 @@ interface CitySolidMeshProps {
 }
 
 const FILL: Record<CitySolidMeshProps['emphasis'], THREE.Color> = {
-  base: new THREE.Color('#e3ded4'),
-  study: new THREE.Color('#d5cec1'),
-  focus: new THREE.Color('#c3b9a8'),
-  dim: new THREE.Color('#efece5'),
+  base: new THREE.Color(SCENE_TOKENS.cityFill.base),
+  study: new THREE.Color(SCENE_TOKENS.cityFill.study),
+  focus: new THREE.Color(SCENE_TOKENS.cityFill.focus),
+  dim: new THREE.Color(SCENE_TOKENS.cityFill.dim),
 };
 
 /** 单块城市实体：挤出几何 + 极细分隔线。Hover 只轻微抬升与加深，不爆亮。 */
@@ -63,7 +64,7 @@ export function CitySolidMesh({ city, emphasis, hovered, onHover, onSelect, redu
       </mesh>
       {edges.map((outline, index) => (
         <lineSegments key={index} geometry={outline}>
-          <lineBasicMaterial color={hovered ? '#1a1917' : 'rgb(26 25 23 / 0.34)'} transparent opacity={hovered ? 0.9 : 1} />
+          <lineBasicMaterial color={hovered ? SCENE_TOKENS.outlineStrong : SCENE_TOKENS.outline} transparent opacity={hovered ? 0.9 : 1} />
         </lineSegments>
       ))}
     </group>

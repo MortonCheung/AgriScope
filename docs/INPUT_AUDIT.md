@@ -8,12 +8,18 @@
 |---|---|---|---|
 | iTeach 前端母版 | `frontedpage/iTeach` | 存在，`npm run build` 通过 | AgriScope 的技术骨架来源 |
 | 设计参考库 | `frontedpage/design-references` | 存在（GSAP / anime / motion / impeccable / inspira-ui / ponytail / taste-skill 等） | 设计语言与工程规范参考 |
-| 沈阳研究工程 | `shenyang` | 存在 | 唯一研究内容来源 |
-| 研究结构化索引 | `shenyang/SHENYANG_RESEARCH_INDEX.json` | 存在，54 KB | 前端内容主源 |
-| 研究正文 | `shenyang/SHENYANG_RESEARCH.md` | 存在，96 KB，194 个标题 | "查看原文"来源 |
-| 研究图 | `shenyang/outputs/figures` | 55 张 PNG | 图表来源 |
-| 研究表 | `shenyang/outputs/tables` | 114 张 CSV | 交互数据来源 |
+| 沈阳研究工程 | `shenyang` | 存在，按 `shenyang/README.md` 分为 `reports/` 与 `workspace/` | 唯一研究内容来源 |
+| 研究结构化索引 | `shenyang/reports/03_沈阳研究索引.json` | 存在，54 KB | 前端内容主源 |
+| 研究正文 | `shenyang/reports/01_沈阳研究总报告.md` | 存在，96 KB，34 个 `##` 段落标题 | "查看原文"来源 |
+| 研究图 | `shenyang/reports/figures` | 44 张 PNG（研究工程对外发布的核心图） | 图表来源 |
+| 研究表 | `shenyang/reports/tables` | 64 张 CSV（研究工程对外发布的核心表） | 交互数据来源 |
+| 分析工程工作区 | `shenyang/workspace` | 存在（全量 outputs：55 图 / 114 表 / 模型 / 脚本） | 同步脚本的回退来源，前端不直接使用 |
 | 辽宁省 GeoJSON | 需外部获取 | 网络可得 | 3D 省域沙盘几何 |
+
+> 研究工程后来做过一次目录整理：原工程整体迁入 `workspace/`，同时对外发布只含核心成果的
+> `reports/`（README 记录了阅读顺序与图表数量）。两个索引文件的 SHA-256 完全一致，
+> 因此内容未变化，仅来源路径变化。同步脚本按 `reports/` → `workspace/` 顺序回退，
+> 并按键名（basename）解析图表，研究工程再次重组时前端无需改动。
 
 ## 2. 研究索引结构（实测）
 

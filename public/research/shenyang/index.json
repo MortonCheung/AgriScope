@@ -511,7 +511,8 @@
       "tables": [
         "/research/shenyang/tables/threshold_gam_scan.csv",
         "/research/shenyang/tables/threshold_breakpoint.csv",
-        "/research/shenyang/tables/threshold_power.csv"
+        "/research/shenyang/tables/threshold_power.csv",
+        "/research/shenyang/tables/threshold_bins_explanatory.csv"
       ],
       "articleId": "C2"
     },

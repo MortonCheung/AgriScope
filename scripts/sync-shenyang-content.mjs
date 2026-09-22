@@ -11,37 +11,77 @@
  * 这里刻意不做任何数值改写，只做路径归一化与结构切分，
  * 避免把研究结论在前端层重新"创作"一遍。
  */
-import { createReadStream, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync, copyFileSync } from 'node:fs';
-import { dirname, basename, join, resolve } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync, copyFileSync } from 'node:fs';
+import { dirname, basename, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(here, '..');
-const researchRoot = resolve(projectRoot, '..', 'shenyang');
-const outRoot = join(projectRoot, 'public', 'research', 'shenyang');
+const outputRoot = join(projectRoot, 'public', 'research', 'shenyang');
 const geoOut = join(projectRoot, 'public', 'geo');
 
-const INDEX_PATH = join(researchRoot, 'SHENYANG_RESEARCH_INDEX.json');
-const DOC_PATH = join(researchRoot, 'SHENYANG_RESEARCH.md');
+/**
+ * 研究工程目录约定（见 `shenyang/README.md`）：
+ *   reports/    给人看的研究成果（索引 / 正文 / 核心图表）—— 首选来源
+ *   workspace/  分析工程工作区（数据 / 脚本 / 全量输出）—— 回退来源
+ * 索引里的图与表路径沿用分析工程内部相对路径，因此这里按 basename 在来源目录中解析，
+ * 这样研究工程重组目录结构时前端不需要跟着改。
+ */
+const reportsRoot = resolve(projectRoot, '..', 'shenyang', 'reports');
+const workspaceRoot = resolve(projectRoot, '..', 'shenyang', 'workspace');
+
+const INDEX_CANDIDATES = [
+  join(reportsRoot, '03_沈阳研究索引.json'),
+  join(workspaceRoot, 'SHENYANG_RESEARCH_INDEX.json'),
+];
+const DOC_CANDIDATES = [
+  join(reportsRoot, '01_沈阳研究总报告.md'),
+  join(reportsRoot, '02_沈阳最终总结.md'),
+  join(workspaceRoot, 'SHENYANG_RESEARCH.md'),
+];
+const FIGURE_DIRS = [join(reportsRoot, 'figures'), join(workspaceRoot, 'outputs', 'figures')];
+const TABLE_DIRS = [join(reportsRoot, 'tables'), join(workspaceRoot, 'outputs', 'tables')];
+
 const GEO_SOURCE = join(projectRoot, 'sources', 'liaoning.geo.json');
 const GEO_OUT_PATH = join(geoOut, 'liaoning.json');
 
 const REQUIRED_TOPIC_FIELDS = ['id', 'title', 'question', 'summary', 'conclusion', 'evidence_level', 'status'];
 const RESEARCH_ID = /^[GC]\d+$/;
 
+/**
+ * 交互补充表：研究体系已产出、但索引把引用登记在别的节点上的表。
+ * 只在对应研究点的交互模块确实需要时补充，避免为了做交互去造表；
+ * 前端会把补充表与索引原生的表一并标注为来源。
+ */
+const INTERACTIVE_SUPPLEMENTS = {
+  C2: ['outputs/tables/threshold_bins_explanatory.csv'],
+};
+
 function fail(message) {
   console.error(`\n[sync] 同步失败：${message}\n`);
   process.exit(1);
 }
 
-function assertReadable(path, label) {
-  if (!existsSync(path)) fail(`${label} 不存在：${path}`);
-  if (statSync(path).isDirectory()) fail(`${label} 应为文件：${path}`);
-}
-
 function ensureClean(dir) {
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
+}
+
+/** 按候选顺序取第一个存在的文件；全部缺失时报错，不做静默回退。 */
+function firstExisting(candidates, label) {
+  for (const candidate of candidates) {
+    if (existsSync(candidate) && !statSync(candidate).isDirectory()) return candidate;
+  }
+  fail(`${label} 不存在。已尝试：\n${candidates.map((path) => `  - ${path}`).join('\n')}`);
+}
+
+/** 在来源目录中按文件名解析资源；研究工程重组目录不影响前端。 */
+function resolveSourceFile(dirs, fileName, label) {
+  for (const dir of dirs) {
+    const candidate = join(dir, fileName);
+    if (existsSync(candidate)) return candidate;
+  }
+  fail(`索引引用的${label}不存在：${fileName}\n已尝试目录：\n${dirs.map((dir) => `  - ${dir}`).join('\n')}`);
 }
 
 function publicUrl(kind, relativePath) {
@@ -120,22 +160,22 @@ function blocksFromMarkdown(markdown) {
 }
 
 function main() {
-  assertReadable(INDEX_PATH, '研究索引');
-  assertReadable(DOC_PATH, '研究正文');
+  const indexSource = firstExisting(INDEX_CANDIDATES, '研究索引');
+  const docSource = firstExisting(DOC_CANDIDATES, '研究正文');
   if (!existsSync(GEO_SOURCE)) fail(`辽宁 GeoJSON 源缺失：${GEO_SOURCE}`);
 
-  const index = JSON.parse(readFileSync(INDEX_PATH, 'utf8'));
+  const index = JSON.parse(readFileSync(indexSource, 'utf8'));
   const ids = validateIndex(index);
-  const markdown = readFileSync(DOC_PATH, 'utf8');
+  const markdown = readFileSync(docSource, 'utf8');
   const { articles, abstract } = splitResearchDoc(markdown);
 
   const missingArticles = [...ids].filter((id) => !articles.has(id));
   if (missingArticles.length) console.warn(`[sync] 警告：正文缺少研究点 ${missingArticles.join(', ')}`);
 
-  ensureClean(outRoot);
-  const figuresDir = join(outRoot, 'figures');
-  const tablesDir = join(outRoot, 'tables');
-  const articlesDir = join(outRoot, 'articles');
+  ensureClean(outputRoot);
+  const figuresDir = join(outputRoot, 'figures');
+  const tablesDir = join(outputRoot, 'tables');
+  const articlesDir = join(outputRoot, 'articles');
   mkdirSync(figuresDir, { recursive: true });
   mkdirSync(tablesDir, { recursive: true });
   mkdirSync(articlesDir, { recursive: true });
@@ -144,34 +184,41 @@ function main() {
   const figureSet = new Set();
   const tableSet = new Set();
   const resolveAsset = (kind, relativePath) => {
-    const source = join(researchRoot, relativePath);
-    if (!existsSync(source)) fail(`索引引用的${kind === 'figures' ? '图' : '表'}不存在：${relativePath}`);
-    (kind === 'figures' ? figureSet : tableSet).add(basename(relativePath));
-    copyFileSync(source, join(outRoot, kind, basename(relativePath)));
+    const fileName = basename(relativePath);
+    const source = resolveSourceFile(
+      kind === 'figures' ? FIGURE_DIRS : TABLE_DIRS,
+      fileName,
+      kind === 'figures' ? '图' : '表',
+    );
+    (kind === 'figures' ? figureSet : tableSet).add(fileName);
+    copyFileSync(source, join(outputRoot, kind, fileName));
     return publicUrl(kind, relativePath);
   };
 
-  const topics = index.topics.map((topic) => ({
-    id: topic.id,
-    layer: topic.layer ?? null,
-    category: topic.category ?? null,
-    title: topic.title,
-    question: topic.question,
-    why: topic.why ?? null,
-    data: topic.data ?? null,
-    method: topic.method ?? null,
-    summary: topic.summary,
-    conclusion: topic.conclusion,
-    evidenceLevel: topic.evidence_level,
-    status: topic.status,
-    frontendText: topic.frontend_text ?? null,
-    keyNumbers: topic.key_numbers ?? {},
-    limitations: topic.limitations ?? [],
-    primaryFigure: topic.figure ? publicUrl('figures', topic.figure) : null,
-    figures: (topic.figures ?? []).map((path) => resolveAsset('figures', path)),
-    tables: (topic.tables ?? []).map((path) => resolveAsset('tables', path)),
-    articleId: articles.has(topic.id) ? topic.id : null,
-  }));
+  const topics = index.topics.map((topic) => {
+    const supplemented = [...new Set([...(topic.tables ?? []), ...(INTERACTIVE_SUPPLEMENTS[topic.id] ?? [])])];
+    return {
+      id: topic.id,
+      layer: topic.layer ?? null,
+      category: topic.category ?? null,
+      title: topic.title,
+      question: topic.question,
+      why: topic.why ?? null,
+      data: topic.data ?? null,
+      method: topic.method ?? null,
+      summary: topic.summary,
+      conclusion: topic.conclusion,
+      evidenceLevel: topic.evidence_level,
+      status: topic.status,
+      frontendText: topic.frontend_text ?? null,
+      keyNumbers: topic.key_numbers ?? {},
+      limitations: topic.limitations ?? [],
+      primaryFigure: topic.figure ? publicUrl('figures', topic.figure) : null,
+      figures: (topic.figures ?? []).map((path) => resolveAsset('figures', path)),
+      tables: supplemented.map((path) => resolveAsset('tables', path)),
+      articleId: articles.has(topic.id) ? topic.id : null,
+    };
+  });
 
   for (const [id, markdownSection] of articles) {
     writeFileSync(join(articlesDir, `${id}.json`), JSON.stringify({
@@ -191,7 +238,7 @@ function main() {
   copyFileSync(GEO_SOURCE, GEO_OUT_PATH);
 
   const city = index.city;
-  writeFileSync(join(outRoot, 'index.json'), JSON.stringify({
+  writeFileSync(join(outputRoot, 'index.json'), JSON.stringify({
     city,
     title: index.title,
     headline: `${city}市农业气象风险与农产品市场响应研究`,
@@ -220,10 +267,12 @@ function main() {
     },
   }, null, 2));
 
-  writeFileSync(join(outRoot, 'manifest.json'), JSON.stringify({
+  writeFileSync(join(outputRoot, 'manifest.json'), JSON.stringify({
     generatedFrom: {
-      index: 'shenyang/SHENYANG_RESEARCH_INDEX.json',
-      doc: 'shenyang/SHENYANG_RESEARCH.md',
+      index: relative(projectRoot, indexSource),
+      doc: relative(projectRoot, docSource),
+      figuresDir: relative(projectRoot, existsSync(FIGURE_DIRS[0]) ? FIGURE_DIRS[0] : FIGURE_DIRS[1]),
+      tablesDir: relative(projectRoot, existsSync(TABLE_DIRS[0]) ? TABLE_DIRS[0] : TABLE_DIRS[1]),
       researchWindow: index.window,
     },
     counters: {
@@ -239,9 +288,11 @@ function main() {
     geo: { liaoning: '/geo/liaoning.json' },
   }, null, 2));
 
+  console.log(`[sync] 来源：${relative(projectRoot, indexSource)}`);
+  console.log(`[sync] 来源：${relative(projectRoot, docSource)}`);
   console.log(`[sync] 研究点 ${topics.length} · 专题 ${index.summary_blocks?.length ?? 0} · 原文 ${articles.size} 篇`);
   console.log(`[sync] 图 ${figureSet.size} · 表 ${tableSet.size} · 城问 ${index.city_conclusion?.qas?.length ?? 0}`);
-  console.log(`[sync] 输出：${outRoot}`);
+  console.log(`[sync] 输出：${outputRoot}`);
 }
 
 main();

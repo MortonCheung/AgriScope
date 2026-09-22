@@ -44,11 +44,12 @@ domain/simulation   Scenario / ScenarioParameter / ScenarioResult / Counterfactu
 ## 4. Research Repository 与同步管道
 
 ```text
-shenyang 研究工程（只读）
-  SHENYANG_RESEARCH_INDEX.json ─┐
-  SHENYANG_RESEARCH.md ─────────┤
-  outputs/figures/*.png ────────┤   scripts/sync-shenyang-content.mjs
-  outputs/tables/*.csv ─────────┘   （字段校验 + 路径归一化 + 正文按研究点切分）
+shenyang 研究工程（只读，不修改）
+  reports/03_沈阳研究索引.json ─┐        （首选：研究工程对外发布的人类可读成果）
+  reports/01_沈阳研究总报告.md ─┤
+  reports/figures/*.png ────────┤   scripts/sync-shenyang-content.mjs
+  reports/tables/*.csv ─────────┘   （字段校验 + basename 解析 + 正文按研究点切分 + 交互补充表）
+  workspace/**                   回退来源：分析工程全量产物（目录重组时自动兜底）
                                         ↓
 public/research/shenyang/{index.json, manifest.json, articles/*.json, figures/*, tables/*}
 public/geo/liaoning.json
@@ -60,7 +61,9 @@ services/useCityResearch（React Hook）→ 组件
 ```
 
 - 组件从不拼接研究工程路径，只调用 Repository 具名方法。
-- 同步只收录索引真正引用到的图（44/55）与表（64/114），并写 `manifest.json` 记录计数。
+- 同步只收录索引真正引用到的图（44/55）与表（64/114），并写 `manifest.json` 记录计数与来源路径。
+- `INTERACTIVE_SUPPLEMENTS` 允许为某个研究点的交互模块补充一张"研究体系已产出、但索引把引用登记在别处"的表
+  （当前仅 `C2` 需要 `threshold_bins_explanatory.csv`），规则见 `RESEARCH_CONTENT_CONTRACT.md` §5。
 
 ## 5. 交互研究
 
