@@ -1,0 +1,24 @@
+/* 返回控件（V3 §11）：无背景、无圆角、无边框，hover 只做极轻的水平位移。 */
+.ag-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--ag-ink-muted);
+  font-size: var(--ag-fs-meta);
+  line-height: 1;
+  transition: color var(--ag-dur-fast) var(--ag-ease);
+}
+.ag-back__arrow {
+  display: inline-block;
+  transition: transform var(--ag-dur-fast) var(--ag-ease);
+}
+.ag-back:hover { color: var(--ag-ink); }
+.ag-back:hover .ag-back__arrow { transform: translateX(-3px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ag-back__arrow { transition: none; }
+}
