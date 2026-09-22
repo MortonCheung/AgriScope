@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { AsyncState } from './useCityResearch';
+import type { AsyncState } from './asyncState';
 
 /**
  * 带同步缓存命中的资源 hook（V4 §四十四）。

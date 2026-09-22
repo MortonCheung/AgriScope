@@ -1,6 +1,6 @@
 import type { V2Article, V2Manifest, V2Source } from '../../domain/research/v2/types';
 import { V2Repository, type V2Table } from '../../domain/research/v2/repository';
-import type { AsyncState } from '../../services/useCityResearch';
+import type { AsyncState } from '../../services/asyncState';
 import { useCachedResource } from '../../services/useCachedResource';
 
 /** v2 载荷的读取 hooks：同步命中缓存，切换条目不闪加载态。 */

@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build && node scripts/verify-ui-strings.mjs",
     "preview": "vite preview",
     "typecheck": "tsc -b --pretty false",
-    "test": "vitest run && node scripts/verify-content.mjs && node scripts/verify-v2-payload.mjs",
+    "test": "vitest run && node scripts/verify-v2-payload.mjs",
     "test:unit": "vitest run",
     "test:watch": "vitest",
     "sync": "node scripts/sync-shenyang-v2.mjs",

@@ -19,6 +19,8 @@ const REQUIRED = ['A01', 'A02', 'A03', 'A04', 'A05', 'A06', 'A07', 'A08', 'A09']
 const LEGACY_ID = /^[GC]\d+$/;
 /** v1 时代才有的索引字段，v2 载荷里出现即视为回退。 */
 const LEGACY_KEYS = ['sourceOfTruth', 'frontendText', 'provenance'];
+/** 被禁的 AI 营销文案（原 verify-content.mjs 的检查，随 v1 载荷一起搬过来）。 */
+const FORBIDDEN_COPY = ['AI驱动', 'AI 驱动', '赋能', '智慧', '洞察未来', '智能决策', '开启探索', '解码农业脉搏', '一键洞察'];
 
 const failures = [];
 function check(ok, message) {
@@ -234,6 +236,14 @@ if (failures.length === 0) {
     uncovered.length === 0,
     `以下分类取值未登记中文，会在表里显示原始英文：${[...new Set(uncovered)].sort().join(', ')}`,
   );
+
+  /*
+   * 9. 载荷不得出现被禁的 AI 营销文案。
+   *    这条原本检查 v1 索引；v1 载荷退役后搬到这里，检查面反而更全（覆盖全部 9 篇正文）。
+   */
+  const wholePayload = articleFiles.map((name) => readFileSync(join(PAYLOAD, 'articles', name), 'utf8')).join('\n');
+  const forbidden = FORBIDDEN_COPY.filter((word) => wholePayload.includes(word));
+  check(forbidden.length === 0, `载荷出现被禁文案：${forbidden.join('、')}`);
 }
 
 if (failures.length > 0) {
