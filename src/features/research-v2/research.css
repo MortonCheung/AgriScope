@@ -5,12 +5,40 @@
 */
 .research { min-height: 100dvh; padding: clamp(84px, 10vh, 132px) clamp(20px, 4vw, 56px) clamp(64px, 10vh, 120px); background: var(--ag-paper); }
 
+/*
+  交互研究：一个**固定高度的工作台**（本轮 §28）。
+  过去是"左 sticky、右 sticky、中间整页滚"，于是中栏与右栏并不独立。
+  现在整块工作台 = 100dvh − Header，overflow:hidden；
+  左 / 中 / 右三栏各自 min-height:0 + overflow-y:auto，互不牵动。
+*/
+.research[data-mode='interactive'] {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  padding: var(--ag-nav-height) clamp(16px, 3vw, 40px) 0;
+}
+.research[data-mode='interactive'] .research__shell {
+  height: 100%;
+  align-items: stretch;
+  gap: clamp(16px, 2.4vw, 40px);
+}
+
 .research__shell { display: grid; gap: clamp(24px, 3.2vw, 52px); width: min(100%, 1560px); margin: 0 auto; align-items: start; }
 .research[data-mode='interactive'] .research__shell { grid-template-columns: minmax(190px, 230px) minmax(0, 1fr) minmax(190px, 250px); }
 .research[data-mode='article'] .research__shell { grid-template-columns: minmax(0, 1fr); justify-content: center; }
 
+/* ---- 三栏：都是独立滚动区（§28）---- */
+.research[data-mode='interactive'] .research__tree,
+.research[data-mode='interactive'] .research__column,
+.research[data-mode='interactive'] .research__rail {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
 /* ---- 左：研究树 ---- */
-.research__tree { position: sticky; top: 92px; display: flex; flex-direction: column; gap: var(--ag-space-4); max-height: calc(100dvh - 120px); overflow-y: auto; }
+.research__tree { display: flex; flex-direction: column; gap: var(--ag-space-4); padding-block: var(--ag-space-6) var(--ag-space-10); }
 .research__crumb { color: var(--ag-ink-muted); font-size: var(--ag-fs-small); }
 .research__crumb:hover { color: var(--ag-ink); }
 
@@ -18,7 +46,7 @@
 .research__main { display: flex; flex-direction: column; gap: var(--ag-space-6); min-width: 0; }
 /* 交互研究的中栏：模式切换条 + 研究正文合成一个网格子项（否则正文会掉进右栏）。 */
 .research__column { display: flex; flex-direction: column; gap: var(--ag-space-6); min-width: 0; }
-.research__stage { display: flex; flex-direction: column; min-width: 0; }
+.research__stage { display: flex; flex-direction: column; min-width: 0; padding-block: var(--ag-space-6) var(--ag-space-10); }
 
 .research__head { display: flex; flex-direction: column; gap: var(--ag-space-3); padding-bottom: var(--ag-space-5); border-bottom: 1px solid var(--ag-rule); }
 .research__id { margin: 0; color: var(--ag-ink-muted); font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); letter-spacing: 0.08em; }
@@ -26,7 +54,25 @@
 .research__article-title { margin: 0; color: var(--ag-ink-muted); font-size: var(--ag-fs-small); line-height: 1.6; }
 .research__lead { margin: 0; max-width: 68ch; color: var(--ag-ink-soft); font-size: var(--ag-fs-body); line-height: 1.8; }
 
-.research__modes { display: flex; gap: var(--ag-space-5); border-bottom: 1px solid var(--ag-rule-soft); }
+/*
+  模式切换条：交互研究与原文**永久共享**（本轮 §29）。
+  它现在挂在两种模式的共同父层上，并且 sticky 在内容滚动区顶部，
+  读到原文中间也能直接切回交互研究。
+*/
+.research__modes {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  gap: var(--ag-space-5);
+  margin-bottom: calc(-1 * var(--ag-space-3));
+  padding-top: var(--ag-space-6);
+  background: var(--ag-paper);
+  border-bottom: 1px solid var(--ag-rule-soft);
+}
+/* 原文整页滚动：切换条停在固定 Header 之下。 */
+.research[data-mode='article'] .research__modes { top: var(--ag-nav-height); padding-bottom: var(--ag-space-2); }
+.research[data-mode='article'] .research__stage { padding-top: var(--ag-space-8); }
 .research__modes button,
 .research__modes a {
   padding: 8px 2px;
@@ -54,7 +100,7 @@
 .research__point-state { color: var(--ag-ink-muted); font-size: var(--ag-fs-micro); }
 
 /* ---- 右：证据栏（只在交互研究出现） ---- */
-.research__rail { position: sticky; top: 92px; display: flex; flex-direction: column; gap: var(--ag-space-5); }
+.research__rail { display: flex; flex-direction: column; gap: var(--ag-space-5); padding-block: var(--ag-space-6) var(--ag-space-10); }
 .research__rail-block { display: flex; flex-direction: column; gap: 6px; }
 .research__rail-label { margin: 0; color: var(--ag-ink-muted); font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); letter-spacing: 0.08em; }
 .research__rail-block > p { margin: 0; color: var(--ag-ink-soft); font-size: var(--ag-fs-small); line-height: 1.75; }

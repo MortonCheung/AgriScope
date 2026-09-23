@@ -23,15 +23,19 @@ function firstSentence(text: string): string {
 }
 
 /**
- * 研究路由页（本轮 §9/§15）。
+ * 研究路由页（本轮 §9/§15/§28/§29）。
  *
  * 一个路由承载两个层级与两种模式：
  *   /cities/:cityId/research/A2        方向入口
  *   /cities/:cityId/research/A2.2      研究点（交互研究主战场）
  *   ?mode=article                      完整原文（从研究点进来时定位到对应章节）
  *
- * 交互研究与原文的 DOM 必须明显不同：
- *   交互研究有数据模块容器与右侧证据栏；原文有连续正文与窄目录、没有证据栏。
+ * 布局（§28）：交互研究是**一个固定高度工作台**，左（研究树）/ 中 / 右（证据栏）
+ * 各自独立滚动 —— 滚左不会带动中右。
+ *
+ * 模式切换（§29）：切换条挂在交互研究与原文的**共同父层**，两种模式都常驻、sticky 在
+ * 内容滚动区顶部。本轮删除了所有重复的原文入口（§30）：右栏的「原文 →」、原文底部的
+ * 「回到交互研究 →」、研究点里那段"方法与结论…打开原文"，模式切换只有这一处。
  *
  * 注意：所有 hook 都在最前面调用，编号兼容的重定向放在 hook 之后，
  * 这样同一路由在不同 researchId 之间切换时 hook 顺序不变。
@@ -82,6 +86,7 @@ export function ResearchRoutePage() {
     .map((id) => allSources.find((source) => source.source_id === id))
     .filter((source): source is (typeof allSources)[number] => Boolean(source));
   const limitations = article.status === 'ready' ? article.data.limitations : [];
+  const targetId = point?.id ?? topic.id;
 
   return (
     <main className="research" data-mode={mode} data-research-kind={kind}>
@@ -99,43 +104,38 @@ export function ResearchRoutePage() {
           </aside>
         )}
 
-        {mode === 'article' && article.status === 'ready' ? (
-          <ResearchArticleView
-            cityId={cityId}
-            canonicalId={articleId as string}
-            article={article.data}
-            focusPointId={point?.id}
-            focusSection={point?.sectionId ? Number(point.sectionId) : undefined}
-          />
-        ) : (
-          /* 交互研究的中栏是**一个**网格子项：模式切换条 + 研究正文。
-             二者必须是同一个 children，否则网格会把切换条当成中栏、
-             把正文挤进右侧 250px 的证据栏（§31：中栏是阅读区，不是窄栏）。 */
-          <div className="research__column" key={`${point?.id ?? topic.id}:${mode}`}>
-            <div className="research__modes" role="tablist" aria-label="阅读方式">
-              <Link to={ROUTES.research(cityId, point?.id ?? topic.id)} aria-current={mode === 'interactive' ? 'page' : undefined}>交互研究</Link>
-              <Link to={`${ROUTES.research(cityId, point?.id ?? topic.id)}?mode=article`} aria-current={mode === 'article' ? 'page' : undefined}>原文</Link>
-            </div>
-            {/* key 让"切换研究点 / 切换模式"时重放一次入场动效（§32） */}
-            <div className="research__stage">
-              {point ? (
-                <InteractivePointView cityId={cityId} point={point} topic={topic} />
-              ) : (
-                <InteractiveTopicView cityId={cityId} topic={topic} />
-              )}
-            </div>
+        {/*
+          中栏 = 模式切换条 + 内容，两者始终是**同一个**网格子项，且切换条两种模式都在（§29）。
+          key 让"切换研究点 / 切换模式"时重放一次入场动效（§32）。
+        */}
+        <div className="research__column" key={`${targetId}:${mode}`}>
+          <div className="research__modes" role="tablist" aria-label="阅读方式">
+            <Link to={ROUTES.research(cityId, targetId)} aria-current={mode === 'interactive' ? 'page' : undefined}>交互研究</Link>
+            <Link to={`${ROUTES.research(cityId, targetId)}?mode=article`} aria-current={mode === 'article' ? 'page' : undefined}>原文</Link>
           </div>
-        )}
+          <div className="research__stage">
+            {mode === 'article' && article.status === 'ready' ? (
+              <ResearchArticleView
+                cityId={cityId}
+                canonicalId={articleId as string}
+                article={article.data}
+                focusPointId={point?.id}
+                focusSection={point?.sectionId ? Number(point.sectionId) : undefined}
+              />
+            ) : point ? (
+              <InteractivePointView cityId={cityId} point={point} topic={topic} />
+            ) : (
+              <InteractiveTopicView cityId={cityId} topic={topic} />
+            )}
+          </div>
+        </div>
 
         {mode === 'interactive' && (
           <aside className="research__rail">
+            {/* 方向上下文只在交互研究右栏出现；进入原文的唯一入口是顶部切换条（§30）。 */}
             <div className="research__rail-block">
               <p className="research__rail-label">方向</p>
-              <p>
-                {topic.id} · {topic.title}
-                <br />
-                <Link to={`${ROUTES.research(cityId, point?.id ?? topic.id)}?mode=article`}>原文 →</Link>
-              </p>
+              <p>{topic.id} · {topic.title}</p>
             </div>
 
             {resolvedSources.length > 0 && (

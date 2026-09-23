@@ -55,3 +55,31 @@ describe('交互研究的中栏是一个网格子项', () => {
     expect(container.querySelector('.research__shell > .research__modes')).toBeNull();
   });
 });
+
+describe('模式切换条在两种模式下都常驻（§29/§59-14/15）', () => {
+  it('交互研究有切换条，且两条都在', () => {
+    const { container } = renderAt('/cities/shenyang/research/A2.2');
+    const modes = container.querySelector('.research__modes');
+    expect(modes).not.toBeNull();
+    expect(modes?.textContent).toContain('交互研究');
+    expect(modes?.textContent).toContain('原文');
+  });
+
+  it('原文模式用同一个切换条，仍在中栏里', () => {
+    const { container } = renderAt('/cities/shenyang/research/A2.2?mode=article');
+    expect(container.querySelector('.research')?.getAttribute('data-mode')).toBe('article');
+    const column = container.querySelector('.research__column');
+    expect(column?.querySelector('.research__modes')).not.toBeNull();
+  });
+});
+
+describe('重复的原文入口与图/表切换已删除（§30/§31/§59-16/17/18/19）', () => {
+  it('交互研究 DOM 里没有重复入口，也没有图/表切换', () => {
+    const { container } = renderAt('/cities/shenyang/research/A2.2');
+    const text = container.textContent ?? '';
+    expect(text).not.toContain('方法与结论由研究侧统一写在方向原文中');
+    expect(text).not.toContain('回到交互研究');
+    expect(text).not.toContain('原文 →');
+    expect(container.querySelector('.module__views')).toBeNull();
+  });
+});
