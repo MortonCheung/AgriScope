@@ -13,11 +13,26 @@
 .estimate-chart__tick { fill: var(--ag-ink-muted); font-family: var(--ag-font-mono); font-size: 10px; }
 .estimate-chart__cat { fill: var(--ag-ink-soft); font-size: 10px; }
 
+@keyframes ag-dot-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+/*
+  图表首次绘制（§32）：点与区间淡入。
+  动画声明挂在**恒定**的选择器上：hover 只改 fill / stroke / r，不改变 animation，
+  因此不会每次移开指针就重播一次（那会让读数时抖动，§87）。
+*/
+.estimate-chart__mark { animation: ag-dot-in 320ms cubic-bezier(.16, 1, .3, 1) backwards; }
+
 .estimate-chart__hit { fill: transparent; cursor: crosshair; }
 .estimate-chart__ci { stroke: color-mix(in srgb, var(--ag-ink) 45%, transparent); stroke-width: 1.4; }
 .estimate-chart__dot { fill: var(--ag-ink); transition: r 120ms var(--ag-ease); }
 .estimate-chart__mark.is-active .estimate-chart__dot { fill: var(--ag-accent-ink, var(--ag-ink)); }
 .estimate-chart__mark.is-active .estimate-chart__ci { stroke: var(--ag-ink); }
+
+@media (prefers-reduced-motion: reduce) {
+  .estimate-chart__mark { animation: none; }
+}
 
 /* 读数行高度固定：hover 不得改变布局（§87） */
 .estimate-chart__readout {

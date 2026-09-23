@@ -10,13 +10,7 @@
 .opening__inner { display: flex; flex-direction: column; gap: var(--ag-space-5); justify-self: start; align-self: end; max-width: min(680px, 62vw); }
 
 .opening__wordmark { display: flex; align-items: center; gap: clamp(12px, 1.6vw, 22px); flex-wrap: wrap; }
-/* Logo slot（V5 §19）：正式品牌 Logo 未指定，只预留位形，不由前端自行设计。 */
-.opening__mark {
-  width: clamp(28px, 4vw, 44px);
-  aspect-ratio: 1;
-  border: 1px solid var(--ag-rule);
-  background: color-mix(in srgb, var(--ag-paper) 70%, transparent);
-}
+/* 空占位方块已按 §28 移除：没有真实 Logo 时只写品牌名。 */
 .opening__en {
   font-family: var(--ag-font-mono);
   font-size: var(--ag-fs-display);

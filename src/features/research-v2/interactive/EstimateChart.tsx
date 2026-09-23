@@ -119,6 +119,7 @@ export function EstimateChart({ rows, categoryKey, valueKey, ciLowKey, ciHighKey
               <g key={`${point.category}-${index}`}
                 onPointerEnter={() => setHover(index)}
                 onPointerLeave={() => setHover(null)}
+                style={{ animationDelay: `${Math.min(index, 24) * 14}ms` }}
                 className={isActive ? 'estimate-chart__mark is-active' : 'estimate-chart__mark'}>
                 {/* 命中区域：让 hover 更容易触发，且不改变任何布局 */}
                 <rect x={cx - slot / 2} y={PAD.top} width={slot} height={plotHeight} className="estimate-chart__hit" />

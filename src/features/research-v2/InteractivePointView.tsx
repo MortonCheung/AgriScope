@@ -21,7 +21,7 @@ export function InteractivePointView({ cityId, point, topic }: {
   const citations = point.citations ?? [];
 
   return (
-    <div className="research__main">
+    <div className="research__main" data-animate="in">
       <header className="research__head">
         <p className="research__id">{point.id}</p>
         <h1 className="research__title">{point.title}</h1>

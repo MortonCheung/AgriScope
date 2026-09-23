@@ -46,10 +46,8 @@ export function OpeningPage() {
       >
         <h1 className="opening__wordmark">
           {/*
-            品牌（V5 §18/§19）：仓库与设计参考里都没有用户指定的正式 Logo，
-            因此**不自行设计**，只预留 slot；位形确定后再填。中文「穹衡」已按 §18 删除。
+            品牌（本轮 §28）：没有用户指定的正式 Logo 时**不渲染空占位方块**，只写品牌名。
           */}
-          <span className="opening__mark" aria-hidden="true" />
           <span className="opening__en">AGRISCOPE</span>
         </h1>
         <p className="opening__subtitle">辽宁农业气候风险研究</p>

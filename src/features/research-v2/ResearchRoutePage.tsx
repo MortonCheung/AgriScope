@@ -113,11 +113,14 @@ export function ResearchRoutePage() {
               <Link to={ROUTES.research(cityId, point?.id ?? topic.id)} aria-current={mode === 'interactive' ? 'page' : undefined}>交互研究</Link>
               <Link to={`${ROUTES.research(cityId, point?.id ?? topic.id)}?mode=article`} aria-current={mode === 'article' ? 'page' : undefined}>原文</Link>
             </div>
-            {point ? (
-              <InteractivePointView cityId={cityId} point={point} topic={topic} />
-            ) : (
-              <InteractiveTopicView cityId={cityId} topic={topic} />
-            )}
+            {/* key 让"切换研究点 / 切换模式"时重放一次入场动效（§32） */}
+            <div className="research__stage" key={`${point?.id ?? topic.id}:${mode}`}>
+              {point ? (
+                <InteractivePointView cityId={cityId} point={point} topic={topic} />
+              ) : (
+                <InteractiveTopicView cityId={cityId} topic={topic} />
+              )}
+            </div>
           </>
         )}
 

@@ -90,8 +90,12 @@ export function AboutPage() {
           {METRIC_DEFINITIONS.map((metric) => (
             <div className="about__metric" id={`metric-${metric.id}`} key={metric.id}>
               <dt>
+                {/*
+                  单位写法（本轮 §22）：真实物理量写「指标 / 单位」，不用括号夹住；
+                  没有单位就不写（绝不写「无量纲」）。
+                */}
                 {metric.label}
-                {metric.unit && <span className="about__metric-unit">（{metric.unit}）</span>}
+                {metric.unit && <span className="about__metric-unit">{` / ${metric.unit}`}</span>}
               </dt>
               {metric.definition && <dd>{metric.definition}</dd>}
               {metric.formula && <dd className="about__metric-formula">计算：{metric.formula}</dd>}
