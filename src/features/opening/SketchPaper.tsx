@@ -3,49 +3,46 @@ import * as THREE from 'three';
 import { Line } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 import type { OpeningPhase } from './openingPhase';
+import {
+  DRAFT_COLOR,
+  DRAFT_LINE_WIDTH,
+  DRAFT_OPACITY,
+  GRID_CELLS,
+  GRID_OPACITY,
+  GRID_REPEAT,
+  GRID_TEXTURE_SIZE,
+  MAJOR_ALPHA,
+  MAJOR_COLOR,
+  MAJOR_EVERY,
+  MINOR_ALPHA,
+  MINOR_COLOR,
+  OUTLINE_COLOR,
+  OUTLINE_LINE_WIDTH,
+  OUTLINE_OPACITY,
+  PLANE_HALF_SPAN,
+  draftFadeAt,
+  gridFadeAt,
+} from './sketchMetrics';
 
 /**
- * 草稿纸（本轮 §23，取代只调 opacity 的做法）。
+ * 草稿纸（本轮 §12–§15 重做）。
  *
- * 之前的问题：网格与手稿都用 1px 的 `LineBasicMaterial`，
- * Safari 里几乎看不见 —— 属于"盯着看 3 秒才发现有线"。
+ * 之前的问题：
+ *   1. 方格 Plane 只有 `radius × 1.35`，用户能明显看到"方格区域 | 非方格区域"的分界线；
+ *   2. 组装结束后网格与手稿仍留 `GRID_RESIDUAL / DRAFT_RESIDUAL` 的痕迹，
+ *      于是正式省域页也带着草稿感 —— 而草稿纸只应属于 Opening。
  *
  * 现在的做法：
- *   · **网格**用 `CanvasTexture` 画在 2048² 画布上，贴到一块 Plane 上，
- *     由绘制阶段的线宽直接控制粗细，配 mipmap + 各向异性，远处也不会消失；
- *   · **手稿线**改用 drei 的 `Line`（Line2 / LineSegments2），
- *     线宽是**屏幕像素**而不是世界单位，缩到多远都保持可读；
- *   · 层级严格是：minor grid < major grid < 市界 < 辽宁外轮廓。
+ *   · **网格**：大面积 Plane（`半径 × 6`，覆盖所有目标屏幕比例下 Sketch 与 Province
+ *     机位能看到的地面），配 `RepeatWrapping` 的固定世界尺寸方格纹理 ——
+ *     平面放大但格子尺寸不变，远处一直是连续的方格纸，永远看不到 Plane 边界；
+ *   · **手稿线**用 drei 的 `Line`（屏幕像素线宽），缩到多远都保持可读；
+ *   · 层级严格是：minor grid < major grid < 市界 < 辽宁外轮廓；
+ *   · 随组装进度，网格在 0.15→0.60 淡出、手稿/外轮廓在 0.15→0.82 淡出，
+ *     0.82 之后只剩正在落定的 3D 辽宁（§15）；组件本身也只在 Opening 路由挂载。
  *
- * §63 仍然成立：随着组装进度，网格与手稿一起渐退到极淡痕迹，
- * 形成"实体建立在自己的研究草图上"。
+ * 所有数值策略都在 `sketchMetrics.ts`，单独单测覆盖。
  */
-
-const GRID_TEXTURE_SIZE = 2048;
-/** 画布上的网格划分：次要格 96 格，主要格每 8 格一条。 */
-const GRID_CELLS = 96;
-const MAJOR_EVERY = 8;
-
-const MINOR_COLOR = '#b9b1a6';
-const MAJOR_COLOR = '#a49a8d';
-const DRAFT_COLOR = '#8f8577';
-const OUTLINE_COLOR = '#6f6659';
-
-/** 材质总透明度；画布内部的 alpha 比例保证 minor < major。 */
-const GRID_OPACITY = 0.34;
-const MINOR_ALPHA = 0.33;
-const MAJOR_ALPHA = 0.62;
-
-/** 屏幕像素线宽：市界 1.1、外轮廓 2.2（层级分明且都看得见）。 */
-const DRAFT_LINE_WIDTH = 1.1;
-const OUTLINE_LINE_WIDTH = 2.2;
-
-const DRAFT_OPACITY = 0.5;
-const OUTLINE_OPACITY = 0.62;
-const PAPER_SCALE = 1.35;
-/** 组装结束后的残留比例（§63）。 */
-const GRID_RESIDUAL = 0.18;
-const DRAFT_RESIDUAL = 0.15;
 
 /** 在透明画布上画方格：次要 1px、主要 3px，暖灰。 */
 function createGridTexture(renderer?: THREE.WebGLRenderer | null): THREE.CanvasTexture {
@@ -91,6 +88,10 @@ function createGridTexture(renderer?: THREE.WebGLRenderer | null): THREE.CanvasT
   texture.minFilter = THREE.LinearMipmapLinearFilter;
   texture.magFilter = THREE.LinearFilter;
   texture.generateMipmaps = true;
+  // 平面放大靠平铺，而不是把纹理拉伸：格子世界尺寸恒定，看不到边界（§13）。
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(GRID_REPEAT, GRID_REPEAT);
   texture.needsUpdate = true;
   return texture;
 }
@@ -107,10 +108,10 @@ export function SketchPaper({ radius, provinceRings, outlineRings, phase, progre
   /** 辽宁外轮廓环：由边界环配对推出，配对失败时为空数组。 */
   outlineRings: THREE.Vector2[][];
   phase: OpeningPhase;
-  /** 组装进度 0→1；用来让图纸渐退（§63）。 */
+  /** 组装进度 0→1；用来让图纸渐退并最终完全消失（§15）。 */
   progress?: number;
 }) {
-  const half = radius * PAPER_SCALE;
+  const half = radius * PLANE_HALF_SPAN;
   /** 各向异性取渲染器的最大值：草稿纸常被斜视，否则远处的线会被 mipmap 抹平。 */
   const gl = useThree((state) => state.gl);
   const texture = useMemo(() => createGridTexture(gl), [gl]);
@@ -119,12 +120,10 @@ export function SketchPaper({ radius, provinceRings, outlineRings, phase, progre
   const draftLines = useMemo(() => toLinePoints(provinceRings, 0.004), [provinceRings]);
   const outlineLines = useMemo(() => toLinePoints(outlineRings, 0.006), [outlineRings]);
 
-  /** 组装期间渐退，落定后留下极淡痕迹（§63）。 */
-  const p = progress < 0 ? 0 : progress > 1 ? 1 : progress;
-  const gridFade = 1 - (1 - GRID_RESIDUAL) * p;
-  const draftFade = 1 - (1 - DRAFT_RESIDUAL) * p;
+  const gridFade = gridFadeAt(progress);
+  const draftFade = draftFadeAt(progress);
   /** 实体落定后手稿线不再需要：实体自身的边线已精确描出同一轮廓。 */
-  const showDraft = phase !== 'ready';
+  const showDraft = phase !== 'ready' && draftFade > 0;
 
   return (
     <group>

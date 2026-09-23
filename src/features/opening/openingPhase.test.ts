@@ -2,20 +2,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
- * Opening 首屏决策（V5 §36/§37/§71）。
+ * Opening 首屏决策（本轮 §10/§11 修订）。
  *
  * 阶段是在模块加载时定的，所以每条用例都先重置模块再导入，
- * 才能分别验证「看过 / 减少动效 / 全新」三种环境。
+ * 以便分别验证「减少动效 / 全新」两种环境。
+ * sessionStorage 已不再参与决策 —— 有专门用例证明这一点。
  */
 
-const SEEN_KEY = 'agriscope-opening-seen';
-
-async function loadPhaseModule(options: { seen: boolean; reducedMotion: boolean }) {
-  vi.resetModules();
-  window.sessionStorage.clear();
-  if (options.seen) window.sessionStorage.setItem(SEEN_KEY, 'v5-orbit-assembly');
+function stubMotion(reducedMotion: boolean) {
   vi.stubGlobal('matchMedia', (query: string) => ({
-    matches: options.reducedMotion && query.includes('prefers-reduced-motion'),
+    matches: reducedMotion && query.includes('prefers-reduced-motion'),
     media: query,
     onchange: null,
     addListener: () => undefined,
@@ -24,6 +20,11 @@ async function loadPhaseModule(options: { seen: boolean; reducedMotion: boolean 
     removeEventListener: () => undefined,
     dispatchEvent: () => false,
   }));
+}
+
+async function loadPhaseModule(options: { reducedMotion: boolean }) {
+  vi.resetModules();
+  stubMotion(options.reducedMotion);
   return import('./openingPhase');
 }
 
@@ -31,55 +32,61 @@ describe('Opening 首屏阶段', () => {
   beforeEach(() => { vi.resetModules(); });
   afterEach(() => { vi.unstubAllGlobals(); window.sessionStorage.clear(); });
 
-  it('全新会话先停在草稿态', async () => {
-    const { useOpeningStore } = await loadPhaseModule({ seen: false, reducedMotion: false });
+  it('全新进入先停在草稿态', async () => {
+    const { useOpeningStore } = await loadPhaseModule({ reducedMotion: false });
     expect(useOpeningStore.getState().phase).toBe('sketch');
   });
 
-  it('看过本次版本直接进入完成态', async () => {
-    const { useOpeningStore } = await loadPhaseModule({ seen: true, reducedMotion: false });
-    expect(useOpeningStore.getState().phase).toBe('ready');
-  });
-
-  it('要求减少动效时不做任何组装（§71）', async () => {
-    const { useOpeningStore } = await loadPhaseModule({ seen: false, reducedMotion: true });
+  it('要求减少动效时直接完成态，不组装（§11）', async () => {
+    const { useOpeningStore } = await loadPhaseModule({ reducedMotion: true });
     expect(useOpeningStore.getState().phase).toBe('ready');
   });
 
   it('阶段只能单向推进', async () => {
-    const { useOpeningStore } = await loadPhaseModule({ seen: false, reducedMotion: false });
-    const { begin, finish } = useOpeningStore.getState();
-    // 完成态不可退回组装态。
-    finish();
+    const { useOpeningStore } = await loadPhaseModule({ reducedMotion: false });
+    useOpeningStore.getState().finish();
     expect(useOpeningStore.getState().phase).toBe('ready');
-    begin();
+    useOpeningStore.getState().begin();
     expect(useOpeningStore.getState().phase).toBe('ready');
   });
 
   it('草稿 → 组装 → 完成', async () => {
-    const { useOpeningStore } = await loadPhaseModule({ seen: false, reducedMotion: false });
-    const { begin } = useOpeningStore.getState();
-    begin();
+    const { useOpeningStore } = await loadPhaseModule({ reducedMotion: false });
+    useOpeningStore.getState().begin();
     expect(useOpeningStore.getState().phase).toBe('assembling');
     useOpeningStore.getState().finish();
     expect(useOpeningStore.getState().phase).toBe('ready');
   });
-});
 
-describe('Opening 会话标记按版本记录', () => {
-  beforeEach(() => { vi.resetModules(); window.sessionStorage.clear(); });
-
-  it('记住的是当前动画版本，而不是布尔值', async () => {
-    const session = await import('./openingSession');
-    expect(session.hasSeenOpening()).toBe(false);
-    session.markOpeningSeen();
-    expect(window.sessionStorage.getItem(SEEN_KEY)).toBe(session.OPENING_VERSION);
-    expect(session.hasSeenOpening()).toBe(true);
+  it('reset 让完成态重新回到草稿，支持再次进入 / 重放（§11）', async () => {
+    const { useOpeningStore } = await loadPhaseModule({ reducedMotion: false });
+    useOpeningStore.getState().begin();
+    useOpeningStore.getState().finish();
+    expect(useOpeningStore.getState().phase).toBe('ready');
+    useOpeningStore.getState().reset();
+    expect(useOpeningStore.getState().phase).toBe('sketch');
   });
 
-  it('旧版本的标记不会被当成本次已看过', async () => {
-    window.sessionStorage.setItem(SEEN_KEY, 'v4-something-old');
-    const session = await import('./openingSession');
-    expect(session.hasSeenOpening()).toBe(false);
+  it('reset 幂等：连续调用结果一致（StrictMode 安全）', async () => {
+    const { useOpeningStore } = await loadPhaseModule({ reducedMotion: false });
+    useOpeningStore.getState().reset();
+    useOpeningStore.getState().reset();
+    expect(useOpeningStore.getState().phase).toBe('sketch');
+    useOpeningStore.getState().begin();
+    useOpeningStore.getState().reset();
+    useOpeningStore.getState().reset();
+    expect(useOpeningStore.getState().phase).toBe('sketch');
+  });
+
+  it('减少动效下 reset 仍落在完成态，不强迫看动画', async () => {
+    const { useOpeningStore } = await loadPhaseModule({ reducedMotion: true });
+    useOpeningStore.getState().reset();
+    expect(useOpeningStore.getState().phase).toBe('ready');
+  });
+
+  it('sessionStorage 不再决定是否播放（本轮退役 openingSession）', async () => {
+    window.sessionStorage.setItem('agriscope-opening-seen', 'v5-orbit-assembly');
+    const { useOpeningStore } = await loadPhaseModule({ reducedMotion: false });
+    expect(useOpeningStore.getState().phase).toBe('sketch');
   });
 });

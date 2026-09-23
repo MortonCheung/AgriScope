@@ -3,6 +3,7 @@ import {
   ENTRY_AZIMUTH_ORBIT_DEGREES,
   PROVINCE_ROOT_ROTATION,
   azimuthDegrees,
+  maxGroundHalfSpan,
   orbitSpanDegrees,
   orbitView,
   provinceView,
@@ -92,5 +93,16 @@ describe('模型本身不转（§33.11）', () => {
   it('位姿只有 position 与 target，没有任何旋转自由度', () => {
     const pose = orbitView(RADIUS, 0.37);
     expect(Object.keys(pose).sort()).toEqual(['position', 'target']);
+  });
+});
+
+describe('地面可见范围随屏幕变宽而增大（§13 的前置）', () => {
+  it('任何机位下都算得出有限的地面可见半范围', () => {
+    expect(maxGroundHalfSpan(16 / 9)).toBeGreaterThan(0);
+    expect(Number.isFinite(maxGroundHalfSpan(21 / 9))).toBe(true);
+  });
+
+  it('宽屏能看到更远的地面，因此对平面覆盖的要求更高', () => {
+    expect(maxGroundHalfSpan(21 / 9)).toBeGreaterThan(maxGroundHalfSpan(4 / 3));
   });
 });

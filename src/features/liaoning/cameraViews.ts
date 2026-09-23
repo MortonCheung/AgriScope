@@ -109,3 +109,64 @@ export function orbitSpanDegrees(radius: number): number {
   const span = azimuthDegrees(provinceView(radius)) - azimuthDegrees(sketchView(radius));
   return ((span % 360) + 360) % 360;
 }
+
+/**
+ * 省域沙盘相机的垂直视场角（°）。LiaoningCanvas 的 PerspectiveCamera 必须用同一个值，
+ * 否则地面覆盖范围的计算会与实际渲染不一致（§13 的前提）。
+ */
+export const CAMERA_FOV_DEG = 38;
+
+type V3 = readonly [number, number, number];
+const sub = (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+const add = (a: V3, b: V3): V3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+const scale = (a: V3, s: number): V3 => [a[0] * s, a[1] * s, a[2] * s];
+const cross = (a: V3, b: V3): V3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const magnitude = (a: V3) => Math.hypot(a[0], a[1], a[2]);
+const normalized = (a: V3): V3 => { const l = magnitude(a) || 1; return scale(a, 1 / l); };
+
+/**
+ * 单个机位下，屏幕四角射线与地面（y = 0）交点里离原点的最大水平距离（以省域半径为单位）。
+ * 用来证明草稿纸平面的半宽足够覆盖某个屏幕比例下的整幅画面（§13/§59-6）。
+ */
+export function groundReach(pose: CameraPose, aspect: number, fovDeg: number = CAMERA_FOV_DEG): number {
+  const camera = pose.position;
+  const forward = normalized(sub(pose.target, camera));
+  let right = cross(forward, [0, 1, 0]);
+  if (magnitude(right) < 1e-6) right = [1, 0, 0];
+  right = normalized(right);
+  const up = cross(right, forward);
+
+  const tanV = Math.tan((fovDeg / 2) * (Math.PI / 180));
+  const tanH = tanV * aspect;
+
+  let reach = 0;
+  for (const signY of [-1, 1]) {
+    for (const signX of [-1, 1]) {
+      const ray = add(add(forward, scale(up, tanV * signY)), scale(right, tanH * signX));
+      // 射线不朝下就永远交不到地面。
+      if (ray[1] >= -1e-6) continue;
+      const t = (0 - camera[1]) / ray[1];
+      const x = camera[0] + ray[0] * t;
+      const z = camera[2] + ray[2] * t;
+      reach = Math.max(reach, Math.hypot(x, z));
+    }
+  }
+  return reach;
+}
+
+/**
+ * Opening 时间轴（Sketch → 环绕）在 `progress ∈ [0, progressLimit]` 内，
+ * 地面在屏幕内可见的最大半范围（× 半径）。草稿纸平面的半宽必须 ≥ 它（§13）。
+ *
+ * `progressLimit` 默认 1（含正式省域机位）；草稿纸只在网格可见的区间需要覆盖，
+ * 因此覆盖率断言应传 `GRID_FADE_END`。采样足够密以免错过掠射机位的峰值。
+ */
+export function maxGroundHalfSpan(aspect: number, progressLimit = 1, radius = 1): number {
+  let max = groundReach(sketchView(radius), aspect);
+  const steps = 40;
+  for (let step = 0; step <= steps; step += 1) {
+    const progress = (step / steps) * progressLimit;
+    max = Math.max(max, groundReach(orbitView(radius, progress), aspect));
+  }
+  return max;
+}

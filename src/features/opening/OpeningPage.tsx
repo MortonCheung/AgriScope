@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'motion/react';
 import { ROUTES } from '../../app/routes';
 import { MOTION_DURATION } from '../../design/motion';
-import { markOpeningSeen } from './openingSession';
 import { useOpeningStore } from './openingPhase';
 import './opening.css';
 
@@ -13,9 +12,13 @@ import './opening.css';
  * 流程：草稿研究图 → 用户点击「进入」→ 一条 3.6s 的时间轴同时驱动
  * 「14 块行政区从空间落下」与「相机螺旋环绕一圈后落到省域机位」→ 切到 /liaoning。
  *
- * 两个关键点：
+ * 本轮 §10/§11 修订：**每次真正进入 `/` 都重放开场**。
+ * 挂载时用 `reset()` 把状态机拉回草稿态（幂等，StrictMode 安全），
+ * 因此不再需要 sessionStorage，也不会出现"一个 session 只看一次"。
+ *
+ * 两个仍然成立的关键点：
  *   - 只有真的点击过（assembleStarted）才会在组装结束后跳转，
- *     否则"本次 session 已看过"的用户一进首页就会被自动带走；
+ *     否则减少动效的用户一进首页就会被自动带走；
  *   - 相机不再决定路由提交：时间轴走完即完成态（§58/§67）。
  */
 export function OpeningPage() {
@@ -23,11 +26,18 @@ export function OpeningPage() {
   const reducedMotion = Boolean(useReducedMotion());
   const phase = useOpeningStore((state) => state.phase);
   const begin = useOpeningStore((state) => state.begin);
+  const reset = useOpeningStore((state) => state.reset);
   const [assembleStarted, setAssembleStarted] = useState(false);
+
+  /**
+   * 每次打开 `/` 都回到草稿态。
+   * 放在 layout effect 里，避免先按上一次的「完成态」画一帧再跳回草稿（可见闪一下）。
+   * `reset` 幂等：StrictMode 双执行、重复挂载都只产生同一结果。
+   */
+  useLayoutEffect(() => { reset(); }, [reset]);
 
   useEffect(() => {
     if (!assembleStarted || phase !== 'ready') return;
-    markOpeningSeen();
     navigate(ROUTES.liaoning, { viewTransition: true });
   }, [assembleStarted, navigate, phase]);
 

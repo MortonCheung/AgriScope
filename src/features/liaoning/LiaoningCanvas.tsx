@@ -10,8 +10,9 @@ import { useAnimationFrames } from './useAnimationFrames';
 import { QUALITY_CONFIG, resolveAutoQualityTier, resolveDpr, readRuntimeQualitySignals } from '../../performance/qualityPolicy';
 import { SCENE_TOKENS } from '../../design/sceneTokens';
 import { MOTION_DURATION } from '../../design/motion';
-import { PROVINCE_ROOT_ROTATION, cityView, easeInOutCubic, orbitView, provinceView, sketchView } from './cameraViews';
+import { PROVINCE_ROOT_ROTATION, CAMERA_FOV_DEG, cityView, easeInOutCubic, orbitView, provinceView, sketchView } from './cameraViews';
 import { SketchPaper } from '../opening/SketchPaper';
+import { shouldMountSketchPaper } from '../opening/sketchMetrics';
 import { useOpeningStore, type OpeningPhase } from '../opening/openingPhase';
 
 export interface LiaoningCanvasProps {
@@ -239,9 +240,16 @@ function SceneContents({ mode, focusCityId, hoveredCityId, onHoverCity, onSelect
     }));
   }, [model]);
 
+  /**
+   * 回到草稿态时把图纸进度清零（§11/§15）：否则再次进入 `/` 时，
+   * 网格会带着上一次"已组装完"的进度直接消失，看不到完整草稿。
+   * 幂等：已是 0 时 setState 会被 React 丢弃，不会额外重渲染。
+   */
   useEffect(() => {
-    if (phase !== 'sketch' && mode === 'opening' && paperProgress === 0) setPaperProgress(0);
-  }, [mode, paperProgress, phase]);
+    if (mode !== 'opening' || phase !== 'sketch') return;
+    assemblyRef.current = 0;
+    setPaperProgress(0);
+  }, [mode, phase]);
 
   if (!model) return null;
 
@@ -263,14 +271,20 @@ function SceneContents({ mode, focusCityId, hoveredCityId, onHoverCity, onSelect
         controlsRef={controlsRef}
       />
       <PaperGround radius={model.radius} />
-      {/* 草稿纸：暖灰方格 + 手稿边界；随组装进度渐退（§55/§56/§63） */}
-      <SketchPaper
-        radius={model.radius}
-        provinceRings={model.provinceRings}
-        outlineRings={model.provinceOutlineRings}
-        phase={phase}
-        progress={paperProgress}
-      />
+      {/*
+        草稿纸：暖灰方格 + 手稿边界，**只在 Opening 路由挂载**（§14/§15）——
+        正式省域页根本不渲染它，而不是把 opacity 调到 0。
+        随组装进度在 0.15→0.82 之间淡出，0.82 之后只剩正在落定的 3D 辽宁。
+      */}
+      {shouldMountSketchPaper(mode) && (
+        <SketchPaper
+          radius={model.radius}
+          provinceRings={model.provinceRings}
+          outlineRings={model.provinceOutlineRings}
+          phase={phase}
+          progress={paperProgress}
+        />
+      )}
       {/*
         接触阴影：frames={1} 只在挂载首帧烘焙一次，因此必须等区块落定后再挂载，
         否则草稿阶段还没有实体，会烘出一块"没有对象的阴影"。
@@ -366,7 +380,7 @@ export function LiaoningCanvas(props: LiaoningCanvasProps) {
       }}
     >
       <color attach="background" args={[SCENE_TOKENS.paper]} />
-      <PerspectiveCamera makeDefault fov={38} near={1} far={1200} position={[0, 70, 110]} />
+      <PerspectiveCamera makeDefault fov={CAMERA_FOV_DEG} near={1} far={1200} position={[0, 70, 110]} />
       <hemisphereLight args={[SCENE_TOKENS.lightKey, SCENE_TOKENS.lightFill, 1.05]} />
       <directionalLight position={[-40, 70, 40]} intensity={0.85} />
       <directionalLight position={[30, 40, -50]} intensity={0.25} />
