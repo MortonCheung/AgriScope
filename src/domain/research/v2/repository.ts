@@ -1,24 +1,55 @@
 import { parseCsv } from '../../../services/csv';
-import type { V2Article, V2Manifest, V2Source, V2SyncReport } from './types';
+import type { V2Article, V2Manifest, V2Source, V2SyncReport, V2Table } from './types';
+
+export type { V2Table };
 
 /**
- * 沈阳 v2 载荷访问（V5 Phase 3 产物）。
+ * 研究载荷访问（本轮 §5/§6：**城市无关**）。
  *
- * 与 v4 的 ResearchRepository 同样的两层缓存：pending 去重 + resolved 允许同步命中，
- * 因此切换研究条目不会再闪一次加载态。
+ * 关键变化：
+ *   1. 路径由 `cityId` 推导，不再把 shenyang 或某个版本号写死：
+ *      `/research/<cityId>/manifest.json`、`/articles/<id>.json`、`/tables/<file>`、`/figures/<file>`
+ *   2. 文章 id 用 **canonical**（A2），由 compat 层解析到当前载荷 id（A02）。
+ *      canonical 存在时优先用它；不存在才回退。研究侧完成正式迁移后，回退自然失效。
+ *   3. 推演表与研究树分离（§30）：`/scenario/<cityId>/<file>`。
  *
  * 载荷由 `scripts/sync-shenyang-v2.mjs` 生成，前端**只读**，不做任何拼装或推断。
+ * 正式文章树（`/research/<cityId>/index.json`）与 `src/domain/research/catalog` 是同一份内容
+ * （完整性校验器逐字节比对），应用直接读 catalog，因此树没有加载态。
  */
-const BASE = '/research/shenyang/v2';
 
-export interface V2Table {
-  file: string;
-  columns: string[];
-  rows: Record<string, string>[];
+export function researchRoot(cityId: string): string {
+  return `/research/${cityId}`;
+}
+
+export function scenarioRoot(cityId: string): string {
+  return `/scenario/${cityId}`;
 }
 
 /**
- * 载荷读取失败的对外文案（V5 §38）。
+ * canonical → 当前载荷的候选 id（§4）。
+ *
+ * 这是一层**极薄的兼容**，只存在于 repository 内部：
+ *   - 不进入 URL；
+ *   - 不进入界面；
+ *   - 不成为新的领域契约。
+ * 研究侧开始输出 `articles/A1.json` 时，第一个候选直接命中，回退不再被使用。
+ */
+export function candidateArticleIds(canonicalId: string): string[] {
+  const match = /^A(\d+)$/.exec(canonicalId);
+  if (!match) return [canonicalId];
+  const padded = `A${match[1].padStart(2, '0')}`;
+  return padded === canonicalId ? [canonicalId] : [canonicalId, padded];
+}
+
+export const assetUrl = {
+  figure: (cityId: string, file: string) => `${researchRoot(cityId)}/figures/${file}`,
+  table: (cityId: string, file: string) => `${researchRoot(cityId)}/tables/${file}`,
+  scenario: (cityId: string, file: string) => `${scenarioRoot(cityId)}/${file}`,
+};
+
+/**
+ * 载荷读取失败的对外文案（§38）。
  *
  * 错误同样可能出现在界面上，所以只说明「哪一类研究资源没取到」，
  * **不带 URL、不带文件名**。具体地址只在开发期通过 `cause` 附带，
@@ -63,78 +94,117 @@ const articleResource = createResource<V2Article>();
 const tableResource = createResource<V2Table>();
 const reportResource = createResource<V2SyncReport>();
 const referenceResource = createResource<string>();
+/** canonical → 实际命中的载荷 id（只探测一次）。 */
+const resolvedArticleIds = new Map<string, string>();
 
-/** 图片与表格的 URL：表格走 fetch（有 .csv），图片直接给 <img src>。 */
-export const v2AssetUrl = {
-  figure: (file: string) => `${BASE}/figures/${file}`,
-  table: (file: string) => `${BASE}/tables/${file}`,
-};
-
-export function getManifest(): Promise<V2Manifest> {
-  return manifestResource.load('manifest', () => fetchJson<V2Manifest>(`${BASE}/manifest.json`, '研究清单'));
+export function getManifest(cityId: string): Promise<V2Manifest> {
+  return manifestResource.load(`${cityId}:manifest`, () =>
+    fetchJson<V2Manifest>(`${researchRoot(cityId)}/manifest.json`, '研究清单'));
 }
-export function peekManifest(): V2Manifest | null {
-  return manifestResource.peek('manifest');
+export function peekManifest(cityId: string): V2Manifest | null {
+  return manifestResource.peek(`${cityId}:manifest`);
 }
 
-export function getSources(): Promise<V2Source[]> {
-  return sourcesResource.load('sources', () => fetchJson<V2Source[]>(`${BASE}/sources.json`, '来源清单'));
+export function getSources(cityId: string): Promise<V2Source[]> {
+  return sourcesResource.load(`${cityId}:sources`, () =>
+    fetchJson<V2Source[]>(`${researchRoot(cityId)}/sources.json`, '来源清单'));
 }
-export function peekSources(): V2Source[] | null {
-  return sourcesResource.peek('sources');
-}
-
-export function getArticle(id: string): Promise<V2Article> {
-  return articleResource.load(id, () => fetchJson<V2Article>(`${BASE}/articles/${id}.json`, '研究正文'));
-}
-export function peekArticle(id: string): V2Article | null {
-  return articleResource.peek(id);
+export function peekSources(cityId: string): V2Source[] | null {
+  return sourcesResource.peek(`${cityId}:sources`);
 }
 
-export function getSyncReport(): Promise<V2SyncReport> {
-  return reportResource.load('report', () => fetchJson<V2SyncReport>(`${BASE}/sync-report.json`, '同步报告'));
-}
-export function peekSyncReport(): V2SyncReport | null {
-  return reportResource.peek('report');
+/**
+ * 读取一篇文章。参数是 **canonical id**（A2），内部解析到当前载荷。
+ * 解析结果按 city 缓存，因此同一篇文章只会为兼容付一次探测成本。
+ */
+export async function getArticle(cityId: string, canonicalId: string): Promise<V2Article> {
+  const cacheKey = `${cityId}:${canonicalId}`;
+  const known = resolvedArticleIds.get(cacheKey);
+  if (known) return articleResource.load(`${cacheKey}:${known}`, () =>
+    fetchJson<V2Article>(`${researchRoot(cityId)}/articles/${known}.json`, '研究正文'));
+
+  const candidates = candidateArticleIds(canonicalId);
+  let lastError: unknown = null;
+  for (const payloadId of candidates) {
+    try {
+      const article = await articleResource.load(`${cacheKey}:${payloadId}`, () =>
+        fetchJson<V2Article>(`${researchRoot(cityId)}/articles/${payloadId}.json`, '研究正文'));
+      resolvedArticleIds.set(cacheKey, payloadId);
+      return article;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error('研究正文读取失败');
 }
 
-async function fetchTable(file: string): Promise<V2Table> {
-  const response = await fetch(v2AssetUrl.table(file));
-  if (!response.ok) throw payloadError(response.status, '数据表', v2AssetUrl.table(file));
+export function peekArticle(cityId: string, canonicalId: string): V2Article | null {
+  const known = resolvedArticleIds.get(`${cityId}:${canonicalId}`);
+  if (known) return articleResource.peek(`${cityId}:${canonicalId}:${known}`);
+  for (const payloadId of candidateArticleIds(canonicalId)) {
+    const cached = articleResource.peek(`${cityId}:${canonicalId}:${payloadId}`);
+    if (cached) { resolvedArticleIds.set(`${cityId}:${canonicalId}`, payloadId); return cached; }
+  }
+  return null;
+}
+
+export function getSyncReport(cityId: string): Promise<V2SyncReport> {
+  return reportResource.load(`${cityId}:report`, () =>
+    fetchJson<V2SyncReport>(`${researchRoot(cityId)}/sync-report.json`, '同步报告'));
+}
+export function peekSyncReport(cityId: string): V2SyncReport | null {
+  return reportResource.peek(`${cityId}:report`);
+}
+
+async function fetchTable(cityId: string, file: string): Promise<V2Table> {
+  const response = await fetch(assetUrl.table(cityId, file));
+  if (!response.ok) throw payloadError(response.status, '数据表', assetUrl.table(cityId, file));
   const parsed = parseCsv(await response.text());
   return { file, columns: parsed.columns, rows: parsed.rows };
 }
 
-export function getTable(file: string): Promise<V2Table> {
-  return tableResource.load(file, () => fetchTable(file));
+export function getTable(cityId: string, file: string): Promise<V2Table> {
+  return tableResource.load(`${cityId}:${file}`, () => fetchTable(cityId, file));
 }
-export function peekTable(file: string): V2Table | null {
-  return tableResource.peek(file);
+export function peekTable(cityId: string, file: string): V2Table | null {
+  return tableResource.peek(`${cityId}:${file}`);
 }
 
 /** 研究侧的数据来源与参考文献清单（About 的「研究与知识来源」用它，§52）。 */
-async function fetchReferences(): Promise<string> {
-  const response = await fetch(`${BASE}/references.md`);
-  if (!response.ok) throw payloadError(response.status, '来源与参考文献清单', `${BASE}/references.md`);
+async function fetchReferences(cityId: string): Promise<string> {
+  const url = `${researchRoot(cityId)}/references.md`;
+  const response = await fetch(url);
+  if (!response.ok) throw payloadError(response.status, '来源与参考文献清单', url);
   return response.text();
 }
-export function getReferences(): Promise<string> {
-  return referenceResource.load('references', fetchReferences);
+export function getReferences(cityId: string): Promise<string> {
+  return referenceResource.load(`${cityId}:references`, () => fetchReferences(cityId));
 }
-export function peekReferences(): string | null {
-  return referenceResource.peek('references');
+export function peekReferences(cityId: string): string | null {
+  return referenceResource.peek(`${cityId}:references`);
 }
 
-/** 研究条目（A01–A08）与正式报告（A09）的分界来自 manifest，不写死在前端。 */
-export const RESEARCH_NOTE_IDS = ['A01', 'A02', 'A03', 'A04', 'A05', 'A06', 'A07', 'A08'] as const;
-export const REPORT_ARTICLE_ID = 'A09';
+/** 推演表（与「研究」不同的产品入口，§30）。 */
+async function fetchScenarioTable(cityId: string, file: string): Promise<V2Table> {
+  const response = await fetch(assetUrl.scenario(cityId, file));
+  if (!response.ok) throw payloadError(response.status, '情景表', assetUrl.scenario(cityId, file));
+  const parsed = parseCsv(await response.text());
+  return { file, columns: parsed.columns, rows: parsed.rows };
+}
+export function getScenarioTable(cityId: string, file: string): Promise<V2Table> {
+  return tableResource.load(`${cityId}:scenario:${file}`, () => fetchScenarioTable(cityId, file));
+}
+export function peekScenarioTable(cityId: string, file: string): V2Table | null {
+  return tableResource.peek(`${cityId}:scenario:${file}`);
+}
 
 export const V2Repository = {
   getManifest, peekManifest,
   getSources, peekSources,
   getArticle, peekArticle,
   getTable, peekTable,
+  getScenarioTable, peekScenarioTable,
   getReferences, peekReferences,
   getSyncReport, peekSyncReport,
-  v2AssetUrl,
+  assetUrl,
 };

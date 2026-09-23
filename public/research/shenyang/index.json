@@ -14,9 +14,10 @@
    "points": [
     {
      "id": "A1.1",
+     "topicId": "A1",
+     "articleId": "A1",
      "title": "时间 × 价格长期变化",
      "status": "ready",
-     "articleId": "A1",
      "sectionId": "3",
      "module": "trend",
      "binding": {
@@ -26,7 +27,9 @@
         "price"
        ]
       },
-      "focus": "beta_per_year"
+      "focus": "beta_per_year",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -41,9 +44,10 @@
     },
     {
      "id": "A1.2",
+     "topicId": "A1",
+     "articleId": "A1",
      "title": "时间 × 成交量长期变化",
      "status": "ready",
-     "articleId": "A1",
      "sectionId": "3",
      "module": "trend",
      "binding": {
@@ -53,7 +57,9 @@
         "volume"
        ]
       },
-      "focus": "beta_per_year"
+      "focus": "beta_per_year",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -64,15 +70,18 @@
     },
     {
      "id": "A1.3",
+     "topicId": "A1",
+     "articleId": "A1",
      "title": "月份 × 价格",
      "status": "ready",
-     "articleId": "A1",
      "sectionId": "4",
      "module": "seasonality",
      "binding": {
       "table": "A01_monthly.csv",
       "filter": {},
-      "focus": "price_median"
+      "focus": "price_median",
+      "category": "month",
+      "view": "chart"
      },
      "citations": [
       {
@@ -87,15 +96,18 @@
     },
     {
      "id": "A1.4",
+     "topicId": "A1",
+     "articleId": "A1",
      "title": "月份 × 成交量",
      "status": "ready",
-     "articleId": "A1",
      "sectionId": "4",
      "module": "seasonality",
      "binding": {
       "table": "A01_monthly.csv",
       "filter": {},
-      "focus": "volume_median"
+      "focus": "volume_median",
+      "category": "month",
+      "view": "chart"
      },
      "citations": [
       {
@@ -110,9 +122,10 @@
     },
     {
      "id": "A1.5",
+     "topicId": "A1",
+     "articleId": "A1",
      "title": "季节 × 价格",
      "status": "ready",
-     "articleId": "A1",
      "sectionId": "4",
      "module": "seasonality",
      "binding": {
@@ -122,7 +135,9 @@
         "price"
        ]
       },
-      "focus": "seasonal_range"
+      "focus": "seasonal_range",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -137,9 +152,10 @@
     },
     {
      "id": "A1.6",
+     "topicId": "A1",
+     "articleId": "A1",
      "title": "季节 × 成交量",
      "status": "ready",
-     "articleId": "A1",
      "sectionId": "4",
      "module": "seasonality",
      "binding": {
@@ -149,7 +165,9 @@
         "volume"
        ]
       },
-      "focus": "seasonal_range"
+      "focus": "seasonal_range",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -160,16 +178,18 @@
     },
     {
      "id": "A1.7",
+     "topicId": "A1",
+     "articleId": "A1",
      "title": "作物 × 价格波动",
      "status": "pending",
-     "articleId": "A1",
      "reason": "逐品种波动率（年化波动率 / CV）表未在当前 v2 载荷中；A01 只导出了趋势、季节幅度与 STL 强度。"
     },
     {
      "id": "A1.8",
+     "topicId": "A1",
+     "articleId": "A1",
      "title": "作物 × 成交量波动",
      "status": "pending",
-     "articleId": "A1",
      "reason": "同上：无逐品种成交量波动表。"
     }
    ]
@@ -183,9 +203,10 @@
    "points": [
     {
      "id": "A2.1",
+     "topicId": "A2",
+     "articleId": "A2",
      "title": "温度 × 价格",
      "status": "ready",
-     "articleId": "A2",
      "sectionId": "4",
      "module": "weather-response",
      "binding": {
@@ -198,7 +219,9 @@
         "temp_max"
        ]
       },
-      "focus": "beta_per_sd"
+      "focus": "beta_per_sd",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -213,9 +236,10 @@
     },
     {
      "id": "A2.2",
+     "topicId": "A2",
+     "articleId": "A2",
      "title": "降水 × 价格",
      "status": "ready",
-     "articleId": "A2",
      "sectionId": "4",
      "module": "weather-response",
      "binding": {
@@ -228,7 +252,9 @@
         "precipitation"
        ]
       },
-      "focus": "beta_per_sd"
+      "focus": "beta_per_sd",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -243,9 +269,10 @@
     },
     {
      "id": "A2.3",
+     "topicId": "A2",
+     "articleId": "A2",
      "title": "湿度 / VPD × 价格",
      "status": "ready",
-     "articleId": "A2",
      "sectionId": "4",
      "module": "weather-response",
      "binding": {
@@ -259,7 +286,9 @@
         "humidity"
        ]
       },
-      "focus": "beta_per_sd"
+      "focus": "beta_per_sd",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -274,9 +303,10 @@
     },
     {
      "id": "A2.4",
+     "topicId": "A2",
+     "articleId": "A2",
      "title": "风速 × 价格",
      "status": "ready",
-     "articleId": "A2",
      "sectionId": "4",
      "module": "weather-response",
      "binding": {
@@ -289,7 +319,9 @@
         "wind_speed"
        ]
       },
-      "focus": "beta_per_sd"
+      "focus": "beta_per_sd",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -304,9 +336,10 @@
     },
     {
      "id": "A2.5",
+     "topicId": "A2",
+     "articleId": "A2",
      "title": "土壤水分 × 价格",
      "status": "ready",
-     "articleId": "A2",
      "sectionId": "4",
      "module": "weather-response",
      "binding": {
@@ -319,7 +352,9 @@
         "soil_moisture_0_7"
        ]
       },
-      "focus": "beta_per_sd"
+      "focus": "beta_per_sd",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -334,9 +369,10 @@
     },
     {
      "id": "A2.6",
+     "topicId": "A2",
+     "articleId": "A2",
      "title": "温度 × 成交量",
      "status": "ready",
-     "articleId": "A2",
      "sectionId": "4",
      "module": "weather-response",
      "binding": {
@@ -349,7 +385,9 @@
         "temp_max"
        ]
       },
-      "focus": "beta_per_sd"
+      "focus": "beta_per_sd",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -364,9 +402,10 @@
     },
     {
      "id": "A2.7",
+     "topicId": "A2",
+     "articleId": "A2",
      "title": "降水 × 成交量",
      "status": "ready",
-     "articleId": "A2",
      "sectionId": "4",
      "module": "weather-response",
      "binding": {
@@ -379,7 +418,9 @@
         "precipitation"
        ]
       },
-      "focus": "beta_per_sd"
+      "focus": "beta_per_sd",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -394,9 +435,10 @@
     },
     {
      "id": "A2.8",
+     "topicId": "A2",
+     "articleId": "A2",
      "title": "湿度 / VPD × 成交量",
      "status": "ready",
-     "articleId": "A2",
      "sectionId": "4",
      "module": "weather-response",
      "binding": {
@@ -410,7 +452,9 @@
         "humidity"
        ]
       },
-      "focus": "beta_per_sd"
+      "focus": "beta_per_sd",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -425,9 +469,10 @@
     },
     {
      "id": "A2.9",
+     "topicId": "A2",
+     "articleId": "A2",
      "title": "风速 × 成交量",
      "status": "ready",
-     "articleId": "A2",
      "sectionId": "4",
      "module": "weather-response",
      "binding": {
@@ -440,7 +485,9 @@
         "wind_speed"
        ]
       },
-      "focus": "beta_per_sd"
+      "focus": "beta_per_sd",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -455,9 +502,10 @@
     },
     {
      "id": "A2.10",
+     "topicId": "A2",
+     "articleId": "A2",
      "title": "土壤水分 × 成交量",
      "status": "ready",
-     "articleId": "A2",
      "sectionId": "4",
      "module": "weather-response",
      "binding": {
@@ -470,7 +518,9 @@
         "soil_moisture_0_7"
        ]
       },
-      "focus": "beta_per_sd"
+      "focus": "beta_per_sd",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -485,15 +535,18 @@
     },
     {
      "id": "A2.11",
+     "topicId": "A2",
+     "articleId": "A2",
      "title": "天气的增量解释能力",
      "status": "ready",
-     "articleId": "A2",
      "sectionId": "3",
      "module": "weather-response",
      "binding": {
       "table": "A02_daily_response_Fwx.csv",
       "filter": {},
-      "focus": "r2"
+      "focus": "r2",
+      "category": "exposure",
+      "view": "chart"
      },
      "citations": [
       {
@@ -517,9 +570,10 @@
    "points": [
     {
      "id": "A3.1",
+     "topicId": "A3",
+     "articleId": "A3",
      "title": "当日天气 × 当日市场",
      "status": "ready",
-     "articleId": "A3",
      "sectionId": "4",
      "module": "lag",
      "binding": {
@@ -529,7 +583,9 @@
         "w0"
        ]
       },
-      "focus": "beta"
+      "focus": "beta",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -540,9 +596,10 @@
     },
     {
      "id": "A3.2",
+     "topicId": "A3",
+     "articleId": "A3",
      "title": "天气 × 1–3日后市场",
      "status": "ready",
-     "articleId": "A3",
      "sectionId": "4",
      "module": "lag",
      "binding": {
@@ -552,7 +609,9 @@
         "w13"
        ]
       },
-      "focus": "beta"
+      "focus": "beta",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -563,9 +622,10 @@
     },
     {
      "id": "A3.3",
+     "topicId": "A3",
+     "articleId": "A3",
      "title": "天气 × 4–7日后市场",
      "status": "ready",
-     "articleId": "A3",
      "sectionId": "4",
      "module": "lag",
      "binding": {
@@ -575,7 +635,9 @@
         "w47"
        ]
       },
-      "focus": "beta"
+      "focus": "beta",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -586,9 +648,10 @@
     },
     {
      "id": "A3.4",
+     "topicId": "A3",
+     "articleId": "A3",
      "title": "天气 × 8–14日后市场",
      "status": "ready",
-     "articleId": "A3",
      "sectionId": "4",
      "module": "lag",
      "binding": {
@@ -598,7 +661,9 @@
         "w814"
        ]
       },
-      "focus": "beta"
+      "focus": "beta",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -609,9 +674,10 @@
     },
     {
      "id": "A3.5",
+     "topicId": "A3",
+     "articleId": "A3",
      "title": "1日降水 × 市场",
      "status": "ready",
-     "articleId": "A3",
      "sectionId": "4",
      "module": "accumulation",
      "binding": {
@@ -621,7 +687,9 @@
         "1"
        ]
       },
-      "focus": "beta_per_sd"
+      "focus": "beta_per_sd",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -632,9 +700,10 @@
     },
     {
      "id": "A3.6",
+     "topicId": "A3",
+     "articleId": "A3",
      "title": "3日累计降水 × 市场",
      "status": "ready",
-     "articleId": "A3",
      "sectionId": "4",
      "module": "accumulation",
      "binding": {
@@ -644,7 +713,9 @@
         "3"
        ]
       },
-      "focus": "beta_per_sd"
+      "focus": "beta_per_sd",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -655,9 +726,10 @@
     },
     {
      "id": "A3.7",
+     "topicId": "A3",
+     "articleId": "A3",
      "title": "7日累计降水 × 市场",
      "status": "ready",
-     "articleId": "A3",
      "sectionId": "4",
      "module": "accumulation",
      "binding": {
@@ -667,7 +739,9 @@
         "7"
        ]
       },
-      "focus": "beta_per_sd"
+      "focus": "beta_per_sd",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -678,9 +752,10 @@
     },
     {
      "id": "A3.8",
+     "topicId": "A3",
+     "articleId": "A3",
      "title": "14日累计降水 × 市场",
      "status": "ready",
-     "articleId": "A3",
      "sectionId": "4",
      "module": "accumulation",
      "binding": {
@@ -690,7 +765,9 @@
         "14"
        ]
       },
-      "focus": "beta_per_sd"
+      "focus": "beta_per_sd",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -701,9 +778,10 @@
     },
     {
      "id": "A3.9",
+     "topicId": "A3",
+     "articleId": "A3",
      "title": "天气强度 × 市场非线性响应",
      "status": "ready",
-     "articleId": "A3",
      "sectionId": "4",
      "module": "nonlinearity",
      "binding": {
@@ -713,7 +791,9 @@
         "True"
        ]
       },
-      "focus": "wald_F"
+      "focus": "wald_F",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -724,9 +804,10 @@
     },
     {
      "id": "A3.10",
+     "topicId": "A3",
+     "articleId": "A3",
      "title": "风险阈值",
      "status": "unsupported",
-     "articleId": "A3",
      "sectionId": "5",
      "citations": [
       {
@@ -747,9 +828,10 @@
    "points": [
     {
      "id": "A4.1",
+     "topicId": "A4",
+     "articleId": "A4",
      "title": "极端降雨 × 价格",
      "status": "ready",
-     "articleId": "A4",
      "sectionId": "4",
      "module": "event-study",
      "binding": {
@@ -765,7 +847,8 @@
       "focus": "post_mean",
       "companions": [
        "A04_event_responses.csv"
-      ]
+      ],
+      "view": "table"
      },
      "citations": [
       {
@@ -776,9 +859,10 @@
     },
     {
      "id": "A4.2",
+     "topicId": "A4",
+     "articleId": "A4",
      "title": "极端降雨 × 成交量",
      "status": "ready",
-     "articleId": "A4",
      "sectionId": "4",
      "module": "event-study",
      "binding": {
@@ -794,7 +878,8 @@
       "focus": "post_mean",
       "companions": [
        "A04_event_responses.csv"
-      ]
+      ],
+      "view": "table"
      },
      "citations": [
       {
@@ -805,9 +890,10 @@
     },
     {
      "id": "A4.3",
+     "topicId": "A4",
+     "articleId": "A4",
      "title": "高温事件样本与可识别性",
      "status": "ready",
-     "articleId": "A4",
      "sectionId": "2",
      "module": "event-inventory",
      "binding": {
@@ -817,7 +903,8 @@
         "heat"
        ]
       },
-      "focus": "n"
+      "focus": "n",
+      "view": "table"
      },
      "citations": [
       {
@@ -828,9 +915,10 @@
     },
     {
      "id": "A4.4",
+     "topicId": "A4",
+     "articleId": "A4",
      "title": "高温事件 × 市场响应",
      "status": "unsupported",
-     "articleId": "A4",
      "sectionId": "4",
      "citations": [
       {
@@ -842,15 +930,17 @@
     },
     {
      "id": "A4.5",
+     "topicId": "A4",
+     "articleId": "A4",
      "title": "极端天气 vs 普通日期",
      "status": "ready",
-     "articleId": "A4",
      "sectionId": "4",
      "module": "event-study",
      "binding": {
       "table": "A04_event_summary.csv",
       "filter": {},
-      "focus": "placebo_p"
+      "focus": "placebo_p",
+      "view": "table"
      },
      "citations": [
       {
@@ -861,37 +951,42 @@
     },
     {
      "id": "A4.6",
+     "topicId": "A4",
+     "articleId": "A4",
      "title": "事件前 × 事件后",
      "status": "pending",
-     "articleId": "A4",
      "reason": "事件研究曲线表（T-14~T+14 主窗口逐日）未在当前 v2 载荷中。"
     },
     {
      "id": "A4.7",
+     "topicId": "A4",
+     "articleId": "A4",
      "title": "2026年7月降雨极端程度",
      "status": "pending",
-     "articleId": "A4",
      "reason": "2026 案例的天气与位次表（`case2026_*`）未在当前 v2 载荷中；研究正文有结论但无对应导出表。"
     },
     {
      "id": "A4.8",
+     "topicId": "A4",
+     "articleId": "A4",
      "title": "2026暴雨 × 价格",
      "status": "pending",
-     "articleId": "A4",
      "reason": "2026 案例的价格响应表未在当前 v2 载荷中。"
     },
     {
      "id": "A4.9",
+     "topicId": "A4",
+     "articleId": "A4",
      "title": "2026暴雨 × 成交量",
      "status": "pending",
-     "articleId": "A4",
      "reason": "2026 案例的成交量响应表未在当前 v2 载荷中。"
     },
     {
      "id": "A4.10",
+     "topicId": "A4",
+     "articleId": "A4",
      "title": "2026暴雨 vs 历史极端事件",
      "status": "pending",
-     "articleId": "A4",
      "reason": "2026 案例与历史极端的对照表未在当前 v2 载荷中。"
     }
    ]
@@ -905,9 +1000,10 @@
    "points": [
     {
      "id": "A5.1",
+     "topicId": "A5",
+     "articleId": "A5",
      "title": "作物 × 价格响应差异",
      "status": "ready",
-     "articleId": "A5",
      "sectionId": "4",
      "module": "crop-heterogeneity",
      "binding": {
@@ -917,7 +1013,8 @@
         "price"
        ]
       },
-      "focus": "F_crop_interaction"
+      "focus": "F_crop_interaction",
+      "view": "table"
      },
      "citations": [
       {
@@ -928,9 +1025,10 @@
     },
     {
      "id": "A5.2",
+     "topicId": "A5",
+     "articleId": "A5",
      "title": "作物 × 成交量响应差异",
      "status": "ready",
-     "articleId": "A5",
      "sectionId": "4",
      "module": "crop-heterogeneity",
      "binding": {
@@ -940,7 +1038,8 @@
         "volume"
        ]
       },
-      "focus": "F_crop_interaction"
+      "focus": "F_crop_interaction",
+      "view": "table"
      },
      "citations": [
       {
@@ -951,9 +1050,10 @@
     },
     {
      "id": "A5.3",
+     "topicId": "A5",
+     "articleId": "A5",
      "title": "作物 × 降雨敏感度",
      "status": "ready",
-     "articleId": "A5",
      "sectionId": "4",
      "module": "crop-heterogeneity",
      "binding": {
@@ -963,7 +1063,8 @@
         "precip_7d"
        ]
       },
-      "focus": "F_crop_interaction"
+      "focus": "F_crop_interaction",
+      "view": "table"
      },
      "citations": [
       {
@@ -974,9 +1075,10 @@
     },
     {
      "id": "A5.4",
+     "topicId": "A5",
+     "articleId": "A5",
      "title": "作物 × 温度敏感度",
      "status": "ready",
-     "articleId": "A5",
      "sectionId": "4",
      "module": "crop-heterogeneity",
      "binding": {
@@ -986,7 +1088,8 @@
         "temp_max"
        ]
       },
-      "focus": "F_crop_interaction"
+      "focus": "F_crop_interaction",
+      "view": "table"
      },
      "citations": [
       {
@@ -997,15 +1100,18 @@
     },
     {
      "id": "A5.5",
+     "topicId": "A5",
+     "articleId": "A5",
      "title": "作物 × 冲击幅度",
      "status": "ready",
-     "articleId": "A5",
      "sectionId": "3",
      "module": "recovery",
      "binding": {
       "table": "A05_recovery.csv",
       "filter": {},
-      "focus": "trough_abs"
+      "focus": "trough_abs",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -1016,16 +1122,18 @@
     },
     {
      "id": "A5.6",
+     "topicId": "A5",
+     "articleId": "A5",
      "title": "作物 × 谷底时间",
      "status": "pending",
-     "articleId": "A5",
      "reason": "逐品种谷底时间表未在当前 v2 载荷中。"
     },
     {
      "id": "A5.7",
+     "topicId": "A5",
+     "articleId": "A5",
      "title": "作物 × 恢复时间",
      "status": "ready",
-     "articleId": "A5",
      "sectionId": "4",
      "module": "recovery",
      "binding": {
@@ -1034,7 +1142,9 @@
       "focus": "rec_median",
       "companions": [
        "A05_recovery.csv"
-      ]
+      ],
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -1045,9 +1155,10 @@
     },
     {
      "id": "A5.8",
+     "topicId": "A5",
+     "articleId": "A5",
      "title": "作物 × 未恢复 / 删失",
      "status": "ready",
-     "articleId": "A5",
      "sectionId": "4",
      "module": "recovery",
      "binding": {
@@ -1056,7 +1167,9 @@
       "focus": "censored",
       "companions": [
        "A05_recovery.csv"
-      ]
+      ],
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -1076,15 +1189,18 @@
    "points": [
     {
      "id": "A6.1",
+     "topicId": "A6",
+     "articleId": "A6",
      "title": "同日成交量 × 价格",
      "status": "ready",
-     "articleId": "A6",
      "sectionId": "4",
      "module": "price-volume",
      "binding": {
       "table": "A06_price_volume.csv",
       "filter": {},
-      "focus": "beta_volume"
+      "focus": "beta_volume",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -1095,37 +1211,42 @@
     },
     {
      "id": "A6.2",
+     "topicId": "A6",
+     "articleId": "A6",
      "title": "过去成交量 × 后续价格",
      "status": "pending",
-     "articleId": "A6",
      "reason": "领先滞后诊断表（`m1_volume_price_leadlag`）未在当前 v2 载荷中。"
     },
     {
      "id": "A6.3",
+     "topicId": "A6",
+     "articleId": "A6",
      "title": "过去价格 × 后续成交量",
      "status": "pending",
-     "articleId": "A6",
      "reason": "同上：领先滞后诊断表未在 v2 载荷中。"
     },
     {
      "id": "A6.4",
+     "topicId": "A6",
+     "articleId": "A6",
      "title": "天气 × 成交量",
      "status": "pending",
-     "articleId": "A6",
      "reason": "传导步骤一（天气→成交量）的逐项结果只以 `results/metrics/A06_mediation_check.json` 形式存在于研究工程内部，未导出为前端表。"
     },
     {
      "id": "A6.5",
+     "topicId": "A6",
+     "articleId": "A6",
      "title": "成交量 × 后续价格",
      "status": "pending",
-     "articleId": "A6",
      "reason": "需要滞后项的传导结果表，未在当前 v2 载荷中。"
     },
     {
      "id": "A6.6",
+     "topicId": "A6",
+     "articleId": "A6",
      "title": "天气 → 成交量 → 价格",
      "status": "unsupported",
-     "articleId": "A6",
      "sectionId": "4",
      "citations": [
       {
@@ -1137,9 +1258,10 @@
     },
     {
      "id": "A6.7",
+     "topicId": "A6",
+     "articleId": "A6",
      "title": "历史市场状态 × 未来市场",
      "status": "ready",
-     "articleId": "A6",
      "sectionId": "2",
      "module": "forecast",
      "binding": {
@@ -1149,7 +1271,9 @@
         "baseline"
        ]
       },
-      "focus": "rmse"
+      "focus": "rmse",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -1160,9 +1284,10 @@
     },
     {
      "id": "A6.8",
+     "topicId": "A6",
+     "articleId": "A6",
      "title": "天气 × 未来市场",
      "status": "ready",
-     "articleId": "A6",
      "sectionId": "4",
      "module": "forecast",
      "binding": {
@@ -1171,7 +1296,9 @@
       "focus": "rel_gain_pct",
       "companions": [
        "A06_forecast_rolling.csv"
-      ]
+      ],
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -1182,9 +1309,10 @@
     },
     {
      "id": "A6.9",
+     "topicId": "A6",
+     "articleId": "A6",
      "title": "预测模型解释",
      "status": "pending",
-     "articleId": "A6",
      "reason": "模型解释（SHAP / ALE）表未在当前 v2 载荷中。"
     }
    ]
@@ -1198,15 +1326,18 @@
    "points": [
     {
      "id": "A7.1",
+     "topicId": "A7",
+     "articleId": "A7",
      "title": "区县 × 农作物播种面积",
      "status": "ready",
-     "articleId": "A7",
      "sectionId": "4",
      "module": "district-structure",
      "binding": {
       "table": "A07_district_crop_structure.csv",
       "filter": {},
-      "focus": "sown_area_median_ha"
+      "focus": "sown_area_median_ha",
+      "category": "district",
+      "view": "chart"
      },
      "citations": [
       {
@@ -1217,15 +1348,18 @@
     },
     {
      "id": "A7.2",
+     "topicId": "A7",
+     "articleId": "A7",
      "title": "区县 × 农作物总产量",
      "status": "ready",
-     "articleId": "A7",
      "sectionId": "4",
      "module": "district-structure",
      "binding": {
       "table": "A07_district_crop_structure.csv",
       "filter": {},
-      "focus": "production_median_t"
+      "focus": "production_median_t",
+      "category": "district",
+      "view": "chart"
      },
      "citations": [
       {
@@ -1236,15 +1370,18 @@
     },
     {
      "id": "A7.3",
+     "topicId": "A7",
+     "articleId": "A7",
      "title": "区县 × 单产",
      "status": "ready",
-     "articleId": "A7",
      "sectionId": "4",
      "module": "district-structure",
      "binding": {
       "table": "A07_district_crop_structure.csv",
       "filter": {},
-      "focus": "yield_median_kg_ha"
+      "focus": "yield_median_kg_ha",
+      "category": "district",
+      "view": "chart"
      },
      "citations": [
       {
@@ -1255,15 +1392,18 @@
     },
     {
      "id": "A7.4",
+     "topicId": "A7",
+     "articleId": "A7",
      "title": "区县 × 作物结构",
      "status": "ready",
-     "articleId": "A7",
      "sectionId": "4",
      "module": "district-structure",
      "binding": {
       "table": "A07_district_crop_structure.csv",
       "filter": {},
-      "focus": "sown_area_median_ha"
+      "focus": "sown_area_median_ha",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -1274,15 +1414,18 @@
     },
     {
      "id": "A7.5",
+     "topicId": "A7",
+     "articleId": "A7",
      "title": "年份 × 播种面积",
      "status": "ready",
-     "articleId": "A7",
      "sectionId": "4",
      "module": "district-structure",
      "binding": {
       "table": "A07_change_2018_2024.csv",
       "filter": {},
-      "focus": "area_chg_pct"
+      "focus": "area_chg_pct",
+      "category": "district",
+      "view": "chart"
      },
      "citations": [
       {
@@ -1293,15 +1436,18 @@
     },
     {
      "id": "A7.6",
+     "topicId": "A7",
+     "articleId": "A7",
      "title": "年份 × 总产量",
      "status": "ready",
-     "articleId": "A7",
      "sectionId": "4",
      "module": "district-structure",
      "binding": {
       "table": "A07_change_2018_2024.csv",
       "filter": {},
-      "focus": "prod_chg_pct"
+      "focus": "prod_chg_pct",
+      "category": "district",
+      "view": "chart"
      },
      "citations": [
       {
@@ -1312,22 +1458,26 @@
     },
     {
      "id": "A7.7",
+     "topicId": "A7",
+     "articleId": "A7",
      "title": "年份 × 单产",
      "status": "pending",
-     "articleId": "A7",
      "reason": "同上：年份维度的变化表未在 v2 载荷中。"
     },
     {
      "id": "A7.8",
+     "topicId": "A7",
+     "articleId": "A7",
      "title": "作物 × 区县",
      "status": "ready",
-     "articleId": "A7",
      "sectionId": "4",
      "module": "district-structure",
      "binding": {
       "table": "A07_district_crop_structure.csv",
       "filter": {},
-      "focus": "production_median_t"
+      "focus": "production_median_t",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -1338,15 +1488,18 @@
     },
     {
      "id": "A7.9",
+     "topicId": "A7",
+     "articleId": "A7",
      "title": "作物 × 年际变化",
      "status": "ready",
-     "articleId": "A7",
      "sectionId": "4",
      "module": "district-structure",
      "binding": {
       "table": "A07_change_2018_2024.csv",
       "filter": {},
-      "focus": "area_chg_pct"
+      "focus": "area_chg_pct",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -1370,9 +1523,10 @@
    "points": [
     {
      "id": "A8.1",
+     "topicId": "A8",
+     "articleId": "A8",
      "title": "生长季温度 × 单产",
      "status": "ready",
-     "articleId": "A8",
      "sectionId": "2",
      "module": "yield-panel",
      "binding": {
@@ -1382,7 +1536,9 @@
         "growing_season_temp_mean"
        ]
       },
-      "focus": "beta"
+      "focus": "beta",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -1393,9 +1549,10 @@
     },
     {
      "id": "A8.2",
+     "topicId": "A8",
+     "articleId": "A8",
      "title": "生长季降水 × 单产",
      "status": "ready",
-     "articleId": "A8",
      "sectionId": "2",
      "module": "yield-panel",
      "binding": {
@@ -1405,7 +1562,9 @@
         "growing_season_precip"
        ]
       },
-      "focus": "beta"
+      "focus": "beta",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -1416,9 +1575,10 @@
     },
     {
      "id": "A8.3",
+     "topicId": "A8",
+     "articleId": "A8",
      "title": "极端降雨 × 单产",
      "status": "ready",
-     "articleId": "A8",
      "sectionId": "4",
      "module": "yield-panel",
      "binding": {
@@ -1429,7 +1589,9 @@
         "max_1d_precip"
        ]
       },
-      "focus": "beta"
+      "focus": "beta",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -1440,9 +1602,10 @@
     },
     {
      "id": "A8.4",
+     "topicId": "A8",
+     "articleId": "A8",
      "title": "VPD / ET0 / 水分条件 × 单产",
      "status": "ready",
-     "articleId": "A8",
      "sectionId": "2",
      "module": "yield-panel",
      "binding": {
@@ -1453,7 +1616,9 @@
         "et0_sum"
        ]
       },
-      "focus": "beta"
+      "focus": "beta",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -1464,30 +1629,34 @@
     },
     {
      "id": "A8.5",
+     "topicId": "A8",
+     "articleId": "A8",
      "title": "土壤水分 × 单产",
      "status": "pending",
-     "articleId": "A8",
      "reason": "研究侧 A08 的核心暴露不含土壤水分（面板只纳入生长季气温/降水、极端降雨、VPD、ET0），未产出对应结果。"
     },
     {
      "id": "A8.6",
+     "topicId": "A8",
+     "articleId": "A8",
      "title": "天气 × 总产量",
      "status": "pending",
-     "articleId": "A8",
      "reason": "次要结局（总产量）的逐项结果未导出为前端表。"
     },
     {
      "id": "A8.7",
+     "topicId": "A8",
+     "articleId": "A8",
      "title": "区县 × 天气响应",
      "status": "pending",
-     "articleId": "A8",
      "reason": "逐区县结果未导出为前端表（面板以聚类稳健标准误汇总）。"
     },
     {
      "id": "A8.8",
+     "topicId": "A8",
+     "articleId": "A8",
      "title": "作物 × 天气响应",
      "status": "ready",
-     "articleId": "A8",
      "sectionId": "4",
      "module": "yield-panel",
      "binding": {
@@ -1497,7 +1666,9 @@
         "heavy_rain_days"
        ]
       },
-      "focus": "beta"
+      "focus": "beta",
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {
@@ -1508,23 +1679,26 @@
     },
     {
      "id": "A8.9",
+     "topicId": "A8",
+     "articleId": "A8",
      "title": "区县固定效应后的天气关系",
      "status": "pending",
-     "articleId": "A8",
      "reason": "区间固定效应后的单独结果未导出为前端表。"
     },
     {
      "id": "A8.10",
+     "topicId": "A8",
+     "articleId": "A8",
      "title": "年份共同冲击控制后的天气关系",
      "status": "pending",
-     "articleId": "A8",
      "reason": "年份共同冲击控制后的单独结果未导出为前端表。"
     },
     {
      "id": "A8.11",
+     "topicId": "A8",
+     "articleId": "A8",
      "title": "稳健性审查",
      "status": "ready",
-     "articleId": "A8",
      "sectionId": "3",
      "module": "robustness",
      "binding": {
@@ -1533,7 +1707,9 @@
       "focus": "p_wild_boot",
       "companions": [
        "A08_robustness_loo.csv"
-      ]
+      ],
+      "category": "crop",
+      "view": "chart"
      },
      "citations": [
       {

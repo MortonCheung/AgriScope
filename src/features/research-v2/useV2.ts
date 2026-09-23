@@ -1,53 +1,67 @@
-import type { V2Article, V2Manifest, V2Source } from '../../domain/research/v2/types';
-import { V2Repository, type V2Table } from '../../domain/research/v2/repository';
+import type { V2Article, V2Manifest, V2Source, V2Table } from '../../domain/research/v2/types';
+import { V2Repository } from '../../domain/research/v2/repository';
 import type { AsyncState } from '../../services/asyncState';
 import { useCachedResource } from '../../services/useCachedResource';
 
-/** v2 载荷的读取 hooks：同步命中缓存，切换条目不闪加载态。 */
+/**
+ * 研究载荷 hooks（城市无关）。
+ *
+ * 全部同步命中缓存：切换研究点时不闪加载态（`peek` 命中即 ready）。
+ * 参数里的文章 id 一律是 **canonical**（A2），解析由 repository 负责。
+ */
 
-export function useV2Manifest(): AsyncState<V2Manifest> {
+export function useManifest(cityId: string): AsyncState<V2Manifest> {
   return useCachedResource<V2Manifest>({
-    key: 'v2:manifest',
-    peek: () => V2Repository.peekManifest(),
-    load: () => V2Repository.getManifest(),
+    key: cityId ? `${cityId}:manifest` : null,
+    peek: () => V2Repository.peekManifest(cityId),
+    load: () => V2Repository.getManifest(cityId),
     missingMessage: '缺少研究清单',
   });
 }
 
-export function useV2Sources(): AsyncState<V2Source[]> {
+export function useSources(cityId: string): AsyncState<V2Source[]> {
   return useCachedResource<V2Source[]>({
-    key: 'v2:sources',
-    peek: () => V2Repository.peekSources(),
-    load: () => V2Repository.getSources(),
+    key: cityId ? `${cityId}:sources` : null,
+    peek: () => V2Repository.peekSources(cityId),
+    load: () => V2Repository.getSources(cityId),
     missingMessage: '缺少来源表',
   });
 }
 
-export function useV2Article(articleId: string | null): AsyncState<V2Article> {
+export function useArticle(cityId: string, articleId: string | null): AsyncState<V2Article> {
   return useCachedResource<V2Article>({
-    key: articleId ? `v2:article:${articleId}` : null,
-    peek: () => (articleId ? V2Repository.peekArticle(articleId) : null),
-    load: () => V2Repository.getArticle(articleId as string),
+    key: cityId && articleId ? `${cityId}:article:${articleId}` : null,
+    peek: () => (articleId ? V2Repository.peekArticle(cityId, articleId) : null),
+    load: () => V2Repository.getArticle(cityId, articleId as string),
     missingMessage: '缺少文章编号',
-    /** 未命中时保留上一篇正文，等新正文到达再换（沿用 v4 §四十四 的做法）。 */
+    /** 未命中时保留上一篇正文，等新正文到达再换（沿用 v4 的做法）。 */
     keepPrevious: true,
   });
 }
 
-export function useV2Table(file: string | null): AsyncState<V2Table> {
+export function useTable(cityId: string, file: string | null): AsyncState<V2Table> {
   return useCachedResource<V2Table>({
-    key: file ? `v2:table:${file}` : null,
-    peek: () => (file ? V2Repository.peekTable(file) : null),
-    load: () => V2Repository.getTable(file as string),
+    key: cityId && file ? `${cityId}:table:${file}` : null,
+    peek: () => (file ? V2Repository.peekTable(cityId, file) : null),
+    load: () => V2Repository.getTable(cityId, file as string),
     missingMessage: '缺少数据表',
   });
 }
 
-export function useV2References(): AsyncState<string> {
+export function useScenarioTable(cityId: string, file: string | null): AsyncState<V2Table> {
+  return useCachedResource<V2Table>({
+    key: cityId && file ? `${cityId}:scenario:${file}` : null,
+    peek: () => (file ? V2Repository.peekScenarioTable(cityId, file) : null),
+    load: () => V2Repository.getScenarioTable(cityId, file as string),
+    missingMessage: '缺少情景表',
+  });
+}
+
+export function useReferences(cityId: string): AsyncState<string> {
   return useCachedResource<string>({
-    key: 'v2:references',
-    peek: () => V2Repository.peekReferences(),
-    load: () => V2Repository.getReferences(),
+    key: cityId ? `${cityId}:references` : null,
+    peek: () => V2Repository.peekReferences(cityId),
+    load: () => V2Repository.getReferences(cityId),
     missingMessage: '缺少来源清单',
   });
 }

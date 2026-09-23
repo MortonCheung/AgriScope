@@ -1,64 +1,59 @@
 import { useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { getCity } from '../../domain/geography/cities';
-import { ROUTES } from '../../app/routes';
+import { getCatalog, listPoints, listTopics } from '../../domain/research/catalog';
 import { V2Repository } from '../../domain/research/v2/repository';
-import { useV2Article, useV2Manifest } from './useV2';
+import { useArticle } from './useV2';
+import { ResearchTree } from './ResearchTree';
 import './city-research.css';
 
 /**
- * 城市研究页（V5 §25/§26）：**只有**城市名 + 研究树（A01–A08）。
+ * 城市研究页（本轮 §7/§26）：一张**实体纸**上列出完整的两层研究树。
  *
- * §26 明确删除 v4 的「综合报告 / 暴雨专题」两个按钮 —— 报告属于「报告」一级，
- * 暴雨推演属于「推演」一级，都不该出现在研究页。
+ *   A = 城市
+ *   A1–A8 = 8 个研究方向（研究侧冻结）
+ *   A?.? = 每个方向下的具体研究点
+ *
+ * 页面只做两件事：给出城市名与树。不再有「综合报告 / 暴雨专题」入口
+ * —— 报告属于「报告」，2026 暴雨的推演属于「推演」（§29/§30）。
  */
-function NoteListItem({ id, title }: { id: string; title: string }) {
-  const navigate = useNavigate();
-  const article = useV2Article(id);
-  const summary = article.status === 'ready' ? article.data.frontend_summary : null;
-  return (
-    <li className="city-research__item">
-      <button type="button" className="city-research__link" onClick={() => navigate(ROUTES.researchNote('shenyang', id))}>
-        <span className="city-research__id">{id}</span>
-        <span className="city-research__title">{title}</span>
-        {summary && <span className="city-research__summary">{summary}</span>}
-      </button>
-    </li>
-  );
-}
-
 export function CityResearchPage() {
   const { cityId = '' } = useParams();
   const city = getCity(cityId);
-  const manifest = useV2Manifest();
-  const hasResearch = cityId === 'shenyang';
+  const catalog = getCatalog(cityId);
+  const topics = listTopics(cityId);
+  const points = listPoints(cityId);
 
-  /** 进入城市后后台预取 8 篇研究条目：列表能带出摘要，点进去也不再等加载。 */
+  /** 进入城市后后台预取全部方向的文章，点进去时不再等加载。 */
+  const firstArticle = useArticle(cityId, topics[0]?.articleId ?? null);
+  const articleIds = topics.map((topic) => topic.articleId).join(',');
   useEffect(() => {
-    if (!hasResearch || manifest.status !== 'ready') return;
-    const ids = manifest.data.articles.map((a) => a.id).filter((id) => id !== 'A09');
-    const run = () => ids.forEach((id) => { void V2Repository.getArticle(id).catch(() => null); });
+    if (!catalog || firstArticle.status !== 'ready') return;
+    const ids = articleIds.split(',').filter(Boolean).slice(1);
+    const run = () => ids.forEach((id) => { void V2Repository.getArticle(cityId, id).catch(() => null); });
     const idle = (window as Window & { requestIdleCallback?: (cb: () => void, options?: { timeout: number }) => number }).requestIdleCallback;
     if (typeof idle === 'function') idle(run, { timeout: 2000 });
     else window.setTimeout(run, 0);
-  }, [hasResearch, manifest]);
-
-  const notes = manifest.status === 'ready'
-    ? manifest.data.articles.filter((article) => article.id !== 'A09')
-    : [];
+  }, [articleIds, catalog, cityId, firstArticle.status]);
 
   return (
     <main className="city-research">
-      <header className="city-research__head">
-        <h1 className="city-research__city">{city?.shortName ?? cityId}</h1>
-      </header>
-      {hasResearch && notes.length > 0 ? (
-        <ol className="city-research__list">
-          {notes.map((note) => <NoteListItem key={note.id} id={note.id} title={note.title} />)}
-        </ol>
-      ) : (
-        <p className="city-research__empty">研究内容待接入</p>
-      )}
+      <div className="city-research__paper">
+        <header className="city-research__head">
+          <h1 className="city-research__city">{city?.shortName ?? cityId}</h1>
+          {catalog && (
+            <p className="city-research__meta">
+              {topics.length} 个研究方向 · {points.length} 个研究点
+            </p>
+          )}
+        </header>
+
+        {catalog ? (
+          <ResearchTree cityId={cityId} topics={topics} variant="index" />
+        ) : (
+          <p className="city-research__empty">研究内容待接入</p>
+        )}
+      </div>
     </main>
   );
 }

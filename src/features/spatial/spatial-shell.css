@@ -13,12 +13,13 @@
 .spatial-shell__dom { position: relative; z-index: 1; }
 
 /*
-  省域 → 城市的纸面展开（V5 §67–§69）。
-  不再有卡片飞入（x/y/rotate/scale），只有从上方铺开的裁切：
-  clip-path inset(0 0 100% 0) → inset(0 0 0 0)。
+  省域 → 城市的纸面展开（本轮 §25）。
+  纸张是不透明的实体纸（`background: var(--ag-paper-raised)`），
+  所以看得见的是「一张纸从顶部铺开」，而不是「透明文字飘下来」。
+  不再有卡片飞入（x/y/rotate/scale）：只有 clip-path inset(0 0 100% 0) → inset(0 0 0 0)。
   Camera 0ms 开始（820ms），纸张 +60ms 开始（780ms），两者几乎同时结束。
-  fill 用 backwards：延迟期间就停在起始帧，结束后回到元素自身样式，
-  不会像 both 那样永久留着动画状态（那会把这一层变成常驻的渲染上下文）。
+  fill 用 backwards：延迟期间停在起始帧，结束后回到元素自身样式，
+  不会像 both 那样永久留着动画状态。
 */
 @keyframes ag-paper-unfold {
   from {
@@ -30,12 +31,20 @@
     transform: translateY(0) scaleY(1);
   }
 }
-.spatial-shell__dom[data-transition="province-to-city"] .city-research {
-  transform-origin: top center;
+/* 纸的内容在展开到约 20% 之后轻微淡入，避免"空白纸先出现"；纸本身始终不透明。 */
+@keyframes ag-paper-content-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.spatial-shell__dom[data-transition="province-to-city"] .city-research__paper {
   animation: ag-paper-unfold 780ms cubic-bezier(.16, 1, .3, 1) 60ms backwards;
 }
+.spatial-shell__dom[data-transition="province-to-city"] .city-research__paper > * {
+  animation: ag-paper-content-in 520ms var(--ag-ease) 260ms backwards;
+}
 @media (prefers-reduced-motion: reduce) {
-  .spatial-shell__dom[data-transition="province-to-city"] .city-research { animation: none; }
+  .spatial-shell__dom[data-transition="province-to-city"] .city-research__paper,
+  .spatial-shell__dom[data-transition="province-to-city"] .city-research__paper > * { animation: none; }
 }
 
 /* 省域沙盘标签：克制、无发光，研究城市略深 */

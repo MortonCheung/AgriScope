@@ -1,56 +1,20 @@
-import { useCachedResource } from '../../services/useCachedResource';
-import { parseCsv } from '../../services/csv';
+import { listCatalogCityIds } from '../../domain/research/catalog';
+import { useScenarioTable } from '../research-v2/useV2';
 import { DataTable } from '../research-v2/DataTable';
 import { REANALYSIS_NOTE, VOLUME_UNIT_NOTE } from '../../domain/research/v2/metrics';
 import './scenario-page.css';
 
 /**
- * 推演（V5 §43–§48）：暴雨专题与情景实验合并为唯一入口。
+ * 推演（本轮 §30）：暴雨专题与情景实验合并为唯一入口。
  *
- * 数据仍来自研究工程已发布的情景结果表；本节**不是预测**，
- * 研究侧的门控结论（未达可靠反事实预测门槛）原样保留在首屏。
- * 所有列名走受控中文映射，`gate_min_r2` / `severity_mult` 这类工程字段不出现在界面上。
+ * 与研究树是两个产品入口，但数据同源：
+ *   研究 —— 历史与 2026 事件本身；推演 —— 改变条件看平行情景。
+ * 本节**不是预测**：研究侧的门控结论（未达可靠反事实预测门槛）原样保留在首屏。
+ * 列名走受控中文映射，`gate_min_r2` / `severity_mult` 这类工程字段不出现在界面上。
  */
-const BASE = '/scenario/shenyang';
 
-interface ScenarioTable {
-  file: string;
-  columns: string[];
-  rows: Record<string, string>[];
-}
-
-function createResource() {
-  const pending = new Map<string, Promise<ScenarioTable>>();
-  const resolved = new Map<string, ScenarioTable>();
-  return {
-    peek(key: string) { return resolved.get(key) ?? null; },
-    load(key: string, loader: () => Promise<ScenarioTable>) {
-      const existing = pending.get(key);
-      if (existing) return existing;
-      const promise = loader().then(
-        (value) => { resolved.set(key, value); return value; },
-        (error: unknown) => { pending.delete(key); throw error; },
-      );
-      pending.set(key, promise);
-      return promise;
-    },
-  };
-}
-
-const resource = createResource();
-
-async function fetchTable(file: string): Promise<ScenarioTable> {
-  const response = await fetch(`${BASE}/${file}`);
-  // 对外文案不带文件名 / 路径（V5 §38）；具体地址只在开发期通过 cause 附带。
-  if (!response.ok) {
-    const error = new Error(`研究资源读取失败：情景表（HTTP ${response.status}）`);
-    error.name = 'PayloadError';
-    error.cause = import.meta.env.DEV ? file : undefined;
-    throw error;
-  }
-  const parsed = parseCsv(await response.text());
-  return { file, columns: parsed.columns, rows: parsed.rows };
-}
+/** 站点级页面：城市从 catalog 注册表取，不把 shenyang 写死在组件里。 */
+const CITY_ID = listCatalogCityIds()[0] ?? '';
 
 const SCENARIOS = [
   { file: 'counterfactual_gate.csv', caption: '门控：模型能否复现现实' },
@@ -59,13 +23,7 @@ const SCENARIOS = [
 ] as const;
 
 function ScenarioBlock({ file, caption }: { file: string; caption: string }) {
-  const state = useCachedResource<ScenarioTable>({
-    key: file,
-    peek: () => resource.peek(file),
-    load: () => resource.load(file, () => fetchTable(file)),
-    missingMessage: '缺少情景表',
-  });
-
+  const state = useScenarioTable(CITY_ID, file);
   return (
     <section className="scenario__block">
       {state.status === 'ready' && <DataTable table={state.data} caption={caption} filterColumn="crop" maxRows={20} />}

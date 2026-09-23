@@ -176,6 +176,9 @@ for (const topic of tree.topics ?? []) {
           if (binding.focus) {
             check(primary.headers.includes(binding.focus), `${label}: 关注列不存在 ${binding.table}.${binding.focus}`);
           }
+          if (binding.view === 'chart' && binding.category) {
+            check(primary.headers.includes(binding.category), `${label}: 分类轴不存在 ${binding.table}.${binding.category}`);
+          }
         }
       }
     }

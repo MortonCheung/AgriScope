@@ -146,7 +146,7 @@ describe('renderInline 不泄漏英文工程字段（V5 §76）', () => {
  * 也就不需要为了一个测试往 tsconfig 里塞 Node 类型。
  */
 describe('真实研究正文渲染后不泄漏工程字段', () => {
-  const payloads = import.meta.glob('../../../public/research/shenyang/v2/articles/*.json', {
+  const payloads = import.meta.glob('../../../public/research/shenyang/articles/*.json', {
     eager: true,
     query: '?raw',
     import: 'default',

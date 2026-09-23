@@ -2,23 +2,29 @@ import type { V2Source } from '../../domain/research/v2/types';
 import './research-sources.css';
 
 /**
- * 来源区块（V5 §51/§74/§81）。
+ * 来源区块（§51/§74/§81）。
  *
  * 只展示**用户要的来源**：机构 / 数据集 / 链接 / 时间。
  * 绝不出现 `.csv`、`.md`、`workspace/`、`outputs/` 这类技术血缘（§37/§38）。
+ *
+ * `compact` 用于右侧证据栏：不重复标题层级，只列条目。
  */
-export function ResearchSources({ sources, title = '来源' }: { sources: V2Source[]; title?: string }) {
+export function ResearchSources({ sources, title = '来源', compact = false }: {
+  sources: V2Source[];
+  title?: string;
+  compact?: boolean;
+}) {
   if (sources.length === 0) {
     return (
-      <section className="research-sources" aria-label={title}>
-        <h3 className="research-sources__title">{title}</h3>
+      <section className="research-sources" data-compact={compact || undefined} aria-label={title}>
+        {!compact && <h3 className="research-sources__title">{title}</h3>}
         <p className="research-sources__pending">来源待补充</p>
       </section>
     );
   }
   return (
-    <section className="research-sources" aria-label={title}>
-      <h3 className="research-sources__title">{title}</h3>
+    <section className="research-sources" data-compact={compact || undefined} aria-label={title}>
+      {!compact && <h3 className="research-sources__title">{title}</h3>}
       <ul className="research-sources__list">
         {sources.map((source) => (
           <li className="research-sources__item" key={source.source_id}>

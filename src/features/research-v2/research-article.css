@@ -1,0 +1,37 @@
+/*
+  原文模式（本轮 §15/§17/§72）：窄目录 + 连续正文。
+  没有证据栏、没有数据选择器、没有后台式卡片；正文 720–820px，图与表可放宽到 900–1100px。
+*/
+.article { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(24px, 4vw, 56px); width: min(100%, 1220px); margin: 0 auto; align-items: start; }
+.article__toc { position: sticky; top: 92px; display: none; }
+.article__toc ol { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.article__toc a { color: var(--ag-ink-muted); font-size: var(--ag-fs-small); line-height: 1.6; }
+.article__toc a:hover { color: var(--ag-ink); }
+.article__toc a[data-focus] { color: var(--ag-ink); font-weight: 500; }
+
+.article__body { display: flex; flex-direction: column; gap: clamp(28px, 3.4vw, 48px); width: min(100%, 800px); margin: 0 auto; }
+
+.article__head { display: flex; flex-direction: column; gap: var(--ag-space-3); padding-bottom: var(--ag-space-5); border-bottom: 1px solid var(--ag-rule); }
+.article__meta { margin: 0; color: var(--ag-ink-muted); font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); letter-spacing: 0.08em; }
+.article__title { margin: 0; font-family: var(--ag-font-display); font-size: clamp(1.6rem, 3vw, 2.3rem); font-weight: 400; line-height: 1.32; }
+.article__lead { margin: 0; color: var(--ag-ink-soft); font-size: var(--ag-fs-body); line-height: 1.85; }
+.article__focus-note { margin: 0; color: var(--ag-ink-muted); font-size: var(--ag-fs-small); }
+
+.article__section { display: flex; flex-direction: column; gap: var(--ag-space-3); }
+.article__section[data-focus] { padding-left: var(--ag-space-5); border-left: 2px solid var(--ag-rule); }
+.article__section-title { margin: 0; font-family: var(--ag-font-display); font-size: clamp(1.12rem, 1.9vw, 1.4rem); font-weight: 400; }
+
+/* 图表可以比正文更宽（§35：900–1100px） */
+.article__asset,
+.article__section--wide > * { width: min(100%, 1020px); }
+.article__asset { margin-top: var(--ag-space-3); }
+
+.article__back { margin: var(--ag-space-6) 0 0; font-size: var(--ag-fs-small); }
+.article__back a { color: var(--ag-ink-muted); }
+.article__back a:hover { color: var(--ag-ink); }
+
+@media (min-width: 1240px) {
+  .article { grid-template-columns: 190px minmax(0, 1fr); }
+  .article__toc { display: block; }
+  .article__body { margin: 0; }
+}

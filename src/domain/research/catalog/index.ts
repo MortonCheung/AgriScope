@@ -64,6 +64,11 @@ export function topicOfPoint(cityId: string, pointId: string): ResearchTopic | n
   return point ? getTopic(cityId, point.topicId) : null;
 }
 
+/** 城市综合报告的文章 id（A9）。它不属于研究树（§29）。 */
+export function reportArticleId(cityId: string): string | null {
+  return getCatalog(cityId)?.reportArticleId ?? null;
+}
+
 /**
  * `^` 的层级（V5 §10）：
  *   A2.2 → A2 → 城市页；A2 → 城市页。
@@ -121,6 +126,15 @@ export function validateCatalog(catalog: CityResearchCatalog): string[] {
         if (!point.binding) problems.push(`研究点 ${point.id} 是 ready，必须带数据绑定`);
         if (!point.citations?.length) problems.push(`研究点 ${point.id} 是 ready，必须带研究侧引用`);
         if (!point.module) problems.push(`研究点 ${point.id} 是 ready，必须指定交互模块`);
+        if (point.binding) {
+          if (point.binding.view === 'chart' && !point.binding.category) {
+            problems.push(`研究点 ${point.id} 用图呈现，必须给出分类轴`);
+          }
+          if (point.binding.view === 'table' && point.binding.category) {
+            problems.push(`研究点 ${point.id} 用表呈现，不应再给分类轴`);
+          }
+          if (!point.binding.filter) problems.push(`研究点 ${point.id} 的绑定缺少 filter（哪怕是空对象也要写）`);
+        }
       }
       if (point.status === 'unsupported') {
         // §21：unsupported 允许没有图表，但判定必须来自研究侧。

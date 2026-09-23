@@ -57,10 +57,14 @@ export interface ResearchCitation {
  * 表示"取 outcome=price 且 exposure=precipitation 的那些行"。
  */
 export interface ResearchDataBinding {
-  /** v2 载荷里的表文件名，例如 A02_daily_response.csv */
+  /** 载荷里的表文件名，例如 A02_daily_response.csv */
   table: string;
   filter: Record<string, string[]>;
-  /** 该点主要看的那一列（用于图表取值），必须是表里的列。 */
+  /** 呈现方式：可画图时画图，只有一两行时如实给表（不硬凑成图）。 */
+  view: 'chart' | 'table';
+  /** 图的分类轴列；`view=table` 时不存在。 */
+  category?: string;
+  /** 该点主要看的那一列（图表取值），必须是表里的列。 */
   focus?: string;
   /** 同一结论需要的附加表（例如稳健性审查同时需要 wild bootstrap 与 leave-one-out）。 */
   companions?: string[];

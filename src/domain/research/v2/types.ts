@@ -39,6 +39,12 @@ export interface V2Source {
   verification_status: string;
 }
 
+export interface V2Table {
+  file: string;
+  columns: string[];
+  rows: Record<string, string>[];
+}
+
 export interface V2ArticleSection {
   number: string;
   title: string;

@@ -1,11 +1,12 @@
 import { Link, useParams } from 'react-router-dom';
 import { getCity } from '../../domain/geography/cities';
 import { ROUTES } from '../../app/routes';
-import { REPORT_ARTICLE_ID, v2AssetUrl } from '../../domain/research/v2/repository';
-import { MarkdownBlocks, TableAsset } from '../research-v2/ResearchNotePage';
+import { assetUrl } from '../../domain/research/v2/repository';
+import { reportArticleId } from '../../domain/research/catalog';
+import { MarkdownBlocks, TableAsset } from '../research-v2/blocks';
 import { V2Figure } from '../research-v2/Figure';
 import { ResearchSources } from '../research-v2/ResearchSources';
-import { useV2Article, useV2Sources } from '../research-v2/useV2';
+import { useArticle, useSources } from '../research-v2/useV2';
 import './reports.css';
 
 /**
@@ -17,8 +18,10 @@ import './reports.css';
 export function ReportPage() {
   const { cityId = '' } = useParams();
   const city = getCity(cityId);
-  const articleState = useV2Article(cityId === 'shenyang' ? REPORT_ARTICLE_ID : null);
-  const sourcesState = useV2Sources();
+  /** 城市综合报告（A9）：它不属于研究树，因此单独由 catalog 声明（§29）。 */
+  const reportId = reportArticleId(cityId);
+  const articleState = useArticle(cityId, reportId);
+  const sourcesState = useSources(cityId);
   const allSources = sourcesState.status === 'ready' ? sourcesState.data : [];
 
   if (!city) {
@@ -89,7 +92,7 @@ export function ReportPage() {
     <main className="report">
       <div className="report__body">
         <header className="report__head">
-          <p className="report__meta">{REPORT_ARTICLE_ID} · {city.shortName} · 综合研究</p>
+          <p className="report__meta">{reportId} · {city.shortName} · 综合研究</p>
           <h1 className="report__title">{article.title}</h1>
           <p className="report__summary">{article.frontend_summary}</p>
         </header>
@@ -105,12 +108,12 @@ export function ReportPage() {
             <MarkdownBlocks source={section.content} refs={assetRefs} />
             {tables.map((table) => (
               <div className="report__asset-wide" key={table.file}>
-                <TableAsset file={table.file} caption={`${assetRefs.get(table.file) ?? ''} · ${section.title}`} />
+                <TableAsset cityId={cityId} file={table.file} caption={`${assetRefs.get(table.file) ?? ''} · ${section.title}`} />
               </div>
             ))}
             {figures.map((figure) => (
               <div className="report__asset-wide" key={figure.file}>
-                <V2Figure src={v2AssetUrl.figure(figure.file)} alt={`${article.title} 配图`} index={refOrder(assetRefs.get(figure.file))} />
+                <V2Figure src={assetUrl.figure(cityId, figure.file)} alt={`${article.title} 配图`} index={refOrder(assetRefs.get(figure.file))} />
               </div>
             ))}
           </section>
@@ -121,7 +124,7 @@ export function ReportPage() {
             <h2 className="report__section-title">图表</h2>
             {article.figures.filter((figure) => looseFigures.has(figure.file)).map((figure) => (
               <div className="report__asset-wide" key={figure.file}>
-                <V2Figure src={v2AssetUrl.figure(figure.file)} alt={`${article.title} 配图`} index={refOrder(assetRefs.get(figure.file))} />
+                <V2Figure src={assetUrl.figure(cityId, figure.file)} alt={`${article.title} 配图`} index={refOrder(assetRefs.get(figure.file))} />
               </div>
             ))}
           </section>
@@ -132,7 +135,7 @@ export function ReportPage() {
             <h2 className="report__section-title">数据表</h2>
             {article.tables.filter((table) => looseTables.has(table.file)).map((table) => (
               <div className="report__asset-wide" key={table.file}>
-                <TableAsset file={table.file} caption={`${assetRefs.get(table.file) ?? ''} · ${article.title}`} />
+                <TableAsset cityId={cityId} file={table.file} caption={`${assetRefs.get(table.file) ?? ''} · ${article.title}`} />
               </div>
             ))}
           </section>

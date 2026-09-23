@@ -1,9 +1,16 @@
-import { REPORT_ARTICLE_ID } from '../../domain/research/v2/repository';
+import { reportArticleId, listCatalogCityIds } from '../../domain/research/catalog';
 import { METRIC_DEFINITIONS, REANALYSIS_NOTE, VOLUME_UNIT_NOTE } from '../../domain/research/v2/metrics';
-import { MarkdownBlocks } from '../research-v2/ResearchNotePage';
+import { MarkdownBlocks } from '../research-v2/blocks';
 import { renderInline } from '../research-v2/markdown';
-import { useV2Article, useV2References, useV2Sources } from '../research-v2/useV2';
+import { useArticle, useReferences, useSources } from '../research-v2/useV2';
 import './about.css';
+
+/**
+ * 「关于」描述的是当前城市的正式研究。
+ * 城市从 catalog 注册表取第一个（只有一个城市时就是它），
+ * 不把 shenyang 字符串散落在组件里（§6）。
+ */
+const ABOUT_CITY_ID = listCatalogCityIds()[0] ?? '';
 
 /**
  * 关于（V5 §49–§53）：把「关于」做成**研究溯源索引**，而不是开发说明。
@@ -14,9 +21,10 @@ import './about.css';
  * §82：数据来源与指标定义都带 anchor，文章里可以跳过来。
  */
 export function AboutPage() {
-  const sourcesState = useV2Sources();
-  const referencesState = useV2References();
-  const reportState = useV2Article(REPORT_ARTICLE_ID);
+  const cityId = ABOUT_CITY_ID;
+  const sourcesState = useSources(cityId);
+  const referencesState = useReferences(cityId);
+  const reportState = useArticle(cityId, reportArticleId(cityId));
 
   const sources = sourcesState.status === 'ready' ? sourcesState.data : [];
   /** references.md 的「一、数据来源」与上面的表格重复，只取「二、参考文献」。 */
