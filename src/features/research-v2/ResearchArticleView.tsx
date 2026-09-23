@@ -4,6 +4,7 @@ import { assetUrl } from '../../domain/research/v2/repository';
 import { V2Figure } from './Figure';
 import { ResearchSources } from './ResearchSources';
 import { MarkdownBlocks, TableAsset } from './blocks';
+import { renderInline, stripListPrefix } from './markdown';
 import { useSources } from './useV2';
 import './research-article.css';
 
@@ -76,7 +77,9 @@ export function ResearchArticleView({ cityId, canonicalId, article, focusPointId
         <header className="article__head">
           <p className="article__meta">{canonicalId} · 原文</p>
           <h1 className="article__title">{article.title}</h1>
-          {article.frontend_summary && <p className="article__lead">{article.frontend_summary}</p>}
+          {article.frontend_summary && (
+            <p className="article__lead">{renderInline(article.frontend_summary, 'lead')}</p>
+          )}
           {focusPointId && focusSection && (
             <p className="article__focus-note">正在对照研究点 {focusPointId}</p>
           )}
@@ -131,7 +134,7 @@ export function ResearchArticleView({ cityId, canonicalId, article, focusPointId
           </section>
         )}
 
-        <section className="article__section article__section--wide">
+        <section className="article__section">
           <h2 className="article__section-title">方法</h2>
           {article.methods.map((method, index) => <MarkdownBlocks key={index} source={method.summary} refs={assetRefs} />)}
         </section>
@@ -146,7 +149,7 @@ export function ResearchArticleView({ cityId, canonicalId, article, focusPointId
             <h2 className="article__section-title">研究限制</h2>
             <ul className="research-note__list">
               {article.limitations.map((item, index) => (
-                <li key={index}><MarkdownBlocks source={item} refs={assetRefs} /></li>
+                <li key={index}>{renderInline(stripListPrefix(item), `lim-${index}`)}</li>
               ))}
             </ul>
           </section>

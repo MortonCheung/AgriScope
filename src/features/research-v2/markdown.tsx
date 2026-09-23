@@ -31,6 +31,18 @@ const LINK = /^\[([^\]\n]+)\]\(([^)\n]+)\)$/;
 /** 只允许这两种协议，避免把 `javascript:` 之类的东西渲染成可点击链接。 */
 const SAFE_PROTOCOL = /^https?:\/\//i;
 
+/**
+ * 展示层去掉研究文本自带的列表前缀（本轮 §53）。
+ *
+ * 研究侧有些「限制 / 结论」写成「1. …」「- …」，而外层已经有 <ul>/<ol>：
+ * 不去掉就会出现「• 1. …」这种双重编号。这里**只改展示文本，不修改 source data**
+ * （目录里保存的引文仍是逐字原文，完整性校验不受影响）。
+ */
+const LIST_PREFIX = /^\s*(?:\d+[.)、]\s*|[-*•]\s+)/;
+export function stripListPrefix(text: string): string {
+  return text.replace(LIST_PREFIX, '');
+}
+
 function splitRow(line: string): string[] {
   const inner = TABLE_ROW.exec(line.trim());
   if (!inner) return [];

@@ -4,6 +4,7 @@ import { ROUTES } from '../../app/routes';
 import { assetUrl } from '../../domain/research/v2/repository';
 import { reportArticleId } from '../../domain/research/catalog';
 import { MarkdownBlocks, TableAsset } from '../research-v2/blocks';
+import { renderInline, stripListPrefix } from '../research-v2/markdown';
 import { V2Figure } from '../research-v2/Figure';
 import { ResearchSources } from '../research-v2/ResearchSources';
 import { useArticle, useSources } from '../research-v2/useV2';
@@ -101,7 +102,7 @@ export function ReportPage() {
         <header className="report__head">
           <p className="report__meta">{reportId} · {city.shortName} · 综合研究</p>
           <h1 className="report__title">{article.title}</h1>
-          <p className="report__summary">{article.frontend_summary}</p>
+          <p className="report__summary">{renderInline(article.frontend_summary, 'summary')}</p>
         </header>
 
         <section className="report__section">
@@ -167,7 +168,7 @@ export function ReportPage() {
             <h2 className="report__section-title">研究限制</h2>
             <ul className="report__list">
               {article.limitations.map((item, index) => (
-                <li key={index}><MarkdownBlocks source={item} refs={assetRefs} /></li>
+                <li key={index}>{renderInline(stripListPrefix(item), `lim-${index}`)}</li>
               ))}
             </ul>
           </section>

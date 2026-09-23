@@ -14,13 +14,8 @@ import { InteractivePointView } from './InteractivePointView';
 import { InteractiveTopicView } from './InteractiveTopicView';
 import { ResearchArticleView } from './ResearchArticleView';
 import { ResearchSources } from './ResearchSources';
+import { renderInline, stripListPrefix } from './markdown';
 import './research.css';
-
-/** 证据栏放的是提示性摘句，取研究侧原句的第一句，不改写。 */
-function firstSentence(text: string): string {
-  const match = /^[^。；\n]{4,120}/.exec(text.trim());
-  return match ? `${match[0]}。` : text;
-}
 
 /**
  * 研究路由页（本轮 §9/§15/§28/§29）。
@@ -149,7 +144,9 @@ export function ResearchRoutePage() {
               <div className="research__rail-block">
                 <p className="research__rail-label">本方向限制</p>
                 <ul className="research__rail-list">
-                  {limitations.map((item, index) => <li key={index}>{firstSentence(item)}</li>)}
+                  {limitations.map((item, index) => (
+                    <li key={index}>{renderInline(stripListPrefix(item), `lim-${index}`)}</li>
+                  ))}
                 </ul>
               </div>
             )}

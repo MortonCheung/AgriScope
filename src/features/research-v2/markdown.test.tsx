@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { renderToString } from 'react-dom/server';
-import { parseMarkdownBlocks, renderInline } from './markdown';
+import { parseMarkdownBlocks, renderInline, stripListPrefix } from './markdown';
 
 /**
  * V5 §38 红线：数据文件名（.csv / .md / .png …）绝不允许出现在可见文本里。
@@ -233,5 +233,26 @@ describe('真实研究正文渲染后不泄漏工程字段', () => {
     }
     expect(checked).toBeGreaterThan(0);
     expect(leaks).toEqual([]);
+  });
+});
+
+describe('展示层的列表前缀清理（§52/§53）', () => {
+  it('去掉研究自带的列表前缀，不改其它内容', () => {
+    expect(stripListPrefix('1. 成交量单位未知。')).toBe('成交量单位未知。');
+    expect(stripListPrefix('1) 成交量单位未知。')).toBe('成交量单位未知。');
+    expect(stripListPrefix('2、成交量单位未知。')).toBe('成交量单位未知。');
+    expect(stripListPrefix('- 成交量单位未知。')).toBe('成交量单位未知。');
+    expect(stripListPrefix('成交量单位未知。')).toBe('成交量单位未知。');
+    // 没有前缀分隔符的数字（年份、负数）不能被误伤。
+    expect(stripListPrefix('2024 年')).toBe('2024 年');
+    expect(stripListPrefix('-5 毫米')).toBe('-5 毫米');
+  });
+
+  it('加粗句子经过 strip + renderInline 后不再有裸 **（§59-27）', () => {
+    const html = inline(stripListPrefix('1. **成交量单位未知**：只作相对口径。'));
+    expect(visible(html)).not.toContain('**');
+    expect(html).toContain('<strong>');
+    expect(html).toContain('成交量单位未知');
+    expect(visible(html).startsWith('成交量单位未知')).toBe(true);
   });
 });

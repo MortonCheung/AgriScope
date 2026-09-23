@@ -1,6 +1,7 @@
 import type { ResearchPoint, ResearchTopic } from '../../domain/research/catalog';
 import { quoteLabel } from '../../domain/research/catalog/labels';
 import { ResearchQuote } from './blocks';
+import { renderInline } from './markdown';
 import { ResearchDataModule } from './interactive/InteractiveModuleRegistry';
 
 /**
@@ -32,14 +33,14 @@ export function InteractivePointView({ cityId, point, topic }: {
       {point.status === 'pending' && (
         <section className="research__block">
           <h2 className="research__block-title">研究内容待接入</h2>
-          {point.reason && <p className="research__paragraph">{point.reason}</p>}
+          {point.reason && <p className="research__paragraph">{renderInline(point.reason, 'reason')}</p>}
         </section>
       )}
 
       {point.status === 'unsupported' && (
         <section className="research__block">
           <h2 className="research__block-title">研究侧判定</h2>
-          {point.reason && <p className="research__paragraph">{point.reason}</p>}
+          {point.reason && <p className="research__paragraph">{renderInline(point.reason, 'verdict')}</p>}
           {citations.map((citation, index) => (
             <ResearchQuote
               key={index}
