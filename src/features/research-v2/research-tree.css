@@ -46,12 +46,18 @@
 .tree__points { display: flex; flex-direction: column; margin: 0 0 var(--ag-space-4); padding: 0; list-style: none; }
 .tree__point-link {
   display: flex;
+  width: 100%;
   align-items: baseline;
   gap: var(--ag-space-4);
   padding: 6px 0 6px calc(2.4em + var(--ag-space-4));
+  border: 0;
+  background: none;
   color: var(--ag-ink-soft);
+  font: inherit;
   font-size: var(--ag-fs-small);
   line-height: 1.6;
+  text-align: left;
+  cursor: pointer;
   transition: color var(--ag-dur-fast) var(--ag-ease);
 }
 .tree__point-id {
@@ -72,3 +78,25 @@
 .tree[data-variant='rail'] .tree__topic-open { padding-bottom: var(--ag-space-2); font-size: var(--ag-fs-micro); }
 .tree[data-variant='rail'] .tree__point-link { padding: 3px 0 3px calc(2.4em + var(--ag-space-3)); font-size: var(--ag-fs-micro); }
 .tree[data-variant='rail'] .tree__point-id { min-width: 3em; }
+
+/* ---- picker：城市 App 侧栏（本轮 §20/§21）----
+   只做选择：单击改 selectedResearchId，不导航。
+   选中用极细的左侧竖线 + 墨色，不用 pill / 圆角 / 背景块。 */
+.tree[data-variant='picker'] .tree__topic { border-top-color: var(--ag-rule-soft); }
+.tree[data-variant='picker'] .tree__toggle { padding: var(--ag-space-3) 0; gap: var(--ag-space-3); }
+.tree[data-variant='picker'] .tree__topic-title { font-size: var(--ag-fs-small); }
+.tree[data-variant='picker'] .tree__point-link { padding: 4px 0 4px calc(2.4em + var(--ag-space-3)); font-size: var(--ag-fs-micro); }
+.tree[data-variant='picker'] .tree__point-id { min-width: 3em; }
+
+.tree__topic[data-selected] > .tree__topic-head .tree__topic-title { color: var(--ag-ink); font-weight: 500; }
+.tree__point[data-selected] .tree__point-link { color: var(--ag-ink); }
+.tree__point[data-selected] .tree__point-title { text-decoration: underline; text-underline-offset: 5px; text-decoration-thickness: 1px; }
+
+/* 非 ready 研究点的状态记号：极轻，只作提示，不喧宾夺主。 */
+.tree__point-state {
+  margin-left: auto;
+  padding-left: var(--ag-space-2);
+  color: var(--ag-ink-muted);
+  font-family: var(--ag-font-mono);
+  font-size: var(--ag-fs-micro);
+}

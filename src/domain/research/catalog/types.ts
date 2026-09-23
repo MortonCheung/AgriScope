@@ -78,6 +78,11 @@ export interface ResearchPoint {
   articleId: string;
   title: string;
   status: ResearchPointStatus;
+  /**
+   * 研究点的研究问题（本轮 §22）。
+   * 只有研究侧真的写了才显示；当前载荷没有这个字段就留空 —— **前端绝不自己补写问题**。
+   */
+  question?: string;
   /** 引用所在章节号；未来是 block id。 */
   sectionId?: string;
   module?: InteractiveModuleKind;
