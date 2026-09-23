@@ -14,6 +14,7 @@ import { PROVINCE_ROOT_ROTATION, CAMERA_FOV_DEG, cityView, easeInOutCubic, orbit
 import { SketchPaper } from '../opening/SketchPaper';
 import { shouldMountSketchPaper } from '../opening/sketchMetrics';
 import { useOpeningStore, type OpeningPhase } from '../opening/openingPhase';
+import { useSpatialStageStore } from '../spatial/spatialStageStore';
 
 export interface LiaoningCanvasProps {
   mode: 'opening' | 'province' | 'city';
@@ -157,7 +158,8 @@ function CameraRig({ mode, phase, focusCityId, reducedMotion, targetPoint, provi
   controlsRef: RefObject<CameraControlsImpl | null>;
 }) {
   /** 相机是否正在移动：为真时逐帧请求渲染，否则静止画布上的 setLookAt 不会开始也不会结束。 */
-  const [dollying, setDollying] = useState(false);
+  const dollying = useSpatialStageStore((state) => state.cameraMoving);
+  const setCameraMoving = useSpatialStageStore((state) => state.setCameraMoving);
   useAnimationFrames(dollying, MOTION_DURATION.camera * 3);
 
   useEffect(() => {
@@ -166,9 +168,9 @@ function CameraRig({ mode, phase, focusCityId, reducedMotion, targetPoint, provi
     const smooth = !reducedMotion;
     const radius = Math.max(12, provinceRadius);
     const move = (pose: { position: readonly [number, number, number]; target: readonly [number, number, number] }) => {
-      if (smooth) setDollying(true);
+      if (smooth) setCameraMoving(true);
       void instance.setLookAt(...pose.position, ...pose.target, smooth);
-      if (!smooth) setDollying(false);
+      if (!smooth) setCameraMoving(false);
     };
 
     if (mode === 'opening') {
@@ -183,7 +185,7 @@ function CameraRig({ mode, phase, focusCityId, reducedMotion, targetPoint, provi
       return;
     }
     move(provinceView(radius));
-  }, [controlsRef, focusCityId, mode, phase, provinceRadius, reducedMotion, targetPoint]);
+  }, [controlsRef, focusCityId, mode, phase, provinceRadius, reducedMotion, setCameraMoving, targetPoint]);
 
   return (
     <CameraControls
@@ -196,7 +198,7 @@ function CameraRig({ mode, phase, focusCityId, reducedMotion, targetPoint, provi
       smoothTime={reducedMotion ? 0 : MOTION_DURATION.fast}
       draggingSmoothTime={MOTION_DURATION.fast}
       dollySpeed={0.7}
-      onRest={() => setDollying(false)}
+      onRest={() => setCameraMoving(false)}
     />
   );
 }

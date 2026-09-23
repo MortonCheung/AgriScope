@@ -47,6 +47,37 @@
   .spatial-shell__dom[data-transition="province-to-city"] .city-research__paper > * { animation: none; }
 }
 
+/*
+  省域 ← 城市的纸面收起（本轮 §24/§25）：与展开严格对称。
+  clip-path inset(0 0 0 0) → inset(0 0 100% 0)，translateY 0 → -12px。
+  forwards：保持"已收起"直到真正导航离开（§24：先 fold，后 navigate）。
+  与相机 cityView → provinceView 大约同时（780ms vs 820ms），不是魔法 timeout。
+*/
+@keyframes ag-paper-fold {
+  from {
+    clip-path: inset(0 0 0 0);
+    transform: translateY(0) scaleY(1);
+  }
+  to {
+    clip-path: inset(0 0 100% 0);
+    transform: translateY(-12px) scaleY(0.99);
+  }
+}
+@keyframes ag-paper-content-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+.spatial-shell__dom[data-transition="city-to-province"] .city-research__paper {
+  animation: ag-paper-fold 780ms cubic-bezier(.16, 1, .3, 1) forwards;
+}
+.spatial-shell__dom[data-transition="city-to-province"] .city-research__paper > * {
+  animation: ag-paper-content-out 400ms var(--ag-ease) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .spatial-shell__dom[data-transition="city-to-province"] .city-research__paper,
+  .spatial-shell__dom[data-transition="city-to-province"] .city-research__paper > * { animation: none; }
+}
+
 /* 省域沙盘标签：克制、无发光，研究城市略深 */
 .liaoning-label {
   display: inline-flex;
