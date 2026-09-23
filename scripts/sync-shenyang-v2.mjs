@@ -17,10 +17,13 @@
  *   public/research/<cityId>/integrity.json    SHA-256 完整性清单（§20）
  *   public/scenario/<cityId>/*.csv             推演（与「研究」不同产品入口，§30）
  *
- * 资产来源是**多来源**的（本轮 §20 修正）：
- *   文章 / manifest / sources → exports/frontend
- *   表 / 图                   → reports/v2（出版物口径，优先）
- *                            → workspace/research_v2/results（研究管线口径，兜底）
+ * 研究侧来源（2026-09 目录整理后）：city_data/<city>/research/
+ *   A01 … A09/article.json        文章正文（原 exports/frontend/articles/A0X.json）
+ *   A01 … A09/tables/*.csv        该篇结果表（出版物口径与研究管线口径已合并去重）
+ *   A01 … A09/figures/*.png       该篇结果图
+ *   manifest.json / sources.json  文章清单与来源登记
+ *   references.md                 参考文献
+ * 推演表来源：assets/tables（v1 出版物口径）、assets/outputs/tables（v1 管线口径）。
  * 两条来源的同名文件已逐字节比对一致；不一致会在报告里单独列出，
  * 绝不静默择一。
  *
@@ -49,21 +52,19 @@ const CITY = {
     : resolve(REPO, '..', 'city_data', process.env.AGSCOPE_CITY_ID ?? 'shenyang'),
 };
 
-const EXPORT_DIR = join(CITY.researchRoot, 'workspace/research_v2/exports/frontend');
-const REPORTS_DIR = join(CITY.researchRoot, 'reports/v2');
-/** 表 / 图的来源，按优先级排列：出版物口径优先，研究管线口径兜底。 */
-const TABLE_SOURCES = [
-  join(REPORTS_DIR, 'tables'),
-  join(CITY.researchRoot, 'workspace/research_v2/results/tables'),
-];
-const FIGURE_SOURCES = [
-  join(REPORTS_DIR, 'figures'),
-  join(CITY.researchRoot, 'workspace/research_v2/results/figures'),
-];
+const RESEARCH_DIR = join(CITY.researchRoot, 'research');
+/** 文章正文 / 清单 / 来源 / 参考文献 */
+const MANIFEST_PATH = join(RESEARCH_DIR, 'manifest.json');
+const SOURCES_PATH = join(RESEARCH_DIR, 'sources.json');
+const REFERENCES_PATH = join(RESEARCH_DIR, 'references.md');
+/** 每篇文章的资产目录（A01 … A09）。 */
+const articlePath = (id) => join(RESEARCH_DIR, id, 'article.json');
+const tableSourcesFor = (id) => [join(RESEARCH_DIR, id, 'tables')];
+const figureSourcesFor = (id) => [join(RESEARCH_DIR, id, 'figures')];
 /** 推演表的来源（v1 场景输出；与研究文章是不同产品入口）。 */
 const SCENARIO_SOURCES = [
-  join(CITY.researchRoot, 'reports/tables'),
-  join(CITY.researchRoot, 'workspace/outputs/tables'),
+  join(CITY.researchRoot, 'assets/tables'),
+  join(CITY.researchRoot, 'assets/outputs/tables'),
 ];
 const SCENARIO_TABLES = ['counterfactual_gate.csv', 'counterfactual_severity.csv', 'counterfactual_buffer.csv'];
 
@@ -136,8 +137,8 @@ function csvSummary(path) {
 
 // ---------------------------------------------------------------- 1. 读取源
 
-if (!existsSync(EXPORT_DIR)) {
-  console.error(`[sync] 研究导出不存在：${EXPORT_DIR}`);
+if (!existsSync(RESEARCH_DIR)) {
+  console.error(`[sync] 研究目录不存在：${RESEARCH_DIR}`);
   console.error('[sync] 可用 SHENYANG_V2_ROOT 指定 city_data/<city> 的位置。');
   process.exit(1);
 }
@@ -146,8 +147,8 @@ if (!existsSync(TREE_SOURCE)) {
   process.exit(1);
 }
 
-const sourceManifest = readJson(join(EXPORT_DIR, 'manifest.json'));
-const sources = readJson(join(EXPORT_DIR, 'sources.json'));
+const sourceManifest = readJson(MANIFEST_PATH);
+const sources = readJson(SOURCES_PATH);
 if (!Array.isArray(sources)) fail('sources.json 不是数组');
 const declaredSourceIds = new Set(sources.map((s) => s.source_id));
 for (const source of sources) {
@@ -167,7 +168,7 @@ for (const id of manifestIds) {
 
 const articles = [];
 for (const entry of sourceManifest.articles ?? []) {
-  const path = join(EXPORT_DIR, entry.file);
+  const path = articlePath(entry.id);
   if (!existsSync(path)) { fail(`文章文件不存在：${entry.file}（${entry.id}）`); continue; }
   const article = readJson(path);
 
@@ -191,8 +192,15 @@ if (hardErrors.length > 0) {
 
 // ---------------------------------------------------------------- 3. 解析资产（多来源）
 
-const tableNames = mergeAssetNames(TABLE_SOURCES, '.csv');
-const figureNames = mergeAssetNames(FIGURE_SOURCES, '.png');
+/** 资产按文章目录收集：A01…A09/tables、A01…A09/figures。 */
+const tableNames = new Map();
+const figureNames = new Map();
+for (const id of REQUIRED_ARTICLES) {
+  const tdir = tableSourcesFor(id)[0];
+  for (const name of listNames(tdir, '.csv')) if (!tableNames.has(name)) tableNames.set(name, tdir);
+  const fdir = figureSourcesFor(id)[0];
+  for (const name of listNames(fdir, '.png')) if (!figureNames.has(name)) figureNames.set(name, fdir);
+}
 
 /** 文章声明但任何来源都没有的资产 → 记录 gap（不静默、不造）。 */
 const referencedTables = new Set(articles.flatMap(({ article }) => (article.tables ?? []).map((t) => t.file)));
@@ -225,14 +233,14 @@ function record(kind, fromPath, toPath, extra = {}) {
 copyFile(TREE_SOURCE, join(OUT_ROOT, 'index.json'));
 record('tree', TREE_SOURCE, join(OUT_ROOT, 'index.json'));
 
-copyFile(join(EXPORT_DIR, 'manifest.json'), join(OUT_ROOT, 'manifest.json'));
-record('manifest', join(EXPORT_DIR, 'manifest.json'), join(OUT_ROOT, 'manifest.json'));
-copyFile(join(EXPORT_DIR, 'sources.json'), join(OUT_ROOT, 'sources.json'));
-record('sources', join(EXPORT_DIR, 'sources.json'), join(OUT_ROOT, 'sources.json'));
+copyFile(MANIFEST_PATH, join(OUT_ROOT, 'manifest.json'));
+record('manifest', MANIFEST_PATH, join(OUT_ROOT, 'manifest.json'));
+copyFile(SOURCES_PATH, join(OUT_ROOT, 'sources.json'));
+record('sources', SOURCES_PATH, join(OUT_ROOT, 'sources.json'));
 
-for (const name of listNames(join(EXPORT_DIR, 'articles'), '.json')) {
-  const from = join(EXPORT_DIR, 'articles', name);
-  const to = join(OUT_ROOT, 'articles', name);
+for (const { entry } of articles) {
+  const from = articlePath(entry.id);
+  const to = join(OUT_ROOT, 'articles', entry.file.split('/').pop());
   copyFile(from, to);
   record('article', from, to);
 }
@@ -250,7 +258,7 @@ for (const [name, dir] of figureNames) {
   record('figure', from, to);
 }
 
-const referencesSource = join(REPORTS_DIR, 'references.md');
+const referencesSource = REFERENCES_PATH;
 if (existsSync(referencesSource)) {
   copyFile(referencesSource, join(OUT_ROOT, 'references.md'));
   record('references', referencesSource, join(OUT_ROOT, 'references.md'));
@@ -277,9 +285,9 @@ const presentFigures = listNames(join(OUT_ROOT, 'figures'), '.png');
 const report = {
   generatedBy: 'scripts/sync-shenyang-v2.mjs',
   cityId: CITY.cityId,
-  sourceRoot: EXPORT_DIR,
+  sourceRoot: RESEARCH_DIR,
   outRoot: `public/research/${CITY.cityId}`,
-  assetSources: { tables: TABLE_SOURCES, figures: FIGURE_SOURCES },
+  assetSources: { tables: 'research/<A0X>/tables', figures: 'research/<A0X>/figures' },
   articles: articles.map(({ article }) => ({
     id: article.id,
     title: article.title,
@@ -350,8 +358,7 @@ ${unreferencedRows.join('\n') || '| — | 无 |'}
 
 | 目录 | 角色 |
 |---|---|
-| \`reports/v2/tables\`、\`reports/v2/figures\` | 出版物口径，优先 |
-| \`workspace/research_v2/results/tables\`、\`figures\` | 研究管线口径，兜底 |
+| \`research/<A0X>/tables\`、\`research/<A0X>/figures\` | 该篇研究的结果表/图（出版物口径与研究管线口径已合并去重） |
 
 同名文件逐字节比对：本次冲突 ${sourceConflicts.length} 个。
 ${sourceConflicts.map((c) => `- ⚠ ${c.name}：保留 ${c.kept}，另有 ${c.other}`).join('\n')}

@@ -1,17 +1,11 @@
 {
   "generatedBy": "scripts/sync-shenyang-v2.mjs",
   "cityId": "shenyang",
-  "sourceRoot": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/workspace/research_v2/exports/frontend",
+  "sourceRoot": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/research",
   "outRoot": "public/research/shenyang",
   "assetSources": {
-    "tables": [
-      "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/reports/v2/tables",
-      "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/workspace/research_v2/results/tables"
-    ],
-    "figures": [
-      "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/reports/v2/figures",
-      "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/workspace/research_v2/results/figures"
-    ]
+    "tables": "research/<A0X>/tables",
+    "figures": "research/<A0X>/figures"
   },
   "articles": [
     {

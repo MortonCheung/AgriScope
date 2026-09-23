@@ -23,8 +23,7 @@
 
 | 目录 | 角色 |
 |---|---|
-| `reports/v2/tables`、`reports/v2/figures` | 出版物口径，优先 |
-| `workspace/research_v2/results/tables`、`figures` | 研究管线口径，兜底 |
+| `research/<A0X>/tables`、`research/<A0X>/figures` | 该篇研究的结果表/图（出版物口径与研究管线口径已合并去重） |
 
 同名文件逐字节比对：本次冲突 0 个。
 
