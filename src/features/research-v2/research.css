@@ -84,6 +84,11 @@
   font-size: var(--ag-fs-small);
   text-decoration: none;
   cursor: pointer;
+  /* 模式切换下划线（本轮 §47）：与全局导航使用同一条动效语言。 */
+  transition: color var(--ag-dur-underline) var(--ag-ease), border-color var(--ag-dur-underline) var(--ag-ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  .research__modes button, .research__modes a { transition: none; }
 }
 .research__modes [aria-current='page'],
 .research__modes button[aria-selected='true'] { color: var(--ag-ink); border-bottom-color: var(--ag-ink); }
