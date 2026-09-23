@@ -16,6 +16,9 @@
 
 /* ---- 中：正文 / 研究点 ---- */
 .research__main { display: flex; flex-direction: column; gap: var(--ag-space-6); min-width: 0; }
+/* 交互研究的中栏：模式切换条 + 研究正文合成一个网格子项（否则正文会掉进右栏）。 */
+.research__column { display: flex; flex-direction: column; gap: var(--ag-space-6); min-width: 0; }
+.research__stage { display: flex; flex-direction: column; min-width: 0; }
 
 .research__head { display: flex; flex-direction: column; gap: var(--ag-space-3); padding-bottom: var(--ag-space-5); border-bottom: 1px solid var(--ag-rule); }
 .research__id { margin: 0; color: var(--ag-ink-muted); font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); letter-spacing: 0.08em; }

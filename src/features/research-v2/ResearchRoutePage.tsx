@@ -108,20 +108,23 @@ export function ResearchRoutePage() {
             focusSection={point?.sectionId ? Number(point.sectionId) : undefined}
           />
         ) : (
-          <>
+          /* 交互研究的中栏是**一个**网格子项：模式切换条 + 研究正文。
+             二者必须是同一个 children，否则网格会把切换条当成中栏、
+             把正文挤进右侧 250px 的证据栏（§31：中栏是阅读区，不是窄栏）。 */
+          <div className="research__column" key={`${point?.id ?? topic.id}:${mode}`}>
             <div className="research__modes" role="tablist" aria-label="阅读方式">
               <Link to={ROUTES.research(cityId, point?.id ?? topic.id)} aria-current={mode === 'interactive' ? 'page' : undefined}>交互研究</Link>
               <Link to={`${ROUTES.research(cityId, point?.id ?? topic.id)}?mode=article`} aria-current={mode === 'article' ? 'page' : undefined}>原文</Link>
             </div>
             {/* key 让"切换研究点 / 切换模式"时重放一次入场动效（§32） */}
-            <div className="research__stage" key={`${point?.id ?? topic.id}:${mode}`}>
+            <div className="research__stage">
               {point ? (
                 <InteractivePointView cityId={cityId} point={point} topic={topic} />
               ) : (
                 <InteractiveTopicView cityId={cityId} topic={topic} />
               )}
             </div>
-          </>
+          </div>
         )}
 
         {mode === 'interactive' && (
