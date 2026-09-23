@@ -9,7 +9,48 @@
 .article__toc a:hover { color: var(--ag-ink); }
 .article__toc a[data-focus] { color: var(--ag-ink); font-weight: 500; }
 
-.article__body { display: flex; flex-direction: column; gap: clamp(28px, 3.4vw, 48px); width: min(100%, 800px); margin: 0 auto; }
+/*
+  Wide Figure Grid（本轮 §50）。
+  正文 760–800px；图 / 表可以真正比正文宽（≈1020px），且**不用任何负 margin / 魔法 transform**：
+  每一层各自是一个居中的三列网格 —— 默认子项落在中列（正文宽度），
+  只有数据资产（`.article__asset`、行内数据表）才跨满三列并按 1020px 收窄居中。
+  这样在 Safari、窄屏与 zoom 下都是纯 CSS Grid 行为，稳定可预期。
+*/
+.article__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 800px) minmax(0, 1fr);
+  row-gap: clamp(28px, 3.4vw, 48px);
+  width: 100%;
+  margin: 0 auto;
+}
+.article__body > * { grid-column: 2; }
+
+.article__section {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 800px) minmax(0, 1fr);
+  grid-column: 1 / -1;
+  row-gap: var(--ag-space-3);
+}
+.article__section > * { grid-column: 2; }
+/* 被对照的章节：用一个克制的编辑式标记，而不是横向贯穿整页的左边线。 */
+.article__section[data-focus] > .article__section-title::before {
+  content: '';
+  display: block;
+  width: 30px;
+  height: 2px;
+  margin-bottom: 10px;
+  background: var(--ag-ink);
+}
+.article__section-title { margin: 0; font-family: var(--ag-font-display); font-size: clamp(1.12rem, 1.9vw, 1.4rem); font-weight: 400; }
+
+/* 图与表：真正可以比正文宽（§50：980–1080px）。 */
+.article__section > .article__asset,
+.article__section > .research__inline-table {
+  grid-column: 1 / -1;
+  width: min(100%, 1020px);
+  justify-self: center;
+}
+.article__asset { margin-top: var(--ag-space-3); }
 
 .article__head { display: flex; flex-direction: column; gap: var(--ag-space-3); padding-bottom: var(--ag-space-5); border-bottom: 1px solid var(--ag-rule); }
 .article__meta { margin: 0; color: var(--ag-ink-muted); font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); letter-spacing: 0.08em; }
@@ -17,14 +58,7 @@
 .article__lead { margin: 0; color: var(--ag-ink-soft); font-size: var(--ag-fs-body); line-height: 1.85; }
 .article__focus-note { margin: 0; color: var(--ag-ink-muted); font-size: var(--ag-fs-small); }
 
-.article__section { display: flex; flex-direction: column; gap: var(--ag-space-3); }
-.article__section[data-focus] { padding-left: var(--ag-space-5); border-left: 2px solid var(--ag-rule); }
 .article__section-title { margin: 0; font-family: var(--ag-font-display); font-size: clamp(1.12rem, 1.9vw, 1.4rem); font-weight: 400; }
-
-/* 图表可以比正文更宽（§35：900–1100px） */
-.article__asset,
-.article__section--wide > * { width: min(100%, 1020px); }
-.article__asset { margin-top: var(--ag-space-3); }
 
 @media (min-width: 1240px) {
   .article { grid-template-columns: 190px minmax(0, 1fr); }
