@@ -25,11 +25,18 @@ export function ReportPage() {
   const allSources = sourcesState.status === 'ready' ? sourcesState.data : [];
 
   if (!city) {
+    /**
+     * §29：报告入口包含「城市正式报告」与「辽宁六城综合报告」两级。
+     * `/reports/liaoning` 是省级综合报告的位置，研究侧尚未产出该报告的载荷——
+     * 那就如实说明「研究内容待接入」，而不是谎称"未知城市"（§13：不编造、不谎报）。
+     */
+    const isProvinceReport = cityId !== '' && ROUTES.cityReport(cityId) === ROUTES.provinceReport;
     return (
       <main className="report">
         <div className="report__body">
-          <p className="report__meta">报告</p>
-          <h1 className="report__title">未知城市</h1>
+          <p className="report__meta">{isProvinceReport ? '综合 · 报告' : '报告'}</p>
+          <h1 className="report__title">{isProvinceReport ? '辽宁六城综合研究' : '报告目录里没有这个入口'}</h1>
+          <p className="report__empty">{isProvinceReport ? '研究内容待接入' : '请从报告目录进入。'}</p>
           <Link className="ag-button" to={ROUTES.reports}>返回报告目录</Link>
         </div>
       </main>
