@@ -222,6 +222,8 @@ export const VALUE_LABELS: Record<string, Record<string, string>> = {
   /** §77：POOLED 面向用户写作「总体」。情景表里 target 同时出现 price / volume。 */
   target: { POOLED: '总体', price: '价格', volume: '成交量' },
   window_key: { w0: '当日', w13: '1–3 日', w47: '4–7 日', w814: '8–14 日' },
+  /** §39：累积暴露横轴按天数读，单位随数值一起写（§56）。 */
+  cum_days: { '1': '1 日', '3': '3 日', '7': '7 日', '14': '14 日' },
   model: {
     /** A06 预测增量：baseline = 仅历史量价+日历；weather = baseline + 天气（研究侧原话）。 */
     baseline: '基线（仅历史量价）',

@@ -97,6 +97,43 @@ describe('沈阳研究契约（§7/§33）', () => {
   });
 });
 
+describe('方向页 Explorer 契约（§38/§39）', () => {
+  it('A3 声明了滞后窗口与累积暴露两个 Explorer，且都写明 selectors / category / focus', () => {
+    const a3 = getTopic('shenyang', 'A3');
+    expect(a3?.explorers?.map((explorer) => explorer.id)).toEqual(['lag-window', 'accumulation']);
+    for (const explorer of a3?.explorers ?? []) {
+      expect(explorer.title, `${explorer.id} title`).toBeTruthy();
+      expect(explorer.category, `${explorer.id} category`).toBeTruthy();
+      expect(explorer.focus, `${explorer.id} focus`).toBeTruthy();
+      expect(Array.isArray(explorer.selectors)).toBe(true);
+      expect(explorer.selectors?.length ?? 0).toBeGreaterThan(0);
+    }
+  });
+
+  it('两个 Explorer 都指向研究侧真实的表与列（滞后窗口 window_key·beta / 累积暴露 cum_days·beta_per_sd）', () => {
+    const explorers = getTopic('shenyang', 'A3')?.explorers ?? [];
+    expect(explorers.find((explorer) => explorer.id === 'lag-window')).toMatchObject({
+      table: 'A03_lag_windows.csv', category: 'window_key', focus: 'beta',
+    });
+    expect(explorers.find((explorer) => explorer.id === 'accumulation')).toMatchObject({
+      table: 'A03_accumulation.csv', category: 'cum_days', focus: 'beta_per_sd',
+    });
+  });
+
+  it('结构自检能抓出缺字段的 explorer', () => {
+    const catalog = getCatalog('shenyang') as CityResearchCatalog;
+    const broken = structuredClone(catalog);
+    const target = broken.topics.find((topic) => topic.id === 'A3');
+    if (target?.explorers?.[0]) target.explorers[0].category = '';
+    expect(validateCatalog(broken).some((problem) => problem.includes('explorer'))).toBe(true);
+  });
+
+  it('没有 explorers 的方向仍然自洽（通用契约不要求 explorer）', () => {
+    const a1 = getTopic('shenyang', 'A1');
+    expect(a1?.explorers ?? []).toEqual([]);
+  });
+});
+
 describe('研究 id 解析（§5/§10）', () => {
   it('能区分方向与研究点', () => {
     expect(researchIdKind('shenyang', 'A2')).toBe('topic');

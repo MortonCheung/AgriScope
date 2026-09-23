@@ -583,6 +583,35 @@
    "articleId": "A3",
    "articleTitle": "气象影响的滞后累积与非线性特征",
    "order": 3,
+   "explorers": [
+    {
+     "id": "lag-window",
+     "title": "滞后窗口 Explorer",
+     "note": "同一品种、同一口径下，气象影响在不同滞后窗口的估计值横向比较。",
+     "table": "A03_lag_windows.csv",
+     "filter": {},
+     "selectors": [
+      "crop",
+      "outcome",
+      "exposure"
+     ],
+     "category": "window_key",
+     "focus": "beta"
+    },
+    {
+     "id": "accumulation",
+     "title": "累积暴露 Explorer",
+     "note": "同一品种、同一结果变量下，1 / 3 / 7 / 14 日累积暴露的估计值横向比较。",
+     "table": "A03_accumulation.csv",
+     "filter": {},
+     "selectors": [
+      "crop",
+      "outcome"
+     ],
+     "category": "cum_days",
+     "focus": "beta_per_sd"
+    }
+   ],
    "points": [
     {
      "id": "A3.1",

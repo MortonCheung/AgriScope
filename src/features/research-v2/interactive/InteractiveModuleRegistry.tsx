@@ -1,17 +1,16 @@
 import { useMemo, useState } from 'react';
 import type { InteractiveModuleKind, ResearchCitation, ResearchDataBinding, ResearchPoint } from '../../../domain/research/catalog';
 import { quoteLabel } from '../../../domain/research/catalog/labels';
-import { columnLabel, valueLabel } from '../../../domain/research/v2/metrics';
 import {
   buildDisplayFilter,
   defaultSelectorValues,
   filterRows,
-  uniqueValuesInSourceOrder,
 } from '../../../domain/research/v2/selectors';
 import { useTable } from '../useV2';
 import { DataTable } from '../DataTable';
 import { ResearchQuote } from '../blocks';
 import { EstimateChart } from './EstimateChart';
+import { SelectorRow } from './Selectors';
 import './interactive-module.css';
 
 /**
@@ -49,54 +48,6 @@ const COMPANION_LABELS: Record<string, string> = {
   'A05_recovery_by_crop.csv': '逐品种恢复中位数',
   'A06_forecast_gain.csv': '天气相对基线的增益',
 };
-
-/** 选项少 → 文字选项；选项多 → 原生 select（§45：不引入厚重组件库）。 */
-const INLINE_OPTION_LIMIT = 4;
-
-function Selector({ column, options, value, onChange }: {
-  column: string;
-  options: string[];
-  value: string | undefined;
-  onChange: (value: string) => void;
-}) {
-  const label = columnLabel(column) ?? column;
-
-  if (options.length > INLINE_OPTION_LIMIT) {
-    return (
-      <label className="module-selector">
-        <span className="module-selector__label">{label}</span>
-        <select
-          className="module-selector__select"
-          value={value ?? ''}
-          onChange={(event) => onChange(event.target.value)}
-        >
-          {options.map((option) => (
-            <option key={option} value={option}>{valueLabel(column, option)}</option>
-          ))}
-        </select>
-      </label>
-    );
-  }
-
-  return (
-    <div className="module-selector" role="group" aria-label={label}>
-      <span className="module-selector__label">{label}</span>
-      <div className="module-selector__options">
-        {options.map((option) => (
-          <button
-            key={option}
-            type="button"
-            className="module-selector__option"
-            aria-pressed={option === value}
-            onClick={() => onChange(option)}
-          >
-            {valueLabel(column, option)}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function CompanionTable({ cityId, file, filter, title }: {
   cityId: string;
@@ -172,19 +123,12 @@ export function ResearchDataModule({ cityId, point, binding, citations }: {
         <h4 className="module__title">{MODULE_LABELS[point.module ?? 'trend']}</h4>
       </div>
 
-      {selectors.length > 0 && (
-        <div className="module__selectors">
-          {selectors.map((column) => (
-            <Selector
-              key={column}
-              column={column}
-              options={uniqueValuesInSourceOrder(staticRows, column)}
-              value={selected[column]}
-              onChange={(value) => setPicked((current) => ({ ...current, [column]: value }))}
-            />
-          ))}
-        </div>
-      )}
+      <SelectorRow
+        selectors={selectors}
+        rows={staticRows}
+        selected={selected}
+        onChange={(column, value) => setPicked((current) => ({ ...current, [column]: value }))}
+      />
 
       {canChart ? (
         <>

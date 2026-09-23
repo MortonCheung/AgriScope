@@ -110,6 +110,30 @@ export interface ResearchTopic {
   articleTitle: string;
   order: number;
   points: ResearchPoint[];
+  /**
+   * 方向页上的横向 Explorer（本轮 §38/§39）。
+   *
+   * 它**只做已有结果之间的可视比较**（例如同一品种下 当日 / 1–3 日 / 4–7 日 / 8–14 日
+   * 的估计值对比），不做任何新分析、不生成"哪个窗口影响最大"这类研究解释。
+   * 与研究点绑定同构：表 / 筛选 / selector / 分类轴 / 取值列全部来自研究侧导出。
+   */
+  explorers?: TopicExplorer[];
+}
+
+export interface TopicExplorer {
+  id: string;
+  /** 前端措辞的标题（只说明在比较什么）。 */
+  title: string;
+  /** 一句话说明比较口径；同样不含研究结论。 */
+  note?: string;
+  table: string;
+  filter: Record<string, string[]>;
+  /** 与 ResearchDataBinding.selectors 同义：UI 行筛选，用来消除分类轴歧义。 */
+  selectors?: string[];
+  /** 横轴（分类）列。 */
+  category: string;
+  /** 纵轴取值列。 */
+  focus: string;
 }
 
 export interface CityResearchCatalog {

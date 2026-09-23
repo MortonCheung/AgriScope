@@ -105,8 +105,18 @@ export function validateCatalog(catalog: CityResearchCatalog): string[] {
     if (!topic.title) problems.push(`方向 ${topic.id} 缺少标题`);
     if (!topic.order) problems.push(`方向 ${topic.id} 缺少 order`);
 
+    // §38/§39：方向页 Explorer 也必须结构自洽（表 / 分类轴 / 取值列 / selectors 都要写全）。
+    for (const explorer of topic.explorers ?? []) {
+      if (!explorer.id) problems.push(`方向 ${topic.id} 的 explorer 缺少 id`);
+      if (!explorer.title) problems.push(`方向 ${topic.id} 的 explorer ${explorer.id} 缺少标题`);
+      if (!explorer.table) problems.push(`方向 ${topic.id} 的 explorer ${explorer.id} 缺少表`);
+      if (!explorer.category) problems.push(`方向 ${topic.id} 的 explorer ${explorer.id} 缺少分类轴`);
+      if (!explorer.focus) problems.push(`方向 ${topic.id} 的 explorer ${explorer.id} 缺少取值列`);
+      if (!Array.isArray(explorer.selectors)) problems.push(`方向 ${topic.id} 的 explorer ${explorer.id} 缺少 selectors（哪怕是空数组也要写）`);
+    }
+
     for (const point of topic.points) {
-      if (pointIds.has(point.id)) problems.push(`研究点 id 重复：${point.id}`);
+       if (pointIds.has(point.id)) problems.push(`研究点 id 重复：${point.id}`);
       pointIds.add(point.id);
       // §33.4：点位 id 的前缀必须与所属方向一致（A4.8 → A4）。
       if (!point.id.startsWith(`${topic.id}.`)) {

@@ -56,6 +56,18 @@ describe('交互研究的中栏是一个网格子项', () => {
   });
 });
 
+describe('方向页跨窗口 Explorer（§38/§39/§59）', () => {
+  it('A3 方向页渲染滞后窗口与累积暴露两个 Explorer', () => {
+    const { container } = renderAt('/cities/shenyang/research/A3');
+    const ids = [...container.querySelectorAll('.module--explorer')].map((element) => element.getAttribute('data-explorer'));
+    expect(ids).toEqual(['lag-window', 'accumulation']);
+    const text = container.textContent ?? '';
+    expect(text).toContain('跨窗口比较');
+    expect(text).toContain('滞后窗口 Explorer');
+    expect(text).toContain('累积暴露 Explorer');
+  });
+});
+
 describe('模式切换条在两种模式下都常驻（§29/§59-14/15）', () => {
   it('交互研究有切换条，且两条都在', () => {
     const { container } = renderAt('/cities/shenyang/research/A2.2');

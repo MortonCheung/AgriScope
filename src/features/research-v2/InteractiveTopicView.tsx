@@ -4,6 +4,7 @@ import { pointStatusLabel } from '../../domain/research/catalog/labels';
 import { ROUTES } from '../../app/routes';
 import { useArticle, useTable } from './useV2';
 import { DataTable } from './DataTable';
+import { TopicExplorer } from './TopicExplorer';
 
 /** 一张声明表：单独组件，保证 `useTable` 的调用位置稳定。 */
 function TopicTable({ cityId, file, caption }: { cityId: string; file: string; caption: string }) {
@@ -33,6 +34,19 @@ export function InteractiveTopicView({ cityId, topic }: { cityId: string; topic:
         <p className="research__article-title">{topic.articleTitle}</p>
         <p className="research__lead">{topic.points.length} 个研究点</p>
       </header>
+
+      {/*
+        §38/§39：方向页额外提供跨窗口 Explorer（滞后窗口 / 累积暴露）。
+        它只把研究表里**已有的**估计值并排比较，不做新分析、不给研究解释。
+      */}
+      {(topic.explorers ?? []).length > 0 && (
+        <section className="research__block">
+          <h2 className="research__block-title">跨窗口比较</h2>
+          {(topic.explorers ?? []).map((explorer) => (
+            <TopicExplorer key={explorer.id} cityId={cityId} explorer={explorer} />
+          ))}
+        </section>
+      )}
 
       <section className="research__block">
         <h2 className="research__block-title">研究点</h2>

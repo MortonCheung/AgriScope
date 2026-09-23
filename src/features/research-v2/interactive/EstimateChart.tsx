@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { columnMeta, formatMetricValue } from '../../../domain/research/v2/metrics';
+import { motion, useReducedMotion, type Transition } from 'motion/react';
+import { columnMeta, formatMetricValue, valueLabel as controlledValueLabel } from '../../../domain/research/v2/metrics';
 import './estimate-chart.css';
 
 export interface EstimateChartProps {
@@ -47,8 +48,19 @@ function buildTicks(min: number, max: number, count = 5): number[] {
  */
 export function EstimateChart({ rows, categoryKey, valueKey, ciLowKey, ciHighKey, ciCaption }: EstimateChartProps) {
   const [hover, setHover] = useState<number | null>(null);
+  const reducedMotion = Boolean(useReducedMotion());
   const scrollRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
+
+  /**
+   * 数据切换的 morph（本轮 §46）。
+   *
+   * 切换 selector 时，图**不 unmount 再淡入**：沿用同一个 DOM 节点，
+   * 让点 / 区间 / 命中区平滑移动到新值（约 280ms）。减少动效时立即切换。
+   */
+  const morph: Transition = reducedMotion
+    ? { duration: 0 }
+    : { duration: 0.28, ease: [0.16, 1, 0.3, 1] };
 
   /**
    * 图必须响应**真实容器宽度**（本轮 §41/§42）。
@@ -159,22 +171,48 @@ export function EstimateChart({ rows, categoryKey, valueKey, ciLowKey, ciHighKey
             const cx = PAD.left + slot * (index + 0.5);
             const cy = toY(point.value);
             const isActive = hover === index;
+            /** 分类取值走受控中文映射（§38）：w0 → 当日、exposure → 中文变量名；没有映射就保留原值。 */
+            const label = controlledValueLabel(categoryKey, point.category);
+            const hasInterval = hasCi && point.low !== undefined && point.high !== undefined
+              && Number.isFinite(point.low) && Number.isFinite(point.high);
             return (
-              <g key={`${point.category}-${index}`}
+              /* key 用**分类取值**而不是下标：切换 selector 时节点身份不变，因此能 morph 而不是重放淡入（§46）。 */
+              <g key={point.category}
                 onPointerEnter={() => setHover(index)}
                 onPointerLeave={() => setHover(null)}
                 style={{ animationDelay: `${Math.min(index, 24) * 14}ms` }}
                 className={isActive ? 'estimate-chart__mark is-active' : 'estimate-chart__mark'}>
-                {/* 命中区域：让 hover 更容易触发，且不改变任何布局 */}
-                <rect x={cx - slot / 2} y={PAD.top} width={slot} height={plotHeight} className="estimate-chart__hit" />
-                {hasCi && point.low !== undefined && point.high !== undefined
-                  && Number.isFinite(point.low) && Number.isFinite(point.high) && (
-                  <line x1={cx} x2={cx} y1={toY(point.high)} y2={toY(point.low)} className="estimate-chart__ci" />
+                {/* 命中区域：让 hover 更容易触发，且不改变任何布局；位置随 morph 一起移动 */}
+                <motion.rect
+                  initial={false}
+                  animate={{ x: cx - slot / 2, y: PAD.top, width: slot, height: plotHeight }}
+                  transition={morph}
+                  className="estimate-chart__hit"
+                />
+                {hasInterval && (
+                  <motion.line
+                    initial={false}
+                    animate={{ x1: cx, x2: cx, y1: toY(point.high as number), y2: toY(point.low as number) }}
+                    transition={morph}
+                    className="estimate-chart__ci"
+                  />
                 )}
-                <circle cx={cx} cy={cy} r={isActive ? 4.5 : 3.2} className="estimate-chart__dot" />
-                <text x={cx} y={HEIGHT - PAD.bottom + 16} textAnchor="middle" className="estimate-chart__cat">
-                  {point.category.length > 6 ? `${point.category.slice(0, 6)}…` : point.category}
-                </text>
+                <motion.circle
+                  initial={false}
+                  animate={{ cx, cy, r: isActive ? 4.5 : 3.2 }}
+                  transition={morph}
+                  className="estimate-chart__dot"
+                />
+                <motion.text
+                  initial={false}
+                  animate={{ x: cx }}
+                  transition={morph}
+                  y={HEIGHT - PAD.bottom + 16}
+                  textAnchor="middle"
+                  className="estimate-chart__cat"
+                >
+                  {label.length > 6 ? `${label.slice(0, 6)}…` : label}
+                </motion.text>
               </g>
             );
           })}

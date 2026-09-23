@@ -6,8 +6,8 @@
    "kind": "tree",
    "path": "public/research/shenyang/index.json",
    "source": "src/domain/research/catalog/shenyang-tree.json",
-   "bytes": 44867,
-   "sha256": "833b2f9765b4368510b11784ac0298fe947eddc79972651a614a058931dc6ca7"
+   "bytes": 45625,
+   "sha256": "9ed06879b144c3e54febb697fb55144669ddb5994a3586a99d3e3e15b4b02622"
   },
   {
    "kind": "manifest",

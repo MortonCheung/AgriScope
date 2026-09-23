@@ -46,6 +46,10 @@
 .module__skeleton { height: 220px; background: color-mix(in srgb, var(--ag-rule) 35%, transparent); animation: ag-skeleton-pulse 1.4s var(--ag-ease) infinite; }
 .module__gap { margin: 0; color: var(--ag-ink-muted); font-size: var(--ag-fs-small); }
 
+/* 方向页 Explorer（本轮 §38/§39）：与数据模块同语言，只多一句口径说明。 */
+.module--explorer { padding-top: var(--ag-space-5); border-top: 1px solid var(--ag-rule-soft); }
+.module__note { margin: 0; max-width: 68ch; color: var(--ag-ink-muted); font-size: var(--ag-fs-small); line-height: 1.7; }
+
 .module__companion { border-top: 1px solid var(--ag-rule-soft); padding-top: var(--ag-space-3); }
 .module__companion > summary {
   color: var(--ag-ink-muted);

@@ -227,7 +227,46 @@ function uniqueValuesInSourceOrder(rows, column) {
   return values;
 }
 
+/**
+ * 一个「分类轴唯一」检查：filter + 默认 selectors 之后，category 的每个取值必须唯一。
+ * 研究点绑定与方向页 Explorer 共用这一条（§36/§38/§39）。
+ */
+function checkUniqueCategory({ label, table, binding, primary }) {
+  const selectors = binding.selectors ?? [];
+  for (const column of selectors) {
+    check(primary.headers.includes(column), `${label}: selector 列不存在 ${table}.${column}`);
+  }
+
+  const staticEntries = Object.entries(binding.filter ?? {});
+  const staticRows = primary.rows.filter((row) => staticEntries.every(([column, allowed]) => allowed.includes(row[column] ?? '')));
+
+  const selected = {};
+  for (const column of selectors) {
+    const first = uniqueValuesInSourceOrder(staticRows, column)[0];
+    check(first !== undefined, `${label}: selector ${column} 在静态筛选后没有任何取值`);
+    selected[column] = first;
+  }
+
+  const display = { ...(binding.filter ?? {}) };
+  for (const column of selectors) if (selected[column] !== undefined) display[column] = [selected[column]];
+  const displayEntries = Object.entries(display);
+  const rows = primary.rows.filter((row) => displayEntries.every(([column, allowed]) => allowed.includes(row[column] ?? '')));
+  check(rows.length > 0, `${label}: filter + 默认 selectors 之后没有任何行`);
+
+  const byCategory = new Map();
+  for (const row of rows) {
+    const key = row[binding.category] ?? '';
+    byCategory.set(key, (byCategory.get(key) ?? 0) + 1);
+  }
+  const duplicated = [...byCategory.entries()].filter(([, count]) => count > 1);
+  check(
+    duplicated.length === 0,
+    `${label}: 应用 filter + 默认 selectors 后分类轴 ${binding.category} 仍有重复（${duplicated.length} 个取值，例如「${duplicated[0]?.[0]}」×${duplicated[0]?.[1]}）—— 必须补上消除歧义的 selectors`,
+  );
+}
+
 let chartsChecked = 0;
+let explorersChecked = 0;
 for (const topic of tree.topics ?? []) {
   for (const point of topic.points ?? []) {
     const binding = point.binding;
@@ -235,37 +274,21 @@ for (const topic of tree.topics ?? []) {
     const primary = loadTable(binding.table);
     if (!primary) continue;
     chartsChecked += 1;
+    checkUniqueCategory({ label: point.id, table: binding.table, binding, primary });
+  }
 
-    const selectors = binding.selectors ?? [];
-    for (const column of selectors) {
-      check(primary.headers.includes(column), `${point.id}: selector 列不存在 ${binding.table}.${column}`);
-    }
-
-    const staticEntries = Object.entries(binding.filter ?? {});
-    const staticRows = primary.rows.filter((row) => staticEntries.every(([column, allowed]) => allowed.includes(row[column] ?? '')));
-
-    const selected = {};
-    for (const column of selectors) {
-      const first = uniqueValuesInSourceOrder(staticRows, column)[0];
-      check(first !== undefined, `${point.id}: selector ${column} 在静态筛选后没有任何取值`);
-      selected[column] = first;
-    }
-
-    const display = { ...(binding.filter ?? {}) };
-    for (const column of selectors) if (selected[column] !== undefined) display[column] = [selected[column]];
-    const displayEntries = Object.entries(display);
-    const rows = primary.rows.filter((row) => displayEntries.every(([column, allowed]) => allowed.includes(row[column] ?? '')));
-
-    const byCategory = new Map();
-    for (const row of rows) {
-      const key = row[binding.category] ?? '';
-      byCategory.set(key, (byCategory.get(key) ?? 0) + 1);
-    }
-    const duplicated = [...byCategory.entries()].filter(([, count]) => count > 1);
-    check(
-      duplicated.length === 0,
-      `${point.id}: 应用 filter + 默认 selectors 后分类轴 ${binding.category} 仍有重复（${duplicated.length} 个取值，例如「${duplicated[0]?.[0]}」×${duplicated[0]?.[1]}）—— 必须在 binding.selectors 里补上消除歧义的维度`,
-    );
+  for (const explorer of topic.explorers ?? []) {
+    const primary = loadTable(explorer.table);
+    if (!primary) continue;
+    explorersChecked += 1;
+    check(primary.headers.includes(explorer.category), `${topic.id} explorer ${explorer.id}: 分类轴不存在 ${explorer.table}.${explorer.category}`);
+    check(primary.headers.includes(explorer.focus), `${topic.id} explorer ${explorer.id}: 取值列不存在 ${explorer.table}.${explorer.focus}`);
+    checkUniqueCategory({
+      label: `${topic.id} explorer ${explorer.id}`,
+      table: explorer.table,
+      binding: { table: explorer.table, filter: explorer.filter, selectors: explorer.selectors, category: explorer.category },
+      primary,
+    });
   }
 }
 
@@ -294,4 +317,4 @@ console.log('[verify-research-integrity] 全部通过');
 console.log(`  hash 校验 ${verifiedFiles} 个文件，全部与源一致（不一致 ${hashMismatches}）`);
 console.log(`  研究契约 ${tree.topics.length} 个方向 / ${totalPoints} 个研究点：ready ${statusCounts.ready} · pending ${statusCounts.pending} · unsupported ${statusCounts.unsupported}`);
 console.log(`  ready 的引用原句全部能在研究正文里逐字找到；绑定的表、列、取值全部存在`);
-console.log(`  ${chartsChecked} 个图绑定在 filter + 默认 selectors 下分类轴取值唯一（§36）`);
+console.log(`  ${chartsChecked} 个图绑定与 ${explorersChecked} 个方向页 Explorer 在 filter + 默认 selectors 下分类轴取值唯一（§36/§38/§39）`);
