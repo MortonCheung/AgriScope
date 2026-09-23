@@ -88,6 +88,24 @@ export function EstimateChart({ rows, categoryKey, valueKey, ciLowKey, ciHighKey
   const active = hover !== null ? points[hover] : null;
   const hasCi = Boolean(ciLowKey && ciHighKey);
 
+  /**
+   * 读数行的"最宽一条"（§87）。
+   *
+   * 读数行必须**永远占同样的高度**。若让它随着 hover 到的内容改变高度，
+   * 每次指针移上去都会把下方内容顶动（实测 24px → 24.91px，整页 scrollHeight 一起涨）。
+   * 所以让最宽的一条读数默默撑住行高，真正要显示的那条浮在它上面。
+   */
+  const readoutLength = (item: (typeof points)[number]) => {
+    const ci = hasCi && item.low !== undefined && item.high !== undefined
+      ? formatMetricValue(item.low, meta).length + formatMetricValue(item.high, meta).length
+      : 0;
+    return item.category.length + formatMetricValue(item.value, meta).length + ci;
+  };
+  const widest = points.reduce<(typeof points)[number] | null>(
+    (best, item) => (best === null || readoutLength(item) > readoutLength(best) ? item : best),
+    null,
+  );
+
   return (
     <div className="estimate-chart">
       <div className="estimate-chart__head">
@@ -137,11 +155,22 @@ export function EstimateChart({ rows, categoryKey, valueKey, ciLowKey, ciHighKey
         </svg>
       </div>
 
-      {/* 读数行：高度固定，hover 不会让页面跳动（§87）。
+      {/* 读数行：高度由"最宽一条"撑住，hover 不会让页面跳动（§87）。
           空闲时不写操作提示 —— 界面不靠"告诉我怎么用"才可用（§84）。 */}
       <div className="estimate-chart__readout" data-empty={active ? undefined : true}>
+        {widest && (
+          <span className="estimate-chart__readout-ghost" aria-hidden>
+            <span className="estimate-chart__readout-cat">{widest.category}</span>
+            <span className="estimate-chart__readout-value">{formatMetricValue(widest.value, meta)}</span>
+            {hasCi && widest.low !== undefined && widest.high !== undefined && (
+              <span className="estimate-chart__readout-ci">
+                {formatMetricValue(widest.low, meta)} – {formatMetricValue(widest.high, meta)}
+              </span>
+            )}
+          </span>
+        )}
         {active && (
-          <>
+          <span className="estimate-chart__readout-live">
             <span className="estimate-chart__readout-cat">{active.category}</span>
             <span className="estimate-chart__readout-value">{formatMetricValue(active.value, meta)}</span>
             {hasCi && active.low !== undefined && active.high !== undefined && (
@@ -149,7 +178,7 @@ export function EstimateChart({ rows, categoryKey, valueKey, ciLowKey, ciHighKey
                 {formatMetricValue(active.low, meta)} – {formatMetricValue(active.high, meta)}
               </span>
             )}
-          </>
+          </span>
         )}
       </div>
     </div>

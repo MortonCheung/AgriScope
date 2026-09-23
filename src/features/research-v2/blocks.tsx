@@ -32,15 +32,20 @@ export function TableAsset({ cityId, file, caption }: { cityId: string; file: st
  * 引文进的是界面，所以必须和正文走同一套行内规则：
  * 研究常写成「显著（表 `A02_daily_response.csv`）：」，原样渲染就会把
  * 数据文件名和 `**` 一起露给读者（§38 红线）。这里统一过 `renderInline`。
+ *
+ * 另外：引文若是「……显著（表 `x.csv`）：」这种**引出下文表格**的句式，
+ * 去掉内部引用后会剩下一个悬空的冒号，读起来像被截断。展示层收掉这个尾标点；
+ * 目录里保存的引文仍是逐字原文，完整性校验不受影响。
  */
 export function ResearchQuote({ quote, cite, className = 'research__quote' }: {
   quote: string;
   cite: string;
   className?: string;
 }) {
+  const body = quote.replace(/[：:]\s*$/, '');
   return (
     <blockquote className={className}>
-      {renderInline(quote, 'q')}
+      {renderInline(body, 'q')}
       <cite>{cite}</cite>
     </blockquote>
   );

@@ -76,7 +76,7 @@ export function ResearchArticleView({ cityId, canonicalId, article, focusPointId
       <div className="article__body">
         <header className="article__head">
           <p className="article__meta">{canonicalId} · 原文</p>
-          <h2 className="article__title">{article.title}</h2>
+          <h1 className="article__title">{article.title}</h1>
           {article.frontend_summary && <p className="article__lead">{article.frontend_summary}</p>}
           {focusPointId && focusSection && (
             <p className="article__focus-note">正在对照研究点 {focusPointId}</p>
@@ -84,7 +84,7 @@ export function ResearchArticleView({ cityId, canonicalId, article, focusPointId
         </header>
 
         <section className="article__section">
-          <h3 className="article__section-title">摘要</h3>
+          <h2 className="article__section-title">摘要</h2>
           <MarkdownBlocks source={article.abstract} refs={assetRefs} />
         </section>
 
@@ -95,7 +95,7 @@ export function ResearchArticleView({ cityId, canonicalId, article, focusPointId
             key={section.number}
             data-focus={String(section.number) === String(focusSection) || undefined}
           >
-            <h3 className="article__section-title">{section.title}</h3>
+            <h2 className="article__section-title">{section.title}</h2>
             <MarkdownBlocks source={section.content} refs={assetRefs} />
             {tables.map((table) => (
               <div className="article__asset" key={table.file}>
@@ -112,7 +112,7 @@ export function ResearchArticleView({ cityId, canonicalId, article, focusPointId
 
         {placements.looseFigures.size > 0 && (
           <section className="article__section">
-            <h3 className="article__section-title">图表</h3>
+            <h2 className="article__section-title">图表</h2>
             {article.figures.filter((figure) => placements.looseFigures.has(figure.file)).map((figure) => (
               <div className="article__asset" key={figure.file}>
                 <V2Figure src={assetUrl.figure(cityId, figure.file)} alt={`${article.title} 配图`} index={refOrder(assetRefs.get(figure.file))} />
@@ -123,7 +123,7 @@ export function ResearchArticleView({ cityId, canonicalId, article, focusPointId
 
         {placements.looseTables.size > 0 && (
           <section className="article__section">
-            <h3 className="article__section-title">数据表</h3>
+            <h2 className="article__section-title">数据表</h2>
             {article.tables.filter((table) => placements.looseTables.has(table.file)).map((table) => (
               <div className="article__asset" key={table.file}>
                 <TableAsset cityId={cityId} file={table.file} caption={`${assetRefs.get(table.file) ?? ''} · ${article.title}`} />
@@ -133,18 +133,18 @@ export function ResearchArticleView({ cityId, canonicalId, article, focusPointId
         )}
 
         <section className="article__section article__section--wide">
-          <h3 className="article__section-title">方法</h3>
+          <h2 className="article__section-title">方法</h2>
           {article.methods.map((method, index) => <MarkdownBlocks key={index} source={method.summary} refs={assetRefs} />)}
         </section>
 
         <section className="article__section">
-          <h3 className="article__section-title">结论</h3>
+          <h2 className="article__section-title">结论</h2>
           <MarkdownBlocks source={article.conclusion} refs={assetRefs} />
         </section>
 
         {article.limitations.length > 0 && (
           <section className="article__section">
-            <h3 className="article__section-title">研究限制</h3>
+            <h2 className="article__section-title">研究限制</h2>
             <ul className="research-note__list">
               {article.limitations.map((item, index) => (
                 <li key={index}><MarkdownBlocks source={item} refs={assetRefs} /></li>

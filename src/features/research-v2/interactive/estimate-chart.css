@@ -34,16 +34,26 @@
   .estimate-chart__mark { animation: none; }
 }
 
-/* 读数行高度固定：hover 不得改变布局（§87） */
+/*
+  读数行：hover 不得改变布局（§87）。
+
+  行高**不随 hover 到的内容变化**：`__readout-ghost`（最宽的一条读数）在正常流里
+  撑住行高，`__readout-live`（真正显示的那条）绝对定位盖在它上面。
+  曾经只是 `min-height: 24px`，而一行文字实际高 24.91px，于是每次 hover 都会把
+  下方内容顶动 0.91px，整页 scrollHeight 一起涨。
+*/
 .estimate-chart__readout {
+  position: relative;
   display: flex;
   align-items: baseline;
   gap: var(--ag-space-4);
-  min-height: 24px;
+  min-height: 1lh;
   color: var(--ag-ink);
   font-family: var(--ag-font-mono);
   font-size: var(--ag-fs-small);
 }
+.estimate-chart__readout-ghost { display: flex; align-items: baseline; gap: var(--ag-space-4); visibility: hidden; }
+.estimate-chart__readout-live { position: absolute; inset: 0; display: flex; align-items: baseline; gap: var(--ag-space-4); }
 .estimate-chart__readout-cat { color: var(--ag-ink-muted); }
 .estimate-chart__readout-value { font-weight: 500; }
 .estimate-chart__readout-ci { color: var(--ag-ink-muted); }
