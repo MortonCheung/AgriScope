@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import type { InteractiveModuleKind, ResearchCitation, ResearchDataBinding, ResearchPoint } from '../../../domain/research/catalog';
 import { quoteLabel } from '../../../domain/research/catalog/labels';
 import { useTable } from '../useV2';
@@ -74,8 +73,12 @@ function CompanionTable({ cityId, file, filter, title }: {
 /**
  * 研究点的数据模块。
  *
- * 允许：过滤、选择、排序、显示、视图切换（§17）。
+ * 允许：筛选、排序、显示、hover 读数（§17）。
  * 禁止：在浏览器里重跑模型 / 重算 p 值 / 生成结论 —— 这里只呈现研究表里的数字。
+ *
+ * 本轮 §31：**删除「图 / 表」切换**。用户不该为同一份研究选择看图表还是看表；
+ * 表现形式由前端按数据是否适合做图来决定（`binding.view` 仍作内部默认口径，不进 UI）。
+ * 适合做图时给出图，并在其后附一张"研究表" details 作为辅助读数（§31）。
  */
 export function ResearchDataModule({ cityId, point, binding, citations }: {
   cityId: string;
@@ -84,7 +87,6 @@ export function ResearchDataModule({ cityId, point, binding, citations }: {
   citations: ResearchCitation[];
 }) {
   const table = useTable(cityId, binding.table);
-  const [view, setView] = useState<'chart' | 'table'>(binding.view);
 
   if (table.status === 'loading') return <div className="module__skeleton" aria-hidden />;
   if (table.status === 'error') return <p className="module__gap">研究内容待接入</p>;
@@ -94,32 +96,36 @@ export function ResearchDataModule({ cityId, point, binding, citations }: {
 
   const hasCi = table.data.columns.includes('ci_low') && table.data.columns.includes('ci_high');
   const category = binding.category;
+  /** 值得做图的条件：研究侧口径就是图、有分类轴、且分类轴至少有 3 个不同取值。 */
   const canChart = binding.view === 'chart' && Boolean(category)
     && new Set(rows.map((row) => row[category as string])).size >= 3;
-  const effectiveView = view === 'chart' && !canChart ? 'table' : view;
+
+  const dataTable = (
+    <DataTable table={{ ...table.data, rows }} caption={`${point.title} · 研究表`} maxRows={40} />
+  );
 
   return (
     <section className="module">
       <div className="module__head">
         <h4 className="module__title">{MODULE_LABELS[point.module ?? 'trend']}</h4>
-        {canChart && (
-          <div className="module__views" role="group" aria-label="视图">
-            <button type="button" aria-pressed={effectiveView === 'chart'} onClick={() => setView('chart')}>图</button>
-            <button type="button" aria-pressed={effectiveView === 'table'} onClick={() => setView('table')}>表</button>
-          </div>
-        )}
       </div>
 
-      {effectiveView === 'chart' && canChart ? (
-        <EstimateChart
-          rows={rows}
-          categoryKey={category as string}
-          valueKey={binding.focus ?? table.data.columns[0]}
-          ciLowKey={hasCi ? 'ci_low' : undefined}
-          ciHighKey={hasCi ? 'ci_high' : undefined}
-        />
+      {canChart ? (
+        <>
+          <EstimateChart
+            rows={rows}
+            categoryKey={category as string}
+            valueKey={binding.focus ?? table.data.columns[0]}
+            ciLowKey={hasCi ? 'ci_low' : undefined}
+            ciHighKey={hasCi ? 'ci_high' : undefined}
+          />
+          <details className="module__companion">
+            <summary>研究表</summary>
+            {dataTable}
+          </details>
+        </>
       ) : (
-        <DataTable table={{ ...table.data, rows }} caption={`${point.title} · 研究表`} maxRows={40} />
+        dataTable
       )}
 
       {(binding.companions ?? []).map((file) => (

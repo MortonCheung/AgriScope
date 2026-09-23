@@ -5,7 +5,6 @@ import { V2Figure } from './Figure';
 import { ResearchSources } from './ResearchSources';
 import { MarkdownBlocks, TableAsset } from './blocks';
 import { useSources } from './useV2';
-import { ROUTES } from '../../app/routes';
 import './research-article.css';
 
 /**
@@ -154,10 +153,6 @@ export function ResearchArticleView({ cityId, canonicalId, article, focusPointId
         )}
 
         <ResearchSources sources={sources} />
-
-        <p className="article__back">
-          <a href={ROUTES.research(cityId, focusPointId ?? canonicalId)}>回到交互研究 →</a>
-        </p>
       </div>
     </article>
   );

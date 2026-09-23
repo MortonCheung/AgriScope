@@ -26,10 +26,6 @@
 .article__section--wide > * { width: min(100%, 1020px); }
 .article__asset { margin-top: var(--ag-space-3); }
 
-.article__back { margin: var(--ag-space-6) 0 0; font-size: var(--ag-fs-small); }
-.article__back a { color: var(--ag-ink-muted); }
-.article__back a:hover { color: var(--ag-ink); }
-
 @media (min-width: 1240px) {
   .article { grid-template-columns: 190px minmax(0, 1fr); }
   .article__toc { display: block; }
