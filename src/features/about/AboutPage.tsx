@@ -1,7 +1,7 @@
 import { reportArticleId, listCatalogCityIds } from '../../domain/research/catalog';
 import { METRIC_DEFINITIONS, REANALYSIS_NOTE, VOLUME_UNIT_NOTE } from '../../domain/research/v2/metrics';
 import { MarkdownBlocks } from '../research-v2/blocks';
-import { renderInline } from '../research-v2/markdown';
+import { renderInline, stripListPrefix } from '../research-v2/markdown';
 import { useArticle, useReferences, useSources } from '../research-v2/useV2';
 import './about.css';
 
@@ -15,10 +15,11 @@ const ABOUT_CITY_ID = listCatalogCityIds()[0] ?? '';
 /**
  * 关于（V5 §49–§53）：把「关于」做成**研究溯源索引**，而不是开发说明。
  *
- * 结构：项目 / 数据来源 / 研究与知识来源 / 指标定义 / 证据规范 / 研究边界 / 求索研究系列。
+ * 结构：项目 / 数据来源 / 研究与知识来源 / 指标定义 / 证据规范 / 研究边界。
  * §51：数据来源从研究侧真正的 source table 读，不显示 `weather.csv` 这类文件。
  * §52：知识来源只展示研究侧已给引用的条目；没有引用的记入 KNOWLEDGE_SOURCE_GAPS，不编 DOI。
  * §82：数据来源与指标定义都带 anchor，文章里可以跳过来。
+ * 本轮 §54：删除「求索研究系列」品牌（比赛版本只保留 AgriScope）。
  */
 export function AboutPage() {
   const cityId = ABOUT_CITY_ID;
@@ -127,16 +128,11 @@ export function AboutPage() {
           <h2 className="about__section-title">研究边界</h2>
           <ul className="about__list">
             {limitations.slice(0, 6).map((item, index) => (
-              <li key={index}>{renderInline(item, `bound-${index}`)}</li>
+              <li key={index}>{renderInline(stripListPrefix(item), `bound-${index}`)}</li>
             ))}
           </ul>
         </section>
       )}
-
-      <footer className="about__foot">
-        <span>求索研究系列 / 001</span>
-        <span>AgriScope</span>
-      </footer>
     </main>
   );
 }
