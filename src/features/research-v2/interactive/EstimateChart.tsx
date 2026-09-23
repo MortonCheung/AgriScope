@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { columnMeta, formatMetricValue } from '../../../domain/research/v2/metrics';
 import './estimate-chart.css';
 
@@ -47,6 +47,30 @@ function buildTicks(min: number, max: number, count = 5): number[] {
  */
 export function EstimateChart({ rows, categoryKey, valueKey, ciLowKey, ciHighKey, ciCaption }: EstimateChartProps) {
   const [hover, setHover] = useState<number | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  /**
+   * 图必须响应**真实容器宽度**（本轮 §41/§42）。
+   *
+   * 过去宽度写死 `max(420, PAD + n*34)`，10 个类别只有约 440px，而中栏有 700–900px，
+   * 图只用了一半页面。现在观察父级滚动容器的宽度（**不观察 SVG 自己**，避免
+   * ResizeObserver feedback loop），让图至少铺满容器；类别太多才退化为水平滚动。
+   * jsdom 没有 ResizeObserver，退回 window resize 监听即可。
+   */
+  useEffect(() => {
+    const element = scrollRef.current;
+    if (!element) return;
+    const measure = () => setContainerWidth(element.clientWidth);
+    measure();
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', measure);
+      return () => window.removeEventListener('resize', measure);
+    }
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
   const meta = columnMeta(valueKey);
   const valueLabel = meta?.label ?? valueKey;
@@ -78,7 +102,9 @@ export function EstimateChart({ rows, categoryKey, valueKey, ciLowKey, ciHighKey
     return { min: min - pad, max: max + pad };
   }, [points]);
 
-  const width = Math.max(420, PAD.left + PAD.right + points.length * MIN_SLOT);
+  /** 分类轴所需的最小宽度；容器更宽时铺满容器，更窄时才允许水平滚动（§42）。 */
+  const requiredWidth = PAD.left + PAD.right + points.length * MIN_SLOT;
+  const width = Math.max(containerWidth, requiredWidth, 320);
   const plotWidth = width - PAD.left - PAD.right;
   const plotHeight = HEIGHT - PAD.top - PAD.bottom;
   const slot = points.length > 0 ? plotWidth / points.length : plotWidth;
@@ -116,7 +142,7 @@ export function EstimateChart({ rows, categoryKey, valueKey, ciLowKey, ciHighKey
         </p>
       </div>
 
-      <div className="estimate-chart__scroll">
+      <div className="estimate-chart__scroll" ref={scrollRef}>
         <svg viewBox={`0 0 ${width} ${HEIGHT}`} width={width} height={HEIGHT} role="img"
           aria-label={`${valueLabel} 按${categoryLabel}的估计值与区间`}>
           {ticks.map((tick, index) => (

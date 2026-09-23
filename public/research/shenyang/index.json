@@ -79,6 +79,9 @@
      "binding": {
       "table": "A01_monthly.csv",
       "filter": {},
+      "selectors": [
+       "crop"
+      ],
       "focus": "price_median",
       "category": "month",
       "view": "chart"
@@ -105,6 +108,9 @@
      "binding": {
       "table": "A01_monthly.csv",
       "filter": {},
+      "selectors": [
+       "crop"
+      ],
       "focus": "volume_median",
       "category": "month",
       "view": "chart"
@@ -286,6 +292,9 @@
         "humidity"
        ]
       },
+      "selectors": [
+       "exposure"
+      ],
       "focus": "beta_per_sd",
       "category": "crop",
       "view": "chart"
@@ -452,6 +461,9 @@
         "humidity"
        ]
       },
+      "selectors": [
+       "exposure"
+      ],
       "focus": "beta_per_sd",
       "category": "crop",
       "view": "chart"
@@ -544,6 +556,10 @@
      "binding": {
       "table": "A02_daily_response_Fwx.csv",
       "filter": {},
+      "selectors": [
+       "outcome",
+       "crop"
+      ],
       "focus": "r2",
       "category": "exposure",
       "view": "chart"
@@ -583,6 +599,10 @@
         "w0"
        ]
       },
+      "selectors": [
+       "outcome",
+       "exposure"
+      ],
       "focus": "beta",
       "category": "crop",
       "view": "chart"
@@ -609,6 +629,10 @@
         "w13"
        ]
       },
+      "selectors": [
+       "outcome",
+       "exposure"
+      ],
       "focus": "beta",
       "category": "crop",
       "view": "chart"
@@ -635,6 +659,10 @@
         "w47"
        ]
       },
+      "selectors": [
+       "outcome",
+       "exposure"
+      ],
       "focus": "beta",
       "category": "crop",
       "view": "chart"
@@ -661,6 +689,10 @@
         "w814"
        ]
       },
+      "selectors": [
+       "outcome",
+       "exposure"
+      ],
       "focus": "beta",
       "category": "crop",
       "view": "chart"
@@ -687,6 +719,9 @@
         "1"
        ]
       },
+      "selectors": [
+       "outcome"
+      ],
       "focus": "beta_per_sd",
       "category": "crop",
       "view": "chart"
@@ -713,6 +748,9 @@
         "3"
        ]
       },
+      "selectors": [
+       "outcome"
+      ],
       "focus": "beta_per_sd",
       "category": "crop",
       "view": "chart"
@@ -739,6 +777,9 @@
         "7"
        ]
       },
+      "selectors": [
+       "outcome"
+      ],
       "focus": "beta_per_sd",
       "category": "crop",
       "view": "chart"
@@ -765,6 +806,9 @@
         "14"
        ]
       },
+      "selectors": [
+       "outcome"
+      ],
       "focus": "beta_per_sd",
       "category": "crop",
       "view": "chart"
@@ -791,6 +835,10 @@
         "True"
        ]
       },
+      "selectors": [
+       "outcome",
+       "exposure"
+      ],
       "focus": "wald_F",
       "category": "crop",
       "view": "chart"
@@ -1109,6 +1157,10 @@
      "binding": {
       "table": "A05_recovery.csv",
       "filter": {},
+      "selectors": [
+       "event",
+       "response"
+      ],
       "focus": "trough_abs",
       "category": "crop",
       "view": "chart"
@@ -1139,6 +1191,9 @@
      "binding": {
       "table": "A05_recovery_by_crop.csv",
       "filter": {},
+      "selectors": [
+       "response"
+      ],
       "focus": "rec_median",
       "companions": [
        "A05_recovery.csv"
@@ -1164,6 +1219,9 @@
      "binding": {
       "table": "A05_recovery_by_crop.csv",
       "filter": {},
+      "selectors": [
+       "response"
+      ],
       "focus": "censored",
       "companions": [
        "A05_recovery.csv"
@@ -1271,6 +1329,9 @@
         "baseline"
        ]
       },
+      "selectors": [
+       "test_year"
+      ],
       "focus": "rmse",
       "category": "crop",
       "view": "chart"
@@ -1293,6 +1354,9 @@
      "binding": {
       "table": "A06_forecast_gain.csv",
       "filter": {},
+      "selectors": [
+       "test_year"
+      ],
       "focus": "rel_gain_pct",
       "companions": [
        "A06_forecast_rolling.csv"
@@ -1335,6 +1399,9 @@
      "binding": {
       "table": "A07_district_crop_structure.csv",
       "filter": {},
+      "selectors": [
+       "crop"
+      ],
       "focus": "sown_area_median_ha",
       "category": "district",
       "view": "chart"
@@ -1357,6 +1424,9 @@
      "binding": {
       "table": "A07_district_crop_structure.csv",
       "filter": {},
+      "selectors": [
+       "crop"
+      ],
       "focus": "production_median_t",
       "category": "district",
       "view": "chart"
@@ -1379,6 +1449,9 @@
      "binding": {
       "table": "A07_district_crop_structure.csv",
       "filter": {},
+      "selectors": [
+       "crop"
+      ],
       "focus": "yield_median_kg_ha",
       "category": "district",
       "view": "chart"
@@ -1401,6 +1474,9 @@
      "binding": {
       "table": "A07_district_crop_structure.csv",
       "filter": {},
+      "selectors": [
+       "district"
+      ],
       "focus": "sown_area_median_ha",
       "category": "crop",
       "view": "chart"
@@ -1423,6 +1499,9 @@
      "binding": {
       "table": "A07_change_2018_2024.csv",
       "filter": {},
+      "selectors": [
+       "crop"
+      ],
       "focus": "area_chg_pct",
       "category": "district",
       "view": "chart"
@@ -1445,6 +1524,9 @@
      "binding": {
       "table": "A07_change_2018_2024.csv",
       "filter": {},
+      "selectors": [
+       "crop"
+      ],
       "focus": "prod_chg_pct",
       "category": "district",
       "view": "chart"
@@ -1475,6 +1557,9 @@
      "binding": {
       "table": "A07_district_crop_structure.csv",
       "filter": {},
+      "selectors": [
+       "district"
+      ],
       "focus": "production_median_t",
       "category": "crop",
       "view": "chart"
@@ -1497,6 +1582,9 @@
      "binding": {
       "table": "A07_change_2018_2024.csv",
       "filter": {},
+      "selectors": [
+       "district"
+      ],
       "focus": "area_chg_pct",
       "category": "crop",
       "view": "chart"
@@ -1589,6 +1677,9 @@
         "max_1d_precip"
        ]
       },
+      "selectors": [
+       "exposure"
+      ],
       "focus": "beta",
       "category": "crop",
       "view": "chart"
@@ -1616,6 +1707,9 @@
         "et0_sum"
        ]
       },
+      "selectors": [
+       "exposure"
+      ],
       "focus": "beta",
       "category": "crop",
       "view": "chart"
@@ -1704,6 +1798,9 @@
      "binding": {
       "table": "A08_wild_bootstrap.csv",
       "filter": {},
+      "selectors": [
+       "exposure"
+      ],
       "focus": "p_wild_boot",
       "companions": [
        "A08_robustness_loo.csv"

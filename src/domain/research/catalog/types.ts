@@ -60,6 +60,14 @@ export interface ResearchDataBinding {
   /** 载荷里的表文件名，例如 A02_daily_response.csv */
   table: string;
   filter: Record<string, string[]>;
+  /**
+   * 额外需要用户钉住的维度（本轮 §33）。
+   *
+   * 它**只是 UI 行筛选，不是科研计算**：display filter = `filter` + 当前 selector 值。
+   * 存在的意义是消除分类轴歧义 —— 例如 A1.4「月份 × 成交量」在 10 品种下
+   * 一个月份对应 10 行，必须先把品种钉住，图才读得通（§32/§36）。
+   */
+  selectors?: string[];
   /** 呈现方式：可画图时画图，只有一两行时如实给表（不硬凑成图）。 */
   view: 'chart' | 'table';
   /** 图的分类轴列；`view=table` 时不存在。 */

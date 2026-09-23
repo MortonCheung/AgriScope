@@ -202,6 +202,73 @@ for (const id of payloadArticleIds) {
   check(expectedPayloadIds.has(id), `载荷文章 ${id} 不在 catalog 的 canonical/兼容映射里（会变成不可达内容）`);
 }
 
+// ---------------------------------------------------------------- 2b. 分类轴唯一（§36）
+
+/**
+ * 这是 **correctness gate**，不是视觉检查。
+ *
+ * 对每个 `binding.view === 'chart'` 的 ready 研究点：
+ *   应用 `binding.filter` + **默认 selectors**（每列取"静态筛选后、源顺序第一个"，§34）之后，
+ *   每个分类轴取值必须唯一。
+ *
+ * 只要还有重复，就说明这一点"一个类别对应多行"（例如 A1.4 月份 × 成交量在 10 品种下
+ * 一个月对应 10 行），必须在 catalog 里补上能消除歧义的 `selectors`；否则图是读不通的。
+ * 故意删掉一个必要 selector，这一步就会失败，构建随之失败（§36）。
+ */
+function uniqueValuesInSourceOrder(rows, column) {
+  const seen = new Set();
+  const values = [];
+  for (const row of rows) {
+    const value = row[column] ?? '';
+    if (value === '' || seen.has(value)) continue;
+    seen.add(value);
+    values.push(value);
+  }
+  return values;
+}
+
+let chartsChecked = 0;
+for (const topic of tree.topics ?? []) {
+  for (const point of topic.points ?? []) {
+    const binding = point.binding;
+    if (point.status !== 'ready' || !binding || binding.view !== 'chart' || !binding.category) continue;
+    const primary = loadTable(binding.table);
+    if (!primary) continue;
+    chartsChecked += 1;
+
+    const selectors = binding.selectors ?? [];
+    for (const column of selectors) {
+      check(primary.headers.includes(column), `${point.id}: selector 列不存在 ${binding.table}.${column}`);
+    }
+
+    const staticEntries = Object.entries(binding.filter ?? {});
+    const staticRows = primary.rows.filter((row) => staticEntries.every(([column, allowed]) => allowed.includes(row[column] ?? '')));
+
+    const selected = {};
+    for (const column of selectors) {
+      const first = uniqueValuesInSourceOrder(staticRows, column)[0];
+      check(first !== undefined, `${point.id}: selector ${column} 在静态筛选后没有任何取值`);
+      selected[column] = first;
+    }
+
+    const display = { ...(binding.filter ?? {}) };
+    for (const column of selectors) if (selected[column] !== undefined) display[column] = [selected[column]];
+    const displayEntries = Object.entries(display);
+    const rows = primary.rows.filter((row) => displayEntries.every(([column, allowed]) => allowed.includes(row[column] ?? '')));
+
+    const byCategory = new Map();
+    for (const row of rows) {
+      const key = row[binding.category] ?? '';
+      byCategory.set(key, (byCategory.get(key) ?? 0) + 1);
+    }
+    const duplicated = [...byCategory.entries()].filter(([, count]) => count > 1);
+    check(
+      duplicated.length === 0,
+      `${point.id}: 应用 filter + 默认 selectors 后分类轴 ${binding.category} 仍有重复（${duplicated.length} 个取值，例如「${duplicated[0]?.[0]}」×${duplicated[0]?.[1]}）—— 必须在 binding.selectors 里补上消除歧义的维度`,
+    );
+  }
+}
+
 // ---------------------------------------------------------------- 3. 缺口如实记录
 
 const referencedMissing = (report.assets?.tablesReferencedButMissing ?? []).concat(report.assets?.figuresReferencedButMissing ?? []);
@@ -227,3 +294,4 @@ console.log('[verify-research-integrity] 全部通过');
 console.log(`  hash 校验 ${verifiedFiles} 个文件，全部与源一致（不一致 ${hashMismatches}）`);
 console.log(`  研究契约 ${tree.topics.length} 个方向 / ${totalPoints} 个研究点：ready ${statusCounts.ready} · pending ${statusCounts.pending} · unsupported ${statusCounts.unsupported}`);
 console.log(`  ready 的引用原句全部能在研究正文里逐字找到；绑定的表、列、取值全部存在`);
+console.log(`  ${chartsChecked} 个图绑定在 filter + 默认 selectors 下分类轴取值唯一（§36）`);

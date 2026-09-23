@@ -1,5 +1,13 @@
+import { useMemo, useState } from 'react';
 import type { InteractiveModuleKind, ResearchCitation, ResearchDataBinding, ResearchPoint } from '../../../domain/research/catalog';
 import { quoteLabel } from '../../../domain/research/catalog/labels';
+import { columnLabel, valueLabel } from '../../../domain/research/v2/metrics';
+import {
+  buildDisplayFilter,
+  defaultSelectorValues,
+  filterRows,
+  uniqueValuesInSourceOrder,
+} from '../../../domain/research/v2/selectors';
 import { useTable } from '../useV2';
 import { DataTable } from '../DataTable';
 import { ResearchQuote } from '../blocks';
@@ -7,7 +15,7 @@ import { EstimateChart } from './EstimateChart';
 import './interactive-module.css';
 
 /**
- * 交互模块注册表（本轮 §16）。
+ * 交互模块注册表（本轮 §16/§31/§33）。
  *
  * 模块种类刻意做少：**一个诚实的数据模块**覆盖全部已绑定的研究点，
  * 因为研究侧导出的就是"表 + 列"，而不是 76 套定制图表。
@@ -42,14 +50,52 @@ const COMPANION_LABELS: Record<string, string> = {
   'A06_forecast_gain.csv': '天气相对基线的增益',
 };
 
-/** 按研究表自己的列与取值筛行；不做任何再计算（§17）。 */
-export function filterRows(
-  rows: Record<string, string>[],
-  filter: Record<string, string[]>,
-): Record<string, string>[] {
-  const entries = Object.entries(filter ?? {});
-  if (entries.length === 0) return rows;
-  return rows.filter((row) => entries.every(([column, allowed]) => allowed.includes(row[column] ?? '')));
+/** 选项少 → 文字选项；选项多 → 原生 select（§45：不引入厚重组件库）。 */
+const INLINE_OPTION_LIMIT = 4;
+
+function Selector({ column, options, value, onChange }: {
+  column: string;
+  options: string[];
+  value: string | undefined;
+  onChange: (value: string) => void;
+}) {
+  const label = columnLabel(column) ?? column;
+
+  if (options.length > INLINE_OPTION_LIMIT) {
+    return (
+      <label className="module-selector">
+        <span className="module-selector__label">{label}</span>
+        <select
+          className="module-selector__select"
+          value={value ?? ''}
+          onChange={(event) => onChange(event.target.value)}
+        >
+          {options.map((option) => (
+            <option key={option} value={option}>{valueLabel(column, option)}</option>
+          ))}
+        </select>
+      </label>
+    );
+  }
+
+  return (
+    <div className="module-selector" role="group" aria-label={label}>
+      <span className="module-selector__label">{label}</span>
+      <div className="module-selector__options">
+        {options.map((option) => (
+          <button
+            key={option}
+            type="button"
+            className="module-selector__option"
+            aria-pressed={option === value}
+            onClick={() => onChange(option)}
+          >
+            {valueLabel(column, option)}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function CompanionTable({ cityId, file, filter, title }: {
@@ -73,12 +119,12 @@ function CompanionTable({ cityId, file, filter, title }: {
 /**
  * 研究点的数据模块。
  *
- * 允许：筛选、排序、显示、hover 读数（§17）。
+ * 允许：按维度选择、排序、显示、hover 读数（§17/§33）。
  * 禁止：在浏览器里重跑模型 / 重算 p 值 / 生成结论 —— 这里只呈现研究表里的数字。
  *
- * 本轮 §31：**删除「图 / 表」切换**。用户不该为同一份研究选择看图表还是看表；
- * 表现形式由前端按数据是否适合做图来决定（`binding.view` 仍作内部默认口径，不进 UI）。
- * 适合做图时给出图，并在其后附一张"研究表" details 作为辅助读数（§31）。
+ * §31：**没有「图 / 表」切换**。适合做图就画图（其后附一张研究表 details 作辅助读数），
+ * 不适合就如实给表；`binding.view` 只作内部默认口径，不进 UI。
+ * §33：`binding.selectors` 里的维度会以轻量选择器呈现，用来消除分类轴歧义。
  */
 export function ResearchDataModule({ cityId, point, binding, citations }: {
   cityId: string;
@@ -87,11 +133,27 @@ export function ResearchDataModule({ cityId, point, binding, citations }: {
   citations: ResearchCitation[];
 }) {
   const table = useTable(cityId, binding.table);
+  const selectors = useMemo(() => binding.selectors ?? [], [binding.selectors]);
+  const [picked, setPicked] = useState<Record<string, string>>({});
+
+  /** 静态 filter 后的行：selector 的默认取值以此为准（§34）。 */
+  const staticRows = useMemo(
+    () => (table.status === 'ready' ? filterRows(table.data.rows, binding.filter) : []),
+    [binding.filter, table],
+  );
+  const defaults = useMemo(() => defaultSelectorValues(staticRows, selectors), [selectors, staticRows]);
+
+  /** 当前选择：用户点过的优先，否则回落到确定性默认值。 */
+  const selected = useMemo(() => {
+    const merged: Record<string, string> = {};
+    for (const column of selectors) merged[column] = picked[column] ?? defaults[column];
+    return merged;
+  }, [defaults, picked, selectors]);
 
   if (table.status === 'loading') return <div className="module__skeleton" aria-hidden />;
   if (table.status === 'error') return <p className="module__gap">研究内容待接入</p>;
 
-  const rows = filterRows(table.data.rows, binding.filter);
+  const rows = filterRows(table.data.rows, buildDisplayFilter(binding, selected));
   if (rows.length === 0) return <p className="module__gap">研究内容待接入</p>;
 
   const hasCi = table.data.columns.includes('ci_low') && table.data.columns.includes('ci_high');
@@ -109,6 +171,20 @@ export function ResearchDataModule({ cityId, point, binding, citations }: {
       <div className="module__head">
         <h4 className="module__title">{MODULE_LABELS[point.module ?? 'trend']}</h4>
       </div>
+
+      {selectors.length > 0 && (
+        <div className="module__selectors">
+          {selectors.map((column) => (
+            <Selector
+              key={column}
+              column={column}
+              options={uniqueValuesInSourceOrder(staticRows, column)}
+              value={selected[column]}
+              onChange={(value) => setPicked((current) => ({ ...current, [column]: value }))}
+            />
+          ))}
+        </div>
+      )}
 
       {canChart ? (
         <>
