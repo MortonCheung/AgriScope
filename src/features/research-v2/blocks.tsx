@@ -26,6 +26,26 @@ export function TableAsset({ cityId, file, caption }: { cityId: string; file: st
   return <DataTable table={table.data} caption={caption} filterColumn="crop" note={tableNote(file)} />;
 }
 
+/**
+ * 研究侧原句（引文）。
+ *
+ * 引文进的是界面，所以必须和正文走同一套行内规则：
+ * 研究常写成「显著（表 `A02_daily_response.csv`）：」，原样渲染就会把
+ * 数据文件名和 `**` 一起露给读者（§38 红线）。这里统一过 `renderInline`。
+ */
+export function ResearchQuote({ quote, cite, className = 'research__quote' }: {
+  quote: string;
+  cite: string;
+  className?: string;
+}) {
+  return (
+    <blockquote className={className}>
+      {renderInline(quote, 'q')}
+      <cite>{cite}</cite>
+    </blockquote>
+  );
+}
+
 export function MarkdownBlocks({ source, refs }: { source: string; refs?: Map<string, string> }) {
   const blocks = useMemo(() => parseMarkdownBlocks(source), [source]);
   return (

@@ -201,4 +201,37 @@ describe('真实研究正文渲染后不泄漏工程字段', () => {
     }
     expect(leaks).toEqual([]);
   });
+
+  /**
+   * 研究点的引文同样直接进界面（交互模块的「研究侧原句」），
+   * 也必须走同一套行内规则；这一段专门守住引文这条路径。
+   */
+  const catalogs = import.meta.glob('../../domain/research/catalog/*.json', {
+    eager: true,
+    query: '?raw',
+    import: 'default',
+  }) as Record<string, string>;
+
+  it(`研究点引文（${Object.keys(catalogs).length} 个目录）逐条检查`, () => {
+    const leaks: string[] = [];
+    let checked = 0;
+    for (const path of Object.keys(catalogs)) {
+      const catalog = JSON.parse(catalogs[path]);
+      for (const topic of catalog.topics ?? []) {
+        for (const point of topic.points ?? []) {
+          for (const citation of point.citations ?? []) {
+            checked += 1;
+            const html = renderToString(<p>{renderInline(citation.quote, 'c')}</p>);
+            const shown = prose(html);
+            for (const pattern of FORBIDDEN) {
+              const hit = pattern.exec(shown);
+              if (hit) leaks.push(`${point.id} §${citation.section}：${hit[0]}`);
+            }
+          }
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(0);
+    expect(leaks).toEqual([]);
+  });
 });

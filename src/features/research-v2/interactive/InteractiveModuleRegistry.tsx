@@ -3,6 +3,7 @@ import type { InteractiveModuleKind, ResearchCitation, ResearchDataBinding, Rese
 import { quoteLabel } from '../../../domain/research/catalog/labels';
 import { useTable } from '../useV2';
 import { DataTable } from '../DataTable';
+import { ResearchQuote } from '../blocks';
 import { EstimateChart } from './EstimateChart';
 import './interactive-module.css';
 
@@ -128,10 +129,12 @@ export function ResearchDataModule({ cityId, point, binding, citations }: {
       {citations.length > 0 && (
         <div className="module__citations">
           {citations.map((citation, index) => (
-            <blockquote className="module__quote" key={index}>
-              {citation.quote}
-              <cite>{quoteLabel(point.articleId, citation.section)}</cite>
-            </blockquote>
+            <ResearchQuote
+              key={index}
+              quote={citation.quote}
+              cite={quoteLabel(point.articleId, citation.section)}
+              className="module__quote"
+            />
           ))}
         </div>
       )}

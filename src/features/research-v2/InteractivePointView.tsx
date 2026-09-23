@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import type { ResearchPoint, ResearchTopic } from '../../domain/research/catalog';
-import { pointStatusLabel } from '../../domain/research/catalog/labels';
+import { pointStatusLabel, quoteLabel } from '../../domain/research/catalog/labels';
 import { ROUTES } from '../../app/routes';
+import { ResearchQuote } from './blocks';
 import { ResearchDataModule } from './interactive/InteractiveModuleRegistry';
 
 /**
@@ -40,10 +41,11 @@ export function InteractivePointView({ cityId, point, topic }: {
           <h2 className="research__block-title">研究侧判定</h2>
           {point.reason && <p className="research__paragraph">{point.reason}</p>}
           {citations.map((citation, index) => (
-            <blockquote className="research__quote" key={index}>
-              {citation.quote}
-              <cite>{point.articleId} §{citation.section}</cite>
-            </blockquote>
+            <ResearchQuote
+              key={index}
+              quote={citation.quote}
+              cite={quoteLabel(point.articleId, citation.section)}
+            />
           ))}
         </section>
       )}
