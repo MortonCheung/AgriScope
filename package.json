@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && node scripts/verify-ui-strings.mjs",
+    "prebuild": "npm run verify:v2 && npm run verify:integrity",
+    "build": "tsc -b && vite build && npm run verify:ui",
     "preview": "vite preview",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run && node scripts/verify-v2-payload.mjs && node scripts/verify-research-integrity.mjs",
