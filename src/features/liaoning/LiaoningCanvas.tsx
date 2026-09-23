@@ -10,7 +10,7 @@ import { useAnimationFrames } from './useAnimationFrames';
 import { QUALITY_CONFIG, resolveAutoQualityTier, resolveDpr, readRuntimeQualitySignals } from '../../performance/qualityPolicy';
 import { SCENE_TOKENS } from '../../design/sceneTokens';
 import { MOTION_DURATION } from '../../design/motion';
-import { cityView, easeInOutCubic, orbitView, provinceView, sketchView } from './cameraViews';
+import { PROVINCE_ROOT_ROTATION, cityView, easeInOutCubic, orbitView, provinceView, sketchView } from './cameraViews';
 import { SketchPaper } from '../opening/SketchPaper';
 import { useOpeningStore, type OpeningPhase } from '../opening/openingPhase';
 
@@ -95,7 +95,7 @@ function ParallaxGroup({ enabled, children }: { enabled: boolean; children: Reac
  *
  * 一条 0→1 的时间轴，**每帧**同时做两件事：
  *   1. 写 assemblyRef —— 14 块行政区据此下落；
- *   2. 按 orbitView 写相机 —— 螺旋环绕一圈后精确落到省域位姿。
+ *   2. 按 orbitView 写相机 —— 方位变化 118° 后精确落到省域位姿（不是绕一整圈，§24）。
  * 因为 progress 本身已经 easing，每帧调用 setLookAt(..., false)，
  * 不能再套 smooth=true，否则每帧再平滑一次会产生滞后（§61）。
  */
@@ -264,7 +264,13 @@ function SceneContents({ mode, focusCityId, hoveredCityId, onHoverCity, onSelect
       />
       <PaperGround radius={model.radius} />
       {/* 草稿纸：暖灰方格 + 手稿边界；随组装进度渐退（§55/§56/§63） */}
-      <SketchPaper radius={model.radius} cities={model.cities} phase={phase} progress={paperProgress} />
+      <SketchPaper
+        radius={model.radius}
+        provinceRings={model.provinceRings}
+        outlineRings={model.provinceOutlineRings}
+        phase={phase}
+        progress={paperProgress}
+      />
       {/*
         接触阴影：frames={1} 只在挂载首帧烘焙一次，因此必须等区块落定后再挂载，
         否则草稿阶段还没有实体，会烘出一块"没有对象的阴影"。
@@ -289,24 +295,31 @@ function SceneContents({ mode, focusCityId, hoveredCityId, onHoverCity, onSelect
         radius={model.radius}
         onProgress={setPaperProgress}
       />
-      {/* 视差只服务正式省域（§64）：组装期间关闭 */}
-      <ParallaxGroup enabled={!reducedMotion && mode === 'province'}>
-        {dropPlan.map(({ city, delay, dropHeight }) => (
-          <CitySolidMesh
-            key={city.id}
-            city={city}
-            emphasis={emphasisFor(city.id, city.hasResearch)}
-            hovered={hoveredCityId === city.id}
-            onHover={onHoverCity}
-            onSelect={onSelectCity}
-            reducedMotion={reducedMotion}
-            phase={phase}
-            assemblyRef={assemblyRef}
-            dropDelay={delay}
-            dropHeight={dropHeight}
-          />
-        ))}
-      </ParallaxGroup>
+      {/*
+        省域根节点（本轮 §24）：**全程不绕 Y 轴旋转** —— 转的是相机，不是模型。
+        唯一的旋转是落定之后由指针驱动的 ±0.7° 轻微倾斜（ParallaxGroup，且组装期间关闭），
+        那属于"纸放在桌上的手感"，不是模型自转。
+      */}
+      <group rotation-y={PROVINCE_ROOT_ROTATION} name="province-root">
+        {/* 视差只服务正式省域（§64）：组装期间关闭 */}
+        <ParallaxGroup enabled={!reducedMotion && mode === 'province'}>
+          {dropPlan.map(({ city, delay, dropHeight }) => (
+            <CitySolidMesh
+              key={city.id}
+              city={city}
+              emphasis={emphasisFor(city.id, city.hasResearch)}
+              hovered={hoveredCityId === city.id}
+              onHover={onHoverCity}
+              onSelect={onSelectCity}
+              reducedMotion={reducedMotion}
+              phase={phase}
+              assemblyRef={assemblyRef}
+              dropDelay={delay}
+              dropHeight={dropHeight}
+            />
+          ))}
+        </ParallaxGroup>
+      </group>
       {/* 草稿阶段不出现任何城市 Label / 按钮 / 研究状态（§25） */}
       {mode !== 'opening' && model.cities.map((city) => {
         const active = hoveredCityId === city.id || focusCityId === city.id;
