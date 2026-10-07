@@ -5,13 +5,20 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev:api": "python3 -m uvicorn backend.app.main:app --app-dir .. --host 127.0.0.1 --port 8787 --workers 1",
+    "prebuild": "npm run verify:v2 && npm run verify:integrity && npm run verify:decision",
+    "build": "tsc -b && vite build && node scripts/verify-production-boundary.mjs && npm run verify:ui",
     "preview": "vite preview",
     "typecheck": "tsc -b --pretty false",
-    "test": "vitest run && node scripts/verify-content.mjs",
+    "test": "vitest run && node scripts/verify-v2-payload.mjs && node scripts/verify-research-integrity.mjs",
     "test:unit": "vitest run",
+    "test:api": "python3 ../backend/scripts/acceptance.py",
     "test:watch": "vitest",
-    "sync": "node scripts/sync-shenyang-content.mjs"
+    "sync": "node scripts/sync-shenyang-v2.mjs",
+    "verify:v2": "node scripts/verify-v2-payload.mjs",
+    "verify:integrity": "node scripts/verify-research-integrity.mjs",
+    "verify:ui": "node scripts/verify-ui-strings.mjs",
+    "verify:decision": "node scripts/verify-decision-fixtures.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.6",

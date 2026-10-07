@@ -35,6 +35,13 @@ export interface LiaoningSolidModel {
   cities: CitySolid[];
   radius: number;
   centroid: THREE.Vector2;
+  /**
+   * 全省（14 个地级市）的边界环，供草稿纸画"辽宁手稿"（§23）。
+   * 研究覆盖的是 6 城，但草稿纸上画的是整个辽宁——所以这里不按注册表过滤。
+   */
+  provinceRings: THREE.Vector2[][];
+  /** 由 `provinceRings` 推出的外轮廓；覆盖率过高（配对失败）时为空数组。 */
+  provinceOutlineRings: THREE.Vector2[][];
 }
 
 function toPolygons(geometry: { type: string; coordinates: unknown }): number[][][][] {
@@ -74,19 +81,24 @@ export function buildLiaoningSolidModel(collection: GeoCollection, scale = 11, s
   );
 
   const cities: CitySolid[] = [];
+  /** 全省边界环：同一份数据、同一个投影，只是不按"有研究"过滤。 */
+  const provinceRings: THREE.Vector2[][] = [];
   for (const feature of collection.features) {
     const adcode = feature.properties?.adcode;
     if (typeof adcode !== 'number' || !feature.geometry) continue;
-    const registered = getCityByAdcode(adcode);
-    if (!registered) continue;
 
-    const rings: THREE.Vector2[][] = [];
+    const featureRings: THREE.Vector2[][] = [];
     for (const polygon of toPolygons(feature.geometry)) {
       const outer = polygon[0];
       if (!Array.isArray(outer) || outer.length < 3) continue;
       const projected = simplify(outer.map(([lng, lat]) => project(lng, lat)), simplifyTolerance);
-      if (projected.length >= 3) rings.push(projected);
+      if (projected.length >= 3) featureRings.push(projected);
     }
+    provinceRings.push(...featureRings);
+
+    const registered = getCityByAdcode(adcode);
+    if (!registered) continue;
+    const rings = featureRings;
     if (rings.length === 0) continue;
 
     const box = new THREE.Box2();
@@ -109,12 +121,17 @@ export function buildLiaoningSolidModel(collection: GeoCollection, scale = 11, s
   }
 
   const overall = new THREE.Box2();
-  for (const city of cities) for (const ring of city.rings) for (const point of ring) overall.expandByPoint(point);
+  for (const ring of provinceRings) for (const point of ring) overall.expandByPoint(point);
   const overallSize = overall.getSize(new THREE.Vector2());
+
+  const outline = provinceOutline(provinceRings);
   return {
     cities,
     radius: Math.max(overallSize.x, overallSize.y) / 2,
     centroid: overall.getCenter(new THREE.Vector2()),
+    provinceRings,
+    // 覆盖率过高说明相邻边界没能配对，宁可不画外轮廓，也不画一条错的线。
+    provinceOutlineRings: outline.coverage > 0 && outline.coverage <= OUTLINE_COVERAGE_LIMIT ? outline.rings : [],
   };
 }
 
@@ -122,3 +139,78 @@ export function buildLiaoningSolidModel(collection: GeoCollection, scale = 11, s
 export function ringsToShapes(rings: THREE.Vector2[][]): THREE.Shape[] {
   return rings.map((ring) => new THREE.Shape(ring));
 }
+
+/**
+ * 从各市多边形推出**辽宁外轮廓**（本轮 §23）。
+ *
+ * 14 个地级市的边界拼成整个省，所以"只被一个多边形用到的边"就是省界外轮廓，
+ * 被两个相邻市共用的边是市界。这是从数据本身推出来的，没有手工描线。
+ *
+ * 相邻多边形的共享边来自同一份简化结果，但顶点不一定逐点相同，因此先把端点
+ * **量化**再配对。配对失败的后果是外轮廓里混进内部边（看起来像加粗的市界），
+ * 所以这里同时返回 `coverage`（外轮廓总长 / 全部环总长）：
+ * 覆盖率过高说明配对失败，调用方应当**不要**画这一层，而不是画一条错的线。
+ */
+export interface OutlineResult {
+  rings: THREE.Vector2[][];
+  coverage: number;
+}
+
+export function provinceOutline(rings: THREE.Vector2[][], quantize = 0.05): OutlineResult {
+  const key = (point: THREE.Vector2) => `${Math.round(point.x / quantize)}|${Math.round(point.y / quantize)}`;
+  const edgeUse = new Map<string, { a: THREE.Vector2; b: THREE.Vector2; count: number }>();
+  let totalLength = 0;
+
+  for (const ring of rings) {
+    for (let i = 0; i < ring.length; i += 1) {
+      const a = ring[i];
+      const b = ring[(i + 1) % ring.length];
+      const length = a.distanceTo(b);
+      if (length === 0) continue;
+      totalLength += length;
+      const ka = key(a);
+      const kb = key(b);
+      const edgeKey = ka < kb ? `${ka}>${kb}` : `${kb}>${ka}`;
+      const existing = edgeUse.get(edgeKey);
+      if (existing) existing.count += 1;
+      else edgeUse.set(edgeKey, { a, b, count: 1 });
+    }
+  }
+
+  // 只保留"用过一次"的边，再按端点串成闭合环。
+  const neighbours = new Map<string, { to: string; point: THREE.Vector2 }[]>();
+  const outlineLength: number[] = [];
+  for (const edge of edgeUse.values()) {
+    if (edge.count !== 1) continue;
+    const ka = key(edge.a);
+    const kb = key(edge.b);
+    if (!neighbours.has(ka)) neighbours.set(ka, []);
+    if (!neighbours.has(kb)) neighbours.set(kb, []);
+    neighbours.get(ka as string)!.push({ to: kb, point: edge.b });
+    neighbours.get(kb as string)!.push({ to: ka, point: edge.a });
+    outlineLength.push(edge.a.distanceTo(edge.b));
+  }
+
+  const visited = new Set<string>();
+  const result: THREE.Vector2[][] = [];
+  for (const start of neighbours.keys()) {
+    if (visited.has(start)) continue;
+    const ring: THREE.Vector2[] = [];
+    let current = start;
+    while (current && !visited.has(current)) {
+      visited.add(current);
+      const links = (neighbours.get(current) ?? []).filter((link) => !visited.has(link.to));
+      if (links.length === 0) break;
+      ring.push(links[0].point);
+      current = links[0].to;
+    }
+    if (ring.length >= 3) result.push(ring);
+  }
+
+  const outlineTotal = outlineLength.reduce((sum, value) => sum + value, 0);
+  return { rings: result, coverage: totalLength > 0 ? outlineTotal / totalLength : 0 };
+}
+
+/** 外轮廓覆盖率低于这个值才认为配对成功（内部边被正确消掉）。 */
+export const OUTLINE_COVERAGE_LIMIT = 0.45;
+

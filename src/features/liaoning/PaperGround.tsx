@@ -12,7 +12,9 @@ import { SCENE_TOKENS } from '../../design/sceneTokens';
  */
 export function PaperGround({ radius }: { radius: number }) {
   // 必须远超任何相机角度下可见的地面范围（省域视角约需 ±400），否则会露出方形地板边缘（§64）。
-  const size = Math.max(2000, radius * 10);
+  // 取 radius × 20（半宽 = max(1000, 10·radius)），同时保证比 Opening 的草稿纸
+  // 平面（半宽 = 8·radius，§12）更大 —— 方格永远不会铺到桌面色差之外。
+  const size = Math.max(2000, radius * 20);
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.03, 0]}>
       <planeGeometry args={[size, size]} />

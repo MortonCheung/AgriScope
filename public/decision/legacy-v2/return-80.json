@@ -1,0 +1,493 @@
+{
+  "id": "return-80",
+  "label": "80 亩 · 收益优先",
+  "request": {
+    "city": "沈阳",
+    "available_area_mu": 80,
+    "budget": 400000,
+    "earliest_plant_date": "2027-05-01",
+    "latest_harvest_date": "2027-10-31",
+    "risk_preference": "aggressive"
+  },
+  "source": {
+    "path": "models/evaluation/cases/recommendation_examples.json",
+    "sha256": "648e85bdb6168bc29ec6f757036fd6c850a2f2660f23b4f996ca088d8d8fc818"
+  },
+  "snapshot_version": "legacy-v2-20261007",
+  "output": {
+    "status": "ok",
+    "recommended_plan": {
+      "crop": "芸豆",
+      "city": "沈阳",
+      "planting_window": "2027-07-10（来源：inferred_window）",
+      "harvest_window": "2027-10-03 ~ 2027-10-12",
+      "area_mu": 80,
+      "price_low": 6.174363636363637,
+      "price_mid": 8.527272727272724,
+      "price_high": 11.022436363636364,
+      "price_method": "seasonal_quantile(same_month_history)",
+      "is_calibrated_interval": false,
+      "profit_pessimistic": 1719304.8,
+      "profit_baseline": 2391564.8000000003,
+      "profit_optimistic": 3104468.8,
+      "HRI": 44.7,
+      "market_risk": 52,
+      "climate_exposure": 11.85,
+      "decision_score": 86.5,
+      "decision_grade": "A",
+      "utility_score": 0.4749845454545455,
+      "confidence": 82.6,
+      "confidence_grade": "A",
+      "cost_per_mu": 560,
+      "expected_yield_per_mu": 3571.43,
+      "cost_level": "regional_proxy",
+      "yield_level": "observed_city_aggregate"
+    },
+    "alternatives": [
+      {
+        "crop": "黄瓜",
+        "city": "沈阳",
+        "planting_window": "2027-05-06（来源：inferred_window）",
+        "harvest_window": "2027-08-09 ~ 2027-08-18",
+        "area_mu": 80,
+        "price_low": 2.7864761904761908,
+        "price_mid": 4.902857142857143,
+        "price_high": 5.466685714285715,
+        "price_method": "seasonal_quantile(same_month_history)",
+        "is_calibrated_interval": false,
+        "profit_pessimistic": 1267910.4,
+        "profit_baseline": 2273445.6,
+        "profit_optimistic": 2541332,
+        "HRI": 49.6,
+        "market_risk": 63.8,
+        "climate_exposure": 15.14,
+        "decision_score": 84,
+        "decision_grade": "A",
+        "utility_score": 0.41480595454545455,
+        "confidence": 84.9,
+        "confidence_grade": "A",
+        "cost_per_mu": 700,
+        "expected_yield_per_mu": 5939,
+        "cost_level": "regional_proxy",
+        "yield_level": "observed_city_county_crop"
+      },
+      {
+        "crop": "西红柿",
+        "city": "沈阳",
+        "planting_window": "2027-06-15（来源：inferred_window）",
+        "harvest_window": "2027-10-03 ~ 2027-10-12",
+        "area_mu": 80,
+        "price_low": 3.6527792207792205,
+        "price_mid": 5.8031578947368425,
+        "price_high": 6.859792207792209,
+        "price_method": "seasonal_quantile(same_month_history)",
+        "is_calibrated_interval": false,
+        "profit_pessimistic": 1646503.2000000002,
+        "profit_baseline": 2719404,
+        "profit_optimistic": 3246597.6,
+        "HRI": 57.3,
+        "market_risk": 54.1,
+        "climate_exposure": 12.36,
+        "decision_score": 84.9,
+        "decision_grade": "A",
+        "utility_score": 0.3720799545454546,
+        "confidence": 84.1,
+        "confidence_grade": "A",
+        "cost_per_mu": 2200,
+        "expected_yield_per_mu": 6236.7,
+        "cost_level": "regional_proxy",
+        "yield_level": "observed_city_county_crop"
+      },
+      {
+        "crop": "土豆",
+        "city": "沈阳",
+        "planting_window": "2027-06-10（来源：inferred_window）",
+        "harvest_window": "2027-10-03 ~ 2027-10-12",
+        "area_mu": 80,
+        "price_low": 1.7773333333333334,
+        "price_mid": 2.046363636363636,
+        "price_high": 2.640311688311688,
+        "price_method": "seasonal_quantile(same_month_history)",
+        "is_calibrated_interval": false,
+        "profit_pessimistic": 383809.6,
+        "profit_baseline": 460675.19999999995,
+        "profit_optimistic": 630375.2,
+        "HRI": 61.1,
+        "market_risk": 66.2,
+        "climate_exposure": 12.64,
+        "decision_score": 82.7,
+        "decision_grade": "A",
+        "utility_score": 0.2804066363636364,
+        "confidence": 76.5,
+        "confidence_grade": "B",
+        "cost_per_mu": 1550,
+        "expected_yield_per_mu": 3571.43,
+        "cost_level": "observed_city",
+        "yield_level": "observed_city_aggregate"
+      },
+      {
+        "crop": "韭菜",
+        "city": "沈阳",
+        "planting_window": "2027-05-31（来源：inferred_window）",
+        "harvest_window": "2027-10-28 ~ 2027-10-31",
+        "area_mu": 80,
+        "price_low": 4.8759480519480505,
+        "price_mid": 5.952,
+        "price_high": 9.286967418546368,
+        "price_method": "seasonal_quantile(same_month_history)",
+        "is_calibrated_interval": false,
+        "profit_pessimistic": 1023713.6,
+        "profit_baseline": 1331156.7999999998,
+        "profit_optimistic": 2284004.8000000003,
+        "HRI": 38.4,
+        "market_risk": 61.4,
+        "climate_exposure": 13.46,
+        "decision_score": 85.6,
+        "decision_grade": "A",
+        "utility_score": 0.24342052272727274,
+        "confidence": 82.7,
+        "confidence_grade": "A",
+        "cost_per_mu": 4617.69,
+        "expected_yield_per_mu": 3571.43,
+        "cost_level": "sector_proxy",
+        "yield_level": "observed_city_aggregate"
+      }
+    ],
+    "labels": [
+      {
+        "label": "Best Return",
+        "crop": "西红柿",
+        "harvest_date": "2027-10-31",
+        "area_mu": 80,
+        "profit_baseline": 2719404,
+        "utility_score": 0.3719759545454546
+      },
+      {
+        "label": "Best Balanced",
+        "crop": "芸豆",
+        "harvest_date": "2027-10-12",
+        "area_mu": 80,
+        "profit_baseline": 2391564.8000000003,
+        "utility_score": 0.4749845454545455
+      },
+      {
+        "label": "Lowest Risk",
+        "crop": "茄子",
+        "harvest_date": "2027-10-17",
+        "area_mu": 80,
+        "profit_baseline": 738896.7999999999,
+        "utility_score": -0.0003014772727272519
+      },
+      {
+        "label": "Most Robust",
+        "crop": "芸豆",
+        "harvest_date": "2027-10-12",
+        "area_mu": 80,
+        "profit_baseline": null,
+        "utility_score": null
+      },
+      {
+        "label": "Alternative",
+        "crop": "芸豆",
+        "harvest_date": "2027-08-13",
+        "area_mu": 80,
+        "profit_baseline": 2086357.6,
+        "utility_score": 0.4635826363636364
+      }
+    ],
+    "pareto_frontier": [
+      {
+        "crop": "芸豆",
+        "harvest_date": "2027-10-12",
+        "area_mu": 80,
+        "style": "best_return",
+        "profit_baseline": 2391564.8,
+        "profit_pessimistic": 1719304.8,
+        "HRI": 44.7,
+        "market_risk": 52,
+        "climate_risk": 11.85,
+        "confidence": 82.6
+      },
+      {
+        "crop": "芸豆",
+        "harvest_date": "2027-08-13",
+        "area_mu": 80,
+        "style": "best_downside",
+        "profit_baseline": 2086357.6,
+        "profit_pessimistic": 1841829.6,
+        "HRI": 44.7,
+        "market_risk": 52,
+        "climate_risk": 15.02,
+        "confidence": 83.5
+      },
+      {
+        "crop": "茄子",
+        "harvest_date": "2027-10-17",
+        "area_mu": 80,
+        "style": "balanced",
+        "profit_baseline": 738896.8,
+        "profit_pessimistic": 258711.2,
+        "HRI": 49,
+        "market_risk": 49.4,
+        "climate_risk": 12.45,
+        "confidence": 83.5
+      }
+    ],
+    "within_crop_windows": [
+      {
+        "crop": "芸豆",
+        "harvest_window": "2027-10-03 ~ 2027-10-12",
+        "utility_score": 0.475,
+        "profit_baseline": 2391564.8
+      },
+      {
+        "crop": "芸豆",
+        "harvest_window": "2027-08-04 ~ 2027-08-13",
+        "utility_score": 0.4636,
+        "profit_baseline": 2086357.6
+      },
+      {
+        "crop": "芸豆",
+        "harvest_window": "2027-09-03 ~ 2027-09-12",
+        "utility_score": 0.4566,
+        "profit_baseline": 2042548
+      }
+    ],
+    "confidence": {
+      "score": 41.4,
+      "grade": "D",
+      "components": {
+        "underlying_model_confidence": 83.2,
+        "score_separation": 22.8,
+        "ranking_stability": 96.8,
+        "data_coverage": 11.4,
+        "scenario_robustness": 79.1
+      },
+      "weights": {
+        "underlying_model_confidence": 0.3,
+        "score_separation": 0.2,
+        "ranking_stability": 0.2,
+        "data_coverage": 0.15,
+        "scenario_robustness": 0.15
+      },
+      "penalties": {
+        "reference_proxy": 11.08,
+        "calendar(level)": 10
+      },
+      "total_penalty": 21.08,
+      "top1_minus_top2_utility": 0.011401909090909101,
+      "note": "Top1 与 Top2 效用几乎相同（Δ=0.0114）→ 不给出「强烈推荐」，请视为并列方案"
+    },
+    "risk_summary": {
+      "recommended": {
+        "HRI": 44.7,
+        "market_risk": 52,
+        "climate_risk": 11.85
+      },
+      "loss_tolerance": {
+        "max_acceptable_loss": 200000,
+        "source": "default_aggressive"
+      },
+      "herding_check": {
+        "recommended_crop": "芸豆",
+        "HRI": 44.7,
+        "current_highest_price_crop": "芸豆",
+        "recommended_is_highest_price": true,
+        "recommended_price_rank": 1,
+        "n_crops": 10,
+        "HRI_p90_threshold": 73.2,
+        "recommended_in_HRI_top10pct": false,
+        "note": "用于检验系统是否在盲目追高（HRI/市场风险是否真正抑制了高价诱惑）"
+      },
+      "profit_plausibility": {
+        "profit_per_mu": 29894.56,
+        "cost_per_mu": 560,
+        "sector_cost_reference": 4617.69,
+        "plausible": false,
+        "flags": [
+          "亩均净收益 29,895 元/亩 异常偏高（>15000）",
+          "参考成本 560 元/亩 低于蔬菜混合口径成本（4,618）60% 以上 → 成本科目可能不完整（不含人工/地租/折旧），利润存在高估风险"
+        ],
+        "note": "基于口径比较的合理性提示，不是精度评估"
+      }
+    },
+    "stress_test": {
+      "recommended_plan_stress": {
+        "plan": {
+          "crop": "芸豆",
+          "harvest_date": "2027-10-12",
+          "area_mu": 80
+        },
+        "base": {
+          "profit_baseline": 2391564.61,
+          "profit_pessimistic": 1719304.6,
+          "decision_score": 86.5
+        },
+        "scenarios": [
+          {
+            "shock": "price_-10%",
+            "status": "ok",
+            "profit_baseline": 2147928.15,
+            "profit_delta": -243636.46,
+            "profit_delta_pct": -10.19,
+            "roi_baseline": 47.9448,
+            "roi_delta": -5.4383,
+            "profit_pessimistic": 1542894.14,
+            "decision_score": 86.5,
+            "score_delta": 0,
+            "still_profitable": true
+          },
+          {
+            "shock": "price_-20%",
+            "status": "ok",
+            "profit_baseline": 1904291.69,
+            "profit_delta": -487272.92,
+            "profit_delta_pct": -20.37,
+            "roi_baseline": 42.5065,
+            "roi_delta": -10.8766,
+            "profit_pessimistic": 1366483.68,
+            "decision_score": 86.5,
+            "score_delta": 0,
+            "still_profitable": true
+          },
+          {
+            "shock": "price_+10%",
+            "status": "ok",
+            "profit_baseline": 2635201.07,
+            "profit_delta": 243636.46,
+            "profit_delta_pct": 10.19,
+            "roi_baseline": 58.8215,
+            "roi_delta": 5.4384,
+            "profit_pessimistic": 1895715.06,
+            "decision_score": 86.5,
+            "score_delta": 0,
+            "still_profitable": true
+          },
+          {
+            "shock": "cost_+10%",
+            "status": "ok",
+            "profit_baseline": 2387084.61,
+            "profit_delta": -4480,
+            "profit_delta_pct": -0.19,
+            "roi_baseline": 48.4392,
+            "roi_delta": -4.9439,
+            "profit_pessimistic": 1714824.6,
+            "decision_score": 86.5,
+            "score_delta": 0,
+            "still_profitable": true
+          },
+          {
+            "shock": "cost_+20%",
+            "status": "ok",
+            "profit_baseline": 2382604.61,
+            "profit_delta": -8960,
+            "profit_delta_pct": -0.37,
+            "roi_baseline": 44.3193,
+            "roi_delta": -9.0638,
+            "profit_pessimistic": 1710344.6,
+            "decision_score": 86.5,
+            "score_delta": 0,
+            "still_profitable": true
+          },
+          {
+            "shock": "yield_-10%",
+            "status": "ok",
+            "profit_baseline": 2147928.15,
+            "profit_delta": -243636.46,
+            "profit_delta_pct": -10.19,
+            "roi_baseline": 47.9448,
+            "roi_delta": -5.4383,
+            "profit_pessimistic": 1542894.14,
+            "decision_score": 86.5,
+            "score_delta": 0,
+            "still_profitable": true
+          },
+          {
+            "shock": "yield_-20%",
+            "status": "ok",
+            "profit_baseline": 1904291.69,
+            "profit_delta": -487272.92,
+            "profit_delta_pct": -20.37,
+            "roi_baseline": 42.5065,
+            "roi_delta": -10.8766,
+            "profit_pessimistic": 1366483.68,
+            "decision_score": 86.5,
+            "score_delta": 0,
+            "still_profitable": true
+          },
+          {
+            "shock": "harvest_delay_+7d",
+            "status": "ok",
+            "profit_baseline": 2391564.61,
+            "profit_delta": 0,
+            "profit_delta_pct": 0,
+            "roi_baseline": 53.3831,
+            "roi_delta": 0,
+            "profit_pessimistic": 1719304.6,
+            "decision_score": 86.5,
+            "score_delta": 0,
+            "still_profitable": true
+          },
+          {
+            "shock": "harvest_delay_+14d",
+            "status": "ok",
+            "profit_baseline": 2391564.61,
+            "profit_delta": 0,
+            "profit_delta_pct": 0,
+            "roi_baseline": 53.3831,
+            "roi_delta": 0,
+            "profit_pessimistic": 1719304.6,
+            "decision_score": 86.5,
+            "score_delta": 0,
+            "still_profitable": true
+          },
+          {
+            "shock": "climate_risk_+15",
+            "status": "ok",
+            "profit_baseline": 2391564.61,
+            "profit_delta": 0,
+            "profit_delta_pct": 0,
+            "roi_baseline": 53.3831,
+            "roi_delta": 0,
+            "profit_pessimistic": 1684022.51,
+            "decision_score": 85,
+            "score_delta": -1.5,
+            "still_profitable": true
+          },
+          {
+            "shock": "market_risk_+15",
+            "status": "ok",
+            "profit_baseline": 2391564.61,
+            "profit_delta": 0,
+            "profit_delta_pct": 0,
+            "roi_baseline": 53.3831,
+            "roi_delta": 0,
+            "profit_pessimistic": 1719304.6,
+            "decision_score": 84.3,
+            "score_delta": -2.2,
+            "still_profitable": true
+          }
+        ],
+        "worst_case_profit": 1904291.69,
+        "worst_case_shock": "price_-20%",
+        "worst_case_score": 84.3,
+        "n_loss_scenarios": 0,
+        "note": "参数压力测试（what-if），不代表任何事件发生的概率或因果"
+      }
+    },
+    "plan_risks": [
+      "成本/亩产来自参考值或 proxy（非用户实测），利润为参考口径",
+      "⚠ 跨城/区域参考成本（非目标城市实测），已降低 confidence；⚠ 成本口径不含人工/地租/折旧等（原文仅部分科目）→ 利润可能高估 | ⚠ 城市级蔬菜合计口径 proxy（非该作物亩产），已降低 confidence"
+    ],
+    "limitations": [
+      "价格区间为历史同月分位（scenario range），未校准为概率区间",
+      "参考成本/亩产为 proxy 时利润口径偏粗（部分来源仅含种子+肥料+农药，不含人工/地租/折旧）",
+      "面积不影响价格（无农户级市场冲击模型）",
+      "不做复种；组合仅同季；土地可分割",
+      "不做跨城市联合优化（无同口径跨城价格）",
+      "风险偏好只改变排序权重，不改变价格预测与风险指标数值",
+      "推荐置信度已按 proxy/日历强度/排序稳定性折扣"
+    ],
+    "comparison_reason": "预测收益：黄瓜 低 118,119 元；下行情景：黄瓜 差 451,394 元；跟风风险：黄瓜 49.6 vs 芸豆 44.7；市场风险：黄瓜 63.8 vs 芸豆 52.0；气候暴露：黄瓜 15.1 vs 芸豆 11.8；在 aggressive 偏好下，综合效用 芸豆 0.4750 > 黄瓜 0.4148（差 0.0602）"
+  }
+}

@@ -1,7 +1,8 @@
 import { useLocation } from 'react-router-dom';
 import { useAppHistory } from '../app/appHistory';
 import { usePageNavigate } from '../app/pageNavigation';
-import { ROUTES, structuralParent } from '../app/routes';
+import { ROUTES, parseCityPath, structuralParent } from '../app/routes';
+import { requestCityExit } from '../features/spatial/cityExit';
 import './navigation-controls.css';
 
 /** 细线 chevron：不依赖字体里的 ‹ › ^ 字形，跨 Safari / Chromium / WebKit 一致（V4 §十二/§五十二）。 */
@@ -34,6 +35,8 @@ export function NavigationControls() {
   const history = useAppHistory();
   const navigate = usePageNavigate();
   const up = structuralParent(pathname);
+  /** 在城市空间里，"回退 / 上一级"都会离开城市 —— 必须走空间退出动画（本轮 §26）。 */
+  const inCity = parseCityPath(pathname) !== null;
 
   return (
     <div className="ag-nav-controls" role="group" aria-label="页面导航">
@@ -43,7 +46,10 @@ export function NavigationControls() {
         data-dir="back"
         aria-label="后退"
         disabled={!history?.canGoBack}
-        onClick={() => history?.goBack({ to: up ?? ROUTES.root })}
+        onClick={() => {
+          if (inCity) requestCityExit({ via: 'back' });
+          else history?.goBack({ to: up ?? ROUTES.root });
+        }}
       >
         <Chevron dir="back" />
       </button>
@@ -63,7 +69,11 @@ export function NavigationControls() {
         data-dir="up"
         aria-label="上一级"
         disabled={!up}
-        onClick={() => { if (up) navigate(up); }}
+        onClick={() => {
+          if (!up) return;
+          if (inCity) requestCityExit({ target: up, via: 'push' });
+          else navigate(up);
+        }}
       >
         <Chevron dir="up" />
       </button>

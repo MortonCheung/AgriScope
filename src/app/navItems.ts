@@ -1,15 +1,14 @@
-import { ROUTES, CITY_ROUTE_PREFIX } from './routes';
+import { ROUTES, CITY_ROUTE_PREFIX, REPORTS_ROUTE_PREFIX } from './routes';
 
 /**
- * 顶部导航的 Active 语义（V4 §十四）。
+ * 顶部导航的 Active 语义（V5 §23）。
  *
- * 抽成纯函数而不是写在组件里，因为"哪个页面高亮哪一项"是产品层级的事实，
- * 必须可以用测试锁住，而不是只能靠肉眼看。
+ * 抽成纯函数而不是写在组件里：这是产品层级的事实，必须能被测试锁住。
  *
- *   辽宁      单城市 / 地理研究体系：/liaoning、/cities/*、/shenyang-rainstorm
- *   研究      只代表辽宁六城综合研究：/research、/research/*
- *   情景实验  只代表 Scenario Lab
- *   关于      只代表 /about
+ *   研究  /liaoning、/cities/*（/reports/* 天然不落在这些前缀里）
+ *   报告  /reports、/reports/*
+ *   推演  /scenario-lab
+ *   关于  /about
  */
 export interface NavItem {
   to: string;
@@ -19,19 +18,19 @@ export interface NavItem {
 
 export const NAV_ITEMS: readonly NavItem[] = [
   {
-    to: ROUTES.liaoning,
-    label: '辽宁',
-    match: (path) => path === ROUTES.liaoning || path.startsWith(CITY_ROUTE_PREFIX) || path === ROUTES.rainstorm,
-  },
-  {
-    to: ROUTES.provinceResearch,
+    to: ROUTES.researchHome,
     label: '研究',
-    match: (path) => path === ROUTES.provinceResearch || path.startsWith(`${ROUTES.provinceResearch}/`),
+    match: (path) => path === ROUTES.researchHome || path.startsWith(CITY_ROUTE_PREFIX),
   },
   {
-    to: ROUTES.scenarioLab,
-    label: '情景实验',
-    match: (path) => path === ROUTES.scenarioLab,
+    to: ROUTES.reports,
+    label: '报告',
+    match: (path) => path === ROUTES.reports || path.startsWith(REPORTS_ROUTE_PREFIX),
+  },
+  {
+    to: ROUTES.scenario,
+    label: '推演',
+    match: (path) => path === ROUTES.scenario,
   },
   {
     to: ROUTES.about,

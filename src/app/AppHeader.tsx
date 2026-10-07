@@ -26,9 +26,12 @@ export function AppHeader() {
     >
       <div className="ag-header__inner">
         <div className="ag-header__lead">
-          <NavLink to={ROUTES.root} className="ag-header__brand" aria-label="AgriScope 穹衡">
-            <span className="ag-header__brand-cn">穹衡</span>
-            <span className="ag-header__brand-en">AgriScope</span>
+          {/*
+            品牌（本轮 §28）：仓库与设计参考里都没有用户指定的正式 Logo，
+            因此**不渲染空的占位方块**，只写 AGRISCOPE；有真实 Logo 再插进去。
+          */}
+          <NavLink to={ROUTES.root} className="ag-header__brand" aria-label="AgriScope">
+            <span className="ag-header__brand-en">AGRISCOPE</span>
           </NavLink>
           {/* ‹ › ^（V4 §八/§九/§十）：始终渲染，保证 Header 的 DOM 在路由切换时稳定 */}
           <NavigationControls />

@@ -2,7 +2,7 @@
 
 V4 施工前的设计参考审计。**本地参考库已逐项打开阅读**；外部站点为客户端渲染，本轮只能取到作品索引，故其结论沿用 V2 已落库的审计（`docs/INTERACTION_REFERENCE_AUDIT.md`），并在下表注明读取状态。
 
-本地参考库：`/Users/morton_cheung/Desktop/比赛/大数据分析/frontedpage/design-references`
+本地参考库：`/Users/morton_cheung/Desktop/比赛/大数据分析/reference/design-references`
 （顶层 14 项：`anime` `archify` `awesome-design-md` `gsap-skills` `GSAP` `impeccable` `inspira-ui` `lottie-web` `morphicons` `motion` `ponytail` `taste-skill` `ui-ux-pro-max-skill` `video-shotcraft`）
 
 | Reference | 学习什么 | 不学什么 | 应用位置 |

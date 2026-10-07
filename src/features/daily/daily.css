@@ -1,0 +1,21 @@
+/* Market context stays on the existing paper: typography and rules, no cards or new motion. */
+.daily-context { min-width: 0; padding-block: var(--ag-space-3); margin-bottom: var(--ag-space-4); border-block: 1px solid var(--ag-rule-soft); color: var(--ag-ink-soft); font-size: var(--ag-fs-meta); }
+.daily-context p { margin: 0; }
+.daily-context__head { display: flex; flex-direction: column; gap: var(--ag-space-2); }
+.daily-context__label { font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); color: var(--ag-ink-muted); }
+.daily-context__date, .daily-context__pending { color: var(--ag-ink-muted); line-height: 1.7; }
+.daily-context__rows { margin: var(--ag-space-3) 0 0; padding: 0; list-style: none; }
+.daily-context__rows li { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: var(--ag-space-3); row-gap: 2px; padding-block: 4px; font-variant-numeric: tabular-nums; }
+.daily-context__crop { color: var(--ag-ink); }
+.daily-context__signal { margin-left: auto; color: var(--ag-ink-muted); }
+.daily-context__details summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; color: var(--ag-ink-soft); }
+.daily-context__details summary::before { content: '+'; margin-right: var(--ag-space-2); }
+.daily-context__details[open] summary::before { content: '−'; }
+.daily-context__trend { padding-block: var(--ag-space-3); border-top: 1px solid var(--ag-rule-soft); }
+.daily-context__trend-label { color: var(--ag-ink-soft); }
+.daily-context__trend dl { display: flex; flex-wrap: wrap; gap: var(--ag-space-4); margin: var(--ag-space-2) 0 0; }
+.daily-context__trend dl > div { display: flex; flex-direction: column; gap: 2px; }
+.daily-context__trend dt { color: var(--ag-ink-muted); font-size: var(--ag-fs-micro); }
+.daily-context__trend dd { margin: 0; font-variant-numeric: tabular-nums; }
+.daily-context__source { color: var(--ag-ink-muted); font-size: var(--ag-fs-micro); line-height: 1.7; }
+.daily-context__source-link { display: inline-flex; align-items: center; min-height: 44px; color: var(--ag-ink-muted); font-size: var(--ag-fs-micro); line-height: 1.7; text-decoration: underline; text-underline-offset: 3px; }

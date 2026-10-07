@@ -1,0 +1,3 @@
+/* 统一指标值（V5 §16）：只负责"值本身"的排版，单位与精度由 metrics.ts 决定。 */
+.ag-metric { font-variant-numeric: tabular-nums; }
+.ag-metric--missing, .ag-metric[data-missing] { color: var(--ag-ink-muted); }

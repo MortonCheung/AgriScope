@@ -30,7 +30,7 @@
 
 ## Ponytail 最小实现阶梯
 
-来源：`frontedpage/design-references/ponytail`（MIT）。每次编码按顺序停在第一个可行层级：
+来源：`reference/design-references/ponytail`（MIT）。每次编码按顺序停在第一个可行层级：
 
 1. 这项功能真的需要存在吗？不需要就删除或跳过。
 2. 代码库里已有实现吗？复用并修正共享根因。
