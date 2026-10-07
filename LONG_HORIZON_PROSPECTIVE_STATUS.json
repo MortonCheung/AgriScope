@@ -7,8 +7,8 @@
   "raw_archived_forecasts": 0,
   "duplicate_archived_forecasts": 0,
   "skipped": {
-    "ISSUANCE_PROTOCOL_MISSING": 1,
-    "ORIGIN_NOT_ELIGIBLE": 120
+    "ORIGIN_NOT_ELIGIBLE": 360,
+    "ISSUANCE_PROTOCOL_MISSING": 1
   },
   "groups": [],
   "production_promotion": false,

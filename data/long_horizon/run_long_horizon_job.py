@@ -14,6 +14,7 @@ from typing import Optional
 from zoneinfo import ZoneInfo
 import numpy as np
 import pandas as pd
+from joblib import parallel_backend
 
 ROOT = Path(os.environ.get('PROJECT_ROOT') or Path(__file__).resolve().parents[2]).resolve()
 for path in (ROOT, ROOT / 'models', ROOT / 'models/src'):
@@ -96,7 +97,10 @@ def build(as_of: Optional[str] = None):
         anchor = history.loc[history.crop == crop, 'date'].max()
         for h in HORIZONS:
             for target in TARGETS:
-                r = predict_at(bundle, history, crop, h, target)
+                # Forest 的并行累加顺序会产生 1e-15 级浮点差，影响快照哈希。
+                # 推理串行调度；不改已训练权重/参数、统计方法或评估配置。
+                with parallel_backend('sequential'):
+                    r = predict_at(bundle, history, crop, h, target)
                 registered = next(e for e in bundle['entries'] if e['key'] == f'{crop}|{h}|{target}')
                 pt, lo, hi = [number(r.get(k, r.get(alt))) for k, alt in
                               [('point', 'point_forecast'), ('low', 'range_low'), ('high', 'range_high')]]

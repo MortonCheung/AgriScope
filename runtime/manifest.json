@@ -6,7 +6,7 @@
   "code_fingerprint": "b19b187268ee92db",
   "generated_at": "2026-10-07 19:45:00",
   "n_assets": 722,
-  "total_bytes": 755551311,
+  "total_bytes": 755552871,
   "assets": [
     {
       "path": "LONG_HORIZON_SAMPLE_ACCOUNTING.csv",
@@ -229,8 +229,8 @@
       "destination": "backend/",
       "asset_type": "immutable",
       "required": true,
-      "sha256": "d180bda2f90105bca0a84fe729ccd125c7604aa6a392fc9253cf62551a5c5822",
-      "size": 973,
+      "sha256": "192f21ce5fd5ef73e699068cb5e33cf5c29c3ba1d147568e8191670c027d206a",
+      "size": 987,
       "model_version": "final_v1"
     },
     {
@@ -364,8 +364,8 @@
       "destination": "data/long_horizon/",
       "asset_type": "immutable",
       "required": true,
-      "sha256": "3323346f05141b61b8eade1c97db2f53fe9d492d400ddc25b91dbc9f33db0bf3",
-      "size": 12304,
+      "sha256": "ca44f6a69fbd6bb0825ec47d691a20a9dbfb804ef88b3e3127fc121d036538ef",
+      "size": 12597,
       "model_version": "final_v1"
     },
     {
@@ -814,8 +814,8 @@
       "destination": "data/processed/daily/logs/",
       "asset_type": "generated",
       "required": true,
-      "sha256": "8336aec8d2522ac32cd74312eb577bcb77339661bf3908a08f6a4acb75c6dfa8",
-      "size": 27297,
+      "sha256": "56cd351a1eee070fd224fd938b83683837d148ad00f0cf67405d0dcad6eedb47",
+      "size": 28546,
       "model_version": "final_v1"
     },
     {
@@ -841,7 +841,7 @@
       "destination": "data/processed/daily/monitor/",
       "asset_type": "generated",
       "required": true,
-      "sha256": "25fde801fba6e5b889bf6178b8b573c54b5096de108446b8198e7b58284973d2",
+      "sha256": "0d1cc311a5841c0dcaf6954dd264fbf2b0660ae4a0b8442b4405737b3eb0cac0",
       "size": 459,
       "model_version": "final_v1"
     },
@@ -850,7 +850,7 @@
       "destination": "data/processed/daily/",
       "asset_type": "generated",
       "required": true,
-      "sha256": "5830e8a4d76b130c26aaab7ce732ab04f51bc0bf705acbee6d1cc7ad1b4fd92b",
+      "sha256": "0d3a501aff6ef3d19a74d3b38ce2ed910bfa01451c4c6c092dc6e76eaa18ec13",
       "size": 888,
       "model_version": "final_v1"
     },
@@ -886,7 +886,7 @@
       "destination": "data/processed/daily/snapshots/daily/",
       "asset_type": "generated",
       "required": true,
-      "sha256": "ad2dfc85de371ece54bb5c413e36e24fd408ffc7046b70aeaed0c8ce1ee1cfe3",
+      "sha256": "be9981492202e189901c65e5e23cdefa8d9f118027f197135d0bbf00dd2881f1",
       "size": 35825,
       "model_version": "final_v1"
     },
@@ -913,8 +913,8 @@
       "destination": "data/processed/long_horizon/snapshots/",
       "asset_type": "generated",
       "required": true,
-      "sha256": "565a555f60a26a62fe3db27757d20194269c292197293b9c825484e7b37ff48b",
-      "size": 215211,
+      "sha256": "30516824e54365d960957ae2fa5988c3b76e960724cd6eeab8237d0b48a83523",
+      "size": 215215,
       "model_version": "final_v1"
     },
     {
@@ -6507,9 +6507,9 @@
       "model_version": "final_v1"
     }
   ],
-  "refreshed_at": "2026-10-08T02:40:07+08:00",
+  "refreshed_at": "2026-10-08T02:51:59+08:00",
   "refresh_note": "Only explicitly generated assets refreshed; immutable hashes unchanged.",
-  "release_frozen_at": "2026-10-08T02:33:04+08:00",
+  "release_frozen_at": "2026-10-08T02:49:53+08:00",
   "asset_types": {
     "immutable": 617,
     "generated": 41,

@@ -9,6 +9,8 @@
 - Final live 源码指纹 b19b187268ee92db，**173/173** 冻结文件未变。
 - 独立 Long-Horizon Job 成功加载包内权重，推理 **120** 双目标条目；没有训练，也没有借用原仓库模型路径。
 
+初始包额外复核发现 ExtraTrees 并行累加产生约1e-15浮点差，妨碍字节级幂等；已将运行时调度改为串行，不改训练权重/参数。完整120条推理连续两次取得同一2d84aea5...哈希，第二次没有改写latest。最终包包含此修复。
+
 此检查使用本机已安装的冻结版本 Python 依赖；未声称另一操作系统、新虚拟环境 cold install 或真实服务器验收。安装清单已补齐 Final/Daily 使用的 PyYAML，以及采集/解析依赖。前端 node_modules 需服务器 npm ci 安装，不在包中。
 
 服务器配置在 deploy/README.md：Python 虚拟环境、专用用户、环境文件、单 worker API、20:30/23:30 Asia/Shanghai Daily timer、Daily 发布后 API refresh path、nginx SPA/API 代理及完整旧包回滚步骤。未提供实际服务器地址/权限，状态为 DEPLOYMENT_PREPARED_NOT_DEPLOYED。

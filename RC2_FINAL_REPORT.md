@@ -73,7 +73,7 @@ Residual、权重融合、regime selector、ablation 与重复性 Pilot 的代�
 
 全量 ALL_TESTS_PASS 与正式 ACCEPTANCE_PASS：前端 322，Python 全层 168 + Daily84，Backend19/19、Final38/38、Daily33/33、长期28/28。详见 RC2_TEST_REPORT.md；日志/截图保存在本机 output 和临时日志，不伪造线上 CI 状态。
 
-清单 722 项：immutable617、generated41、external64、optional0，总 755,551,311 bytes。Final/Daily 运行源码、长期60权重/index/锁/评估证据、前端全部 dist（含CSV）均登记。generated 可以显式 refresh，immutable/hash 缺失不可放宽。为完整旧回归恢复 143 项原 Model v1/v2 资产，618,247,150 bytes，逐字节复制，没有重训或使用它们替换 Final；legacy_regression_assets.json 单列来源。
+清单 722 项：immutable617、generated41、external64、optional0，总 755,552,871 bytes。Final/Daily 运行源码、长期60权重/index/锁/评估证据、前端全部 dist（含CSV）均登记。generated 可以显式 refresh，immutable/hash 缺失不可放宽。为完整旧回归恢复 143 项原 Model v1/v2 资产，618,247,150 bytes，逐字节复制，没有重训或使用它们替换 Final；legacy_regression_assets.json 单列来源。
 
 部署包生成命令 scripts/build_deploy_bundle.py，排除真实 .env、LLM response cache、node_modules/raw 全集，只包含必需资产与已有 Daily 原始响应。实际解压到独立目录后，722项资产、Backend19/19+52tests、Final173哈希与长期120条推理均通过；详见 RC2_DEPLOY_BUNDLE_REPORT.md。部署配置和详细步骤在 deploy/README.md。没有提供服务器地址/SSH授权环境，不能称已部署。
 
