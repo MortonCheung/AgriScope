@@ -13,7 +13,7 @@
 | `models/` | 冻结模型工程：`src/`（decision_engine）、`config/`、`scripts/`、`tests/`、`reports/final/`（清单） |
 | `data/` | 数据与研究：`daily/`（Daily 管道源码）、`scripts/`（数据基座管道源码） |
 | `llm/` | 长期预测层（Provider / Context / Prompts / Schemas） |
-| `deploy/` | 部署配置（systemd / env 模板） |
+| `backend/deploy/` | 部署配置（systemd 单元 / env 模板） |
 | `runtime/` | `manifest.json`：大型运行时资产的 sha256 清单 |
 | `scripts/` | `dev.sh` / `test_all.sh` / `acceptance.sh` |
 | `docs/` + 根 `*.md` | 审计、设计、计划与冻结报告 |
