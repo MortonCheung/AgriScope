@@ -30,13 +30,13 @@
 }
 ```
 
-日期示例取本次真实模型 capability。部署时必须按其返回日期更新，不能用网页今天替代。`as_of+horizon_days` 是模型市场比较口径；可选 `harvest_date` 只选择历史气候月份。没有农事种植窗口或可行上市期优化。桥将 `plant_date=as_of` 作为默认气候参照，不制造农业日历。预算当前只回显；UI 可用已返回成本提示超预算，但不改变模型面积、排序或结论。
+日期示例取本次真实模型 capability。部署时必须按其返回日期更新，不能用网页今天替代。`as_of+horizon_days` 是模型市场比较口径；可选 `harvest_date` 只选择历史气候月份。没有农事种植窗口或可行上市期优化。后端将 `plant_date=as_of` 作为默认气候参照，不制造农业日历。预算当前只回显；UI 可用已返回成本提示超预算，但不改变模型面积、排序或结论。
 
-面积、预算及实际成本/亩产必须是正的有限数字；缺失投入用 null。空作物偏好比较 capability 中全部作物。未来 LLM 提交同一结构，并设置 `input_source={kind:"natural_language",text:"原始情况"}`；桥不解析或生成文本，UI 无聊天模块。
+面积、预算及实际成本/亩产必须是正的有限数字；缺失投入用 null。空作物偏好比较 capability 中全部作物。未来 LLM 提交同一结构，并设置 `input_source={kind:"natural_language",text:"原始情况"}`；后端不解析或生成文本，UI 无聊天模块。
 
 ## Final Adapter
 
-桥返回 `{request,batch,market_as_of,model_version,data_version,code_fingerprint}`，其中 `batch` 是官方 `evaluate_many()` 原始输出。Adapter 保留 `all` 中有效价格/风险，使用模型 `ranking`，不在浏览器重新评分。
+正式后端（`backend/`）返回 `{request,batch,market_as_of,model_version,data_version,code_fingerprint}`，其中 `batch` 是官方 `evaluate_many()` 原始输出。Adapter 保留 `all` 中有效价格/风险，使用模型 `ranking`，不在浏览器重新评分。
 
 已覆盖正式 runtime 的 `OK/LOW_CONFIDENCE/PARTIAL/SCENARIO_ONLY/USER_INPUT_REQUIRED/INSUFFICIENT_MARKET_DATA/NO_FEASIBLE_PLAN/NO_FEASIBLE_WINDOW/NO_CLEAR_WINNER/NO_DIVERSIFICATION_BENEFIT/MODEL_ERROR`。前端稳定为 `ok/no_data/user_input_required/model_error` 加独立 issues，保存 `model_status` 便于追溯。无可行窗口、无明确赢家、无分散收益分别表达；不能全部当没有数据。
 
@@ -50,7 +50,7 @@
 
 ## 压力与每日背景
 
-`POST /api/decision/stress` 接受 `{request,candidate_id,changes}`。正式桥调用同作物官方 `evaluate()` 与 `_scenario_profit()`，返回 `available/profit_base/delta_cny/roi/note` 与版本。UI 不调用公式演示，也不补算 ROI 或上/下界。
+`POST /api/decision/stress` 接受 `{request,candidate_id,changes}`。正式后端调用同作物官方 `evaluate()` 与 `_scenario_profit()`，返回 `available/profit_base/delta_cny/roi/note` 与版本。UI 不调用公式演示，也不补算 ROI 或上/下界。
 
 模型支持单轴变化、mild（-10%/-5%/+10%）、severe（-20%/-15%/+20%）。上市延迟或其他多轴组合明确不可用、结果 null。当前无不写报告的在线 Minimax Regret / Counterfactual 接口；不会把离线代表场景套成用户方案。原暴雨研究推演仍是独立、明确的历史平行情景。
 
@@ -64,4 +64,4 @@
 
 正式 `npm run build` 排除 `dist/decision` 和演示代码，并通过 bundle 边界检查；源快照与旧测试保留。DEV 的 `test_state` 在 production 不生效。请求使用 v1 独立 session key，只保存输入；取消与迟到响应不能回填。
 
-外部 JSON Schema 目前仍保留较窄的旧枚举及 profit.expected 字段，与正式 Python runtime 有差异。本轮按真实生产入口、capability 和运行结果适配，保留版本与测试；没有修改模型工程。桥部署、接口限制与 Python 验证见 `server/README.md`。
+外部 JSON Schema 目前仍保留较窄的旧枚举及 profit.expected 字段，与正式 Python runtime 有差异。本轮按真实生产入口、capability 和运行结果适配，保留版本与测试；没有修改模型工程。后端部署、接口限制与验证见 [`../backend/README.md`](../backend/README.md) 与 [`../backend/FRONTEND_INTEGRATION_HANDOFF.md`](../backend/FRONTEND_INTEGRATION_HANDOFF.md)。

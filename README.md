@@ -13,7 +13,7 @@ npm run sync      # 从外部研究工程同步研究索引 / 选定图表 / 研
 npm run dev
 ```
 
-Decision 和 Daily 正式接入时，另一个终端运行 `npm run dev:api`；Vite 将 `/api` 代理到本地只读桥。桥调用外部冻结模型并读取已发布 Daily，不采集、不训练、不修改研究。
+Decision 和 Daily 正式接入时，另一个终端运行 `npm run dev:api`：它启动工程根目录的**唯一正式后端** `backend/`（FastAPI，127.0.0.1:8787），Vite 将 `/api` 代理到该地址。后端调用外部冻结模型并读取已发布 Daily，不采集、不训练、不修改研究。前端不直连模型，也不再有第二套业务实现。
 默认 Provider 为 API；连接失败显示不可用，不回退历史样例。显式生产演示必须同时设置 `VITE_DECISION_PROVIDER=fixtures`（或 `mock`）与 `VITE_ENABLE_DEMO=true`。
 
 生产构建：
@@ -24,7 +24,18 @@ npm run build
 npm run preview
 ```
 
-完整本地生产验证可用 `python3 -B server/agriscope_api.py --frontend dist` 同源提供网页与 API。实际部署与模型依赖见 [server/README.md](server/README.md)；正式数据契约见 [API_CONTRACT_V1.md](docs/API_CONTRACT_V1.md)。已发布研究不需要为 Decision/Daily 接入重新同步。
+完整本地验证：先启动正式后端，再预览前端。
+
+```bash
+# 终端 1（工程根目录）· 唯一正式后端
+python3 -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8787 --workers 1
+# 或在前端目录：npm run dev:api
+
+# 终端 2（本目录）
+npm run preview
+```
+
+后端部署与接口见 [`../backend/README.md`](../backend/README.md) 与 [`../backend/FRONTEND_INTEGRATION_HANDOFF.md`](../backend/FRONTEND_INTEGRATION_HANDOFF.md)；正式数据契约见 [API_CONTRACT_V1.md](docs/API_CONTRACT_V1.md)。旧的 `server/` bridge **已退役**（见 [server/README.md](server/README.md)）。已发布研究不需要为 Decision/Daily 接入重新同步。
 
 ## 验证
 

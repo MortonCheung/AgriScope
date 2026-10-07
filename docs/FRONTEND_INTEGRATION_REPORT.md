@@ -27,6 +27,8 @@ Daily schema/pipeline 1.1.0，snapshot_hash `2be17dcabbb72a1e`，Final 指纹与
 
 正式入口为 `FinalDecisionEngine.evaluate/evaluate_many`；现有工程没有 HTTP 接口，新增仓库内只读标准库桥，不复制 models/data、模型文件或外部快照。桥有输入校验、同源 Origin 限制、no-store、64KB 请求上限、版本变化拒绝旧缓存。模型 common 的本机 ROOT 只在进程内配置，外部文件不改。Daily GET 只读 snapshot，不执行采集或写入 CLI。
 
+> **后续变更（最终集成）**：该只读 bridge 已从本仓库**移除**，正式生产后端改为工程根目录的 `backend/`（FastAPI），前端契约与路由不变。本报告中的 bridge 描述与「API 桥 20 项」记录仅作历史留存，对应能力已由 `backend/` 覆盖并纳入其验收；详情见 `../FINAL_INTEGRATION_MERGE_REPORT.md`。
+
 Pipeline：Final API → FinalDecisionAdapter → UI Contract v1 → 现有组件；Daily API → DailyAdapter → 城市/当前作物背景。未来 Final Provider 或 LLM 仍用同一契约，页面不重做。
 
 日期改为数据基准日 + 市场评估跨度，可选上市日只给历史气候参照；没有假农事窗口。Shenyang 支持 10 规范作物、7/14/30 天 model 与 60/90 天 scenario；Chaoyang 较弱能力如实从 registry 返回；Jinzhou 等无可用价格模型时不借沈阳数字。
