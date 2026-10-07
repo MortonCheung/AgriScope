@@ -1,4 +1,4 @@
-import type { Confidence, DecisionCandidate, DecisionRequest, DecisionResult, ScenarioRange, Strategy, StressScenario } from '../../domain/decision/types';
+import type { Confidence, DecisionCandidate, LegacyDecisionRequest, DecisionResult, ScenarioRange, Strategy, StressScenario } from '../../domain/decision/types';
 import { unknownRange } from '../../domain/decision/calculations';
 import { parseDecisionResult } from '../../domain/decision/validation';
 
@@ -32,7 +32,7 @@ function windowFrom(text: string | undefined): { start: string; end: string } {
   if (!dates[0]) throw new Error('历史方案日期不完整。');
   return { start:dates[0],end:dates[1] ?? dates[0] };
 }
-export function normalizeLegacyRequest(request: LegacyRequest, cityId = 'shenyang'): DecisionRequest {
+export function normalizeLegacyRequest(request: LegacyRequest, cityId = 'shenyang'): LegacyDecisionRequest {
   return {
     contract_version:'0',
     user_context: { city_id:cityId,area_mu:request.available_area_mu,budget_cny:request.budget,risk_preference:request.risk_preference,

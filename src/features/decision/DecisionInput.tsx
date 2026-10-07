@@ -1,15 +1,20 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { getCity } from '../../domain/geography/cities';
-import type { DecisionProvider, DecisionRequest, RiskPreference } from '../../domain/decision/types';
+import type { DecisionProvider, DecisionRequest, LegacyDecisionRequest, RiskPreference } from '../../domain/decision/types';
+import { FinalDecisionInput } from './FinalDecisionInput';
 import { validateRequest } from '../../domain/decision/validation';
-type DecisionSample={id:string;label:string;request:DecisionRequest};
+type DecisionSample={id:string;label:string;request:LegacyDecisionRequest};
 
 const preferenceLabels:Record<RiskPreference,string>={conservative:'稳健一些',balanced:'兼顾收益与风险',aggressive:'收益优先'};
-function blankRequest(cityId:string):DecisionRequest{
+function blankRequest(cityId:string):LegacyDecisionRequest{
   return {contract_version:'0',user_context:{city_id:cityId,area_mu:0,budget_cny:0,risk_preference:'balanced',planting_window:{start:'',end:''},harvest_window:{start:'',end:''},crop_preferences:[],actual_inputs:{}},input_source:{kind:'structured'}};
 }
 export function DecisionInput({cityId,initial,onSubmit,provider,expandInputs=false}:{cityId:string;initial:DecisionRequest|null;onSubmit:(request:DecisionRequest)=>void;provider:DecisionProvider;expandInputs?:boolean}){
-  const [request,setRequest]=useState<DecisionRequest>(()=>structuredClone(initial??blankRequest(cityId)));
+  if(provider.data_mode==='api')return <FinalDecisionInput cityId={cityId} initial={initial?.contract_version==='1'?initial:null} onSubmit={onSubmit} provider={provider} expandInputs={expandInputs}/>;
+  return <LegacyDecisionInput cityId={cityId} initial={initial?.contract_version==='0'?initial:null} onSubmit={onSubmit} provider={provider} expandInputs={expandInputs}/>;
+}
+function LegacyDecisionInput({cityId,initial,onSubmit,provider,expandInputs=false}:{cityId:string;initial:LegacyDecisionRequest|null;onSubmit:(request:DecisionRequest)=>void;provider:DecisionProvider;expandInputs?:boolean}){
+  const [request,setRequest]=useState<LegacyDecisionRequest>(()=>structuredClone(initial??blankRequest(cityId)));
   const [samples,setSamples]=useState<DecisionSample[]>([]);
   const [sampleError,setSampleError]=useState(false);
   const [errors,setErrors]=useState<string[]>([]);
@@ -21,14 +26,14 @@ export function DecisionInput({cityId,initial,onSubmit,provider,expandInputs=fal
   const c=request.user_context;
   useEffect(()=>{
     const controller=new AbortController();
-    provider.listSamples?.({signal:controller.signal}).then(setSamples).catch(()=>{if(!controller.signal.aborted)setSampleError(true);});
+    provider.listSamples?.({signal:controller.signal}).then(values=>setSamples(values.filter((s):s is DecisionSample=>s.request.contract_version==='0'))).catch(()=>{if(!controller.signal.aborted)setSampleError(true);});
     return()=>controller.abort();
   },[provider]);
-  const update=(patch:Partial<DecisionRequest['user_context']>)=>setRequest({...request,user_context:{...c,...patch}});
+  const update=(patch:Partial<LegacyDecisionRequest['user_context']>)=>setRequest({...request,user_context:{...c,...patch}});
   function build(){
     return {...request,input_source:{kind:'structured' as const},user_context:{...c,
-      planting_window:{start:c.planting_window.start,end:c.harvest_window.end},
-      harvest_window:{start:harvestStart||c.planting_window.start,end:c.harvest_window.end},
+      planting_window:{start:c.planting_window.start,end:c.planting_window.start},
+      harvest_window:{start:harvestStart||c.harvest_window.end,end:c.harvest_window.end},
       crop_preferences:crops.split(/[、,，\s]+/).map(s=>s.trim()).filter(Boolean),
       actual_inputs:actualCrop.trim()?{[actualCrop.trim()]:{cost_per_mu:cost.trim()?Number(cost):null,yield_kg_per_mu:yieldValue.trim()?Number(yieldValue):null}}:{},
     }};

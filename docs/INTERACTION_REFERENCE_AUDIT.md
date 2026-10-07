@@ -95,7 +95,7 @@ Back 逆动画                          app/RouteTransition.tsx · app/appHistor
 
 ---
 
-## 6. 本地参考库 `frontedpage/design-references`
+## 6. 本地参考库 `reference/design-references`
 
 ### 6.1 `impeccable/reference/animate.md`（动效方法论，最高价值）
 

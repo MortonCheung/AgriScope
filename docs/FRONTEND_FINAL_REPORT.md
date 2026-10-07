@@ -1,5 +1,7 @@
 # AgriScope Decision 前端产品化交付
 
+这是 `2f7af6b` 基线的历史交付记录。当前正式收口、Final Model / Daily 接入与冻结验收以 [FRONTEND_INTEGRATION_REPORT.md](FRONTEND_INTEGRATION_REPORT.md) 为准。
+
 本轮在现役 AgriScope 上接入种植选择流程。保持暖白纸面、宋体标题、直角控件、细线图表与现有空间转场；未重设计首页、辽宁地图或研究页面。两个只读子 Agent 分别比较产品信息架构与模型契约后，采用独立城市工作页，避免把决策模式塞进成熟研究窗口。
 
 ## 已完成的产品路径

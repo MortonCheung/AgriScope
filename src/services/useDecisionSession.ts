@@ -40,7 +40,7 @@ export function cancelDecision(key:string){
   sessions.getState().set(key,{...previous,status:'idle',result:null,error:null});
 }
 export function useDecisionSession(cityId:string,provider:DecisionProvider,testState:string|null=null,restore=false){
-  const key=`${cityId}:${testState??'default'}`;
+  const key=`${cityId}:${testState??'default'}${provider.data_mode==='api'?':api:v1':''}`;
   const state=sessions((s)=>s.items[key]??EMPTY);
   useEffect(()=>{
     if(!restore || state.status!=='idle' || state.request)return;

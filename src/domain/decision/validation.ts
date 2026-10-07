@@ -10,13 +10,17 @@ export function isDate(value: unknown): value is string {
   return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }
 export function validateRequest(value: unknown): string[] {
-  if (!record(value) || value.contract_version !== '0' || !record(value.user_context)) return ['种植条件格式不完整。'];
+  if (!record(value) || !['0','1'].includes(String(value.contract_version)) || !record(value.user_context)) return ['种植条件格式不完整。'];
   const c = value.user_context;
   const errors: string[] = [];
   if (typeof c.city_id !== 'string' || !getCity(c.city_id)) errors.push('请从辽宁城市入口选择城市。');
   if (!finite(c.area_mu) || c.area_mu <= 0) errors.push('面积需要大于 0 亩。');
   if (!finite(c.budget_cny) || c.budget_cny <= 0) errors.push('预算需要大于 0 元。');
   if (!['conservative', 'balanced', 'aggressive'].includes(String(c.risk_preference))) errors.push('请选择决策偏好。');
+  if(value.contract_version==='1'){
+    const market=c.market_context;
+    if(!record(market)||!isDate(market.as_of)||![7,14,30,60,90].includes(Number(market.horizon_days))||!finite(market.horizon_days)||!(market.harvest_date===null||isDate(market.harvest_date)))errors.push('市场评估日期或跨度不完整。');
+  }else{
   const planting = c.planting_window;
   const harvest = c.harvest_window;
   for (const [name, window] of [['种植', planting], ['上市', harvest]] as const) {
@@ -24,6 +28,7 @@ export function validateRequest(value: unknown): string[] {
   }
   if (record(planting) && record(harvest) && isDate(planting.start) && isDate(harvest.start) && planting.start > harvest.start) errors.push('上市不能早于最早种植日期。');
   if (record(planting) && record(harvest) && isDate(planting.end) && isDate(harvest.end) && planting.end > harvest.end) errors.push('最晚种植不能晚于最晚上市日期。');
+  }
   if (!Array.isArray(c.crop_preferences) || !c.crop_preferences.every((crop) => typeof crop === 'string' && crop.trim().length > 0)) errors.push('作物偏好格式有误。');
   if (!record(c.actual_inputs)) errors.push('实际成本与亩产格式有误。');
   else for (const [crop, inputs] of Object.entries(c.actual_inputs)) {
@@ -38,10 +43,14 @@ export function validateRequest(value: unknown): string[] {
 }
 /** Field order in JSON is not part of the contract. */
 export function sameDecisionContext(a:DecisionRequest,b:DecisionRequest):boolean{
+  if(a.contract_version!==b.contract_version)return false;
   const x=a.user_context,y=b.user_context;
   const cropKeys=(v:typeof x.actual_inputs)=>Object.keys(v).sort();
+  const datesEqual=a.contract_version==='1'&&b.contract_version==='1'
+    ?a.user_context.market_context.as_of===b.user_context.market_context.as_of&&a.user_context.market_context.horizon_days===b.user_context.market_context.horizon_days&&a.user_context.market_context.harvest_date===b.user_context.market_context.harvest_date
+    :a.contract_version==='0'&&b.contract_version==='0'&&a.user_context.planting_window.start===b.user_context.planting_window.start&&a.user_context.planting_window.end===b.user_context.planting_window.end&&a.user_context.harvest_window.start===b.user_context.harvest_window.start&&a.user_context.harvest_window.end===b.user_context.harvest_window.end;
   return x.city_id===y.city_id&&x.area_mu===y.area_mu&&x.budget_cny===y.budget_cny&&x.risk_preference===y.risk_preference&&
-    x.planting_window.start===y.planting_window.start&&x.planting_window.end===y.planting_window.end&&x.harvest_window.start===y.harvest_window.start&&x.harvest_window.end===y.harvest_window.end&&
+    datesEqual&&
     JSON.stringify([...x.crop_preferences].sort())===JSON.stringify([...y.crop_preferences].sort())&&JSON.stringify(cropKeys(x.actual_inputs))===JSON.stringify(cropKeys(y.actual_inputs))&&
     cropKeys(x.actual_inputs).every(k=>x.actual_inputs[k].cost_per_mu===y.actual_inputs[k].cost_per_mu&&x.actual_inputs[k].yield_kg_per_mu===y.actual_inputs[k].yield_kg_per_mu);
 }
@@ -57,14 +66,14 @@ const strings = (v: unknown) => Array.isArray(v) && v.every((x) => typeof x === 
 const windowValid = (v: unknown) => record(v) && isDate(v.start) && isDate(v.end) && v.start <= v.end;
 function confidence(v: unknown): boolean {
   return record(v) && nullable(v.score) && (v.score === null || ((v.score as number) >= 0 && (v.score as number) <= 100)) &&
-    ['A','B','C','D',null].includes(v.grade as string | null) && ['high','medium','low','unknown'].includes(String(v.level)) && typeof v.basis === 'string' && typeof v.is_mock === 'boolean';
+    ['A','B','C','D',null].includes(v.grade as string | null) && ['high','medium','low','unknown','reported'].includes(String(v.level)) && typeof v.basis === 'string' && typeof v.is_mock === 'boolean';
 }
 /** Fail closed at the boundary: malformed/NaN data never reaches charts. */
 export function parseDecisionResult(value: unknown): DecisionResult {
   const fail = () => { throw new Error('决策数据格式不完整，请重试。'); };
   if (!record(value)) return fail();
-  if (value.contract_version !== '0' || !['ok','no_data','user_input_required','model_error'].includes(String(value.status)) || validateRequest(value.request).length) return fail();
-  if (!strings(value.issues) || !(value.issues as string[]).every((i) => ['high_risk','low_confidence','insufficient_market_data','proxy_only','no_clear_winner','scenario_only','partial_result'].includes(i)) || !strings(value.warnings) || !strings(value.assumptions)) return fail();
+  if (!['0','1'].includes(String(value.contract_version)) || !['ok','no_data','user_input_required','model_error'].includes(String(value.status)) || validateRequest(value.request).length || !record(value.request) || value.request.contract_version!==value.contract_version) return fail();
+  if (!strings(value.issues) || !(value.issues as string[]).every((i) => ['high_risk','low_confidence','insufficient_market_data','proxy_only','no_clear_winner','scenario_only','partial_result','user_input_required','no_feasible_plan','no_feasible_window','no_diversification_benefit'].includes(i)) || !strings(value.warnings) || !strings(value.assumptions)) return fail();
   if (!['legacy_model_fixture','mock','model'].includes(String(value.data_status)) || typeof value.model_version !== 'string' || typeof value.data_version !== 'string' || !(value.fixture_id === null || typeof value.fixture_id === 'string')) return fail();
   if (!record(value.recommendation) || !confidence(value.recommendation.confidence) || !strings(value.recommendation.reasons) || !Array.isArray(value.candidates)) return fail();
   const ids = new Set<string>();
@@ -78,6 +87,9 @@ export function parseDecisionResult(value: unknown): DecisionResult {
     if (!record(candidate.data_quality) || typeof candidate.data_quality.label !== 'string' || !strings(candidate.data_quality.proxy_flags) || !strings(candidate.data_quality.mock_fields) || !strings(candidate.warnings) || !strings(candidate.reasons)) return fail();
     if (!Array.isArray(candidate.evidence) || !candidate.evidence.every((e) => record(e) && typeof e.city_id === 'string' && /^A\d+(\.\d+)?$/.test(String(e.research_id)) && typeof e.label === 'string' && ['background','input'].includes(String(e.role)))) return fail();
     if (!Array.isArray(candidate.stress_scenarios)) return fail();
+    if(candidate.confidence_components!==undefined&&(!record(candidate.confidence_components)||!Object.entries(candidate.confidence_components).every(([k,v])=>['price','profit','risk','data'].includes(k)&&confidence(v))))return fail();
+    if(candidate.profit_basis!==undefined&&!['user_input','reference','missing'].includes(String(candidate.profit_basis)))return fail();
+    if(candidate.market_context!==undefined){const market=candidate.market_context;if(!record(market)||!isDate(market.as_of)||!finite(market.horizon_days)||typeof market.scenario_only!=='boolean'||typeof market.range_status!=='string'||!(market.harvest_date===null||isDate(market.harvest_date)))return fail();}
     for (const stress of candidate.stress_scenarios) {
       if (!record(stress) || typeof stress.id !== 'string' || !stress.id || typeof stress.label !== 'string' || typeof stress.note !== 'string' || typeof stress.is_mock !== 'boolean' || !range(stress.profit) || stress.profit.unit !== 'CNY' || !nullable(stress.roi) || !nullable(stress.delta_cny) || !record(stress.changes)) return fail();
       const changes=stress.changes;

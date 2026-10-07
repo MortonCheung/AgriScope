@@ -6,8 +6,8 @@
 
 | 资源 | 路径 | 状态 | 用途 |
 |---|---|---|---|
-| iTeach 前端母版 | `frontedpage/iTeach` | 存在，`npm run build` 通过 | AgriScope 的技术骨架来源 |
-| 设计参考库 | `frontedpage/design-references` | 存在（GSAP / anime / motion / impeccable / inspira-ui / ponytail / taste-skill 等） | 设计语言与工程规范参考 |
+| iTeach 前端母版 | `reference/iTeach` | 存在，`npm run build` 通过 | AgriScope 的技术骨架来源 |
+| 设计参考库 | `reference/design-references` | 存在（GSAP / anime / motion / impeccable / inspira-ui / ponytail / taste-skill 等） | 设计语言与工程规范参考 |
 | 沈阳研究工程 | `shenyang` | 存在，按 `shenyang/README.md` 分为 `reports/` 与 `workspace/` | 唯一研究内容来源 |
 | 研究结构化索引 | `shenyang/reports/03_沈阳研究索引.json` | 存在，54 KB | 前端内容主源 |
 | 研究正文 | `shenyang/reports/01_沈阳研究总报告.md` | 存在，96 KB，34 个 `##` 段落标题 | "查看原文"来源 |

@@ -17,7 +17,7 @@
  *   public/research/<cityId>/integrity.json    SHA-256 完整性清单（§20）
  *   public/scenario/<cityId>/*.csv             推演（与「研究」不同产品入口，§30）
  *
- * 研究侧来源（2026-09 目录整理后）：city_data/<city>/research/
+ * 研究侧来源（2026-09 目录整理后）：data/research/<city>/
  *   A01 … A09/article.json        文章正文（原 exports/frontend/articles/A0X.json）
  *   A01 … A09/tables/*.csv        该篇结果表（出版物口径与研究管线口径已合并去重）
  *   A01 … A09/figures/*.png       该篇结果图
@@ -33,7 +33,7 @@
  *
  * 用法：
  *   node scripts/sync-shenyang-v2.mjs
- *   SHENYANG_V2_ROOT=/path/to/city_data/shenyang node scripts/sync-shenyang-v2.mjs
+ *   SHENYANG_V2_ROOT=/path/to/data/research/shenyang node scripts/sync-shenyang-v2.mjs
  */
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, copyFileSync, writeFileSync, statSync } from 'node:fs';
@@ -47,12 +47,13 @@ const REPO = resolve(HERE, '..');
 /** 城市配置：新增城市只加一行，不改下面的任何逻辑。 */
 const CITY = {
   cityId: process.env.AGSCOPE_CITY_ID ?? 'shenyang',
+  // 结构收口（2026-10-07）：研究内容由 city_data/<city>/research/ 迁移至 data/research/<city>/
   researchRoot: process.env.SHENYANG_V2_ROOT
     ? resolve(process.env.SHENYANG_V2_ROOT)
-    : resolve(REPO, '..', 'city_data', process.env.AGSCOPE_CITY_ID ?? 'shenyang'),
+    : resolve(REPO, '..', 'data', 'research', process.env.AGSCOPE_CITY_ID ?? 'shenyang'),
 };
 
-const RESEARCH_DIR = join(CITY.researchRoot, 'research');
+const RESEARCH_DIR = CITY.researchRoot;
 /** 文章正文 / 清单 / 来源 / 参考文献 */
 const MANIFEST_PATH = join(RESEARCH_DIR, 'manifest.json');
 const SOURCES_PATH = join(RESEARCH_DIR, 'sources.json');
@@ -139,7 +140,7 @@ function csvSummary(path) {
 
 if (!existsSync(RESEARCH_DIR)) {
   console.error(`[sync] 研究目录不存在：${RESEARCH_DIR}`);
-  console.error('[sync] 可用 SHENYANG_V2_ROOT 指定 city_data/<city> 的位置。');
+  console.error('[sync] 可用 SHENYANG_V2_ROOT 指定 data/research/<city> 的位置。');
   process.exit(1);
 }
 if (!existsSync(TREE_SOURCE)) {

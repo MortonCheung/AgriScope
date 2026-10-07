@@ -9,6 +9,7 @@ import { ResearchTree } from './ResearchTree';
 import { CityResearchPreview } from './CityResearchPreview';
 import { TransitionLink } from '../../app/pageNavigation';
 import { ROUTES } from '../../app/routes';
+import { DailyContext } from '../daily/DailyContext';
 import './city-research.css';
 
 /**
@@ -88,6 +89,7 @@ export function CityResearchPage() {
           <div className="city-research__body">
             <aside className="city-research__sidebar" aria-label="研究方向">
               <TransitionLink className="city-research__decision" to={`${ROUTES.decision(cityId)}?view=input`}>比较种植选择 →</TransitionLink>
+              <DailyContext cityId={cityId} />
               <ResearchTree
                 cityId={cityId}
                 topics={topics}

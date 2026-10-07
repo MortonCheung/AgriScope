@@ -1,5 +1,7 @@
 # API_CONTRACT_V0
 
+历史演示契约，仅用于显式 fixtures/mock。正式 Final Model 使用 [API_CONTRACT_V1.md](API_CONTRACT_V1.md)；下面保留上一轮 v0 的原始说明。
+
 权威 TypeScript 结构：src/domain/decision/types.ts。请求/响应均 contract_version="0"；这是 UI 展示契约，不假设最终模型内部 Schema 与旧 v2 相同。
 
 ## 请求

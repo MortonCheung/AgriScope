@@ -18,6 +18,7 @@ export class MockDecisionProvider implements DecisionProvider {
   async decide(request: DecisionRequest, options: { signal?: AbortSignal } = {}): Promise<DecisionResult> {
     const errors=validateRequest(request);
     if (errors.length) throw new Error(errors.join(' '));
+    if(request.contract_version!=='0')throw new Error('历史演示不支持正式市场评估请求。');
     options.signal?.throwIfAborted();
     if (this.testState === 'loading') return new Promise((_,reject) => {
       const abort=()=>reject(new DOMException('Aborted','AbortError'));
@@ -34,8 +35,8 @@ export class MockDecisionProvider implements DecisionProvider {
     const samples=await getDecisionSamples(options.signal);
     const c=request.user_context;
     const month=c.harvest_window.end.slice(0,7);
-    const preferred=samples.find((s)=>s.request.user_context.risk_preference===c.risk_preference && s.request.user_context.harvest_window.end.slice(0,7)===month)
-      ?? samples.find((s)=>s.request.user_context.harvest_window.end.slice(0,7)===month) ?? samples[0];
+    const preferred=samples.find((s)=>s.request.contract_version==='0' && s.request.user_context.risk_preference===c.risk_preference && s.request.user_context.harvest_window.end.slice(0,7)===month)
+      ?? samples.find((s)=>s.request.contract_version==='0' && s.request.user_context.harvest_window.end.slice(0,7)===month) ?? samples[0];
     const fixture=await readLegacyFixture(preferred.id,options.signal);
     let result=adaptLegacyFixture(fixture);
     if (this.testState) return applyTestState(result,this.testState,request);

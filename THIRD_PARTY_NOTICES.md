@@ -13,9 +13,9 @@
 
 ## Adapted reference ideas
 
-- `frontedpage/design-references/ponytail`（MIT）：最小实现阶梯（删除优先于新增、复用优先于重写）。
-- `frontedpage/design-references/impeccable`（MIT）：令牌与排版工程纪律、Do/Don't 的写法。
-- `frontedpage/iTeach`（本项目母版）：单 Canvas 生命周期、相机连续运动、性能策略、
+- `reference/design-references/ponytail`（MIT）：最小实现阶梯（删除优先于新增、复用优先于重写）。
+- `reference/design-references/impeccable`（MIT）：令牌与排版工程纪律、Do/Don't 的写法。
+- `reference/iTeach`（本项目母版）：单 Canvas 生命周期、相机连续运动、性能策略、
   路由转场与历史方向状态机的技术骨架。
 
 ## Data

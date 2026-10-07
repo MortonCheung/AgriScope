@@ -31,6 +31,7 @@ export async function readLegacyFixture(id: string, signal?: AbortSignal): Promi
   return structuredClone(fixture);
 }
 export function sameConditions(a: DecisionRequest, b: DecisionRequest): boolean {
+  if(a.contract_version!=='0'||b.contract_version!=='0')return false;
   const x=a.user_context,y=b.user_context;
   return x.city_id===y.city_id && x.area_mu===y.area_mu && x.budget_cny===y.budget_cny && x.risk_preference===y.risk_preference &&
     x.planting_window.start===y.planting_window.start && x.planting_window.end===y.planting_window.end &&

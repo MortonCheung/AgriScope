@@ -52,7 +52,7 @@ describe('decision flow & truthfulness',()=>{
     fireEvent.click(screen.getByRole('button',{name:'依据'}));expect(screen.getByRole('link',{name:'月份与价格 →'}).getAttribute('href')).toBe('/cities/shenyang/research/A1.3');
     fireEvent.click(screen.getByRole('button',{name:'方案'}));fireEvent.click(screen.getByRole('link',{name:'如果条件变差 →'}));
     await waitFor(()=>expect(screen.queryByRole('heading',{name:'条件变差，还撑得住吗。'})).not.toBeNull());
-    fireEvent.click(screen.getByRole('button',{name:'市场转弱'}));expect(screen.getByText('旧模型参数压力情景，非发生概率或因果估计。 压力结果的上行情景待补充。')).toBeTruthy();
+    fireEvent.click(await screen.findByRole('button',{name:'市场转弱'}));expect(screen.getByText('旧模型参数压力情景，非发生概率或因果估计。 压力结果的上行情景待补充。')).toBeTruthy();
     fireEvent.click(screen.getByRole('button',{name:'上市延迟 7 天'}));expect(screen.getByText(/零变化不代表延迟没有风险/)).toBeTruthy();
     fireEvent.click(screen.getByRole('link',{name:'← 返回种植选择'}));await waitFor(()=>expect(screen.queryByRole('heading',{name:'芸豆 100 亩'})).not.toBeNull());
   });

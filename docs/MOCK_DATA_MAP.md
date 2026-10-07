@@ -1,5 +1,7 @@
 # MOCK_DATA_MAP
 
+本页仅描述显式历史演示数据。正式生产默认 API，构建时排除这些载荷与公式演示代码；正式接入见 [API_CONTRACT_V1.md](API_CONTRACT_V1.md)。
+
 快照版本 `legacy-v2-20261007`。导出脚本只读外部模型文件，写入 AgriScope/public/decision/legacy-v2；运行时不读取研究工程目录，不在浏览器复制推荐引擎。
 
 ## 真实历史样例
