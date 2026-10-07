@@ -99,3 +99,4 @@ cd frontend && npm run dev        # Vite 将 /api 代理到 127.0.0.1:8787
 - LLM 预报/消融/Hybrid：`LLM_FORECAST_REPORT.md` / `LLM_ABLATION_REPORT.md` / `HYBRID_REPORT.md`
 - 长期冻结门禁：`LONG_HORIZON_FREEZE_GATE.md`
 - 上一轮集成记录：`FINAL_INTEGRATION_MERGE_REPORT.md`
+- 本轮单仓库合并与长期层落地：`MONOREPO_V1_MERGE_REPORT.md`

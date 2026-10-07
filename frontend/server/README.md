@@ -7,8 +7,10 @@
 - 启动方式（在前端目录运行）：`npm run dev:api` → 实际启动 `backend.app.main:app`（127.0.0.1:8787）
 - 前端契约与逐字段交接：`../backend/FRONTEND_INTEGRATION_HANDOFF.md`
 - 双后端审计与最终处置：`../FINAL_INTEGRATION_MERGE_REPORT.md`
+- 单仓库与长期层落地：`../MONOREPO_V1_MERGE_REPORT.md`
 - 基线布局与运行时资产：`../RUNTIME_ASSETS.md`
 
-> 提示：本仓库（`MortonCheung/AgriScope`）是**前端独立仓库**；
-> `backend/` 是与其并列的工程基线目录。两者需按 `RUNTIME_ASSETS.md` 的基线布局共同部署。
+> 提示：仓库 `MortonCheung/AgriScope` 现为**单仓库（monorepo v1）**，
+> `frontend/` 与 `backend/` 同在根目录，一次 `git clone` 即得全部源码；
+> 大型运行时资产按 `RUNTIME_ASSETS.md` 的清单单独提供。
 > 本文件仅作历史说明，**不提供**任何 bridge 启动命令。
