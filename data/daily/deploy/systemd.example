@@ -1,0 +1,38 @@
+# ============================================================================
+# AgriScope Daily · systemd 示例（cron 的等价替代；第一版非必须）
+# 安装：
+#   sudo cp agriscope-daily.service agriscope-daily.timer /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now agriscope-daily.timer
+# 查看：
+#   systemctl list-timers agriscope-daily.timer ; journalctl -u agriscope-daily.service -n 50
+# 注意：OnCalendar 使用服务器本地时区，请设置 Timezone=Asia/Shanghai 或确保系统为东八区。
+# ============================================================================
+
+# ---------------------------- agriscope-daily.service ----------------------------
+[Unit]
+Description=AgriScope Daily market pulse pipeline (Shenyang P0)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/agriscope
+Environment=AGRISCOPE_ROOT=/opt/agriscope
+ExecStart=/usr/bin/python3 /opt/agriscope/data/daily/run_daily.py
+# 退出码：0 成功 / 2 抓取失败或无数据 / 3 契约非法 / 4 锁占用 / 1 异常
+SuccessExitStatus=0
+TimeoutStartSec=1800
+
+# ---------------------------- agriscope-daily.timer ------------------------------
+[Unit]
+Description=Run AgriScope Daily twice daily (20:30 / 23:30 Asia/Shanghai)
+
+[Timer]
+OnCalendar=*-*-* 20:30:00
+OnCalendar=*-*-* 23:30:00
+Persistent=true
+Timezone=Asia/Shanghai
+Unit=agriscope-daily.service
+
+[Install]
+WantedBy=timers.target

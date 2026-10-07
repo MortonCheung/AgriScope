@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:api": "python3 -m uvicorn backend.app.main:app --app-dir .. --host 127.0.0.1 --port 8787 --workers 1",
+    "dev:api": "python3 -m uvicorn app.main:app --app-dir ../backend --host 127.0.0.1 --port 8787 --workers 1",
     "prebuild": "npm run verify:v2 && npm run verify:integrity && npm run verify:decision",
     "build": "tsc -b && vite build && node scripts/verify-production-boundary.mjs && npm run verify:ui",
     "preview": "vite preview",

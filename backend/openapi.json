@@ -1,0 +1,601 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AgriScope Decision API",
+    "description": "AgriScope 后端：把已冻结的 Final Model（推理）与 Daily（市场脉搏）收口为前端可直接调用的 HTTP 契约。只读 canonical 数据，不改算法、不重训。",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "存活探针",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "就绪探针（真检查）",
+        "operationId": "ready_health_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/meta": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "版本矩阵（model/daily/runtime/backend）",
+        "operationId": "meta_api_meta_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Meta Api Meta Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/decision/capabilities": {
+      "get": {
+        "tags": [
+          "capabilities"
+        ],
+        "summary": "城市决策能力（前端可支持的作物与 horizon）",
+        "operationId": "_capability_api_decision_capabilities_get",
+        "parameters": [
+          {
+            "name": "city",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "前端 city_id（slug），如 shenyang",
+              "title": "City"
+            },
+            "description": "前端 city_id（slug），如 shenyang"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CapabilityResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/decision/evaluate": {
+      "post": {
+        "tags": [
+          "decision"
+        ],
+        "summary": "种植决策评估（Final Model，主契约）",
+        "operationId": "_evaluate_api_decision_evaluate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Payload",
+                "description": "FinalDecisionRequest（contract_version='1'），原样回显。"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response  Evaluate Api Decision Evaluate Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/decision": {
+      "post": {
+        "tags": [
+          "decision"
+        ],
+        "summary": "别名：/api/decision（前端 HttpDecisionProvider 默认入口）",
+        "operationId": "_evaluate_api_decision_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Payload",
+                "description": "FinalDecisionRequest（contract_version='1'），原样回显。"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response  Evaluate Api Decision Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/decision/stress": {
+      "post": {
+        "tags": [
+          "decision"
+        ],
+        "summary": "压力情景（价格/亩产/成本/延迟）",
+        "operationId": "_stress_api_decision_stress_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Payload",
+                "description": "{request, candidate_id, changes}"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StressResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/daily/latest": {
+      "get": {
+        "tags": [
+          "daily"
+        ],
+        "summary": "Daily 市场脉搏最新快照（schema 1.1.0）",
+        "operationId": "latest_api_daily_latest_get",
+        "parameters": [
+          {
+            "name": "city",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "城市 slug，目前仅 shenyang",
+              "default": "shenyang",
+              "title": "City"
+            },
+            "description": "城市 slug，目前仅 shenyang"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Latest Api Daily Latest Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CapabilityResponse": {
+        "properties": {
+          "city_id": {
+            "type": "string",
+            "title": "City Id"
+          },
+          "tier": {
+            "type": "string",
+            "title": "Tier"
+          },
+          "supported": {
+            "type": "boolean",
+            "title": "Supported"
+          },
+          "crops": {
+            "items": {
+              "$ref": "#/components/schemas/CropCapabilityModel"
+            },
+            "type": "array",
+            "title": "Crops"
+          },
+          "market_as_of": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market As Of"
+          },
+          "model_version": {
+            "type": "string",
+            "title": "Model Version"
+          },
+          "data_version": {
+            "type": "string",
+            "title": "Data Version"
+          },
+          "code_fingerprint": {
+            "type": "string",
+            "title": "Code Fingerprint"
+          },
+          "limitation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limitation"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "city_id",
+          "tier",
+          "supported",
+          "crops",
+          "market_as_of",
+          "model_version",
+          "data_version",
+          "code_fingerprint",
+          "limitation"
+        ],
+        "title": "CapabilityResponse"
+      },
+      "CropCapabilityModel": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "horizons": {
+            "items": {
+              "$ref": "#/components/schemas/HorizonModel"
+            },
+            "type": "array",
+            "title": "Horizons"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "horizons"
+        ],
+        "title": "CropCapabilityModel"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HorizonModel": {
+        "properties": {
+          "days": {
+            "type": "integer",
+            "title": "Days"
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "days",
+          "mode"
+        ],
+        "title": "HorizonModel"
+      },
+      "StressChangesModel": {
+        "properties": {
+          "price_pct": {
+            "type": "number",
+            "title": "Price Pct"
+          },
+          "yield_pct": {
+            "type": "number",
+            "title": "Yield Pct"
+          },
+          "cost_pct": {
+            "type": "number",
+            "title": "Cost Pct"
+          },
+          "delay_days": {
+            "type": "integer",
+            "title": "Delay Days"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "price_pct",
+          "yield_pct",
+          "cost_pct",
+          "delay_days"
+        ],
+        "title": "StressChangesModel"
+      },
+      "StressResponse": {
+        "properties": {
+          "candidate_id": {
+            "type": "string",
+            "title": "Candidate Id"
+          },
+          "changes": {
+            "$ref": "#/components/schemas/StressChangesModel"
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          },
+          "profit_base": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profit Base"
+          },
+          "delta_cny": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta Cny"
+          },
+          "roi": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roi"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note"
+          },
+          "model_version": {
+            "type": "string",
+            "title": "Model Version"
+          },
+          "data_version": {
+            "type": "string",
+            "title": "Data Version"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "candidate_id",
+          "changes",
+          "available",
+          "profit_base",
+          "delta_cny",
+          "roi",
+          "note",
+          "model_version",
+          "data_version"
+        ],
+        "title": "StressResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "health",
+      "description": "存活 / 就绪探针"
+    },
+    {
+      "name": "meta",
+      "description": "版本矩阵"
+    },
+    {
+      "name": "capabilities",
+      "description": "城市决策能力"
+    },
+    {
+      "name": "decision",
+      "description": "Final Model 推理（评估 / 压力）"
+    },
+    {
+      "name": "daily",
+      "description": "Daily 市场脉搏快照"
+    }
+  ]
+}

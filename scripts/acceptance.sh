@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# AgriScope v1.0 · 一键正式验收（只读校验 + 各层验收；禁止训练）
+set -uo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+export PROJECT_ROOT="$ROOT"
+FAIL=0
+
+echo "===== 0. 运行时资产清单校验 ====="
+python3 scripts/verify_assets.py || FAIL=1
+
+echo; echo "===== 1. Backend 正式验收 ====="
+python3 backend/scripts/acceptance.py || FAIL=1
+
+echo; echo "===== 2. Final Model 验收 ====="
+PYTHONPATH=models/src python3 models/scripts/check_acceptance_final.py || FAIL=1
+
+echo; echo "===== 3. Daily 验收 ====="
+python3 data/daily/acceptance.py || FAIL=1
+
+echo
+if [ "$FAIL" -eq 0 ]; then echo "ACCEPTANCE_PASS"; else echo "ACCEPTANCE_FAILED"; fi
+exit "$FAIL"

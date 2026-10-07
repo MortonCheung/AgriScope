@@ -1,0 +1,26 @@
+# ============================================================================
+# AgriScope Decision API · 服务器运行依赖
+# 安装：python3 -m pip install -r backend/requirements.txt
+#
+# 版本对齐冻结时的运行环境（见 models/reports/final/FINAL_RUN_META.json 的 packages）。
+# 后端通过 decision_engine.final.inference 调用冻结模型，因此需要加载 .pkl 的
+# scikit-learn / catboost / lightgbm / scipy，以及 pandas / numpy / pyarrow。
+# ============================================================================
+
+# --- Final Model 推理（加载 models/models/final/*.pkl）---
+pandas==2.3.3
+numpy==2.0.2
+pyarrow==20.0.0
+scikit-learn==1.6.1
+scipy==1.13.1
+catboost==1.2.10
+lightgbm==4.6.0
+
+# --- HTTP 服务 ---
+fastapi==0.128.8
+uvicorn==0.39.0
+pydantic==2.13.4
+
+# --- 测试（可选，生产可不装）---
+pytest==8.4.2
+httpx==0.28.1
