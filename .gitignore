@@ -35,8 +35,12 @@ archive/
 reference/
 catboost_info/
 
-# --- LLM 调用缓存 ---
+# --- LLM 调用缓存与中间产物 ---
 llm/cache/
+llm/artifacts/
+
+# --- Long-Horizon 研究中间产物（大 parquet/csv；源与交付报告仍进 Git）---
+models/long_horizon/artifacts/
 
 # --- 注意：以下必须保留在 Git 中，不要被上面的规则误伤 ---
 #   models/src/  models/config/  models/scripts/  models/tests/  models/docs/

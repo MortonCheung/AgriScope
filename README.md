@@ -12,10 +12,12 @@
 | `backend/` | 唯一正式后端（FastAPI：Final Model 推理 + Daily 快照） |
 | `models/` | 冻结模型工程：`src/`（decision_engine）、`config/`、`scripts/`、`tests/`、`reports/final/`（清单） |
 | `data/` | 数据与研究：`daily/`（Daily 管道源码）、`scripts/`（数据基座管道源码） |
-| `llm/` | 长期预测层（Provider / Context / Prompts / Schemas） |
+| `models/long_horizon/` | **长期研究层（30–180d 窗口均价）**：target 研究 / baseline / 回测 / Registry（只读冻结数据，不重训 Final） |
+| `llm/` | 长期预测实验层（Provider / Context / Prompts / Schemas / Cache / 评估 harness） |
+| `data/long_horizon/` | Long-Horizon Forecast Job（独立预生成，前端只读；不塞进 Daily） |
 | `backend/deploy/` | 部署配置（systemd 单元 / env 模板） |
 | `runtime/` | `manifest.json`：大型运行时资产的 sha256 清单 |
-| `scripts/` | `dev.sh` / `test_all.sh` / `acceptance.sh` |
+| `scripts/` | `dev.sh` / `test_all.sh` / `acceptance.sh` / `verify_long_horizon.py` |
 | `docs/` + 根 `*.md` | 审计、设计、计划与冻结报告 |
 
 ## 运行时资产（不进 Git）
@@ -41,10 +43,33 @@ python3 scripts/verify_assets.py        # 逐件比对 sha256（只读）
 python3 -m pip install -r backend/requirements.txt
 cd frontend && npm install && cd ..
 
-./scripts/dev.sh          # 终端 A：启动正式后端(8787)；终端 B：npm run dev(5173)
-./scripts/test_all.sh     # 前端 → 后端 → Final → Daily（+ Long-Horizon，待 Phase 7+）
+./scripts/dev.sh          # 终端 A：启动正式后端(8787)；终端 B：cd frontend && npm run dev
+./scripts/test_all.sh     # 前端 → 后端 → Final → Daily → Long-Horizon（一致性门禁）
 ./scripts/acceptance.sh   # 一键正式验收（禁止训练）
 ```
+
+Long-Horizon（长期研究层）重建与验证：
+
+```bash
+# 一键重建 Phase 7→18（目标研究 / baseline / Registry / LLM harness / 预测快照）
+PROJECT_ROOT=$PWD PYTHONPATH=models/src:models:. python3 -m long_horizon.run_long_horizon
+
+# 只生成长快照（前端读它）
+PROJECT_ROOT=$PWD PYTHONPATH=models/src:models:. python3 -m data.long_horizon.run_long_horizon_job
+
+# 一致性门禁（只读）
+python3 scripts/verify_long_horizon.py
+```
+
+长期预测 API（**独立于** `/api/decision`，不改变其语义）：
+
+```bash
+GET  /api/forecast/capabilities?city=shenyang
+POST /api/forecast/long-horizon     # {contract_version, city_id, crop, horizon_days}
+```
+
+LLM 层无 API key 时自动使用确定性 stub（`is_real_llm=false`），
+所有 LLM 数字结论一律标注**未评估**；LLM 不参与正式数值链路。
 
 手动等价：
 
@@ -68,4 +93,9 @@ cd frontend && npm run dev        # Vite 将 /api 代理到 127.0.0.1:8787
 - 单仓库迁移设计：`MONOREPO_MIGRATION_DESIGN.md`
 - LLM 评估设计：`LLM_EVALUATION_DESIGN.md`
 - 施工计划（Phase 7–22）：`LONG_HORIZON_CONSTRUCTION_PLAN.md`
+- 长期目标研究：`LONG_HORIZON_TARGET_STUDY.md`（由 `models/long_horizon/target_study.py` 生成）
+- 长期模型报告：`LONG_HORIZON_MODEL_REPORT.md`
+- 长期 Registry：`LONG_HORIZON_REGISTRY.csv`
+- LLM 预报/消融/Hybrid：`LLM_FORECAST_REPORT.md` / `LLM_ABLATION_REPORT.md` / `HYBRID_REPORT.md`
+- 长期冻结门禁：`LONG_HORIZON_FREEZE_GATE.md`
 - 上一轮集成记录：`FINAL_INTEGRATION_MERGE_REPORT.md`

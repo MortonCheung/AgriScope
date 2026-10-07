@@ -3,6 +3,7 @@ import { ROUTES } from '../../app/routes';
 import type { DecisionCandidate, DecisionResult } from '../../domain/decision/types';
 import { ConfidenceMark, dateWindow, formatNumber, money, RangePlot, rangeText, RiskScale } from './DecisionVisuals';
 import { DailyContext } from '../daily/DailyContext';
+import { LongHorizonPanel } from '../longHorizon/LongHorizonPanel';
 import { actualProfit, evaluationLabel, profitLabel, shownConfidence } from './presentation';
 
 export function DecisionSummary({result,candidate,onDetail,onCompare,onEvidence,stressUrl}:{result:DecisionResult;candidate:DecisionCandidate;onDetail:()=>void;onCompare:()=>void;onEvidence:()=>void;stressUrl:string}){
@@ -24,6 +25,7 @@ export function DecisionSummary({result,candidate,onDetail,onCompare,onEvidence,
       <ConfidenceMark confidence={confidence}/>
       <div className="decision-result__caution">{noWinner&&<p>方案差异较小，不作强烈推荐。</p>}{warning&&<p>{warning}</p>}</div>
       <DailyContext cityId={result.request.user_context.city_id} crop={candidate.crop}/>
+      <LongHorizonPanel cityId={result.request.user_context.city_id} crop={candidate.crop}/>
       <button type="button" className="decision-text-button" onClick={onCompare}>比较替代方案 →</button>
       <button type="button" className="decision-text-button" onClick={onEvidence}>查看依据 →</button>
     </aside>

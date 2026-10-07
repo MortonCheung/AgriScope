@@ -43,6 +43,12 @@ DAILY_MONITOR = DAILY_PROCESSED_DIR / "monitor" / "status.json"
 EXTENDED_SNAPSHOT_DIR = DAILY_PROCESSED_DIR / "final_input" / "extended_snapshot"
 EXTENDED_FINGERPRINT = EXTENDED_SNAPSHOT_DIR / ".source_fingerprint.json"
 
+# Long-Horizon（独立预测 Job 的预生成产物，只读；由 data/long_horizon 生成）
+LH_PROCESSED_DIR = ROOT / "data" / "processed" / "long_horizon"
+LH_SNAPSHOT_DIR = LH_PROCESSED_DIR / "snapshots"
+LH_LATEST = LH_SNAPSHOT_DIR / "latest.json"
+LH_REGISTRY = MODELS_DIR / "long_horizon" / "artifacts" / "LONG_HORIZON_REGISTRY.csv"
+
 # ---------------------------------------------------------------- 服务参数
 API_TITLE = "AgriScope Decision API"
 API_VERSION = "1.0.0"

@@ -25,9 +25,9 @@ backend/
 │   ├── dependencies.py        # 城市映射 / 推理锁 / 引擎单例 / request_id
 │   ├── errors.py              # 统一 Error Contract {error_code,message,request_id,details}
 │   ├── schemas.py             # 对外响应模型（OpenAPI）
-│   ├── services/              # final_model / capability / daily / meta 服务
-│   └── routes/                # health / meta / capabilities / decision / daily
-├── tests/test_e2e.py          # 16 项契约 + 1 项并发（17 passed）
+│   ├── services/              # final_model / capability / daily / meta / long_horizon 服务
+│   └── routes/                # health / meta / capabilities / decision / daily / forecast
+├── tests/test_e2e.py          # 契约 + 并发（28 passed）
 ├── scripts/acceptance.py      # 正式验收（19/19 → BACKEND_FROZEN）
 ├── deploy/agriscope-api.service
 ├── openapi.json               # 生成的 OpenAPI 规范
@@ -66,6 +66,12 @@ python3 -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --workers 1
 | POST | `/api/decision/evaluate` | 决策评估主契约（别名 `/api/decision`、`/api/decision/rank`） |
 | POST | `/api/decision/stress` | 压力情景 |
 | GET | `/api/daily/latest?city=shenyang` | Daily 快照（原样返回，schema 1.1.0） |
+| GET | `/api/forecast/capabilities?city=shenyang` | 长期能力（crop × horizon × method × production_status） |
+| POST | `/api/forecast/long-horizon` | 长期预测（N 天窗口均价情景；只读预生成快照，**不改** `/api/decision` 语义） |
+
+> Long-Horizon 由独立 Job（`data/long_horizon/run_long_horizon_job.py`）预生成到
+> `data/processed/long_horizon/snapshots/latest.json`，后端**只读**转发；
+> 快照缺失返回 `FORECAST_UNAVAILABLE(503)`，不影响 Decision / Daily。
 
 OpenAPI 文档：`/docs`、`/redoc`、`/openapi.json`（仓库内另有 `openapi.json` 快照）。
 

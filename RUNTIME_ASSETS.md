@@ -7,9 +7,10 @@
 
 | 基线块 | 身份 | 路径 | 版本/指纹 |
 |---|---|---|---|
-| Frontend | 独立仓库 `MortonCheung/AgriScope` | `AgriScope/` | 分支 `feat/frontend-v5-restructure`，commit **`dc9a9c1c1ead11d184e9d4b527efd17fd5a0a40c`** |
+| Frontend | **本仓库**（`git mv` 保留历史；来源 commit `dc9a9c1c1ead11d184e9d4b527efd17fd5a0a40c` @ `feat/frontend-v5-restructure`） | `frontend/` | typecheck / 315 tests / build / verify:ui 全绿 |
 | Backend | **本仓库** | `backend/` | api_version `1.0.0`；`backend/openapi.json` |
-| Final Model | 冻结（不得重训） | `models/` | `model_version=final_v1`，`data_version=final_v1`，`code_fingerprint=5a5d68232b747549`，`generated_at=2026-10-07 19:45:00` |
+| Long-Horizon | **本仓库**（研究层，只读冻结数据） | `models/long_horizon/`、`llm/` | `model_version=long_horizon_v1`；预测快照 `data/processed/long_horizon/snapshots/latest.json` |
+| Final Model | 冻结（不得重训） | `models/` | `model_version=final_v1`，`data_version=final_v1`，`code_fingerprint=b19b187268ee92db`（PORTABILITY_PATCH：仅路径解析改变，算法/权重/产物未改动） |
 | Daily | 冻结（不得扩功能） | `data/processed/daily/` | `schema_version=daily_pipeline_version=1.1.0`，`data_version=5158f56ad7df596d`，`model_version=final_v1` |
 
 ## 2. 不进仓库的资产（被 `.gitignore` 排除）
@@ -59,7 +60,22 @@ PY
 
 # 后端就绪（会真检查快照/数据/模型/元数据/daily）
 curl -s http://127.0.0.1:8000/health/ready
+
+# 运行时资产清单校验（强校验 canonical/模型；派生资产可刷新）
+python3 scripts/verify_assets.py
+python3 scripts/verify_assets.py --refresh   # 管道重跑后刷新 data/processed/** 的哈希
 ```
+
+### 强校验 vs 可刷新（重要）
+
+- **强校验**：`models/**`、`data/model_ready/**`、`data/metadata/**`、`data/reports/**`、`data/raw/**`
+  —— 事实来源，任何 size/sha256 不符直接 FAIL。
+- **可刷新（派生）**：`data/processed/**` 由 Daily / Final 管道**重新生成**（日志会追加、
+  快照含 `generated_at`），每次管道运行都可能变化。只读校验时若漂移只提示；
+  用 `--refresh` 刷新其哈希（会在 manifest 记录 `refreshed_at` / `refresh_note`）。
+
+  > 背景：`data/daily/acceptance.py` 会真实重跑 Daily 管道，从而改写 `data/processed/daily/**`；
+  > 若无该机制，`scripts/acceptance.sh` 的每一步都会在下一次运行时因日志追加而误报失败。
 
 ## 5. 部署时的资产获取
 

@@ -1,6 +1,11 @@
-# PROJECT STATUS · AgriScope（穹衡）
+# PROJECT STATUS · AgriScope
 
-> 本文件是**唯一的人类项目状态说明**，由 2026-10-07 全项目只读审计 + 结构收口任务生成。
+> **历史文档（SUPERSEDED）**：本文件记录的是 2026-10-07「结构收口」阶段的状态，
+> 其中的单仓库 / 分支 / 模型冻结状态**已过时**。
+> 当前状态请看：`README.md`（入口）、`LONG_HORIZON_FREEZE_GATE.md`（长期层）、
+> `backend/BACKEND_FREEZE_GATE.md`（后端）、`models/reports/final/FINAL_MODEL_FREEZE_GATE.md`（Final Model）。
+
+> 本文件由 2026-10-07 全项目只读审计 + 结构收口任务生成。
 > 所有结论均以**实际文件 / 实际代码 / 实际运行结果**为准（不采信旧 Agent 的“完成”声明）。
 > 机器审计产物见 `archive/audits/project_structure_20261007/`。
 

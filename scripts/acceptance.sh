@@ -18,6 +18,9 @@ PYTHONPATH=models/src python3 models/scripts/check_acceptance_final.py || FAIL=1
 echo; echo "===== 3. Daily 验收 ====="
 python3 data/daily/acceptance.py || FAIL=1
 
+echo; echo "===== 4. Long-Horizon 一致性门禁 ====="
+python3 scripts/verify_long_horizon.py || FAIL=1
+
 echo
 if [ "$FAIL" -eq 0 ]; then echo "ACCEPTANCE_PASS"; else echo "ACCEPTANCE_FAILED"; fi
 exit "$FAIL"

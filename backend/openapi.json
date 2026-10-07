@@ -297,6 +297,99 @@
           }
         }
       }
+    },
+    "/api/forecast/capabilities": {
+      "get": {
+        "tags": [
+          "forecast"
+        ],
+        "summary": "长期预测能力（crop × horizon × method × production_status）",
+        "operationId": "capabilities_api_forecast_capabilities_get",
+        "parameters": [
+          {
+            "name": "city",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "城市 slug，目前仅 shenyang",
+              "default": "shenyang",
+              "title": "City"
+            },
+            "description": "城市 slug，目前仅 shenyang"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Capabilities Api Forecast Capabilities Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/forecast/long-horizon": {
+      "post": {
+        "tags": [
+          "forecast"
+        ],
+        "summary": "长期预测（N 天窗口均价的情景化估计）",
+        "operationId": "long_horizon_api_forecast_long_horizon_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Payload",
+                "description": "{contract_version?, city_id?, crop, horizon_days}"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Long Horizon Api Forecast Long Horizon Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -596,6 +689,10 @@
     {
       "name": "daily",
       "description": "Daily 市场脉搏快照"
+    },
+    {
+      "name": "forecast",
+      "description": "Long-Horizon 长期预测（情景化，独立于 /api/decision）"
     }
   ]
 }

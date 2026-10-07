@@ -286,3 +286,52 @@ def test_concurrent_evaluate_isolation(client):
     for crop, row in results:
         assert row["crop"] == crop, f"串了：期望 {crop} 得到 {row['crop']}"
         assert row["area_mu"] == 60
+
+
+# ---- 22 Long-Horizon capability（新增路由，独立于 /api/decision）
+def test_forecast_capability_shenyang(client):
+    v = client.get("/api/forecast/capabilities", params={"city": "shenyang"}).json()
+    assert v["supported"] is True and v["city_id"] == "shenyang"
+    assert v["horizons"] == [30, 60, 90, 120, 150, 180]
+    statuses = {h["production_status"] for c in v["crops"] for h in c["horizons"]}
+    assert statuses <= {"PRODUCTION_POINT", "SCENARIO_ONLY", "EXPLORATORY_SCENARIO_ONLY"}
+    assert any(h["production_status"] == "EXPLORATORY_SCENARIO_ONLY" for c in v["crops"] for h in c["horizons"])
+
+
+# ---- 23 Long-Horizon 预测：点值必须落在区间内且单位固定
+def test_forecast_long_horizon_entry_is_consistent(client):
+    r = client.post("/api/forecast/long-horizon",
+                    json={"contract_version": "1", "city_id": "shenyang", "crop": "土豆", "horizon_days": 120})
+    assert r.status_code == 200
+    e = r.json()
+    assert e["crop"] == "土豆" and e["horizon"] == 120 and e["available"] is True
+    assert e["unit"] == "CNY/kg"
+    assert e["range_low"] <= e["point_forecast"] <= e["range_high"]
+    assert e["forecast"]["source"] in {"seasonal", "long_horizon_model", "scenario_only"}
+    assert e["forecast"]["fallback_used"] is False
+    assert e["range_type"] in {"scenario_range", "prediction_interval"}
+    raw = r.text
+    for token in ("NaN", "Infinity", "-Infinity"):
+        assert token not in raw
+
+
+# ---- 24 Long-Horizon 失败隔离与校验（不 fallback、不臆造）
+def test_forecast_long_horizon_validation_and_isolation(client):
+    city = client.post("/api/forecast/long-horizon",
+                       json={"crop": "土豆", "horizon_days": 120, "city_id": "dalian"})
+    assert city.status_code == 422 and city.json()["error_code"] == "UNSUPPORTED_CITY"
+    bad_h = client.post("/api/forecast/long-horizon", json={"crop": "土豆", "horizon_days": 45})
+    assert bad_h.status_code == 400 and bad_h.json()["error_code"] == "VALIDATION_ERROR"
+    missing = client.post("/api/forecast/long-horizon", json={"horizon_days": 120})
+    assert missing.status_code == 400 and missing.json()["error_code"] == "VALIDATION_ERROR"
+    unknown = client.post("/api/forecast/long-horizon", json={"crop": "不存在的作物", "horizon_days": 120})
+    assert unknown.status_code == 404 and unknown.json()["error_code"] == "NOT_FOUND"
+
+
+# ---- 25 新增路由不得破坏 decision 语义
+def test_decision_semantics_unchanged_by_forecast_routes(client):
+    body = request_body(crops=["西红柿"], horizon=90)
+    env = client.post("/api/decision", json=body).json()
+    assert env["request"] == body
+    assert env["market_as_of"] == body["user_context"]["market_context"]["as_of"]
+    assert isinstance(env["batch"]["all"], list) and env["batch"]["all"]
