@@ -1,0 +1,13 @@
+/* Long-horizon stays on the same paper: typography and rules only, no cards or new motion. */
+.long-horizon { min-width: 0; padding-block: var(--ag-space-3); margin-bottom: var(--ag-space-4); border-block: 1px solid var(--ag-rule-soft); color: var(--ag-ink-soft); font-size: var(--ag-fs-meta); }
+.long-horizon p { margin: 0; }
+.long-horizon__head { display: flex; flex-direction: column; gap: var(--ag-space-2); }
+.long-horizon__label { font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); color: var(--ag-ink-muted); }
+.long-horizon__status, .long-horizon__pending { color: var(--ag-ink-muted); line-height: 1.7; }
+.long-horizon__rows { margin: var(--ag-space-3) 0 0; padding: 0; list-style: none; }
+.long-horizon__rows li { display: flex; align-items: baseline; justify-content: space-between; column-gap: var(--ag-space-3); padding-block: 4px; font-variant-numeric: tabular-nums; }
+.long-horizon__rows li span:first-child { color: var(--ag-ink-muted); }
+.long-horizon__meta { margin-top: var(--ag-space-3); color: var(--ag-ink-muted); font-size: var(--ag-fs-micro); line-height: 1.7; }
+.long-horizon__note { margin-top: var(--ag-space-2); color: var(--ag-ink-muted); font-size: var(--ag-fs-micro); line-height: 1.7; }
+.long-horizon[data-status='SCENARIO_ONLY'] .long-horizon__status,
+.long-horizon[data-status='EXPLORATORY_SCENARIO_ONLY'] .long-horizon__status { text-decoration: underline; text-underline-offset: 3px; }

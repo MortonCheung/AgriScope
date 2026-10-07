@@ -1,0 +1,1574 @@
+{
+  "schema": "agriscope.runtime-manifest/1",
+  "generated_from": "models/reports/final/FINAL_RUN_META.json",
+  "model_version": "final_v1",
+  "data_version": "final_v1",
+  "code_fingerprint": "b19b187268ee92db",
+  "generated_at": "2026-10-07 19:45:00",
+  "n_assets": 195,
+  "total_bytes": 111133274,
+  "assets": [
+    {
+      "path": "models/models/final/朝阳_土豆_h30_catboost.pkl",
+      "destination": "models/models/final/",
+      "sha256": "d1795d436aae1f2e0b2bd1a5dbda01f33e9ac05b17a3e2bbc8e6fdfad401308e",
+      "size": 461822,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/朝阳_芸豆_h14_extra_trees_tuned.pkl",
+      "destination": "models/models/final/",
+      "sha256": "0a3ba739de0d0b6cef01edfae7dfe2fb167c7c78f912034a20dda17477686829",
+      "size": 5512518,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/朝阳_芸豆_h30_catboost.pkl",
+      "destination": "models/models/final/",
+      "sha256": "ac828353d2a00d574d43239bde79fd07a48242d713d52b606e1cb94dfcef6638",
+      "size": 461710,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/朝阳_茄子_h30_elasticnet_tuned.pkl",
+      "destination": "models/models/final/",
+      "sha256": "473679e2cac8d2a63dcb48b0b1a5ee189b2f63150a545684487953abb3444c06",
+      "size": 6479,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/朝阳_西红柿_h14_extra_trees_tuned.pkl",
+      "destination": "models/models/final/",
+      "sha256": "fdae27752a13ae968d4f351219ec53e6115f7da737f745a34cce8a167a5e707c",
+      "size": 5496825,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/朝阳_西红柿_h30_extra_trees_tuned.pkl",
+      "destination": "models/models/final/",
+      "sha256": "22a51df320d8216c9a7db364ccfe6e307376656117169ab110bf739cc4eff46d",
+      "size": 5515833,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/朝阳_青椒_h14_extra_trees_tuned.pkl",
+      "destination": "models/models/final/",
+      "sha256": "e834dae41f1949a9e0a7cd808a339d2a34377adf8bd2b9229e2427677c9dc47a",
+      "size": 5499990,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/朝阳_青椒_h30_catboost.pkl",
+      "destination": "models/models/final/",
+      "sha256": "47a886b7e9135f2dc2fe25a0bb4ccbb1eb2ac8d2d82f85f6c6891d8b3e797943",
+      "size": 461478,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/朝阳_韭菜_h14_elasticnet_tuned.pkl",
+      "destination": "models/models/final/",
+      "sha256": "a0ec73fcf2d4aa22dc56398e3ae84d6848233e649a3c3cf27bcbdad357d6edda",
+      "size": 6479,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/朝阳_韭菜_h30_elasticnet_tuned.pkl",
+      "destination": "models/models/final/",
+      "sha256": "dfecdb57321df5a60ae4b2214393cfb3d591f4961d785672111aafc0f24b78f8",
+      "size": 6479,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/朝阳_韭菜_h7_elasticnet_tuned.pkl",
+      "destination": "models/models/final/",
+      "sha256": "c8f1e7fefe1d54d24071735469f138595121c7c7c3464ec5d99d7c8ab55f1256",
+      "size": 6478,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/朝阳_黄瓜_h14_extra_trees_tuned.pkl",
+      "destination": "models/models/final/",
+      "sha256": "173410e91ac616a9df34b2f90536057be22cc4436c036c13be589e3fe88a4961",
+      "size": 5500566,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/朝阳_黄瓜_h30_catboost.pkl",
+      "destination": "models/models/final/",
+      "sha256": "8953775befe1dc6a38426d7e44754d1c3b608cb5b3e315dcec9810f3803fa59c",
+      "size": 459038,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/朝阳_黄瓜_h7_extra_trees.pkl",
+      "destination": "models/models/final/",
+      "sha256": "d6345aaaceabc3422f61c01a6bb44e8eb0b7a6276bf755f9f745289e9fd2e46e",
+      "size": 19701815,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/沈阳_尖椒_h14_elasticnet.pkl",
+      "destination": "models/models/final/",
+      "sha256": "0e5b9df82997251bd8a5a6d78b0aa3b643834818731374740606f4259f450e2b",
+      "size": 6473,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/沈阳_尖椒_h30_elasticnet.pkl",
+      "destination": "models/models/final/",
+      "sha256": "98b1371c8ff753946aa066457ff9a0e7a478a30e7e6228459d2121d921f1fe8a",
+      "size": 6474,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/沈阳_尖椒_h7_extra_trees_tuned.pkl",
+      "destination": "models/models/final/",
+      "sha256": "1b54b22b43bd1cfdd7068927c8a17985ad5597cdd31e0822ed1a1b44b8fbd06c",
+      "size": 6259733,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/沈阳_芸豆_h14_elasticnet.pkl",
+      "destination": "models/models/final/",
+      "sha256": "695f902ea001ca24864646955f9e100577ad80a2f45e62b230423cde5fc7ed2b",
+      "size": 6474,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/沈阳_芸豆_h30_elasticnet.pkl",
+      "destination": "models/models/final/",
+      "sha256": "30da7e6791b333e8c831f96e4c88022188be80af9db0833cc9c5137ba66edd06",
+      "size": 6474,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/沈阳_芸豆_h7_elasticnet.pkl",
+      "destination": "models/models/final/",
+      "sha256": "f97dec596e6f038586fb45319870415d9f6ac9240e15a277de3fbf661654a6e5",
+      "size": 6473,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/沈阳_茄子_h30_elasticnet_tuned.pkl",
+      "destination": "models/models/final/",
+      "sha256": "cb5dbdd8275ade77c04fbd40f64598b280e0dae3e72b1c5cbcd0a7d660b39f68",
+      "size": 6479,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/沈阳_西红柿_h14_elasticnet_tuned.pkl",
+      "destination": "models/models/final/",
+      "sha256": "1422d122f2f98e8905a285dbfb9f9cc8fd8247c4df2df9e0c57e9f07c968710c",
+      "size": 6482,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/沈阳_西红柿_h30_elasticnet_tuned.pkl",
+      "destination": "models/models/final/",
+      "sha256": "6a0e8f8fd1f8ec15022722a703ecbd44be01c90fa3b675f1ce1e7f8a9f0e29d2",
+      "size": 6482,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/沈阳_西红柿_h7_elasticnet.pkl",
+      "destination": "models/models/final/",
+      "sha256": "c23e6d8c43d59a32f7c11c83321b737ea6a2fa64874cb7f237bcabaad960312f",
+      "size": 6475,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/沈阳_青椒_h14_elasticnet.pkl",
+      "destination": "models/models/final/",
+      "sha256": "ae4ee8a30bb98c3ba6ac71cf384ebe0386067cf2cff48d54e0ca7bd4919da2c4",
+      "size": 6473,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/沈阳_青椒_h30_elasticnet_tuned.pkl",
+      "destination": "models/models/final/",
+      "sha256": "085fc8728ccfb72f6d44e52309ccbef190af9c96be0eb9d320304a0db699fc01",
+      "size": 6479,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/沈阳_青椒_h7_elasticnet.pkl",
+      "destination": "models/models/final/",
+      "sha256": "ab1f5ecc8342e834c839953d6ba2548c9f34cfa5368d947e24d81715c3cdd886",
+      "size": 6472,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/沈阳_韭菜_h14_elasticnet_tuned.pkl",
+      "destination": "models/models/final/",
+      "sha256": "182318c40e57d1c1ddb43677d46d24fa5e5486c57da182c7f97daace292a31e4",
+      "size": 6479,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/沈阳_韭菜_h30_elasticnet_tuned.pkl",
+      "destination": "models/models/final/",
+      "sha256": "462c4861c033c4e1432d8fedf128a75dd54d34de2d5fe4fd2022a6b2d4cdfbfc",
+      "size": 6479,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/沈阳_黄瓜_h14_elasticnet.pkl",
+      "destination": "models/models/final/",
+      "sha256": "42c2af14b0d9ca2f376706616817d603feb8dfaf1c10f952971a64abeb1a7fc4",
+      "size": 6474,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/沈阳_黄瓜_h30_extra_trees.pkl",
+      "destination": "models/models/final/",
+      "sha256": "d9d3c61180e168b8c69a9c0ee13e244f7f6ac5396b2535e68c804baa76d71440",
+      "size": 22030584,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/models/final/沈阳_黄瓜_h7_elasticnet.pkl",
+      "destination": "models/models/final/",
+      "sha256": "caca80fcf5df1d0ce7f7a8742c0905f39421da100cf671bb48ff7452ba15eb75",
+      "size": 6473,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/data/snapshots/final_v1/datasets/decision_dataset_朝阳.parquet",
+      "destination": "models/data/snapshots/final_v1/",
+      "sha256": "bdbe1307ed16a7c2d4be5b9b9d61b8b90724b6eb5d96825b48719da142e00e6d",
+      "size": 2291517,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/data/snapshots/final_v1/datasets/decision_dataset_沈阳.parquet",
+      "destination": "models/data/snapshots/final_v1/",
+      "sha256": "f04b01b9b8399c155756b4918f61e7fa33e987f525ad80362af809ce27b4bbb4",
+      "size": 3904078,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/data/snapshots/final_v1/model_ready/FEATURE_SOURCE_MAP.csv",
+      "destination": "models/data/snapshots/final_v1/",
+      "sha256": "cb5662b9aed4f434b5f6bd49573aad5a27492152f1c751b79e3d88895bdeaf4c",
+      "size": 86793,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/data/snapshots/final_v1/model_ready/chaoyang_extended/environment_daily.parquet",
+      "destination": "models/data/snapshots/final_v1/",
+      "sha256": "5536378f5d06e217a42da96ab6166a56cd44e492a7ff42288be3aba778f50987",
+      "size": 185768,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/data/snapshots/final_v1/model_ready/chaoyang_extended/market_daily.parquet",
+      "destination": "models/data/snapshots/final_v1/",
+      "sha256": "fec84dfc0d05a65c52fb2362d3072fceda5a9351aaa9e9f417ab120f34626b8f",
+      "size": 181559,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/data/snapshots/final_v1/model_ready/chaoyang_extended/phenology.parquet",
+      "destination": "models/data/snapshots/final_v1/",
+      "sha256": "7a5273178521ee02e389e731d6ca893e7c65400d4139184c4a8f9fda55997186",
+      "size": 28311,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/data/snapshots/final_v1/model_ready/climate/climate_daily.parquet",
+      "destination": "models/data/snapshots/final_v1/",
+      "sha256": "0b9e5d50fb53eaf81c19e3fa0633d5cde25258971fdea81438a7ac3a8ff2449d",
+      "size": 699987,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/data/snapshots/final_v1/model_ready/climate/vegetation_anomaly.parquet",
+      "destination": "models/data/snapshots/final_v1/",
+      "sha256": "ae205bddf64af7aa03de1e248b442254a8cc5cbd54a73183f71765e7d7866c60",
+      "size": 31250,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/data/snapshots/final_v1/model_ready/hri/hri_inputs.parquet",
+      "destination": "models/data/snapshots/final_v1/",
+      "sha256": "1d8f701b77bd2dad8dadea9b9fadc2d8443e86404040e3c1f79be7959912e9e5",
+      "size": 1571972,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/data/snapshots/final_v1/model_ready/jinzhou_extended/environment_daily.parquet",
+      "destination": "models/data/snapshots/final_v1/",
+      "sha256": "2700b630353fc9913c5abae532943f195f6e754c81639bed1b2fc598bf2d3924",
+      "size": 186451,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/data/snapshots/final_v1/model_ready/jinzhou_extended/market_daily.parquet",
+      "destination": "models/data/snapshots/final_v1/",
+      "sha256": "f90060f0a50916c595fdf7a70e9cb35ad43381960ebad0e310e56c5a49302743",
+      "size": 212401,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/data/snapshots/final_v1/model_ready/jinzhou_extended/phenology.parquet",
+      "destination": "models/data/snapshots/final_v1/",
+      "sha256": "44b705154596f8e3b7e1694841cd9d7e98b97163fd622ccd48a61bc5c9ede099",
+      "size": 29152,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/data/snapshots/final_v1/model_ready/profit/cost_components.parquet",
+      "destination": "models/data/snapshots/final_v1/",
+      "sha256": "ec0c7bd292d2d53a747262aedbbca376b20de747f540538c86cc9f16001227f2",
+      "size": 27163,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/data/snapshots/final_v1/model_ready/profit/cost_proxy.parquet",
+      "destination": "models/data/snapshots/final_v1/",
+      "sha256": "b4786b620c7da19210b24041ab8ac95e1eb32775ba76e38eb6b43a9d446706aa",
+      "size": 21613,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/data/snapshots/final_v1/model_ready/profit/crop_cost.parquet",
+      "destination": "models/data/snapshots/final_v1/",
+      "sha256": "c06c71a2e0593953b04075460a1cd077b6e4025203bb6f20141025e00d954ea1",
+      "size": 24944,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/data/snapshots/final_v1/model_ready/recommendation/market_nodes.parquet",
+      "destination": "models/data/snapshots/final_v1/",
+      "sha256": "663e493377e2adccaf9b6a3bac38707d2b0069ba92ff031451a42650cbc2a6cd",
+      "size": 18637,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/data/snapshots/final_v1/model_ready/recommendation/structural_context.parquet",
+      "destination": "models/data/snapshots/final_v1/",
+      "sha256": "0311dc6ba63dc305df4804c74e3d6b5ab4648f0f11f0a7884e2d882326e7b5ab",
+      "size": 82048,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/data/snapshots/final_v1/model_ready/shenyang_core/cost_reference.parquet",
+      "destination": "models/data/snapshots/final_v1/",
+      "sha256": "ec0c7bd292d2d53a747262aedbbca376b20de747f540538c86cc9f16001227f2",
+      "size": 27163,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/data/snapshots/final_v1/model_ready/shenyang_core/crop_context.parquet",
+      "destination": "models/data/snapshots/final_v1/",
+      "sha256": "ae94628caf2734adc939efe607a00e240c0de58dbe0f41132c6a8c1f631aaef6",
+      "size": 24060,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/data/snapshots/final_v1/model_ready/shenyang_core/environment_daily.parquet",
+      "destination": "models/data/snapshots/final_v1/",
+      "sha256": "14ac04d8a56f5f28adfd5916e8bb2ed21a401f394da9af2b4ce2f528aedfd651",
+      "size": 137102,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/data/snapshots/final_v1/model_ready/shenyang_core/market_daily.parquet",
+      "destination": "models/data/snapshots/final_v1/",
+      "sha256": "51230e4a20860f69bc8d87378b580d50c767d4286db18b76d47727c597cbb288",
+      "size": 84942,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/data/snapshots/final_v1/model_ready/shenyang_core/phenology.parquet",
+      "destination": "models/data/snapshots/final_v1/",
+      "sha256": "e6a1592b6f129074b980496635ed9782be3bb707a996db2b48347ad568de146f",
+      "size": 30383,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/daily_market_price.csv",
+      "destination": "data/processed/daily/",
+      "sha256": "4047d4e9f1109ef4eb04f06e2a97b12acf67fc52678ab642a6305f36765d1b5c",
+      "size": 5944878,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/daily_market_price.parquet",
+      "destination": "data/processed/daily/",
+      "sha256": "12d8511ed5d723514f0f83bdb8a71f396d17d9e8d3d1f4bb01ef0634193ee27d",
+      "size": 137323,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/features_daily.csv",
+      "destination": "data/processed/daily/",
+      "sha256": "d72904eeabcbc3a6afc602f309268dfaf47231574617ce5dd7078277ed7d8a94",
+      "size": 1623100,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/features_daily.parquet",
+      "destination": "data/processed/daily/",
+      "sha256": "12683d0d06bba3dc56887594f51957740e756649ccb0267d5135a0053e175c0b",
+      "size": 627914,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/final_input/extended_snapshot/.source_fingerprint.json",
+      "destination": "data/processed/daily/",
+      "sha256": "87803d35f8f6901deff509b71800f99f58692090c585f1d1d6cd3e9fd7916627",
+      "size": 122,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/final_input/extended_snapshot/datasets/decision_dataset_朝阳.parquet",
+      "destination": "data/processed/daily/",
+      "sha256": "bdbe1307ed16a7c2d4be5b9b9d61b8b90724b6eb5d96825b48719da142e00e6d",
+      "size": 2291517,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/final_input/extended_snapshot/datasets/decision_dataset_沈阳.parquet",
+      "destination": "data/processed/daily/",
+      "sha256": "a98fddae660ab656a6758fb595db90afab2835892fa1022acd938f5b04e403fc",
+      "size": 3968931,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/final_input/extended_snapshot/model_ready/FEATURE_SOURCE_MAP.csv",
+      "destination": "data/processed/daily/",
+      "sha256": "cb5662b9aed4f434b5f6bd49573aad5a27492152f1c751b79e3d88895bdeaf4c",
+      "size": 86793,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/final_input/extended_snapshot/model_ready/chaoyang_extended/environment_daily.parquet",
+      "destination": "data/processed/daily/",
+      "sha256": "5536378f5d06e217a42da96ab6166a56cd44e492a7ff42288be3aba778f50987",
+      "size": 185768,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/final_input/extended_snapshot/model_ready/chaoyang_extended/market_daily.parquet",
+      "destination": "data/processed/daily/",
+      "sha256": "fec84dfc0d05a65c52fb2362d3072fceda5a9351aaa9e9f417ab120f34626b8f",
+      "size": 181559,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/final_input/extended_snapshot/model_ready/chaoyang_extended/phenology.parquet",
+      "destination": "data/processed/daily/",
+      "sha256": "7a5273178521ee02e389e731d6ca893e7c65400d4139184c4a8f9fda55997186",
+      "size": 28311,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/final_input/extended_snapshot/model_ready/climate/climate_daily.parquet",
+      "destination": "data/processed/daily/",
+      "sha256": "0b9e5d50fb53eaf81c19e3fa0633d5cde25258971fdea81438a7ac3a8ff2449d",
+      "size": 699987,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/final_input/extended_snapshot/model_ready/climate/vegetation_anomaly.parquet",
+      "destination": "data/processed/daily/",
+      "sha256": "ae205bddf64af7aa03de1e248b442254a8cc5cbd54a73183f71765e7d7866c60",
+      "size": 31250,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/final_input/extended_snapshot/model_ready/hri/hri_inputs.parquet",
+      "destination": "data/processed/daily/",
+      "sha256": "1d8f701b77bd2dad8dadea9b9fadc2d8443e86404040e3c1f79be7959912e9e5",
+      "size": 1571972,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/final_input/extended_snapshot/model_ready/jinzhou_extended/environment_daily.parquet",
+      "destination": "data/processed/daily/",
+      "sha256": "2700b630353fc9913c5abae532943f195f6e754c81639bed1b2fc598bf2d3924",
+      "size": 186451,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/final_input/extended_snapshot/model_ready/jinzhou_extended/market_daily.parquet",
+      "destination": "data/processed/daily/",
+      "sha256": "f90060f0a50916c595fdf7a70e9cb35ad43381960ebad0e310e56c5a49302743",
+      "size": 212401,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/final_input/extended_snapshot/model_ready/jinzhou_extended/phenology.parquet",
+      "destination": "data/processed/daily/",
+      "sha256": "44b705154596f8e3b7e1694841cd9d7e98b97163fd622ccd48a61bc5c9ede099",
+      "size": 29152,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/final_input/extended_snapshot/model_ready/profit/cost_components.parquet",
+      "destination": "data/processed/daily/",
+      "sha256": "ec0c7bd292d2d53a747262aedbbca376b20de747f540538c86cc9f16001227f2",
+      "size": 27163,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/final_input/extended_snapshot/model_ready/profit/cost_proxy.parquet",
+      "destination": "data/processed/daily/",
+      "sha256": "b4786b620c7da19210b24041ab8ac95e1eb32775ba76e38eb6b43a9d446706aa",
+      "size": 21613,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/final_input/extended_snapshot/model_ready/profit/crop_cost.parquet",
+      "destination": "data/processed/daily/",
+      "sha256": "c06c71a2e0593953b04075460a1cd077b6e4025203bb6f20141025e00d954ea1",
+      "size": 24944,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/final_input/extended_snapshot/model_ready/recommendation/market_nodes.parquet",
+      "destination": "data/processed/daily/",
+      "sha256": "663e493377e2adccaf9b6a3bac38707d2b0069ba92ff031451a42650cbc2a6cd",
+      "size": 18637,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/final_input/extended_snapshot/model_ready/recommendation/structural_context.parquet",
+      "destination": "data/processed/daily/",
+      "sha256": "0311dc6ba63dc305df4804c74e3d6b5ab4648f0f11f0a7884e2d882326e7b5ab",
+      "size": 82048,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/final_input/extended_snapshot/model_ready/shenyang_core/cost_reference.parquet",
+      "destination": "data/processed/daily/",
+      "sha256": "ec0c7bd292d2d53a747262aedbbca376b20de747f540538c86cc9f16001227f2",
+      "size": 27163,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/final_input/extended_snapshot/model_ready/shenyang_core/crop_context.parquet",
+      "destination": "data/processed/daily/",
+      "sha256": "ae94628caf2734adc939efe607a00e240c0de58dbe0f41132c6a8c1f631aaef6",
+      "size": 24060,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/final_input/extended_snapshot/model_ready/shenyang_core/environment_daily.parquet",
+      "destination": "data/processed/daily/",
+      "sha256": "14ac04d8a56f5f28adfd5916e8bb2ed21a401f394da9af2b4ce2f528aedfd651",
+      "size": 137102,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/final_input/extended_snapshot/model_ready/shenyang_core/market_daily.parquet",
+      "destination": "data/processed/daily/",
+      "sha256": "aae951b42f207907ec75505b651c3c3ba5345c5e332945df23f98e7338d6b008",
+      "size": 91869,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/final_input/extended_snapshot/model_ready/shenyang_core/phenology.parquet",
+      "destination": "data/processed/daily/",
+      "sha256": "e6a1592b6f129074b980496635ed9782be3bb707a996db2b48347ad568de146f",
+      "size": 30383,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/logs/run_2026-10-01.log",
+      "destination": "data/processed/daily/",
+      "sha256": "56d8e7e66bc317f6f9b02c09e2a690ffded8111eaff12e06f34969cb447ff8e7",
+      "size": 2498,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/logs/run_2026-10-05.log",
+      "destination": "data/processed/daily/",
+      "sha256": "73eb99d5f90a38e484271e4ec0fefc4092367ddcefc25dcff0fc04abbb1d9ccd",
+      "size": 5298,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/logs/run_2026-10-06.log",
+      "destination": "data/processed/daily/",
+      "sha256": "dc650b8bb6fd45873c2051adc288e92d90f1a02879241e2286c617b84857cf0d",
+      "size": 23550,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/logs/run_2026-10-07.log",
+      "destination": "data/processed/daily/",
+      "sha256": "6765ecb13ae97a0d7afbfc731f5303d36fe3bab091b1f180a4b2fe9007c10874",
+      "size": 32359,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/market_signal.json",
+      "destination": "data/processed/daily/",
+      "sha256": "c9cb0a96be0c77df0690400253caf4dd1e61719d0c94de4d09cf6215eaf7e0af",
+      "size": 11624,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/monitor/status.json",
+      "destination": "data/processed/daily/",
+      "sha256": "eb391cf213a2610067acdbf5b0771f2ccb3810dfed3137dbc7fe1a91177ce136",
+      "size": 459,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/normalize_report.json",
+      "destination": "data/processed/daily/",
+      "sha256": "773138699b682a678d6267d51de4777d52197330379488bb9d05620f389a229e",
+      "size": 888,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/qc_daily.csv",
+      "destination": "data/processed/daily/",
+      "sha256": "f8fe1bcbccdef724c84aea3a754c9972bf398a73fe118451a3d7126c059e1660",
+      "size": 44896,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/snapshots/daily/2026-10-01.json",
+      "destination": "data/processed/daily/",
+      "sha256": "f6365674f9bfd45e8d20554a77567b43eba84990fed429bab58a0e643515cac7",
+      "size": 35685,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/snapshots/daily/2026-10-05.json",
+      "destination": "data/processed/daily/",
+      "sha256": "791b416b2d91b1b13a5ed5015b3ae2658be6b92ed5429d399ff51a8c67d5c990",
+      "size": 35737,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/snapshots/daily/2026-10-06.json",
+      "destination": "data/processed/daily/",
+      "sha256": "4b6b1aa15e88ef11588207bbca309eba24f3492ccf94cfbd90df9c3ae2bcfd0d",
+      "size": 35825,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/snapshots/daily/2026-10-07.json",
+      "destination": "data/processed/daily/",
+      "sha256": "553f7bc2df27dd75589bb83fc345ccfdab0087b4c08b5eef8828f542c7f8947b",
+      "size": 36000,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/processed/daily/snapshots/latest.json",
+      "destination": "data/processed/daily/",
+      "sha256": "553f7bc2df27dd75589bb83fc345ccfdab0087b4c08b5eef8828f542c7f8947b",
+      "size": 36000,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/model_ready/FEATURE_SOURCE_MAP.csv",
+      "destination": "data/model_ready/",
+      "sha256": "cb5662b9aed4f434b5f6bd49573aad5a27492152f1c751b79e3d88895bdeaf4c",
+      "size": 86793,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/model_ready/chaoyang_extended/environment_daily.parquet",
+      "destination": "data/model_ready/",
+      "sha256": "5536378f5d06e217a42da96ab6166a56cd44e492a7ff42288be3aba778f50987",
+      "size": 185768,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/model_ready/chaoyang_extended/market_daily.parquet",
+      "destination": "data/model_ready/",
+      "sha256": "fec84dfc0d05a65c52fb2362d3072fceda5a9351aaa9e9f417ab120f34626b8f",
+      "size": 181559,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/model_ready/chaoyang_extended/phenology.parquet",
+      "destination": "data/model_ready/",
+      "sha256": "7a5273178521ee02e389e731d6ca893e7c65400d4139184c4a8f9fda55997186",
+      "size": 28311,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/model_ready/climate/climate_daily.parquet",
+      "destination": "data/model_ready/",
+      "sha256": "0b9e5d50fb53eaf81c19e3fa0633d5cde25258971fdea81438a7ac3a8ff2449d",
+      "size": 699987,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/model_ready/climate/vegetation_anomaly.parquet",
+      "destination": "data/model_ready/",
+      "sha256": "ae205bddf64af7aa03de1e248b442254a8cc5cbd54a73183f71765e7d7866c60",
+      "size": 31250,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/model_ready/hri/hri_inputs.parquet",
+      "destination": "data/model_ready/",
+      "sha256": "1d8f701b77bd2dad8dadea9b9fadc2d8443e86404040e3c1f79be7959912e9e5",
+      "size": 1571972,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/model_ready/jinzhou_extended/environment_daily.parquet",
+      "destination": "data/model_ready/",
+      "sha256": "2700b630353fc9913c5abae532943f195f6e754c81639bed1b2fc598bf2d3924",
+      "size": 186451,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/model_ready/jinzhou_extended/market_daily.parquet",
+      "destination": "data/model_ready/",
+      "sha256": "f90060f0a50916c595fdf7a70e9cb35ad43381960ebad0e310e56c5a49302743",
+      "size": 212401,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/model_ready/jinzhou_extended/phenology.parquet",
+      "destination": "data/model_ready/",
+      "sha256": "44b705154596f8e3b7e1694841cd9d7e98b97163fd622ccd48a61bc5c9ede099",
+      "size": 29152,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/model_ready/profit/cost_components.parquet",
+      "destination": "data/model_ready/",
+      "sha256": "ec0c7bd292d2d53a747262aedbbca376b20de747f540538c86cc9f16001227f2",
+      "size": 27163,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/model_ready/profit/cost_proxy.parquet",
+      "destination": "data/model_ready/",
+      "sha256": "b4786b620c7da19210b24041ab8ac95e1eb32775ba76e38eb6b43a9d446706aa",
+      "size": 21613,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/model_ready/profit/crop_cost.parquet",
+      "destination": "data/model_ready/",
+      "sha256": "c06c71a2e0593953b04075460a1cd077b6e4025203bb6f20141025e00d954ea1",
+      "size": 24944,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/model_ready/recommendation/market_nodes.parquet",
+      "destination": "data/model_ready/",
+      "sha256": "663e493377e2adccaf9b6a3bac38707d2b0069ba92ff031451a42650cbc2a6cd",
+      "size": 18637,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/model_ready/recommendation/structural_context.parquet",
+      "destination": "data/model_ready/",
+      "sha256": "0311dc6ba63dc305df4804c74e3d6b5ab4648f0f11f0a7884e2d882326e7b5ab",
+      "size": 82048,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/model_ready/shenyang_core/cost_reference.parquet",
+      "destination": "data/model_ready/",
+      "sha256": "ec0c7bd292d2d53a747262aedbbca376b20de747f540538c86cc9f16001227f2",
+      "size": 27163,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/model_ready/shenyang_core/crop_context.parquet",
+      "destination": "data/model_ready/",
+      "sha256": "ae94628caf2734adc939efe607a00e240c0de58dbe0f41132c6a8c1f631aaef6",
+      "size": 24060,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/model_ready/shenyang_core/environment_daily.parquet",
+      "destination": "data/model_ready/",
+      "sha256": "14ac04d8a56f5f28adfd5916e8bb2ed21a401f394da9af2b4ce2f528aedfd651",
+      "size": 137102,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/model_ready/shenyang_core/market_daily.parquet",
+      "destination": "data/model_ready/",
+      "sha256": "51230e4a20860f69bc8d87378b580d50c767d4286db18b76d47727c597cbb288",
+      "size": 84942,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "data/model_ready/shenyang_core/phenology.parquet",
+      "destination": "data/model_ready/",
+      "sha256": "e6a1592b6f129074b980496635ed9782be3bb707a996db2b48347ad568de146f",
+      "size": 30383,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/ABLATION_REPORT.md",
+      "destination": "models/reports/final/",
+      "sha256": "9a3abf924d2d21a3c785c6a2b5f0b2563d6b7f35d06f9419261a1d3b43908e65",
+      "size": 1097,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/BACKTEST_REPORT.md",
+      "destination": "models/reports/final/",
+      "sha256": "490acc375c001f011ecf1eb131477fbe1f79ff45de1fa882b9342c8743158fc8",
+      "size": 2108,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/FAILED_EXPERIMENTS.md",
+      "destination": "models/reports/final/",
+      "sha256": "7e974f8422592b5b12f12cfe1066a080016adb4a913ab688067e60661da8d332",
+      "size": 2412,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/FINAL_ANSWERS.md",
+      "destination": "models/reports/final/",
+      "sha256": "210cc3fde291367328b4675ad9bbc942ef7a7138fbd5166c02bbae963c99b02b",
+      "size": 5410,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/FINAL_DATA_AUDIT.md",
+      "destination": "models/reports/final/",
+      "sha256": "c29cc5c8362a1d7039d17c38ea4f9056817d3be5ab4279050dd3b5c4070b5bd1",
+      "size": 4505,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/FINAL_METRICS.csv",
+      "destination": "models/reports/final/",
+      "sha256": "0d25ba43231a87bfd0714f5d0d0d474b1b2a153ba933df400919af4bf1c4d759",
+      "size": 2493,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/FINAL_MODEL_FREEZE_GATE.md",
+      "destination": "models/reports/final/",
+      "sha256": "0c88a4610eca5b122beb685eeceb1a12621c8cf8fb936bc5747e32948a629cee",
+      "size": 3159,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/FINAL_MODEL_OUTPUT_SCHEMA.json",
+      "destination": "models/reports/final/",
+      "sha256": "ac2a2ad093b72bd546f8749d9d9c41ecd7b3354e6ad680a35c92869c8b73a907",
+      "size": 3859,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/FINAL_MODEL_REGISTRY.csv",
+      "destination": "models/reports/final/",
+      "sha256": "5b0da61643490a6d66d3cf23e92d1a3907e5208cb211823307362cb5904d3f73",
+      "size": 35180,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/FINAL_MODEL_REPORT.md",
+      "destination": "models/reports/final/",
+      "sha256": "80392389c4059d330ea24feaab7e536a8f2aeeab04bc8e57059ecb80f359cf1c",
+      "size": 2359,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/FINAL_RUN_META.json",
+      "destination": "models/reports/final/",
+      "sha256": "151776de22dc96b8d8ee8b0d6a2665ed6c31eb53163de41af38dc7d78a588217",
+      "size": 9019,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/FREEZE_CHECKLIST.csv",
+      "destination": "models/reports/final/",
+      "sha256": "ba6252d780796421fd667cd02e5c09722b46ad55fbf025db80db95854b5cb370",
+      "size": 1927,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/HRI_VALIDATION_REPORT.md",
+      "destination": "models/reports/final/",
+      "sha256": "5559422c29d867700bfbd8e0c0cc44a3ce78a62e9abd5d9db3d8baa6a35ac254",
+      "size": 5941,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/INFERENCE_AND_DEPENDENCY_REPORT.md",
+      "destination": "models/reports/final/",
+      "sha256": "07bc544fa25ef829e3154051dd265015cf37e1655336db658332d7cfbe4d8c2d",
+      "size": 4606,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/OPTIMIZATION_REPORT.md",
+      "destination": "models/reports/final/",
+      "sha256": "1d4e6e3b09017ecbe2ce0ce5391c05288f2b8620521c6f83a29d2c18d0347cbe",
+      "size": 6604,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/POLICY_AND_UNTOUCHED_REPORT.md",
+      "destination": "models/reports/final/",
+      "sha256": "6e18e910e3b576f8772861b72397b65e40df4f9ce4804f1c8ca4f6a750a86861",
+      "size": 2725,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/PRICE_MODEL_REPORT.md",
+      "destination": "models/reports/final/",
+      "sha256": "9d3373cb9e68287929802945bedbe7cc077cddea86f510eb4c995dc01c88ac45",
+      "size": 7943,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/PROFIT_REPORT.md",
+      "destination": "models/reports/final/",
+      "sha256": "001ddf826682cf5adc6d135411cd2db610706ec9e7b83ee91c9be10a92e46ea3",
+      "size": 5312,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/RECOMMENDATION_REPORT.md",
+      "destination": "models/reports/final/",
+      "sha256": "a790355470c5aaed0af59b5d1b1195b2f79b8862fd597192e9d02726a4aa6542",
+      "size": 2979,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/RISK_MODEL_REPORT.md",
+      "destination": "models/reports/final/",
+      "sha256": "76a3ff824a5742c583cb43d52cf47bb62b4d96e65f99b7e477d934b3752b4753",
+      "size": 4861,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/ROBUSTNESS_REPORT.md",
+      "destination": "models/reports/final/",
+      "sha256": "c835230e838a9a72f7fd2f3b1c4159db6d1f0d015c1bf44c9ebe15eed43c4338",
+      "size": 4459,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/_clean_repro.log",
+      "destination": "models/reports/final/",
+      "sha256": "06d454c04ba0b2e1b20d7c71761a302a0d8bbff98bbbd833f6de9f918e98d7b8",
+      "size": 29586,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/ablation.csv",
+      "destination": "models/reports/final/",
+      "sha256": "9548071861f100923e0b4256e5a09da842fa41c5536f2ba64f34536242bad0d3",
+      "size": 1265,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/balanced_diagnosis.json",
+      "destination": "models/reports/final/",
+      "sha256": "85d04676195bc1ee4d99848f3a1d688e9475b35923ba626ae4cc475df71d784e",
+      "size": 413,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/balanced_diagnosis_by_cutoff.csv",
+      "destination": "models/reports/final/",
+      "sha256": "e6a3d2e691bc97c1a17b45cb4257822d9146ecfaee870c9edea62ccc4f03c626",
+      "size": 57373,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/balanced_fix_before_after.csv",
+      "destination": "models/reports/final/",
+      "sha256": "22e2fdd32d18fed22dab001a06621ff33e138a4782727a5ffcbf6eb095dccf71",
+      "size": 336,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/balanced_fix_before_after_fixed_thr.csv",
+      "destination": "models/reports/final/",
+      "sha256": "ef830d36d334a42b9fca4751b8aea60a2b81f3575f13a7537cf355c1dae9f633",
+      "size": 251,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/city_capability.csv",
+      "destination": "models/reports/final/",
+      "sha256": "4eeb53706cbaa4292d6fa63fdb0c9ecc5aac9f5f0d6adc8ad9e45fc05f8e2cd8",
+      "size": 685,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/climate_exposure.csv",
+      "destination": "models/reports/final/",
+      "sha256": "f175fba910a081574200a99f2600e8758736d45e884e901184c16ef66cd828a5",
+      "size": 13090,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/confidence_by_crop.csv",
+      "destination": "models/reports/final/",
+      "sha256": "56bbf5b9d2abc6926994c395c983d85b65afc059eb129f40f97941da1922b132",
+      "size": 1050,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/cost_reference_graded.csv",
+      "destination": "models/reports/final/",
+      "sha256": "fc080222b25b23ac3bba4c8677bdb7775a2a22af2a0afdbc8d80b63b1de4c31c",
+      "size": 4285,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/crop_capability.csv",
+      "destination": "models/reports/final/",
+      "sha256": "0b507feb5703adf28a13397385c996638e9cc53983d9e300206978c5166d8d57",
+      "size": 5101,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/decision_score_ranking.csv",
+      "destination": "models/reports/final/",
+      "sha256": "49da35cccb31efe77a6a0e285248c30d503973ab02663a8696a7fcab7b13307d",
+      "size": 43911,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/default_policy_decision.json",
+      "destination": "models/reports/final/",
+      "sha256": "948770cb9748d8160e137a83e3afb21c374558f89754053953969b7397c0f034",
+      "size": 1016,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/final_artifacts_summary.json",
+      "destination": "models/reports/final/",
+      "sha256": "1ffda8b13b29df40e4d3bc701a6c33250471634726effc7101d917fbb2cb2102",
+      "size": 125,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/final_candidates_2025-02-28.csv",
+      "destination": "models/reports/final/",
+      "sha256": "ec18e505d94109248b6b97cff1e0cdbd7d1daac093ba910cfd334785019c9830",
+      "size": 67151,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/final_candidates_2025-06-02.csv",
+      "destination": "models/reports/final/",
+      "sha256": "4933f052a15c6e1ae86eb0fe3a7d22a37ea746116f146e14b4769e7f8097d57e",
+      "size": 67201,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/final_candidates_2025-09-01.csv",
+      "destination": "models/reports/final/",
+      "sha256": "ec5cb7393f0935ce4ecc1517a559e5c7982efb85e163c75149ee55a7ef571a97",
+      "size": 67131,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/final_model_artifacts.csv",
+      "destination": "models/reports/final/",
+      "sha256": "87c3fa5e717b57d35a294e63ef932269f08aa43017d4e78b4530ef479eed5959",
+      "size": 7113,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/herding_suppression_after.csv",
+      "destination": "models/reports/final/",
+      "sha256": "7b06c22f33843ba6c8efe94b6517a81fab0397a5e0aa4d1c92205470d7a7004b",
+      "size": 1778,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/hri_controls.csv",
+      "destination": "models/reports/final/",
+      "sha256": "c7b4c3ab106ec8aeac1bd40012bc39b1be1a377d3446ea21c5df7708a46eabcc",
+      "size": 563,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/hri_summary.json",
+      "destination": "models/reports/final/",
+      "sha256": "b4e761674fc9ba2f0830268d5d7d6fd87c1cf1e667b6a4cafb3b9687d1a77e40",
+      "size": 347,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/hri_timeseries_summary.json",
+      "destination": "models/reports/final/",
+      "sha256": "0369e92fbe67b690025ea98491de9fe501b38bec7a4303e44534731c51acc391",
+      "size": 593,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/hri_timeseries_validation.csv",
+      "destination": "models/reports/final/",
+      "sha256": "f1283727851aba7a079deb6f2c1d6c1164eaa962a037829bf16f04c25edec43e",
+      "size": 17172,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/hri_validation.csv",
+      "destination": "models/reports/final/",
+      "sha256": "555bab6fe9a4f81847398cdf5b1f1d78bc79a6d2324475df1fce372233a7cd04",
+      "size": 19371,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/interval_calibration_by_crop_fold.csv",
+      "destination": "models/reports/final/",
+      "sha256": "b38a08a22661212939f30c2623d0cbb914bb965ab3ae96ee64a21c815d360244",
+      "size": 9975,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/interval_calibration_summary.csv",
+      "destination": "models/reports/final/",
+      "sha256": "9aaa0c63ed4768d2de3ce16aec12022282c863dbd7a18b8f327608d0d10c453b",
+      "size": 624,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/interval_coverage_by_season.csv",
+      "destination": "models/reports/final/",
+      "sha256": "fbcc90f685a08314f6eef93fd93dd26f42bb6eb9b0723ce7c8c4385f231dcf9d",
+      "size": 845,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/interval_decision.json",
+      "destination": "models/reports/final/",
+      "sha256": "575328f961eb0d729ef623eec12309b7a1fc88a6fa0aaf787e029f1a19f55004",
+      "size": 249,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/minimax_regret.csv",
+      "destination": "models/reports/final/",
+      "sha256": "f364597daa7c7155c13c4e57ce41a556ee2daa09f35563b1ec5a57dd00ee57fd",
+      "size": 622,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/multi_horizon_WAPE.csv",
+      "destination": "models/reports/final/",
+      "sha256": "1c9fbaf1361942c088ac0ad942148b6438d24346f0f2f24baff1211626126a4e",
+      "size": 1012,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/optimize_summary.json",
+      "destination": "models/reports/final/",
+      "sha256": "203e7d286f343fc55b2e6949a57816211ce8b97bf4a5d1390cce114bb0cce8c7",
+      "size": 225,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/pareto_frontier.csv",
+      "destination": "models/reports/final/",
+      "sha256": "112971079d9ce64cf46bd3f576b82dfdb4883bcc0f22be4c582853d85c07f8c9",
+      "size": 3596,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/pareto_summary.csv",
+      "destination": "models/reports/final/",
+      "sha256": "6431dfceecb0fa6dc3b8e216672273c16f8ae2b4b0c1471058dab99645f5e679",
+      "size": 388,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/policy_benchmark_by_period.csv",
+      "destination": "models/reports/final/",
+      "sha256": "ec809f20889785fad48dd6c2591650ee5d6026cc15bc0748aecb022238fad925",
+      "size": 4377,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/policy_regret_by_period.csv",
+      "destination": "models/reports/final/",
+      "sha256": "de3837b6bfd930533d269c894ad1fdffab1348837fb21aab359321af3cce9fd5",
+      "size": 1267,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/portfolio.csv",
+      "destination": "models/reports/final/",
+      "sha256": "03baf39ddaefd8c56ad72158b00ec6e23f8e0df4887303d4574e53a01bcde426",
+      "size": 263,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/portfolio_balanced.json",
+      "destination": "models/reports/final/",
+      "sha256": "37c3cfba87f57845e622a1723456f3c0b6f64c263b86b9de1b9a649fe6182931",
+      "size": 2202,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/portfolio_conservative.json",
+      "destination": "models/reports/final/",
+      "sha256": "e00e8bfd6918a7b333d629076792d1ae0addc36b906019a1e2960db4361249b4",
+      "size": 2206,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/price_model_folds.csv",
+      "destination": "models/reports/final/",
+      "sha256": "dd3a068a369a3c2e6086b1e72898b406152984edf1844c167241296417392a42",
+      "size": 4733,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/price_model_metrics_by_fold.csv",
+      "destination": "models/reports/final/",
+      "sha256": "1ace78dc34c837b58b265acb98e482e2edf13dd7665e8e4a800a81f82600ff57",
+      "size": 795297,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/price_model_run_meta.json",
+      "destination": "models/reports/final/",
+      "sha256": "fe641ea0cf0e0f8ffdc9b5bc89254eef0d07e8a7c98e656d014e47730921198a",
+      "size": 415,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/price_model_runtime.csv",
+      "destination": "models/reports/final/",
+      "sha256": "c441f63347758f31e18614254d77fe6ca32bd9edb2f97de0165708ee768e40ed",
+      "size": 13979,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/price_model_selection.csv",
+      "destination": "models/reports/final/",
+      "sha256": "a7b80513a82738a096b76c73e97974874e7b1a6f697dcc32a87cc20e5f44c3ac",
+      "size": 24635,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/profit_engine.csv",
+      "destination": "models/reports/final/",
+      "sha256": "bc568bdef3dda26b626766dd0dcb76fac5f4bf75e70612aeae3177c98614d943",
+      "size": 2442,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/profit_grading.csv",
+      "destination": "models/reports/final/",
+      "sha256": "f9d28aca0812fb6365c0dee5b2088022cfe85d2aab782a7e4f0c37c78b0ac024",
+      "size": 490,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/profit_score_summary.json",
+      "destination": "models/reports/final/",
+      "sha256": "bce87a8de4f271f89cfb85f86f7b13135c2fac2e717e6adba955f48d3cfab4c6",
+      "size": 489,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/recommender_policy_benchmark.csv",
+      "destination": "models/reports/final/",
+      "sha256": "4d8c40fbbf393e0fb8759c62dcffe0f165f096d51084c91e18b360d4207d9ce6",
+      "size": 3205,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/robustness.csv",
+      "destination": "models/reports/final/",
+      "sha256": "5efe5f2721b7c5ab051aa2adbbb619c15dfdd1f9925d9d43a0d37414c167b596",
+      "size": 3173,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/robustness_extensions.csv",
+      "destination": "models/reports/final/",
+      "sha256": "22ed1853cb5a572ad987288486fc1f5bdf6c57fffad4eaff5ed0e79aa5cce4e2",
+      "size": 636,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/scenario_range_all_methods.csv",
+      "destination": "models/reports/final/",
+      "sha256": "0fb01c780d4470df3e7512fcb89ac152c75047a61620df5e7f55f36fd4366f49",
+      "size": 13735,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/scenario_range_by_crop_horizon.csv",
+      "destination": "models/reports/final/",
+      "sha256": "b705d544c218f9006fb0bca652db69a6cc7b8f3ded110c953ddd9891f939fdf6",
+      "size": 6691,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/scenario_range_by_season.csv",
+      "destination": "models/reports/final/",
+      "sha256": "20a1d7a16258fc482ad5a5a3fdeb46fdc62811148a137b9f129fbd1ed4f8f0e4",
+      "size": 33462,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/scenario_range_summary.json",
+      "destination": "models/reports/final/",
+      "sha256": "a3c3511c0a3ba99d32ce7f325ba6f08ed2258cd5ab69302e917989d034d0c111",
+      "size": 300,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/score_confidence_summary.json",
+      "destination": "models/reports/final/",
+      "sha256": "b268ae355f62c5b197a03d639c312245e7986c10ce0f862a55f3e471c16f7987",
+      "size": 197,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/strategy_benchmark.csv",
+      "destination": "models/reports/final/",
+      "sha256": "957e34c24adc4de7f62f29cbc39c07ec7bbbc9af1407e91a92377150a749ef6c",
+      "size": 3275,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/stress_regret_table.csv",
+      "destination": "models/reports/final/",
+      "sha256": "edcda5f52651ea7caf6101df8e90218e43d7d96a2b8c9724a10bd83a3d5639e9",
+      "size": 2764,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/stress_scenarios.csv",
+      "destination": "models/reports/final/",
+      "sha256": "81d2dfb6d5e3850793827556355ac29ef827ee64ccf6936ea22c6208ce1cb59b",
+      "size": 7604,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/weather_ablation_by_fold.csv",
+      "destination": "models/reports/final/",
+      "sha256": "b796cc273139378a0322ba9b77b15730bebde7a3aa4f66d3d75816ff6c024c38",
+      "size": 5505,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/weather_ablation_summary.csv",
+      "destination": "models/reports/final/",
+      "sha256": "aa9d5481d9acb57b8a595a9025dd2ffd0696622bfe8798237a6ee40495c390fc",
+      "size": 210,
+      "model_version": "final_v1",
+      "required": true
+    },
+    {
+      "path": "models/reports/final/tables/window_area_report.csv",
+      "destination": "models/reports/final/",
+      "sha256": "0d1aceeaaa4761176f7d1e775ef8c5f9aa93b82aa3b9e55ba464d4b24b217b34",
+      "size": 1155,
+      "model_version": "final_v1",
+      "required": true
+    }
+  ],
+  "refreshed_at": "2026-10-08 01:13:32",
+  "refresh_note": "仅刷新派生资产（data/processed/**）；强校验资产未改动。派生资产由 Daily / Final 管道重新生成。"
+}

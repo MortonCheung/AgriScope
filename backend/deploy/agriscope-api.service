@@ -1,0 +1,45 @@
+# ============================================================================
+# AgriScope Decision API · systemd 单元示例
+# 安装：
+#   sudo cp agriscope-api.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now agriscope-api.service
+# 查看：
+#   systemctl status agriscope-api ; journalctl -u agriscope-api -n 100 -f
+#
+# 关键约束：
+#   * 必须 **单 worker**（--workers 1）。Final 引擎使用模块级 SNAPSHOT_DIR 与
+#     类级/模块级缓存，后端在启动时绑定一次运行时快照；多 worker 会各自绑定，
+#     且无法保证与 Daily 更新后的重启时序一致。
+#   * Daily 更新（daily timer 运行）后需重启本服务以重新绑定运行时快照：
+#     见文末 agriscope-api-reload.service/.path（可选）。
+# ============================================================================
+
+[Unit]
+Description=AgriScope Decision API (Final Model inference + Daily snapshot)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/agriscope/backend
+EnvironmentFile=/opt/agriscope/backend/.env
+ExecStart=/usr/bin/python3 -m uvicorn app.main:app --host ${AGRISCOPE_API_HOST} --port ${AGRISCOPE_API_PORT} --workers 1
+Restart=always
+RestartSec=5
+# 推理为 CPU 密集；按机器核数调整 worker 数（仍须为 1）与线程数
+LimitNOFILE=4096
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target
+
+# ============================================================================
+# 可选：Daily 更新后自动重启 API（重新绑定运行时快照）
+# 若 Daily 以 systemd timer 运行，可直接给 agriscope-daily.service 增加：
+#   [Service]
+#   ExecStartPost=/bin/systemctl --no-block restart agriscope-api.service
+# 或使用 path 单元监听 latest.json 变更：
+#   [Path]
+#   PathChanged=/opt/agriscope/data/processed/daily/snapshots/latest.json
+#   Unit=agriscope-api.service
+# ============================================================================

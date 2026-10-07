@@ -1,17 +1,57 @@
+# ============================================================================
+# AgriScope v1.0 · 单仓库（ONE OFFICIAL REPOSITORY）
+# 只追踪「源码与清单」；大型运行时资产由 runtime/manifest.json 管理。
+# ============================================================================
+
+# --- 依赖 / 构建 / 缓存 ---
 node_modules/
 dist/
 output/
+.vite/
 .playwright-cli/
-*.local
-.env
-.env.*
-!.env.example
-.cache/
-coverage/
 __pycache__/
-*.pyc
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
 .DS_Store
+*.log
+.env
 
-# 同步产出的研究内容由 scripts/sync-shenyang-content.mjs 生成；
-# 如需版本化，取消下面一行的注释。
-# public/research/
+# --- 大型运行时资产（不进 Git，见 runtime/manifest.json）---
+models/models/
+models/data/
+models/evaluation/
+data/raw/
+data/processed/
+data/model_ready/
+data/metadata/
+data/reports/
+data/research/
+
+# --- 归档 / 参考 / 训练缓存（不进 Git）---
+archive/
+reference/
+catboost_info/
+
+# --- LLM 调用缓存与中间产物 ---
+llm/cache/
+llm/artifacts/
+
+# --- Long-Horizon 研究中间产物（大 parquet/csv；源与交付报告仍进 Git）---
+models/long_horizon/artifacts/
+
+# --- 注意：以下必须保留在 Git 中，不要被上面的规则误伤 ---
+#   models/src/  models/config/  models/scripts/  models/tests/  models/docs/
+#   models/reports/final/  models/data/manifests/
+#   data/daily/  data/scripts/
+!models/src/
+!models/config/
+!models/scripts/
+!models/tests/
+!models/docs/
+!models/reports/
+!models/data/manifests/
+!data/daily/
+!data/scripts/

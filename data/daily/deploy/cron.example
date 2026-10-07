@@ -1,0 +1,42 @@
+# ============================================================================
+# AgriScope Daily · 每日市场脉搏 —— cron 示例（沈阳 Daily P0）
+# ----------------------------------------------------------------------------
+# 安装：服务器执行 `crontab -e`，按下方内容粘贴（按需修改 AGRISCOPE_ROOT / PY）。
+#
+# 时区：
+#   程序内部业务日期、crawl_time、published_at、Snapshot date 一律使用
+#   Asia/Shanghai（由 data/daily/io_utils.py 固定，不依赖服务器系统时区）。
+#   但 cron **触发时刻**受服务器时区影响 → 请设置 CRON_TZ（或把系统时区设为东八区）。
+#
+# 运行时刻的工程依据（保守调度，非官方声明）：
+#   实测北京时间 18:20 时，来源当日批发价尚未发布；上一交易日数据可取。
+#   因此采用「主任务 + 安全网」两次调度：
+#     20:30 主任务
+#     23:30 安全网（若数据已入库，重复运行幂等、无副作用）
+#   本调度不代表"官方固定 20 点后发布"。上线后请观察
+#   data/processed/daily/snapshots/latest.json 的 latest_data_date 与
+#   logs 中 [crawl] status=OK / data_advanced，据此微调时刻。
+#
+# 并发：程序内置进程锁（data/processed/daily/.run.lock），
+#       两个任务或人工 backfill 同时触发时，后到者立即以退出码 4 退出，绝不并发写坏文件。
+#
+# 退出码：0 成功(complete/partial) / 2 抓取失败或无数据 / 3 Snapshot 契约非法 / 4 锁占用 / 1 异常。
+# ============================================================================
+
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin
+CRON_TZ=Asia/Shanghai
+AGRISCOPE_ROOT=/opt/agriscope
+PY=python3
+
+# 主运行：每日 20:30（北京时间）
+30 20 * * * cd $AGRISCOPE_ROOT && $PY data/daily/run_daily.py >> data/processed/daily/logs/cron.log 2>&1
+
+# 安全网：每日 23:30（北京时间）—— 发布延迟时补上；幂等
+30 23 * * * cd $AGRISCOPE_ROOT && $PY data/daily/run_daily.py >> data/processed/daily/logs/cron.log 2>&1
+
+# 说明：
+#   * 停机/发布延迟造成的日期缺口由 run_daily 自动补齐（_dates_to_collect），无需额外 cron。
+#   * 补跑单个历史日期：$PY data/daily/run_daily.py --date 2026-10-05
+#   * 部署前自检（不写数据）：$PY data/daily/run_daily.py --dry-run
+#   * 正式验收：$PY data/daily/acceptance.py
