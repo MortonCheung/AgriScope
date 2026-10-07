@@ -1,3 +1,5 @@
+> 历史 RC1 合仓记录，SUPERSEDED_BY_RC2。当前状态、资产数量与验收见 RC2_FINAL_REPORT.md；此处保留当时事实。
+
 # 单仓库 v1 合并与长期层落地报告（MONOREPO_V1_MERGE_REPORT）
 
 > 本轮范围：**只做「合并与统一」+ Long-Horizon 研究层**。

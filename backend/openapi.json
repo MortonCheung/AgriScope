@@ -350,16 +350,14 @@
         "tags": [
           "forecast"
         ],
-        "summary": "长期预测（N 天窗口均价的情景化估计）",
+        "summary": "长期双目标：上市窗口价格与周期市场均价",
         "operationId": "long_horizon_api_forecast_long_horizon_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "additionalProperties": true,
-                "type": "object",
-                "title": "Payload",
-                "description": "{contract_version?, city_id?, crop, horizon_days}"
+                "$ref": "#/components/schemas/LongHorizonForecastRequest",
+                "description": "{contract_version?: '1'|'2', city_id?, crop, horizon_days, target_type?: harvest_market_price|cycle_market_average}"
               }
             }
           },
@@ -374,6 +372,50 @@
                   "additionalProperties": true,
                   "type": "object",
                   "title": "Response Long Horizon Api Forecast Long Horizon Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/decision/long-horizon": {
+      "post": {
+        "tags": [
+          "forecast"
+        ],
+        "summary": "上市窗口种植决策（结构化契约 v2）",
+        "operationId": "long_horizon_decision_api_decision_long_horizon_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LongHorizonDecisionRequest",
+                "description": "contract_version='2'; user_context 包含面积、预算、风险偏好、作物、实际投入与用户选择的预计上市跨度/日期。"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Long Horizon Decision Api Decision Long Horizon Post"
                 }
               }
             }
@@ -524,6 +566,210 @@
         ],
         "title": "HorizonModel"
       },
+      "LongHorizonActualInput": {
+        "properties": {
+          "cost_per_mu": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Per Mu"
+          },
+          "yield_kg_per_mu": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Yield Kg Per Mu"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cost_per_mu",
+          "yield_kg_per_mu"
+        ],
+        "title": "LongHorizonActualInput"
+      },
+      "LongHorizonDecisionRequest": {
+        "properties": {
+          "contract_version": {
+            "type": "string",
+            "const": "2",
+            "title": "Contract Version"
+          },
+          "user_context": {
+            "$ref": "#/components/schemas/LongHorizonUserContext"
+          },
+          "input_source": {
+            "$ref": "#/components/schemas/StructuredInputSource"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "contract_version",
+          "user_context",
+          "input_source"
+        ],
+        "title": "LongHorizonDecisionRequest"
+      },
+      "LongHorizonForecastRequest": {
+        "properties": {
+          "contract_version": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "1",
+                  "2"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contract Version"
+          },
+          "city_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City Id"
+          },
+          "crop": {
+            "type": "string",
+            "title": "Crop"
+          },
+          "horizon_days": {
+            "type": "integer",
+            "title": "Horizon Days"
+          },
+          "target_type": {
+            "type": "string",
+            "enum": [
+              "harvest_market_price",
+              "cycle_market_average"
+            ],
+            "title": "Target Type",
+            "default": "harvest_market_price"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "crop",
+          "horizon_days"
+        ],
+        "title": "LongHorizonForecastRequest"
+      },
+      "LongHorizonMarketContext": {
+        "properties": {
+          "as_of": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of"
+          },
+          "expected_harvest_horizon_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Harvest Horizon Days"
+          },
+          "expected_harvest_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Harvest Date"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "LongHorizonMarketContext"
+      },
+      "LongHorizonUserContext": {
+        "properties": {
+          "city_id": {
+            "type": "string",
+            "title": "City Id"
+          },
+          "area_mu": {
+            "type": "number",
+            "title": "Area Mu"
+          },
+          "budget_cny": {
+            "type": "number",
+            "title": "Budget Cny"
+          },
+          "risk_preference": {
+            "type": "string",
+            "enum": [
+              "conservative",
+              "balanced",
+              "aggressive"
+            ],
+            "title": "Risk Preference"
+          },
+          "crop_preferences": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Crop Preferences"
+          },
+          "actual_inputs": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LongHorizonActualInput"
+            },
+            "type": "object",
+            "title": "Actual Inputs"
+          },
+          "market_context": {
+            "$ref": "#/components/schemas/LongHorizonMarketContext"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "city_id",
+          "area_mu",
+          "budget_cny",
+          "risk_preference",
+          "crop_preferences",
+          "actual_inputs",
+          "market_context"
+        ],
+        "title": "LongHorizonUserContext"
+      },
       "StressChangesModel": {
         "properties": {
           "price_pct": {
@@ -626,6 +872,21 @@
           "data_version"
         ],
         "title": "StressResponse"
+      },
+      "StructuredInputSource": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "structured",
+            "title": "Kind"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind"
+        ],
+        "title": "StructuredInputSource"
       },
       "ValidationError": {
         "properties": {

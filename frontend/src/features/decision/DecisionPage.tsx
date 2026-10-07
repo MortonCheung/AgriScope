@@ -11,6 +11,7 @@ import { DecisionCompare } from './DecisionCompare';
 import { AnimatedUnderline } from '../../components/AnimatedUnderline';
 import { formatNumber } from './DecisionVisuals';
 import { evaluationLabel } from './presentation';
+import { LongHorizonPlanning } from '../longHorizon/LongHorizonPlanning';
 import type { DecisionResult, Strategy } from '../../domain/decision/types';
 import './decision.css';
 const strategyNames:Record<Strategy,string>={balanced:'综合',robust:'稳健',return:'收益优先',low_risk:'低风险',alternative:'替代'};
@@ -19,7 +20,7 @@ export function DecisionPage(){
   const {cityId=''}=useParams();const city=getCity(cityId);
   const [params,setParams]=useSearchParams();
   const testState=import.meta.env.DEV?params.get('test_state'):null;const provider=getDecisionProvider(testState);
-  const session=useDecisionSession(cityId,provider,testState,params.get('view')!=='input');
+  const session=useDecisionSession(cityId,provider,testState,params.get('view')!=='input'&&params.get('view')!=='long-horizon');
   const {state}=session;
   const main=useRef<HTMLElement>(null);
   const view=params.get('view')??'result';
@@ -36,7 +37,8 @@ export function DecisionPage(){
   if(!city)return <main className="decision"><h1 className="ag-section-title">城市入口不存在</h1><TransitionLink to={ROUTES.liaoning} className="ag-button">返回辽宁</TransitionLink></main>;
   return <main className="decision" ref={main}>
     <TransitionLink className="decision__crumb" to={ROUTES.city(cityId)}>← {city.shortName}研究</TransitionLink>
-    {view==='input'?<DecisionInput key={cityId} cityId={cityId} provider={provider} expandInputs={result?.status==='user_input_required'||result?.issues.includes('user_input_required')} initial={session.savedRequest} onSubmit={request=>{setParams(p=>{p.set('view','result');p.delete('plan');return p;});void session.run(request);}}/>
+    <nav className="decision-modes" aria-label="决策周期"><button aria-pressed={view!=='long-horizon'} onClick={()=>switchView('input')}>短期市场比较</button><button aria-pressed={view==='long-horizon'} onClick={()=>switchView('long-horizon')}>上市窗口决策</button></nav>
+    {view==='long-horizon'?<LongHorizonPlanning cityId={cityId}/>:view==='input'?<DecisionInput key={cityId} cityId={cityId} provider={provider} expandInputs={result?.status==='user_input_required'||result?.issues.includes('user_input_required')} initial={session.savedRequest} onSubmit={request=>{setParams(p=>{p.set('view','result');p.delete('plan');return p;});void session.run(request);}}/>
       :state.status==='loading'?<section className="decision-loading" role="status" aria-label="方案比较中" aria-busy="true"><h1 className="ag-section-title">比较这季的选择</h1><div className="ag-state ag-state--loading" aria-hidden="true"><i className="ag-skeleton"/><i className="ag-skeleton"/><i className="ag-skeleton"/></div><button className="ag-button" onClick={()=>{session.cancel();edit();}}>返回修改条件</button></section>
       :state.status==='error'?<section className="ag-state" role="alert"><h1 className="ag-section-title">暂时没能完成比较</h1><p>{state.error}</p><div className="decision-actions"><button className="ag-button ag-button--primary" onClick={()=>{if(state.request)void session.run(state.request);}}>重试</button><button className="ag-button" onClick={edit}>修改条件</button></div></section>
       :result && candidate && result.status==='ok'?<>

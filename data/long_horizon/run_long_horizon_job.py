@@ -1,245 +1,226 @@
-# -*- coding: utf-8 -*-
-"""Phase 18：Long-Horizon Forecast Job（**独立**于 Daily 采集逻辑；Option B 预生成）。
-
-- 输入：冻结数据 + Registry 选定方法（`models/long_horizon/artifacts/LONG_HORIZON_REGISTRY.csv`）；
-- 输出：`data/processed/long_horizon/snapshots/{as_of}.json` + `latest.json`（原子写、哈希、不倒退）；
-- 严格只读，不触发抓取；LLM 失败不影响本 Job（本轮 LLM 不参与数值链路）。
-
-确定性：固定 seed；`snapshot_hash` 剔除 `generated_at` 等易变字段。
-"""
+"""Daily 后独立长期推理：只加载模型，绝不 fit 或重新选择方法。"""
 from __future__ import annotations
+import argparse
+import contextlib
+import fcntl
+import hashlib
 import json
 import os
+import sys
 import tempfile
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
-
+from typing import Optional
+from zoneinfo import ZoneInfo
 import numpy as np
 import pandas as pd
 
-from decision_engine.common import ROOT, ensure_dir
-from long_horizon.common import (load_frozen_dataset, LONG_HORIZONS, CROPS,
-                                 LH_ARTIFACTS, now_iso)
-from long_horizon.baselines import rowwise_baselines, trained_factories
-from long_horizon.targets import add_long_horizon_targets
-from long_horizon.target_definition import primary_target_col
-from llm.common import stable_hash
-
-SNAPSHOT_DIR = ROOT / "data" / "processed" / "long_horizon" / "snapshots"
-SCHEMA = "lh_forecast_v1"
-
-SEASONAL_METHODS = {"b_seaonal_naive_365", "b_seasonal_naive_365",
-                    "b_same_season_mean", "b_same_season_median", "b_last_value"}
-
-
-# ---------------------------------------------------------------- 预测器
-def _registry() -> pd.DataFrame:
-    p = LH_ARTIFACTS / "LONG_HORIZON_REGISTRY.csv"
-    if not p.exists():
-        raise FileNotFoundError(f"缺少 Registry：{p}")
-    return pd.read_csv(p)
+ROOT = Path(os.environ.get('PROJECT_ROOT') or Path(__file__).resolve().parents[2]).resolve()
+for path in (ROOT, ROOT / 'models', ROOT / 'models/src'):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
+SNAPSHOT_DIR = ROOT / 'data/processed/long_horizon/snapshots'
+LOCK_PATH = ROOT / 'data/processed/long_horizon/.run.lock'
+FROZEN_DATA = ROOT / 'models/data/snapshots/final_v1/datasets/decision_dataset_沈阳.parquet'
+DAILY_DATA = ROOT / 'data/processed/daily/daily_market_price.parquet'
+DAILY_LATEST = ROOT / 'data/processed/daily/snapshots/latest.json'
+TARGETS = ('cycle_market_average', 'harvest_market_price')
+HORIZONS = (30, 60, 90, 120, 150, 180)
+SCHEMA = 'lh_forecast_v2'
 
 
-_RB_CACHE: Dict[int, pd.DataFrame] = {}
+def digest(obj):
+    raw = json.dumps(obj, ensure_ascii=False, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
+    return hashlib.sha256(raw).hexdigest()
 
 
-def _rb(horizon: int, full: pd.DataFrame) -> pd.DataFrame:
-    """rowwise baseline 全表（逐 horizon 只算一次；每行只用自己的过去，无泄漏）。"""
-    if horizon not in _RB_CACHE:
-        _RB_CACHE[horizon] = rowwise_baselines(full, horizon)
-    return _RB_CACHE[horizon]
+def load_runtime_history(as_of=None):
+    """保留冻结历史，只追加 QC OK、沈阳、wholesale、同口径的更新观测。"""
+    frozen = pd.read_parquet(FROZEN_DATA)[['date', 'crop', 'price_per_kg']].copy()
+    frozen['date'] = pd.to_datetime(frozen['date'])
+    daily_meta = json.loads(DAILY_LATEST.read_text()) if DAILY_LATEST.exists() else {}
+    appended = pd.DataFrame(columns=frozen.columns)
+    committed = (daily_meta.get('status') in ('complete', 'partial') and
+                 daily_meta.get('contract_valid') is True and daily_meta.get('crawl_status') != 'FAILED' and
+                 daily_meta.get('latest_data_date'))
+    committed_cutoff = min(pd.Timestamp(daily_meta['latest_data_date']),
+                           pd.Timestamp(datetime.now(ZoneInfo('Asia/Shanghai')).date())) if committed else None
+    if as_of and committed_cutoff is not None:
+        committed_cutoff = min(committed_cutoff, pd.Timestamp(as_of))
+    if DAILY_DATA.exists() and committed_cutoff is not None:
+        d = pd.read_parquet(DAILY_DATA)
+        required = {'date', 'city', 'crop_standard', 'price_per_kg', 'price_level', 'model_comparable', 'quality_status'}
+        if not required <= set(d.columns):
+            raise ValueError('Daily normalized schema mismatch')
+        d['date'] = pd.to_datetime(d['date'])
+        d = d[d.date <= committed_cutoff]
+        d['price_per_kg'] = pd.to_numeric(d['price_per_kg'], errors='coerce')
+        d = d[(d.city == '沈阳') & (d.price_level == 'wholesale') & (d.model_comparable == True) &
+              (d.quality_status == 'OK') & np.isfinite(d.price_per_kg) & (d.price_per_kg > 0)]
+        d = d.rename(columns={'crop_standard': 'crop'})
+        ends = frozen.groupby('crop').date.max()
+        d = d[d.crop.isin(ends.index)]
+        d = d[d.date > d.crop.map(ends)]
+        appended = d.groupby(['crop', 'date'], as_index=False).price_per_kg.median()
+    history = frozen.copy() if appended.empty else pd.concat([frozen, appended], ignore_index=True)
+    if as_of:
+        history = history[history.date <= pd.Timestamp(as_of)]
+    history = history.sort_values(['crop', 'date']).reset_index(drop=True)
+    if history.empty:
+        raise ValueError('No market history at cutoff')
+    serial = [{'crop': r.crop, 'date': str(r.date.date()), 'price': float(r.price_per_kg)} for r in history.itertuples()]
+    return history, {'runtime_data_version': digest(serial), 'latest_data_date': str(history.date.max().date()),
+                     'daily_latest_data_date': daily_meta.get('latest_data_date'),
+                     'daily_status': daily_meta.get('status', 'unavailable'),
+                     'daily_freshness': daily_meta.get('data_freshness', 'UNKNOWN'),
+                     'appended_rows': len(history) - len(frozen[frozen.date <= history.date.max()]),
+                     'source': 'frozen_final_history+daily_QC_OK_wholesale_append'}
 
 
-def _rowwise_at(full: pd.DataFrame, crop: str, horizon: int, method: str,
-                anchor: pd.Timestamp) -> Optional[float]:
-    rb = _rb(horizon, full)
-    row = rb[(rb["crop"] == crop) & (rb["date"] == anchor)]
-    if not len(row):
+def number(v):
+    if v is None or isinstance(v, bool):
         return None
-    v = row.iloc[0].get(method)
-    return float(v) if v is not None and pd.notna(v) else None
+    v = float(v)
+    return v if np.isfinite(v) else None
 
 
-def _fit_predict(df_hist: pd.DataFrame, full: pd.DataFrame, crop: str, horizon: int,
-                 method: str, anchor: pd.Timestamp) -> Optional[float]:
-    """按 Registry 选定方法给出 anchor 处的点预测（只使用 <= anchor 的数据）。"""
-    if method.startswith("b_"):
-        return _rowwise_at(full, crop, horizon, method, anchor)
-    if method.startswith("m_"):
-        key = method[2:]
-        facs = trained_factories()
-        if key not in facs:
-            return None
-        tcol = primary_target_col(horizon)
-        sub = df_hist[(df_hist["crop"] == crop) & (df_hist[tcol].notna())]
-        sub = sub[sub["date"] <= anchor]
-        row = df_hist[(df_hist["crop"] == crop) & (df_hist["date"] == anchor)]
-        if len(sub) < 200 or not len(row):
-            return None
-        from decision_engine.final.models import FINAL_FEATURE_COLS
-        m = facs[key]()
-        m.fit(sub[FINAL_FEATURE_COLS], sub[tcol])
-        return float(m.predict(row[FINAL_FEATURE_COLS])[0])
-    return None
-
-
-def _dev_ratio_band(full: pd.DataFrame, crop: str, horizon: int,
-                    method: str) -> Optional[Dict[str, float]]:
-    """场景区间带：用 **development 折（fold1=2024）** 的残差比 [q10,q90]。"""
-    from decision_engine.models.backtest import FOLDS, fold_mask
-    tcol = primary_target_col(horizon)
-    ds = add_long_horizon_targets(full, horizons=[horizon])
-    if method.startswith("b_"):
-        rb = _rb(horizon, full)
-        sub = rb[rb["crop"] == crop][["date", method]]
-        sub = sub.merge(ds.loc[ds["crop"] == crop, ["date", tcol]], on="date", how="inner")
-        preds_all = sub.rename(columns={method: "prediction"})
-        preds_all = preds_all[preds_all["prediction"].notna()]
-        # rowwise baseline 对每行都有值；用 fold1 的测试窗作为 dev
-        _, te = fold_mask(ds[ds["crop"] == crop], FOLDS[0])
-        dates = set(pd.to_datetime(ds[ds["crop"] == crop][te]["date"]))
-        dev = preds_all[preds_all["date"].isin(dates)]
-    else:
-        # 训练型：用 fold1 的 OOT 预测（与 Registry 同口径）
-        dev = _trained_dev_predictions(ds, crop, horizon, method)
-
-    dev = dev[dev["prediction"].notna() & (dev["prediction"] > 0)]
-    if len(dev) < 20:
-        return None
-    ratio = dev[tcol].values / dev["prediction"].values
-    # 保证区间包含点值（点=预测值本身）：比值带必须跨过 1.0
-    return {"q10": float(min(np.percentile(ratio, 10), 1.0)),
-            "q90": float(max(np.percentile(ratio, 90), 1.0)),
-            "n_dev": int(len(dev))}
-
-
-def _trained_dev_predictions(ds: pd.DataFrame, crop: str, horizon: int,
-                             method: str) -> pd.DataFrame:
-    from decision_engine.models.backtest import FOLDS, fold_mask
-    from decision_engine.final.models import FINAL_FEATURE_COLS
-    tcol = primary_target_col(horizon)
-    key = method[2:]
-    facs = trained_factories()
-    if key not in facs:
-        return pd.DataFrame(columns=["date", tcol, "prediction"])
-    sub = ds[ds["crop"] == crop]
-    fold = FOLDS[0]
-    tr_all, te_all = fold_mask(sub, fold)
-    tr = sub[tr_all.loc[sub.index] & sub[tcol].notna()]
-    te = sub[te_all.loc[sub.index] & sub[tcol].notna()]
-    if len(tr) < 200 or not len(te):
-        return pd.DataFrame(columns=["date", tcol, "prediction"])
-    m = facs[key]()
-    m.fit(tr[FINAL_FEATURE_COLS], tr[tcol])
-    return pd.DataFrame({"date": pd.to_datetime(te["date"]).values, tcol: te[tcol].values,
-                         "prediction": m.predict(te[FINAL_FEATURE_COLS])})
-
-
-# ---------------------------------------------------------------- 主构建
-def build(as_of: Optional[str] = None) -> Dict[str, Any]:
-    ds = load_frozen_dataset()
-    reg = _registry()
-    cutoffs = ds.groupby("crop")["date"].max()
-    default_anchor = pd.Timestamp(cutoffs.max())
-    anchor_by_crop = {c: pd.Timestamp(v) for c, v in cutoffs.items()}
-    as_of = as_of or str(default_anchor.date())
-
-    ds_h = {h: add_long_horizon_targets(ds, horizons=[h]) for h in LONG_HORIZONS}
-
-    entries: List[Dict[str, Any]] = []
-    for crop in CROPS:
-        anchor = anchor_by_crop[crop]
-        hist = ds[ds["date"] <= anchor]
-        for h in LONG_HORIZONS:
-            r = reg[(reg["crop"] == crop) & (reg["horizon"] == h)]
-            if not len(r):
-                continue
-            r = r.iloc[0]
-            method = str(r["method"])
-            point = _fit_predict(ds_h[h][ds_h[h]["date"] <= anchor], ds, crop, h, method, anchor)
-            band = _dev_ratio_band(ds, crop, h, method)
-            entry: Dict[str, Any] = {
-                "crop": crop, "horizon": h, "method": method,
-                "production_status": r["production_status"],
-                "confidence": r["confidence"], "range_type": r["range_type"],
-                "unit": "CNY/kg",
-                "point_forecast": round(point, 4) if point is not None else None,
-                "anchor_observation_date": str(anchor.date()),
-                "available": bool(point is not None),
-                "reason": (None if point is not None else "model_unavailable_at_cutoff"),
-            }
-            if point is not None and band:
-                entry.update({
-                    "range_low": round(point * band["q10"], 4),
-                    "range_high": round(point * band["q90"], 4),
-                    "range_band_source": "dev_fold1_residual_ratio_q10_q90",
-                    "range_dev_n": band["n_dev"],
-                })
-            else:
-                entry.update({"range_low": None, "range_high": None})
-            # 模型分歧（程序计算：与 last_value / 同季均值 的相对离散）
-            lv = _rowwise_at(ds, crop, h, "b_last_value", anchor)
-            sm = _rowwise_at(ds, crop, h, "b_same_season_mean", anchor)
-            vals = [v for v in [point, lv, sm] if v is not None]
-            entry["model_disagreement_pct"] = (round(float(np.std(vals) / np.mean(vals) * 100), 3)
-                                               if len(vals) >= 2 and np.mean(vals) else None)
-            entry["fallback_used"] = False
-            entry["forecast_source"] = ("scenario_only"
-                                        if r["production_status"] != "PRODUCTION_POINT"
-                                        else ("seasonal" if method in SEASONAL_METHODS
-                                              else "long_horizon_model"))
-            entries.append(entry)
-
-    snap: Dict[str, Any] = {
-        "schema_version": SCHEMA, "city": "沈阳", "as_of": as_of,
-        "market_as_of": as_of, "cutoff": as_of,
-        "model_version": "long_horizon_v1",
-        "data_version": "final_v1",
-        "unit": "CNY/kg",
-        "horizons": LONG_HORIZONS,
-        "n_entries": len(entries),
-        "entries": entries,
-        "notes": [
-            "Long-Horizon 输出为 N 天窗口均价的情景化估计（target=full），不是第 N 天点位。",
-            "range_type=scenario_range 表示未经校准，不得称 prediction interval。",
-            "150/180 为探索级。LLM 不参与本快照数值。",
-            "本快照基于冻结 Final 数据（anchor=冻结数据最新观测日）；Daily 更新后需重跑本 Job 才能同步。",
-            "本 Job 独立于 Daily 采集链路；LLM 不可用不影响本快照生成。",
-        ],
-    }
-    snap["snapshot_hash"] = stable_hash(snap, n=32)
+def build(as_of: Optional[str] = None):
+    from long_horizon.v2 import load_bundle, predict_at
+    history, runtime = load_runtime_history(as_of)
+    bundle = load_bundle()
+    latest = runtime['latest_data_date']
+    if as_of and str(pd.Timestamp(as_of).date()) > latest:
+        raise ValueError('as_of cannot advance beyond observed market history')
+    entries = []
+    for crop in sorted(history.crop.unique()):
+        anchor = history.loc[history.crop == crop, 'date'].max()
+        for h in HORIZONS:
+            for target in TARGETS:
+                r = predict_at(bundle, history, crop, h, target)
+                registered = next(e for e in bundle['entries'] if e['key'] == f'{crop}|{h}|{target}')
+                pt, lo, hi = [number(r.get(k, r.get(alt))) for k, alt in
+                              [('point', 'point_forecast'), ('low', 'range_low'), ('high', 'range_high')]]
+                if pt is not None and (pt <= 0 or lo is None or hi is None or not 0 < lo <= pt <= hi):
+                    raise ValueError(f'Invalid forecast range: {crop}/{h}/{target}')
+                start = int(r.get('window_start_offset', r.get('start_offset', 1)))
+                end = int(r.get('window_end_offset', r.get('end_offset_exclusive', h + 1)))
+                entries.append({'crop': crop, 'horizon': h, 'target_type': target,
+                    'method': r.get('method'), 'actual_method': r.get('actual_method', r.get('method')),
+                    'production_status': r.get('production_status', r.get('status', 'SCENARIO_ONLY')),
+                    'confidence': r.get('confidence', 'low'), 'range_type': r.get('range_type', 'scenario_range'),
+                    'unit': 'CNY/kg', 'point_forecast': pt, 'range_low': lo, 'range_high': hi,
+                    'available': pt is not None, 'reason': r.get('reason'),
+                    'fallback_used': bool(r.get('fallback_used', False)), 'forecast_source': 'scenario_only',
+                    'current_price': float(history[history.crop == crop].iloc[-1].price_per_kg),
+                    'anchor_observation_date': str(anchor.date()),
+                    'target_window': {'definition': r.get('window_definition', r.get('window', target)),
+                        'start_offset': start, 'end_offset_exclusive': end,
+                        'start_date': str((anchor + pd.Timedelta(days=start)).date()),
+                        'end_date_exclusive': str((anchor + pd.Timedelta(days=end)).date())},
+                    'model_disagreement': r.get('model_disagreement', {}),
+                    'baseline_method': registered.get('baseline_method', registered.get('fallback')),
+                    'baseline_point': r.get('model_disagreement', {}).get(registered.get('baseline_method', registered.get('fallback'))),
+                    'last_value_point': r.get('model_disagreement', {}).get('last_value'),
+                    'model_disagreement_pct': number(r.get('model_disagreement_pct')),
+                    'sample_n': r.get('sample_n', 0), 'effective_n': r.get('effective_n', 0),
+                    'retrospective_effective_n': r.get('retrospective_effective_n', r.get('effective_n', 0)),
+                    'final_effective_n': r.get('final_effective_n', 0),
+                    'evidence_status': r.get('evidence_status', 'RETROSPECTIVE_ONLY_NO_UNTOUCHED'),
+                    'llm_used': False, 'llm_status': 'LLM_UNAVAILABLE',
+                    'range_band_source': 'separate_2025_calibration_residuals_scenario_only'})
+    snap = {'schema_version': SCHEMA, 'model_version': bundle.get('model_version', 'long_horizon_v2'),
+        'training_data_version': bundle.get('training_data_version', bundle.get('data_version', 'final_v1')),
+        'runtime_data_version': runtime['runtime_data_version'], 'data_version': runtime['runtime_data_version'],
+        'as_of': latest, 'market_as_of': latest, 'latest_data_date': latest,
+        'method_registry_version': bundle.get('method_registry_version', bundle.get('config_hash')),
+        'evaluation_config_hash': bundle.get('config_hash'),
+        'issuance_protocol': {'version': 'prospective_issuance_v1', 'max_origin_age_days': 1,
+                              'duplicate_rule': 'earliest_valid_publication', 'origin_not_before': '2026-10-08'},
+        'llm_model': None, 'prompt_version': None, 'city': '沈阳', 'unit': 'CNY/kg',
+        'horizons': list(HORIZONS), 'target_types': list(TARGETS), 'n_entries': len(entries),
+        'entries': entries, 'runtime': runtime, 'status': 'SCENARIO_ONLY_PENDING_PROSPECTIVE_VALIDATION',
+        'notes': ['上市窗口价格与周期市场均价回答两个不同问题；收益情景采用上市窗口价格。',
+                  '2026历史核验已被RC1查看，不能称untouched；未来独立样本尚不足，不作强推荐。',
+                  '区间是情景范围，不是经过独立验证的概率预测区间。',
+                  'Daily后仅推理，不重训、不重新选型；LLM未通过真实评估，不参与数值。',
+                  '用户选择预计上市日期/跨度；未根据作物名猜测生育期。']}
+    snap['snapshot_hash'] = digest(snap)
     return snap
 
 
-def write_snapshot(snap: Dict[str, Any]) -> Dict[str, Any]:
-    ensure_dir(SNAPSHOT_DIR)
-    payload = dict(snap)
-    payload["generated_at"] = now_iso()
-    target = SNAPSHOT_DIR / f"{snap['as_of']}.json"
-    # 原子写
-    fd, tmp = tempfile.mkstemp(dir=str(SNAPSHOT_DIR), suffix=".tmp")
-    with os.fdopen(fd, "w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, indent=2)
-    os.replace(tmp, target)
-    # latest.json 不倒退
-    latest = SNAPSHOT_DIR / "latest.json"
-    write_latest = True
-    if latest.exists():
+@contextlib.contextmanager
+def job_lock():
+    LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with LOCK_PATH.open('a+') as handle:
         try:
-            cur = json.loads(latest.read_text(encoding="utf-8"))
-            write_latest = str(payload["as_of"]) >= str(cur.get("as_of", ""))
-        except Exception:  # noqa: BLE001
-            write_latest = True
-    if write_latest:
-        fd, tmp = tempfile.mkstemp(dir=str(SNAPSHOT_DIR), suffix=".tmp")
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(payload, f, ensure_ascii=False, indent=2)
-        os.replace(tmp, latest)
-    return {"path": str(target), "latest_written": write_latest,
-            "snapshot_hash": snap["snapshot_hash"], "n_entries": snap["n_entries"]}
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as exc:
+            raise RuntimeError('Long-Horizon job already running') from exc
+        try:
+            yield
+        finally:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
 
 
-if __name__ == "__main__":
-    s = build()
-    print(write_snapshot(s))
-    print("entries:", s["n_entries"], "| hash:", s["snapshot_hash"])
+def atomic_json(path, obj):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(prefix='.publish-', suffix='.tmp', dir=path.parent)
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as f:
+            json.dump(obj, f, ensure_ascii=False, indent=2, allow_nan=False)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, path)
+        dir_fd = os.open(path.parent, os.O_RDONLY)
+        try:
+            os.fsync(dir_fd)
+        finally:
+            os.close(dir_fd)
+    finally:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+
+
+def write_snapshot(snap, *, locked=False):
+    if not locked:
+        with job_lock():
+            return write_snapshot(snap, locked=True)
+    SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
+    latest = SNAPSHOT_DIR / 'latest.json'
+    old = json.loads(latest.read_text()) if latest.exists() else {}
+    if old.get('snapshot_hash') == snap['snapshot_hash']:
+        return {'path': str(latest), 'latest_written': False, 'idempotent': True,
+                'snapshot_hash': snap['snapshot_hash'], 'n_entries': snap['n_entries']}
+    payload = dict(snap, generated_at=datetime.now(ZoneInfo('Asia/Shanghai')).isoformat(timespec='seconds'))
+    archive = SNAPSHOT_DIR / 'history' / snap['as_of'] / (snap['snapshot_hash'] + '.json')
+    if not archive.exists():
+        atomic_json(archive, payload)
+    target = SNAPSHOT_DIR / f"{snap['as_of']}.json"
+    atomic_json(target, payload)
+    advanced = str(snap['as_of']) >= str(old.get('as_of', ''))
+    if advanced:
+        atomic_json(latest, payload)
+    return {'path': str(target), 'latest_written': advanced, 'idempotent': False,
+            'snapshot_hash': snap['snapshot_hash'], 'n_entries': snap['n_entries']}
+
+
+def run(as_of=None):
+    with job_lock():
+        return write_snapshot(build(as_of), locked=True)
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument('--as-of', default=None)
+    args = ap.parse_args()
+    try:
+        print(json.dumps(run(args.as_of), ensure_ascii=False))
+        return 0
+    except Exception as exc:
+        print(json.dumps({'status': 'LONG_HORIZON_JOB_FAILED', 'error_type': type(exc).__name__, 'message': str(exc)}, ensure_ascii=False))
+        return 1
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

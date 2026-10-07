@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
-"""冻结的正式 Long-Horizon Target 定义（由 Phase 7 程序化判定得出）。
+"""RC1 历史 Target 定义；SUPERSEDED_BY_RC2，不是当前生产目标真源。
+
+当前正式定义见 long_horizon.v2.target_spec / 已冻结 V2 index.json。
+以下常量保留用于还原 RC1 研究，不可作为 Harvest Market Price。
 
 判定依据：`reports/LONG_HORIZON_TARGET_STUDY.md`（5 种候选口径 × 4 个 horizon × 3 组 baseline）。
 结论：`full` —— 未来 (t, t+N] 内已有观测的均价，**与现有 Final 短期目标
 `target_mean_price_next_{N}d` 完全同口径**，是它向长期的自然延伸。
 
-禁止在无新证据时改动本常量；改动必须重跑 target_study 并更新报告。
+本常量记录 RC1 历史行为，不影响 V2 两个正式业务 target。
 """
 from __future__ import annotations
 

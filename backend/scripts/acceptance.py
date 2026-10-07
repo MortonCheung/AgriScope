@@ -152,7 +152,8 @@ def runtime_audit() -> None:
         spec = app.openapi()
         paths = set(spec.get("paths", {}).keys())
         need = {"/api/decision/evaluate", "/api/decision/stress",
-                "/api/decision/capabilities", "/api/daily/latest"}
+                "/api/decision/capabilities", "/api/daily/latest", "/api/forecast/capabilities",
+                "/api/forecast/long-horizon", "/api/decision/long-horizon"}
         check("OpenAPI 覆盖核心路径", need <= paths, str(sorted(need - paths)))
 
     after = _models_fingerprint()
@@ -165,10 +166,10 @@ def runtime_audit() -> None:
 
 def run_pytest() -> None:
     print("\n[契约回归 pytest]")
-    proc = subprocess.run([sys.executable, "-m", "pytest", "tests/test_e2e.py", "-q"],
+    proc = subprocess.run([sys.executable, "-m", "pytest", "tests", "-q"],
                           cwd=str(_BACKEND), capture_output=True, text=True)
     tail = (proc.stdout or "").strip().splitlines()[-1:] or [""]
-    check("tests/test_e2e.py 全通过", proc.returncode == 0, tail[0])
+    check("backend tests（含长期 v2）全通过", proc.returncode == 0, tail[0])
 
 
 def main() -> int:

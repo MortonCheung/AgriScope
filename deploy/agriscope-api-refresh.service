@@ -1,0 +1,6 @@
+[Unit]
+Description=Restart AgriScope API after Daily data advances
+
+[Service]
+Type=oneshot
+ExecStart=/bin/systemctl restart agriscope-api.service

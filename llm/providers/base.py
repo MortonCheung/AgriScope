@@ -22,6 +22,13 @@ class LLMProvider(ABC):
     is_real_llm: bool = False
     seed_supported: bool = False
 
+    def cache_config(self) -> Dict[str, Any]:
+        """Non-secret config affecting request behavior; override for provider adapters."""
+        return self.describe()
+
+    def call_metadata(self) -> Dict[str, Any]:
+        return {"token_usage": "unknown", "estimated_cost_usd": "unknown"}
+
     @abstractmethod
     def complete_json(self, *, task: str, system: str, user: str,
                       schema_name: str, context: Optional[Dict[str, Any]] = None,

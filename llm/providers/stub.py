@@ -43,13 +43,16 @@ class StubProvider(LLMProvider):
                 "downside_risks": ["stub_output_not_a_forecast"],
                 "assumptions": ["deterministic_stub"],
                 "uncertainty": "stub：本输出无预测含义，仅用于链路验证",
-                "unit": "CNY/kg",
+                "unit": ctx.get("unit", "CNY/kg"),
+                "method": ctx.get("method", task), "context_hash": h,
             }
         if schema_name == "residual":
             return {"adjustment_pct": round(jitter * 100, 4), "confidence": 0.5,
+                    "method": ctx.get("method", task), "context_hash": h,
                     "rationale": "stub：确定性残差，无预测含义"}
         if schema_name == "critic":
             return {"warnings": ["stub_provider"], "recommendation_strength": "weak",
+                    "method": ctx.get("method", task), "context_hash": h,
                     "model_disagreement": round(abs(jitter) * 100, 4)}
         return {}
 

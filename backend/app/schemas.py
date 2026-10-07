@@ -7,7 +7,7 @@
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -65,3 +65,48 @@ class ErrorResponse(BaseModel):
     message: str
     request_id: str
     details: Dict[str, Any] = {}
+
+
+class LongHorizonForecastRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    contract_version: Optional[Literal["1", "2"]] = None
+    city_id: Optional[str] = None
+    crop: str
+    horizon_days: int
+    target_type: Literal["harvest_market_price", "cycle_market_average"] = "harvest_market_price"
+
+
+class LongHorizonActualInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    cost_per_mu: Optional[float]
+    yield_kg_per_mu: Optional[float]
+
+
+class LongHorizonMarketContext(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    as_of: Optional[str] = None
+    expected_harvest_horizon_days: Optional[int] = None
+    expected_harvest_date: Optional[str] = None
+
+
+class LongHorizonUserContext(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    city_id: str
+    area_mu: float
+    budget_cny: float
+    risk_preference: Literal["conservative", "balanced", "aggressive"]
+    crop_preferences: List[str]
+    actual_inputs: Dict[str, LongHorizonActualInput]
+    market_context: LongHorizonMarketContext
+
+
+class StructuredInputSource(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    kind: Literal["structured"]
+
+
+class LongHorizonDecisionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    contract_version: Literal["2"]
+    user_context: LongHorizonUserContext
+    input_source: StructuredInputSource

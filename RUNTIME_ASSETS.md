@@ -1,84 +1,23 @@
-# 运行时资产清单（RUNTIME_ASSETS）
+# 运行时资产语义（RC2）
 
-本仓库（根目录）只管理**源码与清单**。下表列出基线运行时依赖的**冻结资产**：
-它们体积大且各自有独立冻结版本，**不进入本仓库**，按本清单定位与校验。
+`runtime/manifest.json` 是当前清单；真实数量由 `n_assets` 给出，不固定195。源码、模型、Registry、schema、prompt均记录路径、大小、SHA256和asset_type；路径不能越出仓库。大模型/历史数据不进Git，通过部署包恢复。
 
-## 1. 四块基线的身份（唯一真源）
+- `immutable`：Final权重/快照/事实数据、长期权重与index、Registry、schema、prompt、生产配置与运行代码。任何哈希或大小不符即失败，不能用`--refresh`消除。
+- `generated`：Daily/Long-Horizon latest、派生特征、日志等。动态更新允许漂移且必须报告；required项缺失仍失败。只有这些资产可显式refresh。
+- `external`：外部证据输入，可登记source/version；本地有固定digest时仍强校验，required缺失失败。
+- `optional`：可选资产；缺失单独报告，存在时仍按digest校验。
 
-| 基线块 | 身份 | 路径 | 版本/指纹 |
-|---|---|---|---|
-| Frontend | **本仓库**（`git mv` 保留历史；来源 commit `dc9a9c1c1ead11d184e9d4b527efd17fd5a0a40c` @ `feat/frontend-v5-restructure`） | `frontend/` | typecheck / 315 tests / build / verify:ui 全绿 |
-| Backend | **本仓库** | `backend/` | api_version `1.0.0`；`backend/openapi.json` |
-| Long-Horizon | **本仓库**（研究层，只读冻结数据） | `models/long_horizon/`、`llm/` | `model_version=long_horizon_v1`；预测快照 `data/processed/long_horizon/snapshots/latest.json` |
-| Final Model | 冻结（不得重训） | `models/` | `model_version=final_v1`，`data_version=final_v1`，`code_fingerprint=b19b187268ee92db`（PORTABILITY_PATCH：仅路径解析改变，算法/权重/产物未改动） |
-| Daily | 冻结（不得扩功能） | `data/processed/daily/` | `schema_version=daily_pipeline_version=1.1.0`，`data_version=5158f56ad7df596d`，`model_version=final_v1` |
-
-## 2. 不进仓库的资产（被 `.gitignore` 排除）
-
-| 路径 | 体积（本机实测） | 说明 |
-|---|---|---|
-| `models/` | ≈ 743.7 MB | Final 冻结模型、快照 `models/data/snapshots/final_v1/`、`models/models/final/*.pkl`（32 个）、冻结报告 |
-| `data/` | ≈ 2215.7 MB | 原始证据 `data/raw/`、canonical `data/model_ready/`、Daily 产物 `data/processed/daily/` |
-| `AgriScope/` | （含 `node_modules` ≈ 307.8 MB） | 前端独立仓库，见上表 commit 固定 |
-| `reference/`, `archive/`, `catboost_info/` | — | 参考资料 / 旧层归档 / 训练缓存 |
-
-> 决策依据：§23 —— 禁止 `git add ../data/raw` 之类把 GB 级数据塞进源码仓库；
-> 模型/数据以「部署包 / 明确服务器目录」管理，源码仓库只保存身份与校验信息。
-
-## 3. 后端运行必需的最小集合
-
-正式 Backend 启动时只读以下文件（其余资产可不随包发布）：
-
-```
-models/src/                                          # decision_engine 包（只读）
-models/reports/final/FINAL_RUN_META.json             # 版本真源
-models/reports/final/tables/price_model_selection.csv
-models/reports/final/tables/scenario_range_by_crop_horizon.csv
-models/reports/final/tables/profit_grading.csv
-models/models/final/*.pkl                            # 32 个冻结 ML 产物
-models/data/snapshots/final_v1/datasets/decision_dataset_{沈阳,朝阳}.parquet
-models/data/snapshots/final_v1/model_ready/**        # market_daily / climate / profit / ...
-data/processed/daily/final_input/extended_snapshot/  # 可选：Daily 实时输入快照（指纹需与 Final 兼容）
-data/processed/daily/snapshots/latest.json           # Daily 对外快照（schema 1.1.0）
-```
-
-若 `extended_snapshot` 缺失或其 `.source_fingerprint.json` 与当前 Final 不兼容，
-后端自动回退冻结 `models/data/snapshots/final_v1/`，并在 `/api/meta` 标注
-`runtime.runtime_data_status=FROZEN_FALLBACK`。
-
-## 4. 校验方式
+类型由清单显式指定；不能只按目录放宽。即使放在data/processed中的pkl/Registry/schema/prompt仍必须immutable。验证器拒绝不认识/缺失类型、重复路径、目录越界及受保护资产标成generated。
 
 ```bash
-# 模型/数据身份（无需重训即可确认）
-python3 - <<'PY'
-import json
-m=json.load(open("models/reports/final/FINAL_RUN_META.json"))
-d=json.load(open("data/processed/daily/snapshots/latest.json"))
-print(m["model_version"], m["code_fingerprint"])
-print(d["daily_pipeline_version"], d["data_version"])
-PY
-
-# 后端就绪（会真检查快照/数据/模型/元数据/daily）
-curl -s http://127.0.0.1:8000/health/ready
-
-# 运行时资产清单校验（强校验 canonical/模型；派生资产可刷新）
 python3 scripts/verify_assets.py
-python3 scripts/verify_assets.py --refresh   # 管道重跑后刷新 data/processed/** 的哈希
+python3 scripts/verify_assets.py --refresh
+# 以下只用于发布时显式重新冻结：不是日常校验，不可放进Daily cron
+python3 scripts/freeze_runtime_manifest.py
 ```
 
-### 强校验 vs 可刷新（重要）
+Final冻结身份保持 `final_v1 / b19b187268ee92db`；长期bundle来自显式retrain，与historical evaluated models分开登记。运行推理先加载index校验model/config和每个pkl的SHA256。长期Job不fit，使用冻结历史+同口径Daily追加，版本包括training_data_version/runtime_data_version/method_registry_version/as_of/latest_data_date/generated_at。
 
-- **强校验**：`models/**`、`data/model_ready/**`、`data/metadata/**`、`data/reports/**`、`data/raw/**`
-  —— 事实来源，任何 size/sha256 不符直接 FAIL。
-- **可刷新（派生）**：`data/processed/**` 由 Daily / Final 管道**重新生成**（日志会追加、
-  快照含 `generated_at`），每次管道运行都可能变化。只读校验时若漂移只提示；
-  用 `--refresh` 刷新其哈希（会在 manifest 记录 `refreshed_at` / `refresh_note`）。
+长期快照在data/processed/long_horizon/snapshots，latest与按日期文件原子写；history/日期/hash.json保存每份发行预测，供将来核验真正未见结果。后端比较Daily最新日期并暴露LONG_HORIZON_STALE，不能以generated_at冒充最新观测日期。
 
-  > 背景：`data/daily/acceptance.py` 会真实重跑 Daily 管道，从而改写 `data/processed/daily/**`；
-  > 若无该机制，`scripts/acceptance.sh` 的每一步都会在下一次运行时因日志追加而误报失败。
-
-## 5. 部署时的资产获取
-
-本清单不改变资产来源：`models/`、`data/` 由既有冻结流程产出（`models/scripts/run_final.py`、
-`data/daily/run_daily.py`），或由既有服务器目录直接提供。
-后端通过 `AGRISCOPE_ROOT` 指向这些资产所在的项目根；**不需要**把它们复制进本仓库。
+部署包由scripts/build_deploy_bundle.py生成，包含Git源码、必需运行资产和前端dist，排除.env/LLM调用缓存/node_modules。不可移动rc1，回滚使用完整旧bundle，不能覆盖历史事实。

@@ -1,0 +1,9 @@
+[Unit]
+Description=Rebind frozen Final runtime after atomic Daily publication
+
+[Path]
+PathChanged=/opt/agriscope/data/processed/daily/snapshots/latest.json
+Unit=agriscope-api-refresh.service
+
+[Install]
+WantedBy=multi-user.target

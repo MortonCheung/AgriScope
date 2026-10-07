@@ -23,6 +23,7 @@ venv/
 models/models/
 models/data/
 models/evaluation/
+models/outputs/
 data/raw/
 data/processed/
 data/model_ready/
@@ -36,7 +37,7 @@ reference/
 catboost_info/
 
 # --- LLM 调用缓存与中间产物 ---
-llm/cache/
+# llm/cache contains Python source; response caches live under llm/artifacts/cache.
 llm/artifacts/
 
 # --- Long-Horizon 研究中间产物（大 parquet/csv；源与交付报告仍进 Git）---

@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
-"""AgriScope Long-Horizon 研究层（Phase 7+）。
+"""AgriScope Long-Horizon 研究层：当前 RC2 入口 long_horizon.v2。
+
+RC1 target_study/backtest/registry 模块为历史还原，不能据其旧 Gate 上线。
+V2 显式 --retrain 生成冻结模型；load_bundle()/predict_at() 只做推理。
 
 与冻结的 `decision_engine.final`（Final Model，7/14/30 点预测）**完全隔离**：
 本包只读冻结数据与已验证的 PIT 特征，新增 30–180d 的长期 target、baseline、

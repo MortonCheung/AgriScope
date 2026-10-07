@@ -1,0 +1,18 @@
+[Unit]
+Description=AgriScope RC2 API (single worker)
+After=network-online.target
+
+[Service]
+Type=simple
+User=agriscope
+Group=agriscope
+WorkingDirectory=/opt/agriscope
+EnvironmentFile=/etc/agriscope/runtime.env
+ExecStartPre=/opt/agriscope/.venv/bin/python scripts/verify_assets.py
+ExecStart=/opt/agriscope/.venv/bin/python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8787 --workers 1
+Restart=on-failure
+RestartSec=5
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target

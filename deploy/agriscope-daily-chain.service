@@ -1,0 +1,14 @@
+[Unit]
+Description=AgriScope Daily then isolated Long-Horizon inference
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=agriscope
+Group=agriscope
+WorkingDirectory=/opt/agriscope
+EnvironmentFile=/etc/agriscope/runtime.env
+ExecStart=/opt/agriscope/.venv/bin/python scripts/run_daily_chain.py
+TimeoutStartSec=1800
+UMask=0027

@@ -1,0 +1,723 @@
+{
+  "schema": "agriscope.legacy-regression-assets/1",
+  "source": "original retained Model v1/v2 assets; copied missing files byte-for-byte, no training or source changes",
+  "files": [
+    {
+      "path": "models/data/snapshots/v1/city_data/dandong/data/weather_daily_era5.csv",
+      "sha256": "4cc419c74ca3cb5f2d43c074ce858d2d30e8150fa72101623aac7d36cbf84bc0",
+      "size": 677318
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/dandong/data/production_yearly.csv",
+      "sha256": "6dfa4638b73cac2fa42a3cb6dfc5010be44c6af22c972906162956eadf597f03",
+      "size": 30964
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/dandong/data/price_observation.csv",
+      "sha256": "cf8d70c18537bc730363448088fe9ca816e56a640356a3fd8958ffcc0a7a9f6c",
+      "size": 2008750
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/dandong/data/soil_daily.csv",
+      "sha256": "b6d3966b5f1d83db445ac60a3d334fb164c6f0e829eb874d30bd3e42cb40cbc3",
+      "size": 331224
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/jinzhou/data/weather_daily_era5.csv",
+      "sha256": "e34a9da62ca011442d16d7e4be888837673beda46a4977e32ee97a680ba46531",
+      "size": 689631
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/jinzhou/data/production_yearly.csv",
+      "sha256": "e412fea93ac7c052efd904e860e7e2d2854366b37908d384d0f0990dc23693bb",
+      "size": 23823
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/jinzhou/data/disaster_events_observed.csv",
+      "sha256": "9091415b58129db81652585256b6728b19e7439a0f1020979ac83e90235e97c4",
+      "size": 18266
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/jinzhou/data/phenology_events.csv",
+      "sha256": "ad85acfd6a61642b04a648bd10b991f6558db0b3dda8033e3281a2f1f5a35da9",
+      "size": 14964
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/jinzhou/data/price_observation.csv",
+      "sha256": "2c54557baa715258a5356fe0fdd5c264c03b7d7b01fa51b18d6a6a84d3f65d3c",
+      "size": 13958039
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/jinzhou/data/soil_daily.csv",
+      "sha256": "b7645bfcfd0bd122be8f5062f728d6c5d923c77154b7132c84cb1fcf46fe7d5b",
+      "size": 327029
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/dalian/data/weather_daily_era5.csv",
+      "sha256": "2f926b754869ac7c5363980d6410a065b16fa6e20e76527f3649aada55544a85",
+      "size": 688248
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/dalian/data/production_yearly.csv",
+      "sha256": "49398b1f5ef6a348442966ac778b43796d1fa13e750fa4ef4b38c96a57f811fc",
+      "size": 20969
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/dalian/data/price_observation.csv",
+      "sha256": "e454d5b03ff3f481ca14a80c743d3ab927d00d485a15ed7b159648f704df206f",
+      "size": 16554385
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/dalian/data/soil_daily.csv",
+      "sha256": "f46b7579a874df0c8b4c558a219dd127d18d1cd2023d72c6ed72d24bf4dfbb79",
+      "size": 327448
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/chaoyang/data/weather_daily_era5.csv",
+      "sha256": "00b1303fb2e18dcf64820057bd79f12ffcb1d97f2f19a6fc03dd994143185501",
+      "size": 690467
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/chaoyang/data/production_yearly.csv",
+      "sha256": "c6b8306bef0d778945f317c541e545a9822e5556ca3e7a1ba2adc6d9b2f813e6",
+      "size": 25422
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/chaoyang/data/disaster_events_observed.csv",
+      "sha256": "24f194cbcc92fbe840976e67eda5f0a5f9a031617f5cdbe400eba89a2cdf3e65",
+      "size": 14131
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/chaoyang/data/phenology_events.csv",
+      "sha256": "4bb5a65dcbbdb794c919a7b0f124522b8bc019f855e7e5e417d1d75b6f02fd0e",
+      "size": 16598
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/chaoyang/data/price_observation.csv",
+      "sha256": "8a4de3b1bb8511077b657bc9d0f2c859d5a310657f18198c0a0af8ee25593e83",
+      "size": 12221485
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/chaoyang/data/soil_daily.csv",
+      "sha256": "63cad1419607a37b86c2d407228767b7f2de0ee09def60cea0594b0b62f28edd",
+      "size": 328720
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/shenyang/data/policy_events.csv",
+      "sha256": "c0f44a431efee8a0c8dbd7987b09d0aca57564d813b1726f5fe8aa7758a10ddd",
+      "size": 12311
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/shenyang/data/weather_daily_era5.csv",
+      "sha256": "417a0e425b0e98205148f1dbf6b91efa4714bfa28650de9456af2dba56175967",
+      "size": 690999
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/shenyang/data/input_cost_weekly.csv",
+      "sha256": "0c9bc3fac406bdaaa1cd77a5c63a45176acadf9f81651867681838b5c6c28fcb",
+      "size": 120922
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/shenyang/data/weather_extra_daily_era5land.csv",
+      "sha256": "58e48308d88217efac45a7c09169b7f1f7fc8fffc90aeb4e4fba82b0a6e7b5a8",
+      "size": 666699
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/shenyang/data/weather_extra_daily_era5.csv",
+      "sha256": "d4566eb99ddf7d3edb19eb8c425c203e59c2ef4a68d38488d736e6b5be851e00",
+      "size": 681406
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/shenyang/data/disaster_events_observed.csv",
+      "sha256": "461f8e69a2dcffeb4560a699b4ced21763fbd27419762612c02864461870ac97",
+      "size": 18161
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/shenyang/data/phenology_events.csv",
+      "sha256": "3f5948c59c804231b562b4688fd4ea30c22e667149d2d1fbd9af165e8efb8a64",
+      "size": 21200
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/shenyang/data/volume_observations.csv",
+      "sha256": "ccc828dccb1a575a0d7a08cbf9d0f7e5efd5fe501ad447f9136bd7404a4fbae0",
+      "size": 5791406
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/shenyang/data/price_observation.csv",
+      "sha256": "85b66433e62829df1c4253a5f1edb105e9728bd5c34e92de6aa61a1c19dadde4",
+      "size": 7339660
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/shenyang/data/weather_daily_era5land.csv",
+      "sha256": "c111cb57996e93f287c1fac924b0a9a41d70f54b7019ebb61ab933bf3ae57625",
+      "size": 681847
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/tieling/data/weather_daily_era5.csv",
+      "sha256": "1eec97440b11ae9c0ee12b55ea46c14049f087d65738a0614e66465a59a4127c",
+      "size": 697418
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/tieling/data/production_yearly.csv",
+      "sha256": "08540cda67fe2c4b281ff4e9e2b56480b343710cb3af1d713924871392a877a4",
+      "size": 24898
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/tieling/data/price_observation.csv",
+      "sha256": "63f233240af5fafc1d1dfa192e9294e41aa0be3ded373ccf5efbba25f2346239",
+      "size": 3138452
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/tieling/data/soil_daily.csv",
+      "sha256": "d50bbd3e775593c2f931cf4bb31348d28883614bddce984eecbdecaf8739b605",
+      "size": 329859
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/reference/decision_engine_supplement/crop_calendar.csv",
+      "sha256": "9b51020feafbeb3721460f8885e489f2d7b846c3793a951f66c1e60039fc2d59",
+      "size": 87122
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/reference/decision_engine_supplement/soil_moisture_daily_extended.csv",
+      "sha256": "330453fbdc5575f3dc849fb9ccca0f497b5f5bbd7216a984d0945ccae082abe6",
+      "size": 349135
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/reference/decision_engine_supplement/planting_area_yearly.csv",
+      "sha256": "77d31b39f4b9d5b7c4753a54759772d87c60a8b8968a386c819f2b2389eff608",
+      "size": 7914
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/reference/decision_engine_supplement/price_lnnync_veg_weekly_extended.csv",
+      "sha256": "c9b9b089ae91db6ad69bf0b5236820208c7948cb68225e2e1ea8939eb6712f53",
+      "size": 402173
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/reference/decision_engine_supplement/source_registry.csv",
+      "sha256": "abeb4737586c21e6def5be5b471ca558edac28906d84cb87e1e49e78a56b6c50",
+      "size": 5723
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/reference/decision_engine_supplement/crop_cost_yearly.csv",
+      "sha256": "be2b1da1b93f6ee9333d0807ab1ef25ab68454ce0c1f72689f7533e312ac7ce3",
+      "size": 4555
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/reference/decision_engine_supplement/disaster_loss_events.csv",
+      "sha256": "7fa51164b0e02d4c3744066870ae8e72b39f6ad7f333ca4d001795f51ed1d23e",
+      "size": 3226
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/reference/decision_engine_supplement/production_yearly_extended.csv",
+      "sha256": "6d48575bc112993a1e631e21215aea8aa72e0d368cc356c3effddd385b0114a2",
+      "size": 8224
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/reference/decision_engine_supplement/supply_demand_yearly.csv",
+      "sha256": "ec5c72830b1fda38e051f536e280d999a3886d1c6716463490ef02038dea6669",
+      "size": 1721
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/reference/decision_engine_supplement/herding_events.csv",
+      "sha256": "8f61f1d494d3dada71fc80d5f03c3762655489bf2b33a57b48c8fcf3c80846ff",
+      "size": 4316
+    },
+    {
+      "path": "models/data/snapshots/v1/city_data/reference/decision_engine_supplement/cost_proxy_insurance.csv",
+      "sha256": "605a8b7512d4ca5571846a7e7200c21396db52079f0c76a46b09ccf6132169d0",
+      "size": 2239
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v3/market_registry_v3.csv",
+      "sha256": "0e5491c4b1bb0d36e2786096cd3ab00088da85d052fbbeddba1dd6dba5120546",
+      "size": 7510
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v3/DECISION_ENGINE_DATA_ENHANCEMENT_V3_REPORT.md",
+      "sha256": "b957f6e0f2f4b37c9c2aa90077959466ab6f4a55a9c01877c28c74c75c6e6d2d",
+      "size": 17051
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v3/crop_cost_components.csv",
+      "sha256": "3dbd4145fac8d71ebb9b50a74a181a6dbe8b45fc13ea83db0a7745f04862f3ad",
+      "size": 9961
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v3/remote_sensing_ndvi_derived.csv",
+      "sha256": "353238f222378a9c1e540c2a052909e05db1b0d3d080c8328179c63939e4a2e3",
+      "size": 79776
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v3/DATA_GAP_V3.md",
+      "sha256": "a8538f230ca45933561509f251509c446018adcf8ea457b232b06a248697f440",
+      "size": 2431
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v3/model_value_classification.csv",
+      "sha256": "999aaba26b6269f3e187f78664e2ce86f4d458c3d81660abff2b53ab8adbfff3",
+      "size": 2516
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v3/demand_yearly_v3.csv",
+      "sha256": "76f2d0caed0d391721b00f579aa1690ddaa1e6f6235b278ad80e846741561d45",
+      "size": 20506
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v3/source_registry.csv",
+      "sha256": "e894a0172ef2b3fbe45158f26ead95056caabdeba598b5a7a2155d7727726332",
+      "size": 52417
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v3/agri_insurance_claims_v3.csv",
+      "sha256": "6e2e9b44fcf3587e165443ee19740703578564cd6f5dfb880e6e93a889b97d3d",
+      "size": 8577
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v3/price_lnnync_veg_weekly_historical.csv",
+      "sha256": "fdcc1c54113b4dc4bff451fe02d2f76c0af65b250f232b5418701a6082777157",
+      "size": 135701
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v3/pest_events.csv",
+      "sha256": "a6710d89dc56af27e1eb266c2801d02327c138ba6a78184064d858fe11134d61",
+      "size": 14409
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v3/market_supply_proxy.csv",
+      "sha256": "ac1c6d29e3f394499a6d721e21071875cbe3f03257e71c6022820bf1acc6a1ba",
+      "size": 16336
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v3/herding_events_v3.csv",
+      "sha256": "3b25e608f0722403db156e1cc4c57ced14e90830fd24f9e1df86a30d6078dc04",
+      "size": 6947
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v3/irrigation_yearly_extended.csv",
+      "sha256": "24a005f05b07d4c30e49e7a707e599b7fc80c4f7bc41dc60eb1bb9205aab84cc",
+      "size": 10649
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v3/QC_REPORT_v3.md",
+      "sha256": "ac331396bd386d68331d28fb21dd9a9062b8550008b79ccdfc8a9fb9f3fbb638",
+      "size": 6721
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v3/remote_sensing_evi_city_monthly.csv",
+      "sha256": "fad958110ce4751f8a29b56e3d0180c7cbf6a3a4471354d6b779cc65d11fca95",
+      "size": 15366
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v3/crop_spatial_structure.csv",
+      "sha256": "03df633062e13aace3d6a8e223d37db5b9d2a88eeb63ac1121f27b97b116e98c",
+      "size": 22414
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v3/market_accessibility.csv",
+      "sha256": "771a8f745952a89958959a63f11c36d7f67d010b67db7e10aa71652aeb55e903",
+      "size": 1555
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v3/qc_flags_v3.csv",
+      "sha256": "11ee43b822821bfebc68736b9cbb4f0e136cae52450186034f056dfb41c431b5",
+      "size": 13353
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v3/cold_chain_capacity_v3.csv",
+      "sha256": "687b72a863a3c092c41701284c9986f5a35425d85c4478c1eed3b7548426a995",
+      "size": 8439
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v3/qc_summary_v3.json",
+      "sha256": "16029fa8b9039fdf181839639453a5dc693cbdc101a79920211730f636ae14cd",
+      "size": 7254
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v3/remote_sensing_ndvi_growing_season.csv",
+      "sha256": "04397516cdae5859a9903d45d94070659be3400a537f9b38be9bbbdcf0b02bbc",
+      "size": 4883
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v3/remote_sensing_ndvi_city_monthly.csv",
+      "sha256": "578f7c313b6d86a228602cb28332349f58b418fae53569b579c2adb7b2d60193",
+      "size": 121805
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/price_series_inventory.csv",
+      "sha256": "ad4fb4b235ffadc9fef515b5ef64de05cd6ab5207ee1a6585ae48554f1a11111",
+      "size": 368614
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/agri_insurance_claims.csv",
+      "sha256": "98ce557cbee96b15ef739e4e8904c94400037ff2d116e6c53fbe1d82ed73ff18",
+      "size": 2837
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/cold_chain_capacity.csv",
+      "sha256": "e317615ff957ce46a33ef5c1cb491286a4010becd20a7db857f1832cfb94cb3f",
+      "size": 1734
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/planting_area_crop_yearly_ocr.csv",
+      "sha256": "3a9a4949365018aeceded2cd30688a5a497b19bbda2bd982b01358782bdd16c7",
+      "size": 2028
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/crop_mapping.csv",
+      "sha256": "c9faad03812ddf223584710ec262b770855499c7e846e994b12374d92951dd42",
+      "size": 2907
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/crop_calendar_detailed.csv",
+      "sha256": "b18f4d431c87c7125189264b2a97ba5d35c5384adb04bd51f4c351358bdcaf15",
+      "size": 96876
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/DATA_GAP_crop_disaster_loss.md",
+      "sha256": "fb300ce7757143fbdb8fcb0272457728fad78750673e906e9d53f983a06c71f2",
+      "size": 251
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/disaster_loss_crop_events.csv",
+      "sha256": "3795d767230acb9a7e3bdf0727f206a1c87723510f7d4d5493240ff712d96a27",
+      "size": 3359
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/READINESS_COVERAGE_SUMMARY_V2.csv",
+      "sha256": "85409614d970b401af146b62b35539c7ce2f10a610c1d376ced6c61d0d837709",
+      "size": 332
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/FILE_SHA256_MANIFEST.csv",
+      "sha256": "1b7484dcc4cc12a3fa84eba9d5197d3bb616d42838cc6d09801d4b212a925cfc",
+      "size": 5734
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/FINAL_DATA_READINESS_MATRIX_V2.csv",
+      "sha256": "a6120d3e21e7aa9f3b82c8e25bfe196aa90970bf8378eb2b727b50917890d0b0",
+      "size": 23766
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/planting_area_crop_yearly.csv",
+      "sha256": "329e0a5d8af18ced2d0adf6cefc3413e294d59fe0934aa81bff553c3c68e7097",
+      "size": 15440
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/DATA_GAP_vegetable_cost_city.md",
+      "sha256": "9fe55404b0ca8be716bbf15a5fc0de67f807d0aea31480a3ad669789f3f9a628",
+      "size": 281
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/production_crop_yearly.csv",
+      "sha256": "368d8dd45590a31ea3e139d74ae6c4a51f8e4a91a1ee8bc173430dbb225df68f",
+      "size": 51833
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/MODEL_READINESS_V2.csv",
+      "sha256": "a6120d3e21e7aa9f3b82c8e25bfe196aa90970bf8378eb2b727b50917890d0b0",
+      "size": 23766
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/DATA_GAP_logistics.md",
+      "sha256": "ac8ea444645305960a36d86812b81b1a29714b270d35516bfccd08975af7303f",
+      "size": 233
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/DATA_GAP_market_volume.md",
+      "sha256": "21eeb1e2dbfe37c210cba9669f01ff67dfcf0d37268f40d81e6a6790b863fe87",
+      "size": 270
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/DATA_GAP_facility_phenology.md",
+      "sha256": "ddfd35f997ab0b1461e570df6572f55e006e59671dff7a79ab2e613a551601f1",
+      "size": 344
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/crop_yield_by_city.csv",
+      "sha256": "dfdbbc78b05feabde03322e299d356be6d0c42197d33311eb94bc65cec1c03d9",
+      "size": 51956
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/source_registry.csv",
+      "sha256": "0d14bb9201ba8e3cbd8963f741f3e43f77618be86975568fea7cf213eddfdaca",
+      "size": 5558
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/PROFIT_MODEL_READINESS_V2.csv",
+      "sha256": "3f8a0a7544f6f5b928864baa733a20d2e49fc7e5d6b773884a5fa24699cc0af0",
+      "size": 4332
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/qc_summary_v2.json",
+      "sha256": "5afe6bc37c849123d3a301afb1a771726a3ecdd89cb86f5218dbdeda349776d3",
+      "size": 1203
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/market_registry_extended.csv",
+      "sha256": "31a7aa4a560bffab0041d53bfbda23f7de2b59319225d0c9859ec2ff6292ba55",
+      "size": 2136
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/source_conflict_registry.csv",
+      "sha256": "1f33870a24bd721fe7e8c9b34fba399dee8ac202499460aaf52eb2148ea50384",
+      "size": 1235
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/TOP_CITY_CROP_MODEL_COMBOS_V2.csv",
+      "sha256": "cbc5b171de2ed123bda99b6f3140e869c06672a526b253eda2221ae4a573150b",
+      "size": 15653
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/crop_cost_yearly_extended.csv",
+      "sha256": "90259e2477fa1436e304a66992721b0780e205ea0610cf9cf2608a7180748023",
+      "size": 8222
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/DATA_GAP_city_price_comparable.md",
+      "sha256": "708f1d3f0ad4e949e97a55622fcf78bc9faf583d0d71b369a885ba3bb5dc77d6",
+      "size": 519
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/QC_REPORT_v2.md",
+      "sha256": "4ffa2d25099b61ce9646997c225ffe6b16c8bb481d053c5517d8ba470d52799a",
+      "size": 3611
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/DECISION_ENGINE_DATA_SUPPLEMENT_V2_REPORT.md",
+      "sha256": "e5f8e9213f4a10738d287087af993a84611e01cb711e8b47e962f8f6c8d27f30",
+      "size": 18403
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/CLIMATE_FEATURE_READINESS_V2.csv",
+      "sha256": "84f7d5cce991fcb78a5899bcfd32d548d172695f2b19e7d37963a2c924a9c28b",
+      "size": 362
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/HRI_FEATURE_READINESS_V2.csv",
+      "sha256": "cebcb9a6c27df73a9955dab1cfdbf6e1f000315171330ce03d2b882611eee2c0",
+      "size": 13953
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/DATA_GAP_remote_sensing.md",
+      "sha256": "9b836c7894d7a14ad2df6832c2a6c6a518ea2637f293ec335d913f6826dc3e9a",
+      "size": 271
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/demand_yearly.csv",
+      "sha256": "e2a813fb7c52c658eaf9986aca5ca839f0a9b06ff5019ac4255655fb1635f401",
+      "size": 1480
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/price_city_comparable.csv",
+      "sha256": "3cf0e93dcf9fab10b02347efb64f9a43686aa858d8d6bec23a25da2d6485ed80",
+      "size": 22633
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/herding_events_extended.csv",
+      "sha256": "eccb56d50943c4e31282541cdb12b1e7ac2807ff654423742d86f9a75b716459",
+      "size": 7799
+    },
+    {
+      "path": "models/data/snapshots/v2/city_data/reference/decision_engine_supplement_v2/irrigation_yearly.csv",
+      "sha256": "7e1c780349d81312df8ccae0a39198ad6289b967d36529fb1aa4f014d386025c",
+      "size": 47088
+    },
+    {
+      "path": "models/data/processed/decision_dataset_v1.csv",
+      "sha256": "f14ff292a120a7c7664962dbdb2777681f6ae530478a721c05ffe4141fda5961",
+      "size": 16076721
+    },
+    {
+      "path": "models/data/processed/decision_dataset_v1.parquet",
+      "sha256": "f08d29c5dc2d93ca5b4765ccd4d5943b24b8c80e2eeaf24ca55ee4b9fb17f04d",
+      "size": 4126298
+    },
+    {
+      "path": "models/data/features/weather_features_dalian.parquet",
+      "sha256": "a70c33cd94ab7e11cfe498b6612f7001b1db6a39a25bc5307932b4037f6b268b",
+      "size": 260552
+    },
+    {
+      "path": "models/data/features/climate_daily_dalian.parquet",
+      "sha256": "c3776636e751939f5c0964313cedcf8ae49eaf8523eac7193f5d0890dae67f65",
+      "size": 458354
+    },
+    {
+      "path": "models/data/features/climate_daily_jinzhou.parquet",
+      "sha256": "10333610e1e467d8460a923138ba8f162375203f480b8314b28e5b63b7e3bb96",
+      "size": 457557
+    },
+    {
+      "path": "models/data/features/climate_daily_dandong.parquet",
+      "sha256": "574c46ee7d95540cef2b9d943a3fe35e888b0668a5b4b890f5c8474234ea612c",
+      "size": 474124
+    },
+    {
+      "path": "models/data/features/weather_features_chaoyang.parquet",
+      "sha256": "97a1b5b2e9fc80d0958adb33053220b87c7f60fb09855ec517a65cefae95ea27",
+      "size": 256919
+    },
+    {
+      "path": "models/data/features/price_features_v1.parquet",
+      "sha256": "c8cf51de814105022e21d8de0f571e26ce1610d48f6da76edf469e99130b5d42",
+      "size": 3805736
+    },
+    {
+      "path": "models/data/features/regional_risk_朝阳.parquet",
+      "sha256": "e8102bc00c86fbacd336f7317dbdd7ea512505a6da472f3a3a16c09a15382516",
+      "size": 4455817
+    },
+    {
+      "path": "models/data/features/regional_risk_锦州.parquet",
+      "sha256": "608bc6e4d89321fbbc77627e18b6225baf3bb4f283b24421832d453131f076e3",
+      "size": 977839
+    },
+    {
+      "path": "models/data/features/weather_features_tieling.parquet",
+      "sha256": "dbba6176f35097204f64fddf06117b79c0f5a11f1de57e74b8aa817267b41002",
+      "size": 281135
+    },
+    {
+      "path": "models/data/features/production_context.csv",
+      "sha256": "7c2f8a6c2f8d29a9ab777356e566cef25d93b594751dd213487da5acd86f4d33",
+      "size": 31434
+    },
+    {
+      "path": "models/data/features/climate_daily_shenyang.parquet",
+      "sha256": "2fab8e736e2c3d487fc70e23d2eb97f2b4777663fb0c2ecf9faadb45d3fe31c2",
+      "size": 479074
+    },
+    {
+      "path": "models/data/features/hri_v1.parquet",
+      "sha256": "4766b05d9e2ea9cc82b182b40671b1b48a18b17fa3e3fc2f06b6e320d59602a0",
+      "size": 1347955
+    },
+    {
+      "path": "models/data/features/climate_daily_tieling.parquet",
+      "sha256": "24aaaf2558123889dc87776e413b4a875f1ed58a1b62b3e9d6ec09c2bde78d3c",
+      "size": 479024
+    },
+    {
+      "path": "models/data/features/weather_features_shenyang.parquet",
+      "sha256": "a4f9a8e0cff4ece54525721e1f35c891c6204813b638fc3c751243dcfaf5a62b",
+      "size": 281507
+    },
+    {
+      "path": "models/data/features/climate_daily_chaoyang.parquet",
+      "sha256": "1f2b7ccf289d19484413c8da4a2e9c9c4e391fdbc37870b9271b8549b831f250",
+      "size": 454064
+    },
+    {
+      "path": "models/data/features/market_risk_v1.parquet",
+      "sha256": "78d12abb095db9ca102bd2e7d2635f66a6c8ab2b082f23221c9e243c94d71096",
+      "size": 803921
+    },
+    {
+      "path": "models/data/features/regional_锦州.parquet",
+      "sha256": "63c787dade9321817d0a434aafec3ad6784730411537338e36835dc71a85350e",
+      "size": 2121072
+    },
+    {
+      "path": "models/data/features/regional_朝阳.parquet",
+      "sha256": "f52cc70ebc623bc2f23850f15ee0ae36289e13e332859c54955ed1028d730053",
+      "size": 5627515
+    },
+    {
+      "path": "models/data/features/weather_features_dandong.parquet",
+      "sha256": "635f442cc1354d2ae80a0e813b63e1b72ba50ef9461135293d993967b9f1f35d",
+      "size": 276111
+    },
+    {
+      "path": "models/data/features/weather_features_jinzhou.parquet",
+      "sha256": "a320c90eb86c14c0c73aeec1d8a6dbb12fdf6fadc118c5a685400320ac6bdc80",
+      "size": 260119
+    },
+    {
+      "path": "models/data/features/crop_calendar_v2.parquet",
+      "sha256": "ab2703c832468a5a479aac65ed429645109ab8c21c7100e643029aa12a3fbd5c",
+      "size": 13085
+    },
+    {
+      "path": "models/models/price/西红柿_elasticnet_tuned_pooled.joblib",
+      "sha256": "db38666cd790aec924d7cb62c54ad1039138138f6f4c3600baff94a67ee99cd0",
+      "size": 7273
+    },
+    {
+      "path": "models/models/price/尖椒_elasticnet_pooled.joblib",
+      "sha256": "306083f904107db2f918fb032178a1dac05686eeb2bf1357ef1ce77cbe513d27",
+      "size": 7264
+    },
+    {
+      "path": "models/models/price/韭菜_extra_trees_tuned_pooled.joblib",
+      "sha256": "dad36c0a67af573c2e164071c1de5152975da22082206673f8107b0f339e0dd6",
+      "size": 61461361
+    },
+    {
+      "path": "models/models/price/茄子_elasticnet_tuned_pooled.joblib",
+      "sha256": "8b1f58787e468284a209be5e50543c2121f9b49b518fc40880ca35325f79921c",
+      "size": 7270
+    },
+    {
+      "path": "models/models/price/西红柿_elasticnet_pooled.joblib",
+      "sha256": "70a8ca763bcb165d2531142b01f2579e3815b80174b185e96604f9aa90e08218",
+      "size": 7267
+    },
+    {
+      "path": "models/models/price/青椒_elasticnet_tuned_pooled.joblib",
+      "sha256": "7270a0b38a68faa8efe2914613fdcf783bf6787f7e3db2b388cadc33fa702010",
+      "size": 7270
+    },
+    {
+      "path": "models/models/price/芸豆_elasticnet_pooled.joblib",
+      "sha256": "4258dff505085a1e7371a52f98be8cd5043df10dee457be5587122e7d58db0c5",
+      "size": 7264
+    },
+    {
+      "path": "models/models/price/芸豆_catboost_per_crop.joblib",
+      "sha256": "13311b84c833b92c6f677e168c6b96771521e6cb2311ef9b0dfc3a860e207edb",
+      "size": 463069
+    },
+    {
+      "path": "models/models/price/黄瓜_extra_trees_pooled.joblib",
+      "sha256": "9521bf585c968341865d6eff8e1f14cb871bbb796b8f1f6df357121f7bbebeb0",
+      "size": 220438219
+    },
+    {
+      "path": "models/models/price/韭菜_extra_trees_pooled.joblib",
+      "sha256": "ccedd968376eb6e42109aa0542f8cc8ba5aeafe5a9910484c462de36a1a44615",
+      "size": 220438219
+    },
+    {
+      "path": "models/models/price/青椒_ridge_pooled.joblib",
+      "sha256": "948f47d6e740ef19b1cd61c4510d97ff4886ce27b1197194d5523ef17dc93cb1",
+      "size": 7180
+    },
+    {
+      "path": "models/models/registry/interval_selection.json",
+      "sha256": "09c7c3691407d8ff868b5df7e19200fd67c493849eebab6ef46ff9c279610066",
+      "size": 339
+    },
+    {
+      "path": "models/models/registry/model_registry.json",
+      "sha256": "91dc8d54bea9ff9505b07ec00773cd2972e3468598f9043d4fd6d524e8eaaa52",
+      "size": 55963
+    },
+    {
+      "path": "models/models/registry/tuned_params.json",
+      "sha256": "24e41be1be51f4c830d483d569ff23c5819350e8a35c5dade415b7917cd6a36c",
+      "size": 3291
+    },
+    {
+      "path": "models/outputs/v2_recommendation.json",
+      "sha256": "7bc3f65e2be55729e71c749426ed96a0cc72ece1838829baaeaba05aa6b9266d",
+      "size": 43154
+    },
+    {
+      "path": "models/outputs/engine_examples.json",
+      "sha256": "a596b98c6b82d36856029d97340a41b8c436d41a3d19642d0efb75ffa90b8276",
+      "size": 33751
+    }
+  ],
+  "n_files": 143,
+  "total_bytes": 618247150
+}

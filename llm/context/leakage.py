@@ -1,67 +1,80 @@
-# -*- coding: utf-8 -*-
-"""Phase 9：泄漏检测（四类时间戳：feature / price observation / event publication / production）。
-
-任何进入 packet 的信息都必须满足 timestamp <= cutoff。检测结果结构化返回（bool + 明细）。
-"""
+"""Fail-closed audit of observation, feature and externally published context."""
 from __future__ import annotations
+
+import re
 from typing import Any, Dict
-
 import pandas as pd
+import numpy as np
+
+from llm.common import canonical_json
 
 
-def audit_packet(packet: Dict[str, Any], dataset: pd.DataFrame | None = None) -> Dict[str, Any]:
-    cut = pd.Timestamp(packet["cutoff"]) if not str(packet["cutoff"]).startswith("T") \
-        else None
-    out: Dict[str, Any] = {
-        "mode": packet.get("mode", "context"),
-        "checks": {}, "violations": [], "passed": True,
-    }
+def audit_packet(packet: Dict[str, Any], dataset: pd.DataFrame | None = None,
+                 host_metadata: dict | None = None) -> Dict[str, Any]:
+    blind = packet.get("mode") == "blind"
+    result = {"mode": packet.get("mode", "context"), "checks": {},
+              "violations": [], "passed": True}
 
-    def _fail(kind: str, detail: str) -> None:
-        out["violations"].append({"kind": kind, "detail": detail})
-        out["passed"] = False
+    def check(kind, ok, detail):
+        result["checks"][kind] = {"ok": bool(ok), "detail": detail}
+        if not ok:
+            result["violations"].append({"kind": kind, "detail": detail})
+            result["passed"] = False
 
-    # 1) price observation timestamp
-    if cut is not None:
-        anchor = pd.Timestamp(packet["anchor_observation_date"])
-        out["checks"]["price_observation"] = {"anchor": str(anchor.date()),
-                                              "cutoff": str(cut.date()),
-                                              "ok": bool(anchor <= cut)}
-        if not (anchor <= cut):
-            _fail("price_observation", f"anchor {anchor.date()} > cutoff {cut.date()}")
+    cut = pd.Timestamp(host_metadata["cutoff"]) if blind and host_metadata else (
+        None if blind else pd.Timestamp(packet["cutoff"]))
+    if blind:
+        check("anonymous_identity", packet.get("city") == "CITY_A" and packet.get("crop") == "CROP_A",
+              "generic case identifiers only")
+        text = canonical_json(packet)
+        check("anonymous_source", not re.search(r"沈阳|shenyang|西红柿|土豆|20\d{2}-\d{2}-\d{2}", text, re.I),
+              "no real region/crop/source date")
+        check("relative_price", packet.get("unit") == "ratio_to_current_price" and packet.get("current_price") == 1.,
+              "all prices use current=1 ratio")
+        check("relative_time", packet.get("anchor_observation_date") == "T0" and
+              bool(re.fullmatch(r"T\+\d+d", str(packet.get("cutoff")))) and
+              packet.get("feature_available_at") == "T0", "relative cutoff and feature timestamp")
+        check("blind_external_context", not packet.get("events") and not packet.get("production", {}).get("available"),
+              "blind benchmark has no real event/production context")
     else:
-        out["checks"]["price_observation"] = {"ok": True, "note": "blind 相对索引，无绝对时间"}
+        anchor = pd.Timestamp(packet["anchor_observation_date"])
+        check("price_observation", anchor <= cut, "anchor <= cutoff")
+        check("feature", pd.Timestamp(packet.get("feature_available_at", packet["anchor_observation_date"])) <= cut,
+              "feature timestamp <= cutoff")
+    history = packet.get("history", [])
+    check("historical_relative_offsets", bool(history) and all(
+        isinstance(row.get("day_offset"), int) and row["day_offset"] <= 0 and
+        np.isfinite(row.get("price", np.nan)) and row.get("price", 0) > 0 for row in history),
+        "only observed prices with offsets <= 0")
 
-    # 2) feature timestamp（packet 特征全部派生自 anchor 行）
-    max_feature_ts = packet["anchor_observation_date"]
-    out["checks"]["feature"] = {"max_feature_ts": max_feature_ts, "ok": True}
+    publications = list(packet.get("events", []))
+    for key in ("production", "supply", "climate"):
+        value = packet.get(key, {})
+        if isinstance(value, dict) and value.get("available"):
+            publications.append(value)
+    for key in ("hri", "market_risk", "climate_exposure"):
+        value = packet.get("risk", {}).get(key, {})
+        if isinstance(value, dict) and value.get("available"):
+            publications.append(value)
+    for i, event in enumerate(publications):
+        try:
+            published = pd.Timestamp(event["publication_date"])
+            ok = bool(cut is not None and pd.notna(published) and published <= cut and
+                      event.get("source") and event.get("available_at_cutoff") is True)
+        except (KeyError, ValueError, TypeError):
+            ok = False
+        check(f"publication_{i}", ok, "source + publication_date <= cutoff + available_at_cutoff required")
 
-    # 3) event publication timestamp
-    bad_events = [e for e in packet.get("events", [])
-                  if cut is not None and ("publication_date" not in e
-                                          or pd.Timestamp(e["publication_date"]) > cut)]
-    out["checks"]["event_publication"] = {"n_events": len(packet.get("events", [])),
-                                          "n_violations": len(bad_events),
-                                          "ok": len(bad_events) == 0}
-    for e in bad_events:
-        _fail("event_publication", f"event {e.get('source')} publication > cutoff")
-
-    # 4) production publication timestamp
-    prod = packet.get("production", {})
-    out["checks"]["production_publication"] = {
-        "available": bool(prod.get("available")),
-        "ok": True,
-        "note": "production 本轮 NOT_FOUND（无结构化来源）→ 无泄漏面",
-    }
-
-    # 5) dataset 级复核：确认冻结数据中无 > cutoff 的观测被引用（仅 context 模式）
-    if dataset is not None and cut is not None:
-        crop = packet["crop"]
-        sub = dataset[dataset["crop"] == crop]
-        n_future = int((sub["date"] > cut).sum())
-        out["checks"]["dataset_future_rows"] = {"n_future_rows": n_future, "ok": n_future > 0}
-        # 说明：数据集**存在**未来行是正常的（用于回测构造标签）；此处只记录计数。
-    return out
+    if dataset is not None and (not blind or host_metadata):
+        crop = host_metadata["crop"] if host_metadata else packet["crop"]
+        sub = dataset.loc[(dataset.crop == crop) & (pd.to_datetime(dataset.date) <= cut)].sort_values("date")
+        scale = host_metadata["scale"] if host_metadata else 1.
+        prices = np.asarray([row["price"] for row in history], float)
+        raw = sub.price_per_kg.to_numpy(float) / scale
+        check("dataset_pit_reconstruction", len(raw) == len(prices) and
+              bool(len(raw)) and np.allclose(raw, prices, rtol=1e-10, atol=1e-10),
+              "provider history equals host cutoff-sliced prices")
+    return result
 
 
 __all__ = ["audit_packet"]

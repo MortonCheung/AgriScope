@@ -12,6 +12,8 @@
 """
 from __future__ import annotations
 from dataclasses import dataclass, field
+import copy
+import time
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
@@ -25,8 +27,10 @@ from long_horizon.baselines import rowwise_baselines
 
 from llm.common import (canonical_json, stable_hash, prompt_meta, read_prompt,
                         LLM_RESULTS, ensure_llm_dirs, write_json)
-from llm.context import build_packet, build_blind_packet, packet_hash, audit_packet
+from llm.context import (build_packet, build_blind_packet, build_case_context,
+                         restore_forecast, packet_hash, audit_packet)
 from llm.schemas import validate_forecast, validate_residual, validate_critic, hard_bounds
+from llm.schemas import FORECAST_SCHEMA, RESIDUAL_SCHEMA, CRITIC_SCHEMA
 from llm import cache as CACHE
 from llm.providers import LLMProvider, LLMUnavailable
 
@@ -37,20 +41,9 @@ MAX_ANCHORS_PER_FOLD = 8          # §46 控成本：pilot 阶段限制 cutoff �
 
 
 # ---------------------------------------------------------------- 统计 baseline
-def _summary() -> pd.DataFrame:
-    p = (__import__("long_horizon.common", fromlist=["LH_ARTIFACTS"])
-         .LH_ARTIFACTS / "long_horizon_summary.csv")
-    return pd.read_csv(p) if p.exists() else pd.DataFrame()
-
-
 def best_rowwise_method(crop: str, horizon: int) -> str:
-    s = _summary()
-    if not len(s):
-        return "b_last_value"
-    sub = s[(s["crop"] == crop) & (s["horizon"] == horizon) & (s["family"] == "rowwise")]
-    if not len(sub):
-        return "b_last_value"
-    return str(sub.sort_values("score").iloc[0]["method"])
+    # RC1 summary was selected on reused 2024..2026. Never use it in a PIT benchmark.
+    return "b_last_value"
 
 
 def _baseline_series(dataset: pd.DataFrame, horizon: int) -> pd.DataFrame:
@@ -65,6 +58,7 @@ class ExperimentConfig:
     crops: List[str] = field(default_factory=lambda: list(CROPS))
     max_anchors_per_fold: int = MAX_ANCHORS_PER_FOLD
     temperature: float = 0.0
+    seed: Optional[int] = 42
     repeats: int = 1
     residual_mode: Optional[str] = None             # unbounded|bounded|confidence_gated
     include_sections: Optional[List[str]] = None    # 消融用：限制进入 prompt 的上下文块
@@ -95,34 +89,27 @@ def case_grid(cfg: ExperimentConfig, dataset: pd.DataFrame) -> List[Dict[str, An
 
 # ---------------------------------------------------------------- prompt 渲染
 def _render(prompt_name: str, packet: Dict[str, Any], baseline_point: Optional[float],
-            sections: Optional[List[str]] = None) -> Tuple[str, str]:
+            sections: Optional[List[str]] = None, *, method: str = "forecast",
+            context_hash: Optional[str] = None) -> Tuple[str, str]:
     text = read_prompt(prompt_name)
     system = text.split("## system", 1)[1].split("## user", 1)[0].strip()
     user_tpl = text.split("## user", 1)[1].strip() if "## user" in text else ""
 
-    def block(name: str, value: Any) -> str:
-        if sections is not None and name not in sections:
-            return f"[{name}: omitted_in_ablation]"
-        return canonical_json(value)
-
-    fields = {
-        "city": packet["city"], "crop": packet["crop"], "cutoff": packet["cutoff"],
-        "horizon": packet["horizon"], "current_price": packet["current_price"],
-        "returns": block("returns", packet["returns"]),
-        "rolling": block("rolling", packet["rolling"]),
-        "seasonal_percentile": packet["seasonality"]["seasonal_percentile"],
-        "seasonal_p10": packet["seasonality"]["seasonal_p10"],
-        "seasonal_p50": packet["seasonality"]["seasonal_p50"],
-        "seasonal_p90": packet["seasonality"]["seasonal_p90"],
-        "historical_profile": block("seasonality", packet["seasonality"]["historical_profile"]),
-        "short_model": block("short_model", packet["short_model"]),
-        "risk": block("risk", packet["risk"]),
-        "events": block("events", packet.get("events", [])),
-        "data_quality": block("data_quality", packet["data_quality"]),
-        "sources": canonical_json({"baseline": baseline_point,
-                                   "short_model": packet["short_model"]}),
-    }
-    fields["baseline_point"] = baseline_point
+    selected = copy.deepcopy(packet)
+    if sections is not None:
+        for name in ("seasonality", "short_model", "risk", "events", "climate"):
+            if name not in sections:
+                selected.pop(name, None)
+        # Avoid a climate ablation leaking the climate context through the risk block.
+        if "climate" not in sections and isinstance(selected.get("risk"), dict):
+            selected["risk"].pop("climate_exposure", None)
+        if "events" not in sections:
+            selected.pop("events_available", None)
+            selected.pop("events_status", None)
+    fields = {"packet_json": canonical_json(selected), "method": method,
+              "context_hash": context_hash or packet_hash(packet),
+              "unit": packet["unit"], "horizon": packet["horizon"],
+              "baseline_point": baseline_point}
     user = user_tpl
     for k, v in fields.items():
         user = user.replace("{" + k + "}", str(v))
@@ -131,53 +118,79 @@ def _render(prompt_name: str, packet: Dict[str, Any], baseline_point: Optional[f
 
 # ---------------------------------------------------------------- 单次调用
 def _call_once(provider: LLMProvider, packet: Dict[str, Any], baseline_point: Optional[float],
-               schema_name: str, cfg: ExperimentConfig) -> Dict[str, Any]:
-    prompt_name = {"forecast": "forecast_v1.md", "residual": "residual_v1.md",
-                   "critic": "critic_v1.md"}[schema_name]
+               schema_name: str, cfg: ExperimentConfig, *, host_metadata: Optional[dict] = None,
+               bypass_cache: bool = False) -> Dict[str, Any]:
+    prompt_name = {"forecast": "forecast_v2.md", "residual": "residual_v2.md",
+                   "critic": "critic_v2.md"}[schema_name]
     pm = prompt_meta(prompt_name)
-    system, user = _render(prompt_name, packet, baseline_point, cfg.include_sections)
     chash = packet_hash(packet)
-    key = CACHE.cache_key(chash, pm["prompt_hash"], provider.model)
-    hit = CACHE.get(key)
-    if hit is not None:
-        return {"payload": hit["payload"], "cache_hit": True, "prompt_meta": pm,
-                "context_hash": chash, "key": key, "valid": True, "errors": []}
+    method = f"{cfg.experiment}:{schema_name}"
+    system, user = _render(prompt_name, packet, baseline_point, cfg.include_sections,
+                           method=method, context_hash=chash)
+    pm["rendered_prompt_hash"] = stable_hash({"system": system, "user": user}, n=64)
+    schema = copy.deepcopy({"forecast": FORECAST_SCHEMA, "residual": RESIDUAL_SCHEMA,
+                            "critic": CRITIC_SCHEMA}[schema_name])
+    if schema_name == "forecast":
+        schema["properties"]["unit"] = {"const": packet["unit"]}
+    bounds = tuple(host_metadata["bounds"]) if host_metadata else hard_bounds_placeholder(packet)
+    request_config = {"temperature": cfg.temperature, "seed": cfg.seed,
+                      "actual_seed": cfg.seed if provider.seed_supported else None,
+                      "task": cfg.experiment, "schema_name": schema_name,
+                      "baseline_point": baseline_point, "include_sections": cfg.include_sections}
+    key = CACHE.cache_key(chash, pm["rendered_prompt_hash"], provider.model,
+                          provider_config=provider.cache_config(), schema=schema,
+                          request_config=request_config)
+
+    def validate(out):
+        if schema_name == "forecast":
+            return validate_forecast(out, packet["horizon"], bounds, unit=packet["unit"],
+                                     context_hash=chash, method=method)
+        return (validate_residual if schema_name == "residual" else validate_critic)(
+            out, context_hash=chash, method=method)
+
+    base = {"prompt_meta": pm, "context_hash": chash, "key": key,
+            "method": method, "provider_config": provider.cache_config(), "request_config": request_config}
+    hit = None if bypass_cache else CACHE.get(key)
+    if hit is not None and validate(hit["payload"])["ok"]:
+        return {**base, "payload": hit["payload"], "cache_hit": True, "valid": True,
+                "errors": [], "latency_ms": 0., "api_called": False,
+                "response_model": hit.get("meta", {}).get("response_model", "unknown"),
+                "response_id": hit.get("meta", {}).get("response_id", "unknown"),
+                "system_fingerprint": hit.get("meta", {}).get("system_fingerprint", "unknown"),
+                "token_usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+                "estimated_cost_usd": 0.}
     ctx = {"context_hash": chash, "baseline_point": baseline_point,
-           "current_price": packet["current_price"], "horizon": packet["horizon"]}
+           "current_price": packet["current_price"], "horizon": packet["horizon"],
+           "unit": packet["unit"], "method": method}
+    started = time.perf_counter()
     try:
         out = provider.complete_json(task=cfg.experiment, system=system, user=user,
                                      schema_name=schema_name, context=ctx,
-                                     temperature=cfg.temperature, seed=42)
+                                     temperature=cfg.temperature,
+                                     seed=cfg.seed if provider.seed_supported else None)
     except LLMUnavailable as e:
-        return {"payload": None, "cache_hit": False, "prompt_meta": pm, "context_hash": chash,
-                "key": key, "valid": False, "errors": [f"llm_unavailable:{e}"]}
-
-    if schema_name == "forecast":
-        v = validate_forecast(out, packet["horizon"], hard_bounds_placeholder(packet))
-    elif schema_name == "residual":
-        v = validate_residual(out)
-    else:
-        v = validate_critic(out)
+        return {**base, "payload": None, "cache_hit": False, "valid": False,
+                "errors": [f"llm_unavailable:{type(e).__name__}"],
+                "latency_ms": (time.perf_counter() - started) * 1000,
+                "api_called": getattr(provider, "last_call_attempted", provider.is_available()),
+                **provider.call_metadata()}
+    elapsed = (time.perf_counter() - started) * 1000
+    v = validate(out)
+    metadata = {**provider.call_metadata(), "latency_ms": elapsed, "api_called": True}
     if v["ok"]:
-        CACHE.put(key, out, {**pm, "provider": provider.describe(), "context_hash": chash,
-                             "is_real_llm": provider.is_real_llm}, validated=True)
-    return {"payload": out, "cache_hit": False, "prompt_meta": pm, "context_hash": chash,
-            "key": key, "valid": v["ok"], "errors": v["errors"]}
-
-
-_BOUNDS_CACHE: Dict[str, Tuple[float, float]] = {}
-_DATASET_CACHE: Dict[str, pd.DataFrame] = {}
+        if not bypass_cache:
+            CACHE.put(key, out, {**base, **metadata, "provider": provider.describe(),
+                                "is_real_llm": provider.is_real_llm}, validated=True)
+    return {**base, **metadata, "payload": out, "cache_hit": False,
+            "valid": v["ok"], "errors": v["errors"]}
 
 
 def hard_bounds_placeholder(packet: Dict[str, Any]) -> Tuple[float, float]:
     """用**该作物历史价格分布**推出的量级边界（程序化，非手写常数）。"""
-    crop = packet["crop"]
-    if crop not in _BOUNDS_CACHE:
-        ds = _DATASET_CACHE.get("ds")
-        if ds is None:
-            return (0.0, float("inf"))
-        _BOUNDS_CACHE[crop] = hard_bounds(ds, crop)
-    return _BOUNDS_CACHE[crop]
+    prices = np.array([row["price"] for row in packet.get("history", [])], dtype=float)
+    if not len(prices) or not np.isfinite(prices).all() or min(prices) <= 0:
+        raise ValueError("missing_cutoff_safe_packet_bounds")
+    return float(min(prices) * .5), float(max(prices) * 3.)
 
 
 # ---------------------------------------------------------------- 主运行
@@ -186,7 +199,6 @@ def run_experiment(provider: LLMProvider, cfg: ExperimentConfig,
     ensure_llm_dirs()
     ds = dataset if dataset is not None else load_frozen_dataset()
     ds = add_long_horizon_targets(ds, horizons=cfg.horizons)
-    _DATASET_CACHE["ds"] = ds
 
     cases = case_grid(cfg, ds)
     records: List[Dict[str, Any]] = []
@@ -197,11 +209,13 @@ def run_experiment(provider: LLMProvider, cfg: ExperimentConfig,
     for c in cases:
         h = c["horizon"]
         crop = c["crop"]
-        if cfg.experiment == "blind_numeric_forecast":
-            packet = build_blind_packet(crop, c["anchor"], h, dataset=ds)
-        else:
-            packet = build_packet(crop, c["anchor"], h, dataset=ds)
-        leak = audit_packet(packet, dataset=ds)
+        packet, host = build_case_context(crop, c["anchor"], h, dataset=ds,
+            mode="blind" if cfg.experiment == "blind_numeric_forecast" else "context")
+        packet["target_type"] = "cycle_market_average"
+        packet["target_window"] = {"start_offset": 1, "end_offset": h}
+        leak = audit_packet(packet, dataset=ds, host_metadata=host)
+        if not leak["passed"]:
+            raise ValueError("packet_leakage_audit_failed")
 
         bser = baseline_series[h]
         brow = bser[(bser["crop"] == crop) & (bser["date"] == pd.Timestamp(c["anchor"]))]
@@ -213,11 +227,14 @@ def run_experiment(provider: LLMProvider, cfg: ExperimentConfig,
                   else "high" if (pct is not None and pct > 2 / 3) else "mid")
 
         schema = "residual" if cfg.residual_mode else "forecast"
-        call = _call_once(provider, packet, bpoint, schema, cfg)
+        call = _call_once(provider, packet, bpoint / host["scale"] if bpoint is not None else None,
+                          schema, cfg, host_metadata=host)
         rec = {
             "crop": crop, "horizon": h, "fold": c["fold"], "anchor": c["anchor"],
             "experiment": cfg.experiment, "schema": schema,
             "actual": c["actual"], "baseline_method": bmethod, "baseline_point": bpoint,
+            "target_type": "cycle_market_average", "evidence_status": "RETROSPECTIVE_ONLY_NO_UNTOUCHED",
+            "untouched_metric": None, "production_status": "RESEARCH_ONLY",
             "price_percentile": pct, "regime": regime,
             "provider": provider.name, "is_real_llm": provider.is_real_llm,
             "context_hash": call["context_hash"], "prompt_version": call["prompt_meta"]["prompt_version"],
@@ -225,9 +242,12 @@ def run_experiment(provider: LLMProvider, cfg: ExperimentConfig,
             "valid": call["valid"], "errors": ";".join(call["errors"]),
             "leakage_passed": leak["passed"],
             "temperature": cfg.temperature, "residual_mode": cfg.residual_mode,
+            "latency_ms": call["latency_ms"], "token_usage": call["token_usage"],
+            "estimated_cost_usd": call["estimated_cost_usd"],
+            "rendered_prompt_hash": call["prompt_meta"]["rendered_prompt_hash"],
         }
         if call["valid"] and call["payload"]:
-            p = call["payload"]
+            p = restore_forecast(call["payload"], host) if schema == "forecast" else call["payload"]
             if schema == "forecast":
                 rec.update({"point": float(p["point_forecast"]), "low": float(p["range_low"]),
                             "high": float(p["range_high"]), "direction": p["direction"],
@@ -244,6 +264,8 @@ def run_experiment(provider: LLMProvider, cfg: ExperimentConfig,
 
 # ---------------------------------------------------------------- 指标
 def point_metrics(records: pd.DataFrame) -> pd.DataFrame:
+    if not records.empty and ("is_real_llm" not in records or not records["is_real_llm"].all()):
+        raise ValueError("LLM_CAPABILITY_METRICS_REQUIRE_REAL_PROVIDER")
     rows = []
     ok = records[records["valid"] & records["point"].notna()] if "point" in records else records
     for (exp, h), sub in ok.groupby(["experiment", "horizon"]):
@@ -261,16 +283,23 @@ def point_metrics(records: pd.DataFrame) -> pd.DataFrame:
 def stability_test(provider: LLMProvider, cfg: ExperimentConfig, crop: str, horizon: int,
                    anchor: str, repeats: int = 4, dataset: Optional[pd.DataFrame] = None) -> Dict[str, Any]:
     ds = dataset if dataset is not None else load_frozen_dataset()
-    packet = (build_blind_packet if cfg.experiment == "blind_numeric_forecast" else build_packet)(
-        crop, anchor, horizon, dataset=ds)
-    pts, dirs, los, his = [], [], [], []
+    packet, host = build_case_context(crop, anchor, horizon, dataset=ds,
+        mode="blind" if cfg.experiment == "blind_numeric_forecast" else "context")
+    pts, dirs, los, his, calls = [], [], [], [], []
     for _ in range(repeats):
-        c = _call_once(provider, packet, None, "forecast", cfg)
+        c = _call_once(provider, packet, None, "forecast", cfg, host_metadata=host, bypass_cache=True)
+        calls.append(c)
         if c["valid"]:
-            p = c["payload"]
+            p = restore_forecast(c["payload"], host)
             pts.append(float(p["point_forecast"])); dirs.append(p["direction"])
             los.append(float(p["range_low"])); his.append(float(p["range_high"]))
     return {"repeats": repeats, "n_ok": len(pts),
+            "api_calls": sum(bool(c["api_called"]) for c in calls),
+            "cache_hits": sum(bool(c["cache_hit"]) for c in calls),
+            "is_real_llm": provider.is_real_llm,
+            "latency_ms": [c["latency_ms"] for c in calls],
+            "token_usage": [c["token_usage"] for c in calls],
+            "estimated_cost_usd": [c["estimated_cost_usd"] for c in calls],
             "point_std": float(np.std(pts)) if pts else None,
             "point_cv": float(np.std(pts) / np.mean(pts)) if pts and np.mean(pts) else None,
             "direction_unique": sorted(set(dirs)),
@@ -285,7 +314,9 @@ def learn_max_adjustment(dataset: pd.DataFrame, crop: str, horizon: int,
     ds = add_long_horizon_targets(dataset, horizons=[horizon])
     bser = rowwise_baselines(ds, horizon)
     bmethod = best_rowwise_method(crop, horizon)
-    sub = bser[(bser["crop"] == crop) & (bser["date"] <= pd.Timestamp(train_end))]
+    # An anchor before train_end is insufficient: every future label must already be mature.
+    sub = bser[(bser["crop"] == crop) &
+               (bser["date"] + pd.Timedelta(days=horizon) <= pd.Timestamp(train_end))]
     sub = sub[sub[tcol].notna() & sub[bmethod].notna()]
     if not len(sub):
         return {"crop": crop, "horizon": horizon, "n": 0, "max_adjustment_pct": None}

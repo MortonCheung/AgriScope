@@ -1,0 +1,15 @@
+{
+  "status": "INDEPENDENT_RECALCULATION_PASS",
+  "prediction_rows": 586000,
+  "metric_groups": 3840,
+  "max_absolute_discrepancy": {
+    "n": 0.0,
+    "WAPE": 2.842170943040401e-14,
+    "MAE": 4.440892098500626e-16,
+    "sMAPE": 1.4210854715202004e-14,
+    "bias": 4.440892098500626e-16,
+    "direction_accuracy": 1.1102230246251565e-16
+  },
+  "label_maturity_and_phase_end_checks": "PASS",
+  "untouched_claim": "NONE; historical periods previously viewed"
+}

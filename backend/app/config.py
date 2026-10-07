@@ -47,7 +47,7 @@ EXTENDED_FINGERPRINT = EXTENDED_SNAPSHOT_DIR / ".source_fingerprint.json"
 LH_PROCESSED_DIR = ROOT / "data" / "processed" / "long_horizon"
 LH_SNAPSHOT_DIR = LH_PROCESSED_DIR / "snapshots"
 LH_LATEST = LH_SNAPSHOT_DIR / "latest.json"
-LH_REGISTRY = MODELS_DIR / "long_horizon" / "artifacts" / "LONG_HORIZON_REGISTRY.csv"
+LH_REGISTRY = ROOT / "LONG_HORIZON_V2_REGISTRY.csv"
 
 # ---------------------------------------------------------------- 服务参数
 API_TITLE = "AgriScope Decision API"

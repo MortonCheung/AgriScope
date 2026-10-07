@@ -1,82 +1,64 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""Long-Horizon 一致性门禁（只读；不训练、不改冻结产物）。
-
-校验：
-  1. Registry 行数 = 6 horizon × 10 作物，状态属登记枚举，150/180 必为探索级；
-  2. 快照条目数一致，`low <= point <= high`，单位固定 CNY/kg，source 属登记枚举；
-  3. 报告与交付物齐备（§41 的 7 份）。
-缺失时给出**修复命令**（运行 Long-Horizon 预测 Job）而不是静默通过。
-"""
-from __future__ import annotations
+"""V2 独立验收：报告/Registry/双目标/未见证据/freshness/模型包，不训练。"""
 import json
-import sys
+import math
 from pathlib import Path
-
+import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
-REG = ROOT / "models" / "long_horizon" / "artifacts" / "LONG_HORIZON_REGISTRY.csv"
-SNAP = ROOT / "data" / "processed" / "long_horizon" / "snapshots" / "latest.json"
-DELIVERABLES = [
-    "LONG_HORIZON_TARGET_STUDY.md",
-    "LONG_HORIZON_MODEL_REPORT.md", "LONG_HORIZON_METRICS.csv", "LONG_HORIZON_REGISTRY.csv",
-    "LLM_FORECAST_REPORT.md", "LLM_ABLATION_REPORT.md", "HYBRID_REPORT.md",
-    "LONG_HORIZON_FREEZE_GATE.md",
-]
-STATUSES = {"PRODUCTION_POINT", "SCENARIO_ONLY", "EXPLORATORY_SCENARIO_ONLY"}
-SOURCES = {"seasonal", "long_horizon_model", "scenario_only"}
-HORIZONS = [30, 60, 90, 120, 150, 180]
-
-problems: list[str] = []
+DELIVERABLES = ['LONG_HORIZON_V2_TARGET_REPORT.md','LONG_HORIZON_V2_EVALUATION_REPORT.md',
+ 'LONG_HORIZON_V2_METRICS.csv','LONG_HORIZON_V2_REGISTRY.csv','HARVEST_WINDOW_REPORT.md',
+ 'LONG_HORIZON_SAMPLE_ACCOUNTING.csv','SAMPLE_ACCOUNTING_REPORT.md','PRODUCTION_GATE_REPORT.md',
+ 'LLM_REAL_EVALUATION_REPORT.md','LLM_ABLATION_V2_REPORT.md','HYBRID_V2_REPORT.md',
+ 'DECISION_LONG_HORIZON_BACKTEST.md']
 
 
-def main() -> int:
-    if not REG.exists() or not SNAP.exists():
-        print("[verify_long_horizon] FAIL: 缺少 Registry 或快照。")
-        print("  修复：PROJECT_ROOT=$PWD PYTHONPATH=models/src:models:. "
-              "python3 -m long_horizon.run_long_horizon")
-        return 1
-
-    import pandas as pd  # noqa: PLC0415
-    reg = pd.read_csv(REG)
-    if len(reg) != len(HORIZONS) * 10:
-        problems.append(f"Registry 行数 {len(reg)} != {len(HORIZONS) * 10}")
-    if set(reg["production_status"]) - STATUSES:
-        problems.append(f"Registry 出现未登记状态：{set(reg['production_status']) - STATUSES}")
-    if set(reg["range_type"]) - {"scenario_range", "prediction_interval"}:
-        problems.append("Registry 出现未登记 range_type")
-    for h in (150, 180):
-        sub = reg[reg["horizon"] == h]
-        if len(sub) and set(sub["production_status"]) != {"EXPLORATORY_SCENARIO_ONLY"}:
-            problems.append(f"horizon={h} 未标记为探索级")
-
-    snap = json.loads(SNAP.read_text(encoding="utf-8"))
-    entries = snap.get("entries", [])
-    if snap.get("n_entries") != len(entries):
-        problems.append("快照 n_entries 与 entries 长度不一致")
-    if len(entries) != len(reg):
-        problems.append(f"快照条目 {len(entries)} != Registry {len(reg)}")
-    for e in entries:
-        if e.get("unit") != "CNY/kg":
-            problems.append(f"{e.get('crop')}@{e.get('horizon')} 单位非 CNY/kg")
-        if e.get("forecast_source") not in SOURCES:
-            problems.append(f"{e.get('crop')}@{e.get('horizon')} source 未登记")
-        lo, hi, pt = e.get("range_low"), e.get("range_high"), e.get("point_forecast")
-        if None not in (lo, hi, pt) and not (lo <= pt <= hi):
-            problems.append(f"{e.get('crop')}@{e.get('horizon')} 区间不含点值")
-
-    missing = [n for n in DELIVERABLES if not (ROOT / n).exists()]
-    if missing:
-        problems.append(f"缺少交付物：{missing}")
-
+def main():
+    problems = []
+    for name in DELIVERABLES:
+        if not (ROOT/name).is_file(): problems.append('Missing report: '+name)
     if problems:
-        print("[verify_long_horizon] FAIL")
-        for p in problems:
-            print("  -", p)
-        return 1
-    print(f"[verify_long_horizon] PASS :: registry={len(reg)} entries={len(entries)} "
-          f"hash={snap.get('snapshot_hash')} as_of={snap.get('as_of')}")
-    return 0
+        print('\n'.join(problems));return 1
+    registry = pd.read_csv(ROOT/'LONG_HORIZON_V2_REGISTRY.csv')
+    snap = json.loads((ROOT/'data/processed/long_horizon/snapshots/latest.json').read_text())
+    index = json.loads((ROOT/'models/models/long_horizon_v2/index.json').read_text())
+    entries = snap.get('entries', [])
+    keys = lambda rows: {(r['crop'],int(r['horizon']),r['target_type']) for r in rows}
+    if len(registry)!=120 or len(entries)!=120 or keys(registry.to_dict('records'))!=keys(entries):
+        problems.append('Registry/snapshot must have paired 10x6x2 distinct entries')
+    if len(keys(entries)) != len(entries): problems.append('Duplicate entries')
+    for k in ['schema_version','model_version','training_data_version','runtime_data_version','as_of',
+              'latest_data_date','generated_at','method_registry_version','llm_model','prompt_version']:
+        if k not in snap: problems.append('Missing snapshot version: '+k)
+    if snap.get('schema_version')!='lh_forecast_v2': problems.append('Unsupported snapshot schema')
+    if snap.get('method_registry_version')!=index.get('method_registry_version'):
+        problems.append('Registry version mismatch')
+    for e in entries:
+        if e.get('available'):
+            vals=[e.get('range_low'),e.get('point_forecast'),e.get('range_high')]
+            if any(v is None or not math.isfinite(v) for v in vals) or not 0 < vals[0]<=vals[1]<=vals[2]:
+                problems.append('Invalid numeric interval')
+        if e.get('unit')!='CNY/kg': problems.append('Unit mismatch')
+        if not e.get('actual_method') or not isinstance(e.get('fallback_used'),bool):
+            problems.append('Missing actual method/fallback semantics')
+        if not e.get('target_window',{}).get('definition'): problems.append('Missing target definition')
+        if index.get('evaluation_status')=='RETROSPECTIVE_ONLY_NO_UNTOUCHED':
+            if e.get('production_status') in ['PRODUCTION_POINT','PRODUCTION_SCENARIO']:
+                problems.append('Historical reused evidence cannot upgrade production')
+            if e.get('range_type')!='scenario_range' or e.get('confidence')!='low':
+                problems.append('Insufficient final evidence must remain low confidence scenario')
+        if e.get('llm_used'): problems.append('Unevaluated LLM enters numeric output')
+    if registry.untouched_metric.notna().any() or (registry.final_effective_n!=0).any():
+        problems.append('Reused historical evaluation incorrectly reported as untouched')
+    accounting=pd.read_csv(ROOT/'LONG_HORIZON_SAMPLE_ACCOUNTING.csv')
+    if not {'calendar_candidates','observed_candidates','nonoverlap_samples','effective_test_samples','fold'} <= set(accounting):
+        problems.append('Incomplete sample accounting')
+    daily=json.loads((ROOT/'data/processed/daily/snapshots/latest.json').read_text())
+    if snap['latest_data_date'] < daily['latest_data_date']: problems.append('Long-Horizon has not caught up to Daily')
+    print(json.dumps({'status':'LONG_HORIZON_V2_ENGINEERING_ACCEPTANCE_PASS' if not problems else 'FAIL',
+                      'registry_rows':len(registry),'snapshot_entries':len(entries),'as_of':snap['as_of'],
+                      'untouched_n':0,'scientific_status':index['evaluation_status'],'problems':problems},ensure_ascii=False))
+    return 1 if problems else 0
 
 
-if __name__ == "__main__":
-    sys.exit(main())
+if __name__=='__main__':
+    raise SystemExit(main())

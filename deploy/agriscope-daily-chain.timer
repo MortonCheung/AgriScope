@@ -1,0 +1,11 @@
+[Unit]
+Description=AgriScope 20:30 Daily and 23:30 safety net (Asia/Shanghai)
+
+[Timer]
+OnCalendar=*-*-* 20:30:00 Asia/Shanghai
+OnCalendar=*-*-* 23:30:00 Asia/Shanghai
+Persistent=true
+Unit=agriscope-daily-chain.service
+
+[Install]
+WantedBy=timers.target

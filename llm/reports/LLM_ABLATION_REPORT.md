@@ -1,5 +1,7 @@
 # LLM Ablation Report（Phase 16）
 
+> `SUPERSEDED_BY_RC2`：保留的 RC1 Stub 链路历史记录，不是 LLM 能力证据。当前状态见 `LLM_ABLATION_V2_REPORT.md`。
+
 ## 0. 诚实性声明（必读）
 
 **本轮无合法 LLM API Key**（环境中的 IDE token 不得挪用），因此 harness 使用

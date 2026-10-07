@@ -1,11 +1,7 @@
-# -*- coding: utf-8 -*-
-"""Phase 9：ForecastContextPacket 构建（所有数值由程序计算，LLM 不参与输入构造）。
-
-严格 point-in-time：只读 `date <= cutoff` 的冻结数据；`cutoff` 之后的一切不进入 packet。
-`context_hash = stable_hash(packet)`，packet 不含 `generated_at` 等易变字段 → 同输入同哈希。
-"""
+"""Cutoff-safe numeric packets; reversible blind metadata never enters provider input."""
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
+
+from typing import Any, Dict, Optional
 
 import numpy as np
 import pandas as pd
@@ -14,169 +10,161 @@ from long_horizon.common import load_frozen_dataset
 from llm.common import UNIT, PRICE_LEVEL, stable_hash
 
 CITY = "沈阳"
-SEASON_WINDOW_DAYS = 30
-
-DEFAULT_CONFIG: Dict[str, Any] = {
-    "season_window_days": SEASON_WINDOW_DAYS,
-    "rolling_windows": [7, 14, 30, 60, 90],
-    "return_lags_days": [7, 14, 30, 60, 90],
-    "short_model_horizons": [7, 14, 30],
-    "price_level": PRICE_LEVEL,
-    "unit": UNIT,
-    "calendar": "gregorian",
-    "time_index": "relative",       # blind 用相对索引；context 模式仍保留日期
-}
+DEFAULT_CONFIG = {"season_window_days": 30, "short_model_horizons": [7, 14, 30],
+                  "unit": UNIT, "price_level": PRICE_LEVEL,
+                  "calendar": "gregorian", "time_index": "calendar"}
+RELATIVE_UNIT = "ratio_to_current_price"
 
 
-def _prev_year_same_period(sub: pd.DataFrame, cutoff: pd.Timestamp, days: int) -> Optional[float]:
-    """上一年同期窗口均值，严格早于 cutoff（PIT）。"""
-    lo = cutoff - pd.Timedelta(days=365 + days)
-    hi = cutoff - pd.Timedelta(days=365)
-    w = sub[(sub["date"] > lo) & (sub["date"] <= hi)]["price_per_kg"]
-    return float(w.mean()) if len(w) else None
+def _history(dataset: pd.DataFrame, crop: str, cutoff: str) -> pd.DataFrame:
+    dates = pd.to_datetime(dataset["date"])
+    sub = dataset.loc[(dataset["crop"] == crop) & (dates <= pd.Timestamp(cutoff)),
+                      ["date", "price_per_kg"]].copy()
+    sub["date"] = pd.to_datetime(sub["date"])
+    sub = sub.sort_values("date")
+    if sub.empty or not np.isfinite(sub["price_per_kg"]).all() or (sub["price_per_kg"] <= 0).any():
+        raise ValueError("invalid_or_missing_cutoff_history")
+    if sub["date"].duplicated().any():
+        raise ValueError("duplicate_crop_observation_date")
+    return sub
 
 
-def _short_model(sub: pd.DataFrame, row: pd.Series, crop: str,
-                 horizons: List[int]) -> Dict[str, Any]:
-    """现有 Final 短期模型输出（只读加载冻结 artifacts；缺失则如实降级标注）。"""
-    out: Dict[str, Any] = {}
-    try:
-        from decision_engine.final.artifacts import predict as _predict
-    except Exception:  # noqa: BLE001
-        _predict = None
-    for h in horizons:
-        val, src = None, "unavailable"
-        if _predict is not None:
-            try:
-                val = _predict(CITY, crop, h, row)
-                if val is not None:
-                    src = "final_model_artifact"
-            except Exception:  # noqa: BLE001
-                val = None
-        if val is None:
-            # 规则式 baseline（last value / 去年同期）；如实标注，不冒充模型
-            lv = float(row["price_per_kg"])
-            py = _prev_year_same_period(sub, pd.Timestamp(row["date"]), h)
-            val = py if py is not None else lv
-            src = "rule_baseline_fallback"
-        out[f"d{h}"] = {"value": float(val), "source": src}
-    return out
+def _previous_season(sub: pd.DataFrame, cut: pd.Timestamp, days: int) -> Optional[float]:
+    end = cut - pd.Timedelta(days=365)
+    prices = sub.loc[(sub.date > end - pd.Timedelta(days=days)) & (sub.date <= end), "price_per_kg"]
+    return float(prices.mean()) if len(prices) else None
+
+
+def _short_model(sub: pd.DataFrame, row: pd.Series, crop: str, horizons: list[int]) -> dict:
+    """Historical benchmark must never load Final artifacts refitted through 2026."""
+    last = float(row.price_per_kg)
+    cut = pd.Timestamp(row.date)
+    return {f"d{h}": {"value": _previous_season(sub, cut, h) or last,
+                       "source": "cutoff_safe_seasonal_rule_baseline",
+                       "is_short_model": False,
+                       "final_artifact": "NOT_USED_POST_CUTOFF_TRAINING"}
+            for h in horizons}
 
 
 def build_packet(crop: str, cutoff: str, horizon: int,
                  config: Optional[Dict[str, Any]] = None,
                  dataset: Optional[pd.DataFrame] = None) -> Dict[str, Any]:
-    """构建一个 ForecastContextPacket（context 模式，含真实日期）。"""
-    cfg = dict(DEFAULT_CONFIG)
-    if config:
-        cfg.update(config)
-    ds = dataset if dataset is not None else load_frozen_dataset()
-    cut = pd.Timestamp(cutoff)
-    sub = ds[(ds["crop"] == crop) & (ds["date"] <= cut)].sort_values("date")
-    if not len(sub):
-        raise ValueError(f"cutoff={cutoff} 之前无 {crop} 观测")
-    row = sub.iloc[-1]
-    last_date = pd.Timestamp(row["date"])
-
-    # ---- 历史同月序列（严格更早日期，PIT）
-    same_month = sub[sub["date"].dt.month == cut.month]["price_per_kg"].astype(float).tolist()
-    # ---- 多年季节轮廓（逐月历史均值，仅 <= cutoff）
-    profile = (sub.groupby(sub["date"].dt.month)["price_per_kg"].mean()
-               .round(4).to_dict())
-    profile = {int(k): float(v) for k, v in profile.items()}
-
-    span_days = (last_date - pd.Timestamp(sub["date"].min())).days
-    n_obs = int(len(sub))
-    expected_days = span_days + 1
-    missing_pct = round(100.0 * (1 - n_obs / expected_days), 3) if expected_days > 0 else None
-
-    packet: Dict[str, Any] = {
-        "schema_version": "lh_context_v1",
-        "city": CITY,
-        "crop": crop,
-        "cutoff": str(cut.date()),
-        "anchor_observation_date": str(last_date.date()),
-        "horizon": int(horizon),
-        "unit": cfg["unit"],
-        "price_level": cfg["price_level"],
-        "current_price": float(row["price_per_kg"]),
-        "returns": {f"d{w}": (float(row[f"price_return_{w}"])
-                              if pd.notna(row.get(f"price_return_{w}")) else None)
-                    for w in cfg["return_lags_days"]},
-        "rolling": {
-            "mean_30": float(row["price_ma30"]),
-            "median_30": float(row["price_median30"]),
-            "volatility_30": float(row["volatility_30"]),
-            "drawdown_30": float(row["drawdown_30"]),
-            "max_drawdown_90": float(row["max_drawdown_90"]),
-        },
-        "seasonality": {
-            "same_month_history": [round(float(v), 4) for v in same_month],
-            "same_month_count": len(same_month),
-            "seasonal_percentile": (float(row["same_month_price_percentile"])
-                                    if pd.notna(row.get("same_month_price_percentile")) else None),
-            "seasonal_p10": (float(row["seasonal_p10"]) if pd.notna(row.get("seasonal_p10")) else None),
-            "seasonal_p50": (float(row["seasonal_p50"]) if pd.notna(row.get("seasonal_p50")) else None),
-            "seasonal_p90": (float(row["seasonal_p90"]) if pd.notna(row.get("seasonal_p90")) else None),
-            "historical_profile": profile,
-        },
-        "short_model": _short_model(sub, row, crop, cfg["short_model_horizons"]),
-        "risk": {
-            "hri": {"available": False, "reason": "NO_PIT_PER_CUTOFF_SOURCE"},
-            "market_risk": {"available": False, "reason": "NO_PIT_PER_CUTOFF_SOURCE"},
-            "climate_exposure": {"available": False, "reason": "WEATHER_NOT_WIRED"},
-            "program_proxy": {
-                "drawdown_30": float(row["drawdown_30"]),
-                "volatility_30": float(row["volatility_30"]),
-                "expanding_price_percentile": (float(row["expanding_price_percentile"])
-                                               if pd.notna(row.get("expanding_price_percentile")) else None),
-            },
-        },
-        "supply": {"available": False, "reason": "NO_STRUCTURED_SOURCE_FOR_CROP"},
-        "production": {"available": False, "reason": "NO_STRUCTURED_SOURCE_FOR_CROP"},
-        "events": [],
-        "events_available": False,
-        "data_quality": {
-            "n_obs": n_obs,
-            "first_date": str(pd.Timestamp(sub["date"].min()).date()),
-            "last_date": str(last_date.date()),
-            "missing_calendar_days_pct": missing_pct,
-            "n_years": int(sub["date"].dt.year.nunique()),
-            "source": "frozen Final dataset（data/model_ready/ shenyang_core market_daily, wholesale）",
-        },
+    cfg = {**DEFAULT_CONFIG, **{key: value for key, value in (config or {}).items() if key in DEFAULT_CONFIG}}
+    if cfg["unit"] != UNIT or cfg["price_level"] != PRICE_LEVEL:
+        raise ValueError("packet_price_unit_or_level_mismatch")
+    sub = _history(dataset if dataset is not None else load_frozen_dataset(), crop, cutoff)
+    cut, last_date = pd.Timestamp(cutoff), pd.Timestamp(sub.iloc[-1].date)
+    price = sub.price_per_kg.astype(float)
+    current = float(price.iloc[-1])
+    recent = sub.loc[sub.date > last_date - pd.Timedelta(days=30), "price_per_kg"]
+    recent90 = sub.loc[sub.date > last_date - pd.Timedelta(days=90), "price_per_kg"]
+    same_month = sub.loc[sub.date.dt.month == cut.month, "price_per_kg"]
+    returns = {}
+    for lag in (7, 14, 30, 60, 90):
+        prev = sub.loc[sub.date <= last_date - pd.Timedelta(days=lag), "price_per_kg"]
+        returns[f"d{lag}"] = current / float(prev.iloc[-1]) - 1 if len(prev) else None
+    rolling_peak = recent90.cummax()
+    max_dd = float((recent90 / rolling_peak - 1).min())
+    span = int((last_date - sub.iloc[0].date).days) + 1
+    unavailable = lambda reason: {"available": False, "status": "NOT_FOUND", "reason": reason}
+    return {
+        "schema_version": "lh_context_v2", "mode": "context", "city": CITY, "crop": crop,
+        "cutoff": str(cut.date()), "anchor_observation_date": str(last_date.date()),
+        "feature_available_at": str(last_date.date()), "horizon": int(horizon),
+        "unit": cfg["unit"], "price_level": PRICE_LEVEL, "current_price": current,
+        "history": [{"day_offset": int((date - last_date).days), "price": float(value)}
+                    for date, value in zip(sub.date, price)],
+        "returns": returns,
+        "rolling": {"mean_30": float(recent.mean()), "median_30": float(recent.median()),
+                    "volatility_30": float(np.std(np.diff(np.log(recent)))) if len(recent) > 1 else 0.,
+                    "drawdown_30": current / float(recent.max()) - 1,
+                    "max_drawdown_90": max_dd},
+        "seasonality": {"same_month_history": same_month.astype(float).tolist(),
+                        "same_month_count": len(same_month),
+                        "seasonal_percentile": float((same_month <= current).mean()) if len(same_month) else None,
+                        "seasonal_p10": float(same_month.quantile(.1)) if len(same_month) else None,
+                        "seasonal_p50": float(same_month.quantile(.5)) if len(same_month) else None,
+                        "seasonal_p90": float(same_month.quantile(.9)) if len(same_month) else None,
+                        "historical_profile": {int(k): float(v) for k, v in
+                                               sub.groupby(sub.date.dt.month).price_per_kg.mean().items()}},
+        "short_model": _short_model(sub, sub.iloc[-1], crop, cfg["short_model_horizons"]),
+        "risk": {"hri": unavailable("NO_PIT_PER_CUTOFF_SOURCE"),
+                 "market_risk": unavailable("NO_PIT_PER_CUTOFF_SOURCE"),
+                 "climate_exposure": unavailable("NO_DATED_CLIMATE_SOURCE"),
+                 "program_proxy": {"expanding_price_percentile": float((price <= current).mean()),
+                                   "volatility_30": float(np.std(np.diff(np.log(recent)))) if len(recent) > 1 else 0.}},
+        "supply": unavailable("NO_STRUCTURED_SOURCE_FOR_CROP"),
+        "production": unavailable("NO_DATED_CITY_DAILY_PHENOLOGY_SOURCE"),
+        "events": [], "events_available": False, "events_status": "NOT_FOUND",
+        "data_quality": {"n_obs": len(sub), "first_date": str(sub.iloc[0].date.date()),
+                         "last_date": str(last_date.date()),
+                         "missing_calendar_days_pct": 100 * (1 - len(sub) / span),
+                         "n_years": int(sub.date.dt.year.nunique()),
+                         "source": "frozen Final dataset / shenyang_core wholesale market_daily"},
         "config": cfg,
     }
-    return packet
+
+
+def build_case_context(crop: str, cutoff: str, horizon: int, *, mode: str = "context",
+                       config: Optional[Dict[str, Any]] = None,
+                       dataset: Optional[pd.DataFrame] = None) -> tuple[dict, dict]:
+    """Return (provider packet, host-only inverse transform and PIT validation bounds)."""
+    from llm.schemas import hard_bounds
+    ds = dataset if dataset is not None else load_frozen_dataset()
+    packet = build_packet(crop, cutoff, horizon, config, ds)
+    scale = float(packet["current_price"]) if mode == "blind" else 1.
+    raw_bounds = hard_bounds(ds, crop, cutoff=cutoff)
+    host = {"crop": crop, "city": CITY, "cutoff": cutoff, "scale": scale, "unit": UNIT,
+            "bounds": [value / scale for value in raw_bounds],
+            "anchor_observation_date": packet["anchor_observation_date"]}
+    if mode == "blind":
+        anchor = pd.Timestamp(packet["anchor_observation_date"])
+        first = pd.Timestamp(packet["data_quality"]["first_date"])
+        packet.update({"mode": "blind", "city": "CITY_A", "crop": "CROP_A",
+                       "cutoff": f"T+{(pd.Timestamp(cutoff) - anchor).days}d",
+                       "anchor_observation_date": "T0", "feature_available_at": "T0",
+                       "unit": RELATIVE_UNIT, "current_price": 1.})
+        for row in packet["history"]:
+            row["price"] /= scale
+        for key in ("mean_30", "median_30"):
+            packet["rolling"][key] /= scale
+        seasonal = packet["seasonality"]
+        seasonal["same_month_history"] = [v / scale for v in seasonal["same_month_history"]]
+        for key in ("seasonal_p10", "seasonal_p50", "seasonal_p90"):
+            if seasonal[key] is not None:
+                seasonal[key] /= scale
+        seasonal["historical_profile"] = {f"M-{(pd.Timestamp(cutoff).month - month) % 12}": value / scale
+                                           for month, value in seasonal["historical_profile"].items()}
+        for short in packet["short_model"].values():
+            short["value"] /= scale
+        packet["data_quality"].update({"first_date": f"T-{(anchor - first).days}d",
+                                        "last_date": "T0", "n_years": None,
+                                        "source": "HOST_VERIFIED_ANONYMOUS_OBSERVATIONS"})
+        packet["config"] = {"time_index": "relative", "calendar": "relative_index",
+                            "unit": RELATIVE_UNIT, "short_model_horizons": [7, 14, 30]}
+    elif mode != "context":
+        raise ValueError("unknown_context_mode")
+    return packet, host
 
 
 def build_blind_packet(crop: str, cutoff: str, horizon: int,
                        config: Optional[Dict[str, Any]] = None,
                        dataset: Optional[pd.DataFrame] = None) -> Dict[str, Any]:
-    """blind 模式：匿名化真实年份/日期，使用相对时间索引 T-k，降低 pretrained 记忆泄漏。"""
-    p = build_packet(crop, cutoff, horizon, config=config, dataset=dataset)
-    cut = pd.Timestamp(cutoff)
-    first = pd.Timestamp(p["data_quality"]["first_date"])
-    last = pd.Timestamp(p["anchor_observation_date"])
+    return build_case_context(crop, cutoff, horizon, mode="blind", config=config, dataset=dataset)[0]
 
-    p["mode"] = "blind"
-    p["city"] = "CITY_A"
-    p["crop"] = f"CROP_{stable_hash(crop)[:4]}"      # 确定性匿名 ID（禁用内置 hash）
-    p["cutoff"] = f"T+{(cut - last).days}d"          # 相对 anchor 的偏移
-    p["anchor_observation_date"] = "T0"
-    p["data_quality"]["first_date"] = f"T-{(last - first).days}d"
-    p["data_quality"]["last_date"] = "T0"
-    p["data_quality"]["n_years"] = None
-    p["config"]["time_index"] = "relative"
-    p["config"]["calendar"] = "relative_index"
-    p["seasonality"]["historical_profile"] = {
-        f"M{k}": v for k, v in p["seasonality"]["historical_profile"].items()}
-    return p
+
+def restore_forecast(payload: dict, host: dict) -> dict:
+    result = dict(payload)
+    for key in ("point_forecast", "range_low", "range_high"):
+        if key in result:
+            result[key] = float(result[key]) * float(host["scale"])
+    result["unit"] = host["unit"]
+    return result
 
 
 def packet_hash(packet: Dict[str, Any]) -> str:
-    """确定性哈希：与 `packet_hash` 前先剔除易变字段（本实现本身不含 generated_at）。"""
-    p = {k: v for k, v in packet.items() if k != "generated_at"}
-    return stable_hash(p)
+    return stable_hash({k: v for k, v in packet.items() if k != "generated_at"}, n=64)
 
 
-__all__ = ["build_packet", "build_blind_packet", "packet_hash", "DEFAULT_CONFIG", "CITY"]
+__all__ = ["build_packet", "build_blind_packet", "build_case_context", "restore_forecast",
+           "packet_hash", "DEFAULT_CONFIG", "CITY", "RELATIVE_UNIT"]

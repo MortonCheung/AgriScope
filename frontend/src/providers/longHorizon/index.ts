@@ -1,5 +1,5 @@
-import { adaptForecastCapability, adaptLongHorizonEntry } from '../../domain/longHorizon/adapter';
-import type { LongHorizonCapability, LongHorizonEntry, LongHorizonProvider, LongHorizonRequest } from '../../domain/longHorizon/types';
+import { adaptForecastCapability, adaptLongHorizonEntry, adaptLongHorizonDecision } from '../../domain/longHorizon/adapter';
+import type { LongHorizonCapability, LongHorizonEntry, LongHorizonProvider, LongHorizonRequest, LongHorizonDecisionRequest, LongHorizonDecisionResult } from '../../domain/longHorizon/types';
 
 const TIMEOUT_MS = 15_000;
 
@@ -26,6 +26,7 @@ export class HttpLongHorizonProvider implements LongHorizonProvider {
   constructor(
     private readonly capabilitiesEndpoint = '/api/forecast/capabilities',
     private readonly forecastEndpoint = '/api/forecast/long-horizon',
+    private readonly decisionEndpoint = '/api/decision/long-horizon',
   ) {}
 
   async capabilities(cityId: string, options: { signal?: AbortSignal } = {}): Promise<LongHorizonCapability> {
@@ -65,11 +66,34 @@ export class HttpLongHorizonProvider implements LongHorizonProvider {
       throw error;
     } finally { done(); }
   }
+
+  async decision(input: LongHorizonDecisionRequest, options: { signal?: AbortSignal } = {}): Promise<LongHorizonDecisionResult> {
+    if (input.user_context.city_id !== 'shenyang') throw new Error('这个城市的上市决策暂未接入。');
+    const { signal, done } = withTimeout(options);
+    try {
+      const response = await fetch(guard(this.decisionEndpoint).toString(), {
+        method: 'POST', signal, cache: 'no-store', headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+      if (!response.ok) {
+        const error: unknown = await response.json().catch(() => null);
+        const message = error && typeof error === 'object' && 'message' in error && typeof error.message === 'string'
+          ? error.message : '上市决策暂时无法加载。';
+        throw new Error(message);
+      }
+      return adaptLongHorizonDecision(await response.json(), input);
+    } catch (error) {
+      if (options.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+      if (signal.aborted) throw new Error('上市决策响应超时，请稍后重试。');
+      throw error;
+    } finally { done(); }
+  }
 }
 
 // Production always uses HTTP. There is no silent fixture or mock fallback.
-const provider: LongHorizonProvider = new HttpLongHorizonProvider(
+const provider = new HttpLongHorizonProvider(
   import.meta.env.VITE_LONG_HORIZON_CAPABILITIES_URL || '/api/forecast/capabilities',
   import.meta.env.VITE_LONG_HORIZON_URL || '/api/forecast/long-horizon',
 );
 export function getLongHorizonProvider(): LongHorizonProvider { return provider; }
+export function getLongHorizonDecisionProvider(): HttpLongHorizonProvider { return provider; }
