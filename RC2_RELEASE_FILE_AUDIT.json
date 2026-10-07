@@ -1,6 +1,6 @@
 {
   "status": "RELEASE_FILE_AUDIT_PASS",
-  "files_checked": 898,
+  "files_checked": 900,
   "secret_suspect_files": [],
   "forbidden_files": [],
   "large_files_over_10MiB": [],
