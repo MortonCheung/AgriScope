@@ -2,7 +2,10 @@ import { listCatalogCityIds } from '../../domain/research/catalog';
 import { useScenarioTable } from '../research-v2/useV2';
 import { DataTable } from '../research-v2/DataTable';
 import { REANALYSIS_NOTE, VOLUME_UNIT_NOTE } from '../../domain/research/v2/metrics';
+import { lazy, Suspense } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import './scenario-page.css';
+const DecisionStressPage=lazy(()=>import('../decision/DecisionStressPage').then(m=>({default:m.DecisionStressPage})));
 
 /**
  * 推演（本轮 §30）：暴雨专题与情景实验合并为唯一入口。
@@ -33,6 +36,8 @@ function ScenarioBlock({ file, caption }: { file: string; caption: string }) {
 }
 
 export function ScenarioPage() {
+  const [params]=useSearchParams();
+  if(params.get('mode')==='decision')return <Suspense fallback={<main className="scenario" role="status">情景加载中</main>}><DecisionStressPage/></Suspense>;
   return (
     <main className="scenario">
       <header className="scenario__head">

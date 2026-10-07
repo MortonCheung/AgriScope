@@ -22,6 +22,7 @@ export const ROUTES = {
   liaoning: '/liaoning',
 
   city: (cityId: string) => `/cities/${cityId}`,
+  decision: (cityId: string) => `/cities/${cityId}/decision`,
   /** 研究方向（A2）或研究点（A2.2）共用这一条。 */
   research: (cityId: string, researchId: string) => `/cities/${cityId}/research/${researchId}`,
 
@@ -110,6 +111,9 @@ export function structuralParent(pathname: string): string | null {
     }
     return ROUTES.city(research.cityId);
   }
+
+  const decision = /^\/cities\/([^/]+)\/decision\/?$/.exec(pathname);
+  if (decision) return ROUTES.city(decision[1]);
 
   const city = parseCityPath(pathname);
   if (city) return ROUTES.researchHome;

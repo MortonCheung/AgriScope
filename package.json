@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "prebuild": "npm run verify:v2 && npm run verify:integrity",
+    "prebuild": "npm run verify:v2 && npm run verify:integrity && npm run verify:decision",
     "build": "tsc -b && vite build && npm run verify:ui",
     "preview": "vite preview",
     "typecheck": "tsc -b --pretty false",
@@ -15,7 +15,8 @@
     "sync": "node scripts/sync-shenyang-v2.mjs",
     "verify:v2": "node scripts/verify-v2-payload.mjs",
     "verify:integrity": "node scripts/verify-research-integrity.mjs",
-    "verify:ui": "node scripts/verify-ui-strings.mjs"
+    "verify:ui": "node scripts/verify-ui-strings.mjs",
+    "verify:decision": "node scripts/verify-decision-fixtures.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.6",

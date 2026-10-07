@@ -1,6 +1,6 @@
 # AgriScope · 穹衡
 
-辽宁农业气候风险交互研究前端。
+辽宁农业气候风险交互研究与种植选择前端。
 
 本仓库只负责**前端产品、交互研究与研究成果呈现**：把研究过程变成用户可以观察、操作和理解的数据体验。
 数据采集与模型工程位于外部研究工程，前端只读取研究成果，不修改任何研究结论。
@@ -33,11 +33,11 @@ npm run build
 
 - `/`：Opening。只有产品身份与空间入口。
 - `/liaoning`：辽宁省域 3D 沙盘；点击沈阳进入研究空间。
-- `/cities/shenyang`：沈阳研究空间（6 大专题 → 17 个研究点）。
+- `/cities/shenyang`：沈阳研究空间（8 个方向 → 76 个研究点），侧栏可进入种植选择。
+- `/cities/shenyang/decision`：条件输入、方案、收益与风险、两方案比较及研究依据。
 - `/cities/shenyang/research/:researchId`：交互研究（默认）；`?mode=article` 为查看原文。
-- `/cities/shenyang/report`：沈阳城市综合研究（整城 7 问）。
-- `/shenyang-rainstorm`：2026 沈阳强降雨专题（滚动叙事）。
-- `/scenario-lab`：平行世界实验室（情景实验，标注模型可信边界）。
+- `/reports/shenyang`：沈阳城市综合研究；旧城市报告路径兼容重定向。
+- `/scenario-lab`：沈阳暴雨研究推演；从方案进入 `?mode=decision` 查看种植压力情景。
 - `/about`：证据等级规范与方法学红线。
 
 当前阶段只完整打磨沈阳；铁岭、朝阳、锦州、丹东、大连在地图上保留入口与元数据，
@@ -69,6 +69,11 @@ docs/               施工方案、架构、内容契约、设计系统、迁移
 
 ## 文档
 
+- [本轮前端交付与验证](docs/FRONTEND_FINAL_REPORT.md)
+- [Decision Contract v0](docs/API_CONTRACT_V0.md)
+- [真实样例与 Mock 字段](docs/MOCK_DATA_MAP.md)
+- [现役视觉基线](docs/VISUAL_BASELINE.md)
+- [实际参考使用记录](docs/REFERENCE_USAGE_REPORT.md)
 - [前端架构](docs/FRONTEND_ARCHITECTURE.md)
 - [研究内容契约](docs/RESEARCH_CONTENT_CONTRACT.md)
 - [设计系统](docs/DESIGN_SYSTEM.md)

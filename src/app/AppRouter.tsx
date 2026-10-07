@@ -15,6 +15,7 @@ const researchRoutePage = load(() => import('../features/research-v2/ResearchRou
 const reportsIndexPage = load(() => import('../features/report/ReportsIndexPage'), 'ReportsIndexPage');
 const cityReportPage = load(() => import('../features/report/ReportPage'), 'ReportPage');
 const scenarioPage = load(() => import('../features/scenario/ScenarioPage'), 'ScenarioPage');
+const decisionPage = load(() => import('../features/decision/DecisionPage'), 'DecisionPage');
 const aboutPage = load(() => import('../features/about/AboutPage'), 'AboutPage');
 
 /** 旧 `/cities/:cityId/report` → `/reports/:cityId`（§22：不要 404）。 */
@@ -52,6 +53,7 @@ const router = createBrowserRouter(createRoutesFromElements(
     <Route path={ROUTES.root} lazy={openingPage} />
     <Route path={ROUTES.researchHome} lazy={researchHomePage} />
     <Route path="/cities/:cityId" lazy={cityResearchPage} />
+    <Route path="/cities/:cityId/decision" lazy={decisionPage} />
     <Route path="/cities/:cityId/research/:researchId" lazy={researchRoutePage} />
     <Route path={ROUTES.reports} lazy={reportsIndexPage} />
     <Route path="/reports/:cityId" lazy={cityReportPage} />

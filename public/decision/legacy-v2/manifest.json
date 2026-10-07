@@ -1,0 +1,77 @@
+{
+  "snapshot_version": "legacy-v2-20261007",
+  "data_status": "legacy_model_fixture",
+  "sources": [
+    {
+      "path": "models/outputs/v2_recommendation.json",
+      "sha256": "7bc3f65e2be55729e71c749426ed96a0cc72ece1838829baaeaba05aa6b9266d"
+    },
+    {
+      "path": "models/evaluation/cases/recommendation_examples.json",
+      "sha256": "648e85bdb6168bc29ec6f757036fd6c850a2f2660f23b4f996ca088d8d8fc818"
+    }
+  ],
+  "samples": [
+    {
+      "id": "baseline-100",
+      "label": "100 亩 · 均衡",
+      "request": {
+        "city": "沈阳",
+        "available_area_mu": 100,
+        "budget": 500000,
+        "earliest_plant_date": "2027-03-01",
+        "latest_harvest_date": "2027-10-31",
+        "risk_preference": "balanced",
+        "mode": "compare_both",
+        "as_of": null,
+        "allowed_crops": null,
+        "excluded_crops": null,
+        "max_acceptable_loss": null
+      },
+      "file": "baseline-100.json",
+      "sha256": "1b66579f87db931f3fcea25e177b7dead9856179bd72148d78e79b316d5ef29b"
+    },
+    {
+      "id": "steady-30",
+      "label": "30 亩 · 稳健",
+      "request": {
+        "city": "沈阳",
+        "available_area_mu": 30,
+        "budget": 150000,
+        "earliest_plant_date": "2027-03-01",
+        "latest_harvest_date": "2027-08-31",
+        "risk_preference": "conservative"
+      },
+      "file": "steady-30.json",
+      "sha256": "cac264331c82729e0b71e8b32cbc69767445129d81b7f601c8823ec8d568192e"
+    },
+    {
+      "id": "balanced-50",
+      "label": "50 亩 · 均衡",
+      "request": {
+        "city": "沈阳",
+        "available_area_mu": 50,
+        "budget": 250000,
+        "earliest_plant_date": "2027-04-01",
+        "latest_harvest_date": "2027-09-30",
+        "risk_preference": "balanced"
+      },
+      "file": "balanced-50.json",
+      "sha256": "00c7d8441e33e3a4ada5f16bd228f47f27db4423f87dba88902d1167d362d690"
+    },
+    {
+      "id": "return-80",
+      "label": "80 亩 · 收益优先",
+      "request": {
+        "city": "沈阳",
+        "available_area_mu": 80,
+        "budget": 400000,
+        "earliest_plant_date": "2027-05-01",
+        "latest_harvest_date": "2027-10-31",
+        "risk_preference": "aggressive"
+      },
+      "file": "return-80.json",
+      "sha256": "2372cbf6585d851be5a5ea09c73870e03e9d2d97379ff4470a024408c8a5cc2b"
+    }
+  ]
+}

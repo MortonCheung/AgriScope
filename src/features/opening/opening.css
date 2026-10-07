@@ -43,3 +43,7 @@
   .opening__inner { max-width: none; }
   .opening__wordmark { flex-direction: column; gap: 6px; }
 }
+/* Keep the existing wordmark within the phone's two page gutters. */
+@media (max-width: 480px) {
+  .opening__en { font-size: min(var(--ag-fs-display), calc((100vw - var(--ag-gutter) * 2) / 7)); }
+}

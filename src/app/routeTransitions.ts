@@ -17,6 +17,7 @@ function routeLayer(path: string) {
   if (/^\/cities\/[^/]+\/?$/.test(path)) return 0;
   if (/^\/cities\/[^/]+\/report\/?$/.test(path)) return 2;
   if (/^\/cities\/[^/]+\/research\/[^/]+\/?$/.test(path)) return 2;
+  if (/^\/cities\/[^/]+\/decision\/?$/.test(path)) return 2;
   if (path === '/shenyang-rainstorm' || path === '/scenario-lab') return 2;
   if (path === '/about') return 1;
   return 1;

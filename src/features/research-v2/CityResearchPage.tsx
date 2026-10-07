@@ -7,6 +7,8 @@ import { requestCityExit } from '../spatial/cityExit';
 import { useArticle } from './useV2';
 import { ResearchTree } from './ResearchTree';
 import { CityResearchPreview } from './CityResearchPreview';
+import { TransitionLink } from '../../app/pageNavigation';
+import { ROUTES } from '../../app/routes';
 import './city-research.css';
 
 /**
@@ -85,6 +87,7 @@ export function CityResearchPage() {
         {catalog ? (
           <div className="city-research__body">
             <aside className="city-research__sidebar" aria-label="研究方向">
+              <TransitionLink className="city-research__decision" to={`${ROUTES.decision(cityId)}?view=input`}>比较种植选择 →</TransitionLink>
               <ResearchTree
                 cityId={cityId}
                 topics={topics}
@@ -98,7 +101,7 @@ export function CityResearchPage() {
             </section>
           </div>
         ) : (
-          <p className="city-research__empty">研究内容待接入</p>
+          <div className="city-research__empty"><p>研究内容待接入</p><TransitionLink className="city-research__decision" to={`${ROUTES.decision(cityId)}?view=input`}>比较种植选择 →</TransitionLink></div>
         )}
       </div>
     </main>
