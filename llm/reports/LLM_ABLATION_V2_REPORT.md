@@ -1,25 +1,258 @@
 # LLM Ablation V2 Report（RC2）
 
-状态：`BLOCKED_MISSING_EXTERNAL_SECRET`
-外部阻塞：`REAL_LLM_EVALUATION_BLOCKED_BY_MISSING_SECRET`
+状态：`REAL_LLM_PILOT_PARTIAL_RETROSPECTIVE_ONLY`。真实接口调用 30 次；
+Provider/model=`openai_compatible/deepseek-flash`；
+token usage 已保存原始字段，不能确定的 estimated cost 记 unknown。
+Token 汇总（排除 cache 与预算未调用）：`{"completion_tokens":236459,"prompt_tokens":353393,"total_tokens":589852,"unknown_call_count":2}`；
+实际调用平均 latency_ms=`36932.505173466656`，cache hits=`0`。
 
-仅检查合法环境变量是否存在；未输出、持久化或挪用任何 Secret。合法 API Key 缺失，真实调用 **0**，
-token **0**，费用 **0**。未运行 stub 数值实验；Coding Agent 的推理不算被评估的生产模型。
-Provider 配置的模型 ID `gpt-4o-mini` 尚未通过真实调用确认可访问；LLM 数值增益 **UNKNOWN**。
+所有结果为 reused retrospective pilot，untouched metric=null，final independent n=0，数值生产禁用。
+Context 与 Blind 分开；Context 无法完全排除预训练历史知识。
+数据/协议/target 锁、渲染 prompt hash、响应及反归一 metadata 见 `llm/artifacts/v2/`（不提交）。
+快照 plan hash：`d9511d5b7be5bc84febd40caa214e59038bd13ee1ac5e47494c46d1860607d0b`。Pilot call cap=30；失败或预算不足保留显式记录。
 
-本轮所有历史 2024–2026 已被旧研究查看，2026 只能标 `retrospective_audit_reused`，
-untouched metric 为 null、final independent n 为 0。未来评估起点不得早于 2026-10-08；必须等待真实标签成熟。
-LLM / Hybrid 数值均为 `RESEARCH_ONLY`，禁止进入生产 Registry。
-
-目标分别为 `cycle_market_average` 与 `harvest_market_price`，上市窗口只读取 development+tuning 冻结结果。
-窗口锁状态：`{"harvest_definition":"harvest_post_14","selection_data":"development+tuning only","sha256":"a6b3424a952315e19360635ab7081a0a5e68953afa5109a106a6391a6817927f","source":"models/long_horizon/artifacts/v2/target_selection_lock.json"}`。
-
-历史短期 context 仅用 cutoff-safe seasonal rule baseline，明确标为 proxy；从不调用全历史 refit 的 Final artifact。
-HRI、Market Risk、气候、事件、城市日粒度物候均无可靠的逐 cutoff 来源，保持 `NOT_FOUND`。
-Context benchmark 无法完全排除预训练历史记忆，与 blind 分开报告。
+HRI/Market Risk/climate/event/物候来源为 NOT_FOUND；short model 档仅为 PIT rule proxy。
 
 
-待真实调用执行：LLM only → seasonality → short PIT proxy → HRI/Market Risk → climate → events → Hybrid full。
-每档使用实际不同渲染提示词与缓存键，并报告 paired WAPE、相对 baseline 输出偏差及逐档预测变化。
-缺失上下文的档位如实标 NOT_FOUND，不能凭「加了一档」宣称来源有增益。
-目前各档的真实表现、边际增益、复述 baseline 风险均 **UNKNOWN**。
+真实消融与相对 baseline 输出偏差：
+
+```csv
+experiment,schema,ablation_level,crop,horizon,target_type,phase,requested_n,valid_n,failed_n,schema_valid_n,fallback_n,untouched_metric,final_effective_n,production_status,WAPE,baseline_WAPE,MAE,MASE,sMAPE,Bias,directional_accuracy,output_vs_baseline_abs_pct
+blind_numeric_forecast_v2,forecast,full,土豆,60,cycle_market_average,calibration,1,1,0,1,0,,0,RESEARCH_ONLY,0.720754716981137,10.07075471698113,0.014907317073170834,0.5088954251323624,0.7181666071327906,0.014907317073170834,1.0,12.00000000000001
+blind_numeric_forecast_v2,forecast,full,土豆,60,cycle_market_average,development,1,1,0,1,0,,0,RESEARCH_ONLY,19.542619542619544,6.444906444906443,0.5640000000000001,20.30898379970545,21.658986175115206,-0.5640000000000001,0.0,14.000000000000002
+blind_numeric_forecast_v2,forecast,full,土豆,60,cycle_market_average,retrospective_audit_reused,1,1,0,1,0,,0,RESEARCH_ONLY,10.0458244111349,4.304068522483925,0.22884878048780477,7.812277478618938,10.57710300917836,-0.22884878048780477,0.0,6.000000000000016
+blind_numeric_forecast_v2,forecast,full,土豆,60,cycle_market_average,tuning,1,1,0,1,0,,0,RESEARCH_ONLY,6.031645569620283,6.962025316455728,0.12706666666666733,4.337711811997549,6.219205795020752,-0.12706666666666733,1.0,1.0000000000000009
+blind_numeric_forecast_v2,forecast,full,土豆,60,harvest_market_price,calibration,1,1,0,1,0,,0,RESEARCH_ONLY,0.7775768535262154,15.913200723327293,0.017199999999999882,0.5871614100185488,0.780611781791771,-0.017199999999999882,1.0,17.999999999999993
+blind_numeric_forecast_v2,forecast,full,土豆,60,harvest_market_price,development,1,1,0,1,0,,0,RESEARCH_ONLY,22.393048128342244,9.759358288770047,0.6699999999999999,24.125920471281294,25.216409484380875,-0.6699999999999999,0.0,14.000000000000002
+blind_numeric_forecast_v2,forecast,full,土豆,60,harvest_market_price,retrospective_audit_reused,1,1,0,1,0,,0,RESEARCH_ONLY,3.0897887323943585,4.049295774647872,0.07019999999999982,2.396437847866413,3.1382717153203017,-0.07019999999999982,1.0,1.0000000000000009
+blind_numeric_forecast_v2,forecast,full,土豆,60,harvest_market_price,tuning,1,1,0,1,0,,0,RESEARCH_ONLY,10.645161290322605,12.186379928315388,0.23760000000000048,8.11102040816328,10.107197549770314,0.23760000000000048,1.0,26.0
+blind_numeric_forecast_v2,forecast,full,土豆,90,cycle_market_average,calibration,1,1,0,1,0,,0,RESEARCH_ONLY,2.4661117717003718,12.916171224732476,0.052673015873016205,1.7981140854610353,2.4968999434164583,-0.052673015873016205,1.0,12.00000000000001
+blind_numeric_forecast_v2,forecast,full,土豆,90,cycle_market_average,development,1,1,0,1,0,,0,RESEARCH_ONLY,16.023499596820642,6.6927773298007125,0.46366666666666667,16.696097201767305,17.419072068123473,-0.46366666666666667,0.0,9.999999999999998
+blind_numeric_forecast_v2,forecast,full,土豆,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,土豆,90,cycle_market_average,tuning,1,1,0,1,0,,0,RESEARCH_ONLY,14.431602279924011,8.4547181760608,0.3089830508474578,10.547844407408578,13.46033152434748,0.3089830508474578,1.0,25.00000000000002
+blind_numeric_forecast_v2,forecast,full,土豆,90,harvest_market_price,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,土豆,90,harvest_market_price,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,土豆,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,土豆,90,harvest_market_price,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,土豆,120,cycle_market_average,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,土豆,120,cycle_market_average,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,土豆,120,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,土豆,120,cycle_market_average,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,土豆,120,harvest_market_price,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,土豆,120,harvest_market_price,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,土豆,120,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,土豆,120,harvest_market_price,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,青椒,60,cycle_market_average,calibration,1,1,0,1,0,,0,RESEARCH_ONLY,1.7900837089504136,9.06489232310224,0.12204878048780454,0.6527241857217275,1.806250406081471,-0.12204878048780454,1.0,8.000000000000007
+blind_numeric_forecast_v2,forecast,full,青椒,60,cycle_market_average,development,1,1,0,1,0,,0,RESEARCH_ONLY,27.93749331049984,43.701166648828,2.6102,13.304021263289556,32.47365605444208,-2.6102,1.0,28.000000000000004
+blind_numeric_forecast_v2,forecast,full,青椒,60,cycle_market_average,retrospective_audit_reused,1,1,0,1,0,,0,RESEARCH_ONLY,42.68201547461785,10.440649179090398,4.413112195121951,23.601588254685044,54.2620929239421,-4.413112195121951,0.0,36.0
+blind_numeric_forecast_v2,forecast,full,青椒,60,cycle_market_average,tuning,1,1,0,1,0,,0,RESEARCH_ONLY,52.01943253352796,22.61198795730316,5.848051282051281,31.275728408586996,70.30576166065048,-5.848051282051281,0.0,38.0
+blind_numeric_forecast_v2,forecast,full,青椒,60,harvest_market_price,calibration,1,1,0,1,0,,0,RESEARCH_ONLY,1.7128279883381978,55.703352769679256,0.0940000000000003,0.5027176282517092,1.7276235986032034,-0.0940000000000003,1.0,36.875365710942056
+blind_numeric_forecast_v2,forecast,full,青椒,60,harvest_market_price,development,1,1,0,1,0,,0,RESEARCH_ONLY,24.539040451552214,38.14675446848542,2.0868,10.636285178236399,27.97094067501274,-2.0868,1.0,21.999999999999996
+blind_numeric_forecast_v2,forecast,full,青椒,60,harvest_market_price,retrospective_audit_reused,1,1,0,1,0,,0,RESEARCH_ONLY,32.96794208893485,0.8945191313340275,2.5504,13.639691905246329,39.47498761763249,-2.5504,1.0,33.562240557577006
+blind_numeric_forecast_v2,forecast,full,青椒,60,harvest_market_price,tuning,1,1,0,1,0,,0,RESEARCH_ONLY,50.81967213114754,24.458262671942734,5.394000000000001,28.84743496584799,68.13186813186815,-5.394000000000001,0.0,34.89648291344475
+blind_numeric_forecast_v2,forecast,full,青椒,90,cycle_market_average,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,青椒,90,cycle_market_average,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,青椒,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,青椒,90,cycle_market_average,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,青椒,90,harvest_market_price,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,青椒,90,harvest_market_price,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,青椒,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,青椒,90,harvest_market_price,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,青椒,120,cycle_market_average,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,青椒,120,cycle_market_average,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,青椒,120,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,青椒,120,cycle_market_average,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,青椒,120,harvest_market_price,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,青椒,120,harvest_market_price,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,青椒,120,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,青椒,120,harvest_market_price,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,黄瓜,60,cycle_market_average,calibration,1,1,0,1,0,,0,RESEARCH_ONLY,8.367064907275337,17.84041342038847,0.4577804878048788,2.3397669376693804,8.031081986012262,0.4577804878048788,1.0,8.039133806597864
+blind_numeric_forecast_v2,forecast,full,黄瓜,60,cycle_market_average,development,1,1,0,1,0,,0,RESEARCH_ONLY,22.360472094418856,16.516636660665448,1.6766999999999976,8.286904184354142,25.175108668723645,-1.6766999999999976,0.0,6.999999999999984
+blind_numeric_forecast_v2,forecast,full,黄瓜,60,cycle_market_average,retrospective_audit_reused,1,1,0,1,0,,0,RESEARCH_ONLY,35.685253397688314,18.948597445993613,2.7409756097560987,14.009430894308949,43.435241371313744,-2.7409756097560987,0.0,20.649434092818673
+blind_numeric_forecast_v2,forecast,full,黄瓜,60,cycle_market_average,tuning,1,1,0,1,0,,0,RESEARCH_ONLY,8.150004041057148,2.894581360414924,0.5171282051282056,2.643099715099717,8.496225397681323,-0.5171282051282056,0.0,10.73388438482057
+blind_numeric_forecast_v2,forecast,full,黄瓜,60,harvest_market_price,calibration,1,1,0,1,0,,0,RESEARCH_ONLY,28.584817244611095,22.07122774133084,1.2200000000000015,6.235555555555563,25.010250102501058,1.2200000000000015,0.0,5.335892514395413
+blind_numeric_forecast_v2,forecast,full,黄瓜,60,harvest_market_price,development,1,1,0,1,0,,0,RESEARCH_ONLY,12.104192104192109,20.512820512820515,0.5948000000000002,2.939733171619164,11.413439766665393,0.5948000000000002,1.0,6.977372509287405
+blind_numeric_forecast_v2,forecast,full,黄瓜,60,harvest_market_price,retrospective_audit_reused,1,1,0,1,0,,0,RESEARCH_ONLY,9.977703455964317,34.085841694537336,0.7159999999999993,3.659555555555552,10.501613376356692,-0.7159999999999993,1.0,36.57505285412262
+blind_numeric_forecast_v2,forecast,full,黄瓜,60,harvest_market_price,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,黄瓜,90,cycle_market_average,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,黄瓜,90,cycle_market_average,development,1,1,0,1,0,,0,RESEARCH_ONLY,12.29253271747498,1.7157918085619863,0.7984,3.9460036385688295,13.0975425702943,-0.7984,0.0,13.77202524501
+blind_numeric_forecast_v2,forecast,full,黄瓜,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,黄瓜,90,cycle_market_average,tuning,1,1,0,1,0,,0,RESEARCH_ONLY,8.788393970304886,1.3685191481859311,0.5256949152542374,2.6868851224105468,9.192322738966013,-0.5256949152542374,1.0,10.019790368687243
+blind_numeric_forecast_v2,forecast,full,黄瓜,90,harvest_market_price,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,黄瓜,90,harvest_market_price,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,黄瓜,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,黄瓜,90,harvest_market_price,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,黄瓜,120,cycle_market_average,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,黄瓜,120,cycle_market_average,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,黄瓜,120,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,黄瓜,120,cycle_market_average,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,黄瓜,120,harvest_market_price,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,黄瓜,120,harvest_market_price,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,黄瓜,120,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,forecast,full,黄瓜,120,harvest_market_price,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,residual,full,土豆,60,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,residual,full,土豆,60,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,residual,full,土豆,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,residual,full,土豆,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,residual,full,土豆,120,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,residual,full,土豆,120,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,residual,full,青椒,60,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,residual,full,青椒,60,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,residual,full,青椒,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,residual,full,青椒,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,residual,full,青椒,120,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,residual,full,青椒,120,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,residual,full,黄瓜,60,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,residual,full,黄瓜,60,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,residual,full,黄瓜,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,residual,full,黄瓜,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,residual,full,黄瓜,120,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+blind_numeric_forecast_v2,residual,full,黄瓜,120,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+climate,土豆,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+climate,土豆,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+climate,青椒,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+climate,青椒,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+climate,黄瓜,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+climate,黄瓜,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+events,土豆,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+events,土豆,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+events,青椒,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+events,青椒,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+events,黄瓜,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+events,黄瓜,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+hri_market_risk,土豆,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+hri_market_risk,土豆,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+hri_market_risk,青椒,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+hri_market_risk,青椒,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+hri_market_risk,黄瓜,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+hri_market_risk,黄瓜,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+seasonality,土豆,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+seasonality,土豆,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+seasonality,青椒,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+seasonality,青椒,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+seasonality,黄瓜,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+seasonality,黄瓜,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+short_model_pit_proxy,土豆,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+short_model_pit_proxy,土豆,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+short_model_pit_proxy,青椒,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+short_model_pit_proxy,青椒,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+short_model_pit_proxy,黄瓜,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,+short_model_pit_proxy,黄瓜,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,土豆,60,cycle_market_average,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,土豆,60,cycle_market_average,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,土豆,60,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,土豆,60,cycle_market_average,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,土豆,60,harvest_market_price,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,土豆,60,harvest_market_price,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,土豆,60,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,土豆,60,harvest_market_price,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,土豆,90,cycle_market_average,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,土豆,90,cycle_market_average,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,土豆,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,土豆,90,cycle_market_average,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,土豆,90,harvest_market_price,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,土豆,90,harvest_market_price,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,土豆,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,土豆,90,harvest_market_price,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,土豆,120,cycle_market_average,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,土豆,120,cycle_market_average,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,土豆,120,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,土豆,120,cycle_market_average,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,土豆,120,harvest_market_price,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,土豆,120,harvest_market_price,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,土豆,120,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,土豆,120,harvest_market_price,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,青椒,60,cycle_market_average,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,青椒,60,cycle_market_average,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,青椒,60,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,青椒,60,cycle_market_average,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,青椒,60,harvest_market_price,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,青椒,60,harvest_market_price,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,青椒,60,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,青椒,60,harvest_market_price,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,青椒,90,cycle_market_average,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,青椒,90,cycle_market_average,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,青椒,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,青椒,90,cycle_market_average,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,青椒,90,harvest_market_price,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,青椒,90,harvest_market_price,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,青椒,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,青椒,90,harvest_market_price,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,青椒,120,cycle_market_average,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,青椒,120,cycle_market_average,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,青椒,120,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,青椒,120,cycle_market_average,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,青椒,120,harvest_market_price,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,青椒,120,harvest_market_price,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,青椒,120,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,青椒,120,harvest_market_price,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,黄瓜,60,cycle_market_average,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,黄瓜,60,cycle_market_average,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,黄瓜,60,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,黄瓜,60,cycle_market_average,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,黄瓜,60,harvest_market_price,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,黄瓜,60,harvest_market_price,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,黄瓜,60,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,黄瓜,60,harvest_market_price,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,黄瓜,90,cycle_market_average,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,黄瓜,90,cycle_market_average,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,黄瓜,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,黄瓜,90,cycle_market_average,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,黄瓜,90,harvest_market_price,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,黄瓜,90,harvest_market_price,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,黄瓜,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,黄瓜,90,harvest_market_price,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,黄瓜,120,cycle_market_average,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,黄瓜,120,cycle_market_average,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,黄瓜,120,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,黄瓜,120,cycle_market_average,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,黄瓜,120,harvest_market_price,calibration,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,黄瓜,120,harvest_market_price,development,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,黄瓜,120,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,full,黄瓜,120,harvest_market_price,tuning,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,hybrid_full,土豆,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,hybrid_full,土豆,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,hybrid_full,青椒,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,hybrid_full,青椒,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,hybrid_full,黄瓜,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,hybrid_full,黄瓜,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,llm_only,土豆,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,llm_only,土豆,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,llm_only,青椒,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,llm_only,青椒,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,llm_only,黄瓜,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,forecast,llm_only,黄瓜,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,residual,full,土豆,60,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,residual,full,土豆,60,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,residual,full,土豆,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,residual,full,土豆,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,residual,full,土豆,120,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,residual,full,土豆,120,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,residual,full,青椒,60,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,residual,full,青椒,60,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,residual,full,青椒,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,residual,full,青椒,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,residual,full,青椒,120,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,residual,full,青椒,120,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,residual,full,黄瓜,60,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,residual,full,黄瓜,60,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,residual,full,黄瓜,90,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,residual,full,黄瓜,90,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,residual,full,黄瓜,120,cycle_market_average,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+context_augmented_forecast_v2,residual,full,黄瓜,120,harvest_market_price,retrospective_audit_reused,1,0,1,0,1,,0,RESEARCH_ONLY,,,,,,,,
+```
+
+逐档 matched 预测变化与 WAPE 增益：
+
+```csv
+level,valid_n,paired_n,source_status
+llm_only,0,0,PRICE_HISTORY
++seasonality,0,0,PRICE_HISTORY
++short_model_pit_proxy,0,0,PIT_RULE_PROXY_NOT_FINAL_MODEL
++hri_market_risk,0,0,NOT_FOUND
++climate,0,0,NOT_FOUND
++events,0,0,NOT_FOUND
+hybrid_full,0,0,PRICE_HISTORY
+```
+
+输出变化不是 accuracy gain。NOT_FOUND 的新增档位不能被解释为来源有效；缺 key/预算不足的档位不伪造指标。

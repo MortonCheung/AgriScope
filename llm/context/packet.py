@@ -12,7 +12,9 @@ from llm.common import UNIT, PRICE_LEVEL, stable_hash
 CITY = "沈阳"
 DEFAULT_CONFIG = {"season_window_days": 30, "short_model_horizons": [7, 14, 30],
                   "unit": UNIT, "price_level": PRICE_LEVEL,
-                  "calendar": "gregorian", "time_index": "calendar"}
+                  "calendar": "gregorian", "time_index": "calendar",
+                  "history_recent_obs": 120,      # 逐日明细只保留最近 N 个观测
+                  "history_monthly": True}        # 更早的历史按月聚合成 mean/min/max/n
 RELATIVE_UNIT = "ratio_to_current_price"
 
 
@@ -33,6 +35,37 @@ def _previous_season(sub: pd.DataFrame, cut: pd.Timestamp, days: int) -> Optiona
     end = cut - pd.Timedelta(days=365)
     prices = sub.loc[(sub.date > end - pd.Timedelta(days=days)) & (sub.date <= end), "price_per_kg"]
     return float(prices.mean()) if len(prices) else None
+
+
+def _compress_history(sub: pd.DataFrame, last_date: pd.Timestamp,
+                      recent_obs: int) -> tuple[list, list, dict]:
+    """把「截断前的全量逐日价格」压缩为「最近 N 个逐日观测 + 更早月份聚合」。
+
+    目的（§6 Prompt/Context 压缩）：保留预测所需结构（近期形态、季节轮廓、水平与波动），
+    去掉与本次预测无关的逐日长尾。聚合值全部由程序计算，且只使用 cutoff 之前已发生的观测。
+    """
+    rows = [{"day_offset": int((date - last_date).days), "price": float(value)}
+            for date, value in zip(sub.date, sub.price_per_kg)]
+    split = max(0, len(rows) - recent_obs)
+    recent, older = rows[split:], rows[:split]
+    monthly: list = []
+    if older:
+        frame = sub.iloc[:split].copy()
+        frame["_ym"] = frame.date.dt.to_period("M")
+        anchor_period = last_date.to_period("M")
+        for ym, group in frame.groupby("_ym", sort=False):
+            price = group.price_per_kg.astype(float)
+            monthly.append({
+                "month_offset": int((anchor_period - ym).n),
+                "mean": float(price.mean()), "min": float(price.min()),
+                "max": float(price.max()), "n": int(len(price)),
+            })
+        monthly.sort(key=lambda item: item["month_offset"])
+    meta = {"n_obs_total": len(rows), "recent_obs": len(recent),
+            "monthly_buckets": len(monthly),
+            "first_date": str(sub.iloc[0].date.date()), "last_date": str(last_date.date()),
+            "compression": "recent_daily_plus_older_monthly_aggregates"}
+    return recent, monthly, meta
 
 
 def _short_model(sub: pd.DataFrame, row: pd.Series, crop: str, horizons: list[int]) -> dict:
@@ -67,13 +100,17 @@ def build_packet(crop: str, cutoff: str, horizon: int,
     max_dd = float((recent90 / rolling_peak - 1).min())
     span = int((last_date - sub.iloc[0].date).days) + 1
     unavailable = lambda reason: {"available": False, "status": "NOT_FOUND", "reason": reason}
+    recent_rows, monthly_rows, hist_meta = _compress_history(sub, last_date, int(cfg["history_recent_obs"]))
     return {
         "schema_version": "lh_context_v2", "mode": "context", "city": CITY, "crop": crop,
         "cutoff": str(cut.date()), "anchor_observation_date": str(last_date.date()),
         "feature_available_at": str(last_date.date()), "horizon": int(horizon),
         "unit": cfg["unit"], "price_level": PRICE_LEVEL, "current_price": current,
-        "history": [{"day_offset": int((date - last_date).days), "price": float(value)}
-                    for date, value in zip(sub.date, price)],
+        "history_recent": recent_rows,
+        "history_monthly": monthly_rows if cfg["history_monthly"] else [],
+        "history_meta": hist_meta,
+        # 量级校验边界必须来自**全量**历史（而非被压缩的明细），否则会误判合法输出为越界。
+        "price_bounds": [float(price.min()) * .5, float(price.max()) * 3.],
         "returns": returns,
         "rolling": {"mean_30": float(recent.mean()), "median_30": float(recent.median()),
                     "volatility_30": float(np.std(np.diff(np.log(recent)))) if len(recent) > 1 else 0.,
@@ -124,8 +161,15 @@ def build_case_context(crop: str, cutoff: str, horizon: int, *, mode: str = "con
                        "cutoff": f"T+{(pd.Timestamp(cutoff) - anchor).days}d",
                        "anchor_observation_date": "T0", "feature_available_at": "T0",
                        "unit": RELATIVE_UNIT, "current_price": 1.})
-        for row in packet["history"]:
+        for row in packet["history_recent"]:
             row["price"] /= scale
+        for bucket in packet["history_monthly"]:
+            for key in ("mean", "min", "max"):
+                bucket[key] /= scale
+        packet["price_bounds"] = [value / scale for value in packet["price_bounds"]]
+        # history_meta 含绝对首末日期：blind 模式必须匿名化，否则会泄露真实时间锚点。
+        packet["history_meta"] = {**packet["history_meta"],
+                                  "first_date": f"T-{(anchor - first).days}d", "last_date": "T0"}
         for key in ("mean_30", "median_30"):
             packet["rolling"][key] /= scale
         seasonal = packet["seasonality"]

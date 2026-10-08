@@ -169,8 +169,11 @@ def _call_once(provider: LLMProvider, packet: Dict[str, Any], baseline_point: Op
                                      temperature=cfg.temperature,
                                      seed=cfg.seed if provider.seed_supported else None)
     except LLMUnavailable as e:
+        # 必须保留真实失败原因（timeout / http_429 / incomplete_response_finish_reason:length …），
+        # 否则审计只能看到笼统的 "LLMUnavailable"，无法区分瞬时网络与确定性失败。
+        detail = str(e) or type(e).__name__
         return {**base, "payload": None, "cache_hit": False, "valid": False,
-                "errors": [f"llm_unavailable:{type(e).__name__}"],
+                "errors": [f"llm_unavailable:{type(e).__name__}:{detail}"],
                 "latency_ms": (time.perf_counter() - started) * 1000,
                 "api_called": getattr(provider, "last_call_attempted", provider.is_available()),
                 **provider.call_metadata()}
@@ -186,8 +189,16 @@ def _call_once(provider: LLMProvider, packet: Dict[str, Any], baseline_point: Op
 
 
 def hard_bounds_placeholder(packet: Dict[str, Any]) -> Tuple[float, float]:
-    """用**该作物历史价格分布**推出的量级边界（程序化，非手写常数）。"""
-    prices = np.array([row["price"] for row in packet.get("history", [])], dtype=float)
+    """用**该作物全量历史价格分布**推出的量级边界（程序化，非手写常数）。
+
+    压缩后明细只含最近 N 个观测，因此必须使用 packet 自带的 `price_bounds`
+    （由全量历史在 build_packet 时计算），否则会把合法输出误判为越界。
+    """
+    bounds = packet.get("price_bounds")
+    if isinstance(bounds, (list, tuple)) and len(bounds) == 2 \
+            and all(np.isfinite(bounds)) and bounds[0] > 0 and bounds[1] >= bounds[0]:
+        return float(bounds[0]), float(bounds[1])
+    prices = np.array([row["price"] for row in packet.get("history_recent", [])], dtype=float)
     if not len(prices) or not np.isfinite(prices).all() or min(prices) <= 0:
         raise ValueError("missing_cutoff_safe_packet_bounds")
     return float(min(prices) * .5), float(max(prices) * 3.)

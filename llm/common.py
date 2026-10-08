@@ -4,12 +4,22 @@ from __future__ import annotations
 
 import hashlib
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
 
-from decision_engine.common import ROOT, DE, ensure_dir, write_json, read_json
+# 统一 env 加载（系统环境变量优先，backend/.env 兜底）：LLM Provider 只读 os.environ，
+# 因此这里必须在任何 provider 读取之前执行；路径按仓库根解析，与 cwd 无关。
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+from agriscope_env import load_env  # noqa: E402
+
+load_env()
+
+from decision_engine.common import ROOT, DE, ensure_dir, write_json, read_json  # noqa: E402
 
 LLM_DIR = ROOT / "llm"
 LLM_ARTIFACTS = LLM_DIR / "artifacts"

@@ -9,12 +9,23 @@
 from __future__ import annotations
 
 import logging
+import sys
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any, Dict
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+
+# 统一 env 加载（系统环境变量优先，backend/.env 兜底）。先把仓库根放进 sys.path，
+# 这样无论从哪个 cwd 启动（dev.sh / npm run dev:api / systemd）都能找到唯一 loader。
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+from agriscope_env import load_env  # noqa: E402
+
+load_env()
 
 from . import config as C
 from . import runtime_snapshot as RS

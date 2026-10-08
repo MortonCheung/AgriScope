@@ -99,6 +99,22 @@ def prepared_target(history: pd.DataFrame, horizon: int, target_type: str,
     return frame, spec
 
 
+def _progress(index: int, total: int, context: str, rec: dict) -> None:
+    """实时进度日志（§8）。只输出可公开元数据：绝不打印 Key、header 或 prompt 正文。"""
+    usage = rec.get("token_usage") if isinstance(rec.get("token_usage"), dict) else {}
+    status = ("ok" if rec.get("valid") else
+              "not_attempted" if not rec.get("api_called") else "failed")
+    reason = ""
+    if status != "ok":
+        errors = rec.get("errors") or []
+        reason = f" | {errors[0][:120]}" if errors else ""
+    print(f"[{index:>3}/{total}] {context} | {status} | "
+          f"lat={rec.get('latency_ms', 0) / 1000:.1f}s | "
+          f"tok={usage.get('total_tokens', 'unknown')} "
+          f"(p={usage.get('prompt_tokens', '-')},c={usage.get('completion_tokens', '-')}) | "
+          f"cache={'hit' if rec.get('cache_hit') else 'miss'}{reason}", flush=True)
+
+
 def _wape(actual, predicted):
     actual, predicted = np.asarray(actual, float), np.asarray(predicted, float)
     valid = np.isfinite(actual) & np.isfinite(predicted)
@@ -139,25 +155,33 @@ def learn_adjustment_bounds(frame: pd.DataFrame, crop: str, train_end: str, meth
 
 def run_v2_experiment(provider: LLMProvider, config: PilotConfig, history: pd.DataFrame,
                       harvest_definition: str, *, mode="blind", residual=False,
-                      sections=None, ablation_level="full") -> pd.DataFrame:
+                      sections=None, ablation_level="full", progress=True,
+                      label="") -> pd.DataFrame:
     if not provider.is_real_llm:
         raise ValueError("REAL_LLM_PROVIDER_REQUIRED_NO_STUB_BENCHMARK")
     records = []
     experiment = "blind_numeric_forecast_v2" if mode == "blind" else "context_augmented_forecast_v2"
     call_config = ExperimentConfig(experiment=experiment, temperature=config.temperature,
                                    seed=config.seed, include_sections=sections)
-    for horizon in config.horizons:
-        for target in config.target_types:
-            frame, spec = prepared_target(history, horizon, target, harvest_definition)
-            for crop in config.crops:
-                crop_frame = frame[frame.crop == crop]
-                for phase in config.phases:
+    # 预算友好顺序：**phase 在最外层**。小预算下先让每个 crop×horizon×target 都拿到
+    # development 响应（Hybrid 权重的唯一合法来源），再进入后续阶段；
+    # 否则预算会被第一个作物的所有阶段吃光，Hybrid 永远退化为 baseline。
+    planned = (len(config.phases) * len(config.horizons) * len(config.target_types)
+               * len(config.crops) * max(1, config.max_anchors_per_phase))
+    done = 0
+    for phase in config.phases:
+        for horizon in config.horizons:
+            for target in config.target_types:
+                frame, spec = prepared_target(history, horizon, target, harvest_definition)
+                for crop in config.crops:
+                    crop_frame = frame[frame.crop == crop]
                     learning_end = min(phase["train_end"], "2023-12-31")
                     selection = learn_baseline(frame, crop, learning_end)
                     bounds = learn_adjustment_bounds(frame, crop, learning_end, selection["method"])
                     eligible = crop_frame[LH.evaluation_mask(crop_frame, phase)]
                     anchors = LH.exposure_rows(eligible, spec["exposure_spacing_days"]).head(config.max_anchors_per_phase)
                     for _, row in anchors.iterrows():
+                        done += 1
                         anchor = str(pd.Timestamp(row.date).date())
                         packet, host = build_case_context(crop, anchor, horizon, mode=mode, dataset=history)
                         packet["target_type"] = target
@@ -223,6 +247,10 @@ def run_v2_experiment(provider: LLMProvider, config: PilotConfig, history: pd.Da
                             # Auditable statistical fallback is not scored as an LLM response.
                             rec.update({"point": baseline, "actual_method": selection["method"], "fallback_used": True})
                             rec["fallback_reason"] = "LLM_UNAVAILABLE_OR_SCHEMA_REJECTED"
+                        if progress:
+                            _progress(done, planned,
+                                      f"{label or experiment}|{mode}|{crop}|H{horizon}|{target}|{phase['name']}|"
+                                      f"{'residual' if residual else 'forecast'}", rec)
                         records.append(rec)
     return pd.DataFrame(records)
 

@@ -65,7 +65,14 @@ def test_blind_is_anonymous_normalized_and_reversible(history):
     assert packet["unit"] == "ratio_to_current_price"
     assert packet["seasonality"]["historical_profile"].keys() <= {f"M-{n}" for n in range(12)}
     raw = build_packet("土豆", "2023-06-01", 90, dataset=history)
-    assert np.allclose([x["price"]*host["scale"] for x in packet["history"]], [x["price"] for x in raw["history"]])
+    # 压缩后逐日明细只保留最近 N 个观测，且必须是宿主 cutoff 切片的**尾部**逐值相等。
+    assert len(packet["history_recent"]) <= len(raw["history_recent"])
+    assert np.allclose([x["price"]*host["scale"] for x in packet["history_recent"]],
+                       [x["price"] for x in raw["history_recent"]])
+    assert [x["month_offset"] for x in packet["history_monthly"]] == \
+           [x["month_offset"] for x in raw["history_monthly"]]
+    assert np.allclose([x["mean"]*host["scale"] for x in packet["history_monthly"]],
+                       [x["mean"] for x in raw["history_monthly"]])
     for key in ("mean_30", "median_30"):
         assert packet["rolling"][key]*host["scale"] == pytest.approx(raw["rolling"][key])
     for key in ("seasonal_p10", "seasonal_p50", "seasonal_p90"):
@@ -118,8 +125,17 @@ def test_future_feature_and_mutated_blind_history_are_rejected(history):
     packet["feature_available_at"] = "2023-06-02"
     assert not audit_packet(packet)["passed"]
     blind, host = build_case_context("土豆", "2023-06-01", 90, mode="blind", dataset=history)
-    blind["history"][0]["price"] *= 2
+    # 篡改最近逐日明细：被尾值重建校验拒绝
+    blind["history_recent"][0]["price"] *= 2
     assert not audit_packet(blind, history, host)["passed"]
+    # 篡改月份聚合：mean 越出 [min,max] 被拒绝
+    mutated_mean = build_case_context("土豆", "2023-06-01", 90, mode="blind", dataset=history)[0]
+    mutated_mean["history_monthly"][0]["mean"] = mutated_mean["history_monthly"][0]["max"] * 2
+    assert not audit_packet(mutated_mean)["passed"]
+    # 把「更早历史」伪装成当前月（offset=0）：被拒绝
+    mutated_offset = build_case_context("土豆", "2023-06-01", 90, mode="blind", dataset=history)[0]
+    mutated_offset["history_monthly"][0]["month_offset"] = 0
+    assert not audit_packet(mutated_offset)["passed"]
 
 
 def test_cache_separates_config_schema_baseline_and_rendered_ablation(history):

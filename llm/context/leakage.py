@@ -41,11 +41,23 @@ def audit_packet(packet: Dict[str, Any], dataset: pd.DataFrame | None = None,
         check("price_observation", anchor <= cut, "anchor <= cutoff")
         check("feature", pd.Timestamp(packet.get("feature_available_at", packet["anchor_observation_date"])) <= cut,
               "feature timestamp <= cutoff")
-    history = packet.get("history", [])
+    history = packet.get("history_recent", [])
+    monthly = packet.get("history_monthly", [])
     check("historical_relative_offsets", bool(history) and all(
         isinstance(row.get("day_offset"), int) and row["day_offset"] <= 0 and
         np.isfinite(row.get("price", np.nan)) and row.get("price", 0) > 0 for row in history),
         "only observed prices with offsets <= 0")
+    check("historical_recent_is_tail", bool(history) and all(
+        history[i]["day_offset"] < history[i + 1]["day_offset"] for i in range(len(history) - 1))
+        and history[-1]["day_offset"] == 0,
+        "recent window is strictly increasing and ends at the anchor")
+    # 月份聚合必须严格早于 anchor 月份（offset>=1），且 min<=mean<=max、n>0。
+    check("historical_monthly_aggregates", all(
+        isinstance(bucket.get("month_offset"), int) and bucket["month_offset"] >= 1
+        and isinstance(bucket.get("n"), int) and bucket["n"] > 0
+        and all(np.isfinite(bucket.get(k, np.nan)) and bucket.get(k, 0) > 0 for k in ("mean", "min", "max"))
+        and bucket["min"] <= bucket["mean"] <= bucket["max"] for bucket in monthly),
+        "older history only as cutoff-safe monthly aggregates (offset>=1, min<=mean<=max)")
 
     publications = list(packet.get("events", []))
     for key in ("production", "supply", "climate"):
@@ -71,9 +83,17 @@ def audit_packet(packet: Dict[str, Any], dataset: pd.DataFrame | None = None,
         scale = host_metadata["scale"] if host_metadata else 1.
         prices = np.asarray([row["price"] for row in history], float)
         raw = sub.price_per_kg.to_numpy(float) / scale
-        check("dataset_pit_reconstruction", len(raw) == len(prices) and
-              bool(len(raw)) and np.allclose(raw, prices, rtol=1e-10, atol=1e-10),
-              "provider history equals host cutoff-sliced prices")
+        # 明细被压缩为「最近 N 个观测」：唯一允许的差异是长度，且必须是**尾部**逐值相等。
+        same_tail = len(prices) <= len(raw) and bool(len(prices)) and np.allclose(
+            raw[-len(prices):], prices, rtol=1e-10, atol=1e-10)
+        check("dataset_pit_reconstruction", same_tail,
+              "provider recent history equals the host cutoff-sliced price tail")
+        full = sub.price_per_kg.to_numpy(float) / scale
+        bounds = packet.get("price_bounds")
+        check("dataset_pit_bounds", bool(bounds and len(bounds) == 2 and
+              np.isclose(bounds[0], float(full.min()) * .5, rtol=1e-10) and
+              np.isclose(bounds[1], float(full.max()) * 3., rtol=1e-10)),
+              "magnitude bounds derive from the full cutoff history")
     return result
 
 
