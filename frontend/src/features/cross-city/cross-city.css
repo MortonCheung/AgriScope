@@ -1,0 +1,83 @@
+/* 跨城比较页与六城综合研究专题（Frontend V3 §25 / §26）。
+   复用暖白研究出版物体系与既有 ag-* 版式，不新造色板。 */
+
+.cross-city { display: flex; flex-direction: column; }
+.cross-city > :first-child { max-width: 68ch; }
+
+.cx-back { margin-top: var(--ag-space-4); font-size: var(--ag-fs-small); color: var(--ag-ink-muted); }
+
+/* §25.1 价格口径红线：左侧细线的主张块，不用卡片 */
+.cx-redline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ag-space-4);
+  margin-top: var(--ag-space-7);
+  padding: var(--ag-space-5) var(--ag-space-6);
+  border-left: 2px solid var(--ag-danger);
+  background: var(--ag-surface-2);
+}
+.cx-redline__title { color: var(--ag-danger); font-family: var(--ag-font-mono); font-size: var(--ag-fs-micro); letter-spacing: 0.08em; }
+.cx-scales { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--ag-space-3) var(--ag-space-5); margin: 0; padding: 0; list-style: none; }
+.cx-scales li { display: flex; align-items: baseline; gap: var(--ag-space-3); border-top: 1px solid var(--ag-rule-soft); padding-top: var(--ag-space-3); }
+.cx-scales__city { color: var(--ag-ink); font-size: var(--ag-fs-body); min-width: 3em; }
+.cx-scales__scale { color: var(--ag-ink-muted); font-size: var(--ag-fs-small); }
+
+/* 指标切换：复用 ag-chip 的"文字 + 下划线"状态，不额外造控件 */
+.cx-switch { display: flex; flex-wrap: wrap; gap: var(--ag-space-3) var(--ag-space-5); }
+
+.cx-grid { display: grid; grid-template-columns: minmax(240px, 360px) minmax(0, 1fr); gap: var(--ag-space-7); align-items: start; margin-top: var(--ag-space-6); }
+.cx-mapcol { display: flex; flex-direction: column; gap: var(--ag-space-4); position: sticky; top: calc(var(--ag-nav-height) + var(--ag-space-4)); }
+
+/* 轻量 SVG 地图 */
+.cx-map { display: flex; flex-direction: column; gap: var(--ag-space-3); margin: 0; }
+.cx-map svg { width: 100%; height: auto; }
+.cx-map--state { min-height: 240px; background: var(--ag-surface-2); }
+.cx-map__city path { fill: var(--ag-paper-deep); stroke: var(--ag-rule); stroke-width: 0.6; vector-effect: non-scaling-stroke; transition: fill var(--ag-dur-fast) var(--ag-ease); }
+.cx-map__city[data-highlighted] path { fill: var(--ag-olive-soft); stroke: var(--ag-rule-strong); }
+.cx-map__city[data-active] path { fill: var(--ag-ink); stroke: var(--ag-ink); }
+.cx-map__city[data-clickable] { cursor: pointer; }
+.cx-map__city[data-clickable]:hover path { fill: var(--ag-olive); }
+
+/* 指标详情 */
+.cx-detail { display: flex; flex-direction: column; gap: var(--ag-space-5); }
+.cx-detail__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--ag-space-4); flex-wrap: wrap; }
+.cx-detail__skeleton { min-height: 120px; background: var(--ag-surface-2); }
+
+/* 横向比较条（SVG 自建） */
+.cx-bars { margin: 0; display: flex; flex-direction: column; gap: var(--ag-space-3); }
+.cx-bars__list { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.cx-bars__row {
+  display: grid;
+  grid-template-columns: 4.5em minmax(0, 1fr) 6em;
+  align-items: center;
+  gap: var(--ag-space-3);
+  width: 100%;
+  padding: var(--ag-space-2) 0;
+  text-align: left;
+  border-bottom: 1px solid var(--ag-rule-soft);
+}
+.cx-bars__row[data-active] { background: var(--ag-selected); }
+.cx-bars__label { color: var(--ag-ink); font-size: var(--ag-fs-small); }
+.cx-bars__track { display: block; height: 12px; background: var(--ag-rule-soft); }
+.cx-bars__track svg { width: 100%; height: 100%; }
+.cx-bars__track rect { fill: var(--ag-chart-series-1); }
+.cx-bars__row[data-active] .cx-bars__track rect { fill: var(--ag-chart-highlight); }
+.cx-bars__value { text-align: right; }
+
+/* 城际配对表：只加一点点补充样式，主体复用 .data-table */
+.cx-pairs { margin-top: var(--ag-space-2); }
+
+.cx-conclusion { display: flex; flex-direction: column; gap: var(--ag-space-4); }
+.cx-limits { display: flex; flex-direction: column; gap: var(--ag-space-3); margin: 0; padding: 0 0 0 var(--ag-space-5); color: var(--ag-ink-soft); font-size: var(--ag-fs-body); max-width: 78ch; }
+.cx-limits li { list-style: "— "; }
+
+.cx-findings { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--ag-space-3) var(--ag-space-5); margin: 0; padding: 0; list-style: none; }
+.cx-findings li { padding-top: var(--ag-space-3); border-top: 1px solid var(--ag-rule-soft); color: var(--ag-ink); font-size: var(--ag-fs-body); }
+
+.cx-section { display: flex; flex-direction: column; gap: var(--ag-space-3); }
+.cx-section__title { color: var(--ag-ink); font-size: var(--ag-fs-lead); }
+
+@media (max-width: 980px) {
+  .cx-grid { grid-template-columns: minmax(0, 1fr); }
+  .cx-mapcol { position: static; }
+}

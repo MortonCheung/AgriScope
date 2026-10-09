@@ -1,9 +1,12 @@
+import { useSearchParams } from 'react-router-dom';
 import { LIAONING_CITIES, STUDY_CITY_IDS } from '../../domain/geography/cities';
 import { hasCatalog } from '../../domain/research/catalog';
 import { cityEntry, useRuntimeCatalog } from '../../domain/research/runtime/catalog';
 import { ROUTES } from '../../app/routes';
 import { TransitionLink } from '../../app/pageNavigation';
 import { LlmEvidenceSection } from './LlmEvidenceSection';
+import { CrossCityPage } from '../cross-city/CrossCityPage';
+import { SynthesisPage } from '../cross-city/SynthesisPage';
 import './research-center.css';
 
 /**
@@ -27,6 +30,14 @@ const FLOW = ['数据', '分析', '模型', '验证', '决策'] as const;
 
 export function ResearchCenterPage() {
   const catalogState = useRuntimeCatalog();
+  const [searchParams] = useSearchParams();
+
+  /* 跨城专用页与六城综合研究专题没有独立路由（路由层不在本轮可改范围），
+     因此用研究中心首页的 `?view=` 承载：入口点进来就地切换到专页组件。 */
+  const view = searchParams.get('view');
+  if (view === 'cross_city') return <CrossCityPage />;
+  if (view === 'synthesis') return <SynthesisPage />;
+
   const published = catalogState.status === 'ready' ? catalogState.catalog : null;
   const entryOf = (cityId: string) => (published ? cityEntry(published, cityId) : null);
   const crossCity = entryOf('cross_city');
@@ -97,25 +108,34 @@ export function ResearchCenterPage() {
           </ul>
 
           <ul className="research-center__assets">
-            {crossCity ? (
-              <li className="research-center__asset">
-                <span className="research-center__asset-name">辽宁六城比较与综合研究</span>
-                <span className="research-center__asset-note">
-                  {crossCity.modules.map((module) => module.title).join(' · ')}
-                </span>
-                <TransitionLink className="research-center__city-link" to={ROUTES.city('cross_city')}>
-                  进入研究 →
+            <li className="research-center__asset">
+              <span className="research-center__asset-name">辽宁六城比较（跨城专用页）</span>
+              <span className="research-center__asset-note">
+                {crossCity ? crossCity.modules.map((module) => module.title).join(' · ') : '跨城市生产结构、季节同步与区域差异'}
+              </span>
+              {crossCity ? (
+                <TransitionLink className="research-center__city-link" to={`${ROUTES.researchCenter}?view=cross_city`}>
+                  进入比较 →
                 </TransitionLink>
-              </li>
-            ) : (
-              <li className="research-center__asset">
-                <span className="research-center__asset-name">辽宁六城比较与综合研究</span>
-                <span className="research-center__asset-note">跨城市生产结构、季节同步与区域差异</span>
+              ) : (
                 <span className="research-center__city-state">
                   {catalogState.status === 'loading' ? '读取中…' : '未发布研究载荷'}
                 </span>
-              </li>
-            )}
+              )}
+            </li>
+            <li className="research-center__asset">
+              <span className="research-center__asset-name">六城综合研究（专题）</span>
+              <span className="research-center__asset-note">辽宁六城农业市场周期、气象响应与区域差异研究</span>
+              {crossCity ? (
+                <TransitionLink className="research-center__city-link" to={`${ROUTES.researchCenter}?view=synthesis`}>
+                  进入专题 →
+                </TransitionLink>
+              ) : (
+                <span className="research-center__city-state">
+                  {catalogState.status === 'loading' ? '读取中…' : '未发布研究载荷'}
+                </span>
+              )}
+            </li>
           </ul>
 
           {published && (

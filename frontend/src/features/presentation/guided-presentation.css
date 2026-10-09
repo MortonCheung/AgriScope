@@ -1,0 +1,96 @@
+/**
+ * 演示导览模式（规范 §42）样式。
+ *
+ * 右下角浮层，**没有全屏遮罩** —— 开启讲解时页面其它功能仍可用。
+ * 动画只服务「这一步出现了」这一状态变化：8px 以内的位移 + 透明度，无弹跳、无缩放炫技；
+ * `prefers-reduced-motion` 下退化为瞬时。
+ */
+
+.ag-guide {
+  position: fixed;
+  right: var(--ag-space-5);
+  bottom: var(--ag-space-5);
+  z-index: var(--ag-z-toast);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.ag-guide__launcher {
+  background: var(--ag-paper-raised);
+  box-shadow: var(--ag-shadow-raised);
+}
+
+.ag-guide__panel {
+  width: min(420px, calc(100vw - 2 * var(--ag-space-5)));
+  padding: var(--ag-space-4) var(--ag-space-4) var(--ag-space-3);
+  border: 1px solid var(--ag-rule);
+  background: var(--ag-paper-raised);
+  box-shadow: var(--ag-shadow-raised);
+  animation: ag-guide-in var(--ag-dur-normal) var(--ag-ease) backwards;
+}
+
+/* 从下方 8px 淡入：读作「导览面板出现」，不是「飞进来」。 */
+@keyframes ag-guide-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ag-guide__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ag-space-3);
+}
+
+.ag-guide__exit { min-height: 32px; padding: 0 var(--ag-space-3); }
+
+.ag-guide__counter {
+  margin-top: var(--ag-space-3);
+  color: var(--ag-ink-muted);
+  font-family: var(--ag-font-mono);
+  font-size: var(--ag-fs-micro);
+  letter-spacing: 0.04em;
+}
+
+.ag-guide__narration {
+  margin-top: var(--ag-space-2);
+  color: var(--ag-ink);
+  font-size: var(--ag-fs-small);
+  line-height: var(--ag-lh-body);
+}
+
+.ag-guide__source {
+  margin-top: var(--ag-space-2);
+  color: var(--ag-ink-faint);
+  font-size: var(--ag-fs-micro);
+}
+
+.ag-guide__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ag-space-2);
+  margin-top: var(--ag-space-4);
+}
+
+.ag-guide__controls .ag-button {
+  min-height: 36px;
+  padding: 0 var(--ag-space-4);
+}
+
+/**
+ * 聚焦高亮：只加一圈墨色描边（键盘焦点的第二重表达）。
+ * 不做脉冲、不做呼吸 —— 那属于装饰动画，与规范 §31 相悖。
+ */
+.ag-guide-highlight {
+  outline: 2px solid var(--ag-ink);
+  outline-offset: 4px;
+}
+
+@media (max-width: 560px) {
+  .ag-guide { right: var(--ag-space-3); bottom: var(--ag-space-3); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ag-guide__panel { animation: none; }
+}

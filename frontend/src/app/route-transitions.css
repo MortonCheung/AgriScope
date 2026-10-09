@@ -34,12 +34,12 @@
 ::view-transition-new(ag-header) { animation: none; }
 
 @keyframes page-arrive {
-  from { opacity: 0; transform: translate3d(16px, 0, 0) scale(.994); }
+  from { opacity: 0; transform: translate3d(8px, 0, 0) scale(.994); }
   to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
 }
 @keyframes page-recede {
   from { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
-  to { opacity: 0; transform: translate3d(-16px, 0, 0) scale(.994); }
+  to { opacity: 0; transform: translate3d(-8px, 0, 0) scale(.994); }
 }
 @keyframes page-dissolve { from { opacity: 1; } to { opacity: 0; } }
 

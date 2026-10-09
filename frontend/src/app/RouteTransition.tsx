@@ -25,7 +25,7 @@ export function RouteTransition({ routeKey, pathname, direction, navigationType,
     if ((typeof document.startViewTransition === 'function' && navigationType !== NavigationType.Pop) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     // Older browsers keep the same component tree and receive a light entry.
     const animation = page.current?.animate?.([
-      { opacity: 0.82, transform: `translate3d(${direction * 24}px, 0, 0)` },
+      { opacity: 0.82, transform: `translate3d(${direction * 8}px, 0, 0)` },
       { opacity: 1, transform: 'translate3d(0, 0, 0)' },
     ], { duration: MOTION_DURATION.normal * 1000, easing: 'cubic-bezier(.16,1,.3,1)' });
     return () => animation?.cancel();

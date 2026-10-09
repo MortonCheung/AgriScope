@@ -1,5 +1,20 @@
 # AgriScope Frontend V3 第二阶段 · 施工报告
 
+> **第三轮更新（2026-10-09 傍晚）**：上一轮"仍未完成"清单中的 §21 / §25 / §26 / §31–§34 / §38 / §42 已全部落地；**以本节为准**。
+>
+> - **§21 三栏 Research Workspace**：新增 `features/research-v2/EvidenceRail.tsx`；左栏策展树收窄、中栏默认「交互探索」（完整文章为次入口，顺序符合 §22）、右栏证据轨（来源/方法/样本/CI/FDR/局限，全部取自研究侧现有字段，**缺失整块不渲染**）；桌面 248/838/272 三栏，≤1024 左栏抽屉、≤768 单栏 + 证据折叠；`aria-expanded/aria-controls`、Esc 先关抽屉再退出城市、开抽屉移焦关时归位、图表补 sr-only 摘要。
+> - **§25 cross-city 专页**：新增 `features/cross-city/`（`CrossCityPage`、`LiaoningMiniMap`、`comparability`）；指标切换只用**真实列**（`HHI`/`CR4`/`seasonal_corr`/`mean_corr`/`median_post_z`/`placebo_p`/`corr_at_best`，无气候表故不放气候项）；地图联动为轻量 SVG 高亮（未引入 Three.js）；**明确标注可比较性**（结构指标=可直接比较、同步/韧性/领先滞后=探索性、价格水平=不可直接比较、城际配对按真实 `freq_pair` 逐行判定）；页面写明「不提供六城菜价排行」；领先/滞后只写"探索性"。
+> - **§26 synthesis 专题**：研究中心「研究成果」区独立入口「六城综合研究（专题）」，以 A11 真实内容做 hero 版式（标题/摘要/关键发现/表/图/局限/结论），不改写研究结论。
+> - **§42 讲解模式**：新增 `features/presentation/`（8 步导览，全部为真实存在的路由与页面）；自动导航+滚动+高亮、旁白经 `aria-live` 播报、上一步/下一步/暂停·继续/退出、Esc 捕获阶段退出；旁白只复述真实页面文案与研究模块名，**无编造数字、无"准确率"**；未接入真实数字人资源（规范本身允许先做导览）。
+> - **§31 Motion 收敛**：路由转场位移由 24px/16px 收敛到 8px（scale 保持 .994），新组件入场仅 8px + 透明度，`prefers-reduced-motion` 退化为瞬时。
+> - **§32/§38 压测与无障碍**：`FRONTEND_V3_STRESS_AND_A11Y_REPORT.md` —— 20 次 hard refresh / 30 次 route change / 20 次 city change / 20 次 horizon change / 两轮 6 档 resize / back·forward / 直接 URL：**四种已知症状（底部飞线、错误按钮飞线、首刷闪烁、resize 错位）全部未出现**；键盘可达主导航/地图城市/决策页签/风险条/两个抽屉，Esc 可关抽屉，focus-visible 可见，图表有文本摘要，颜色非唯一状态表达。
+> - **§49 交叉验证**：抽样 **9/9 全部一致**（短期 7 天中心值与区间、长期 150/180、朝阳与铁岭 HHI、季节幅度 0.266、沈阳 A02 天气效应、跨城 r=0.97、铁岭 NOT_SUPPORTED）。
+> - **第三轮验证（本人执行）**：`vitest` **43 files / 389 passed**；`tsc --noEmit` 0 错误；`npm run build` 通过（verify-ui-strings 41 产物、禁用字样 0）；`pytest backend/tests` **74 passed**；`acceptance` **19/19 → BACKEND_FROZEN**；`secret_scan` **CLEAN**。
+>
+> **仍如实保留的未完成项**：§44 的**实际瘦身执行**（只出 `RESEARCH_ASSET_USAGE_REPORT.md`，`runtime/research` 仍 327MB，未删任何文件；规范本身要求"先完成接入再谈瘦身"）；production preview 与真机移动端未验收（dev server + 设备仿真代替，已在压测报告注明）；真实数字人资源未接入；`frontend/src/legacy/**` 五个零引用目录按 AGENTS 规则仍在（需先更新 `docs/ITEACH_MIGRATION_MATRIX.md` 才能删）。
+>
+> **§54 自测问题第三次回答**：辽宁农业态势与决策中心现在是真实、诚实、可用的产品本体（真实状态组装判断、数据不足如实降级、无编造风险/推荐）；研究中心承担证据层，并已具备三栏工作台、六城模块、NOT_SUPPORTED 正式状态、跨城与综合专题、LLM 证据页。**Frontend V3 第二阶段的核心链路已完整贯通。**
+
 > **第二轮更新（2026-10-09 下午）**：本报告第 0/7/8/9/10–16/17–23/25/26/29/30–34/39/44/45/47/48/49/51 节的"未做"部分已大批落地。**以本节为准**，下文保留为第一轮的原始记录。
 >
 > **第二轮新增完成**

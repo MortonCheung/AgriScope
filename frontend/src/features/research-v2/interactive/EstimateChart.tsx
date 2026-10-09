@@ -219,6 +219,20 @@ export function EstimateChart({ rows, categoryKey, valueKey, ciLowKey, ciHighKey
         </svg>
       </div>
 
+      {/* 图的文本摘要（§38）：同一条数据关系对读屏用户也要可读，不靠图形本身。 */}
+      {points.length > 0 && (
+        <p className="ag-sr-only">
+          {valueLabel} 按{categoryLabel}：
+          {points.map((point, index) => {
+            const interval = hasCi && point.low !== undefined && point.high !== undefined
+              && Number.isFinite(point.low) && Number.isFinite(point.high)
+              ? `（区间 ${formatMetricValue(point.low, meta)} – ${formatMetricValue(point.high, meta)}）`
+              : '';
+            return `${index > 0 ? '；' : ''}${controlledValueLabel(categoryKey, point.category)} ${formatMetricValue(point.value, meta)}${interval}`;
+          })}
+        </p>
+      )}
+
       {/* 读数行：高度由"最宽一条"撑住，hover 不会让页面跳动（§87）。
           空闲时不写操作提示 —— 界面不靠"告诉我怎么用"才可用（§84）。 */}
       <div className="estimate-chart__readout" data-empty={active ? undefined : true}>
