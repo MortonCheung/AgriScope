@@ -1,0 +1,154 @@
+/* 模块级研究工作台（Frontend V3 §20–§24）。
+   沿用暖白研究出版物体系；不使用圆角卡片墙，靠分隔线与留白建立层级。 */
+
+.module-workspace__state {
+  padding: 48px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.module-workspace__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.module-workspace__item {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 2.6rem 1fr auto;
+  align-items: baseline;
+  gap: 8px;
+  padding: 7px 10px 7px 0;
+  background: transparent;
+  border: 0;
+  border-left: 2px solid transparent;
+  color: var(--ag-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--ag-dur-fast) var(--ag-ease-standard),
+              border-color var(--ag-dur-fast) var(--ag-ease-standard);
+}
+
+.module-workspace__item:hover { background: var(--ag-paper-sunken); }
+
+.module-workspace__item[data-selected] {
+  border-left-color: var(--ag-ink);
+  background: var(--ag-paper-raised);
+}
+
+.module-workspace__item:focus-visible {
+  outline: 2px solid var(--ag-focus);
+  outline-offset: 2px;
+}
+
+.module-workspace__item-id {
+  font-family: var(--ag-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 0.72rem;
+  color: var(--ag-ink-muted);
+  letter-spacing: 0.02em;
+}
+
+.module-workspace__item-title {
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: var(--ag-ink-soft);
+}
+
+.module-workspace__chip {
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  color: var(--ag-ink-faint);
+  white-space: nowrap;
+}
+
+.module-workspace__chip[data-status='ACCEPTED'] { color: var(--ag-evidence-a); }
+.module-workspace__chip[data-status='NOT_SUPPORTED'] { color: var(--ag-evidence-unsupported); }
+.module-workspace__chip[data-status='DRAFT'] { color: var(--ag-ink-faint); }
+
+.module-workspace__modes {
+  display: flex;
+  gap: 20px;
+  padding: 0 0 12px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--ag-rule-soft);
+}
+
+.module-workspace__mode {
+  position: relative;
+  background: transparent;
+  border: 0;
+  padding: 4px 0;
+  font: inherit;
+  font-size: 0.82rem;
+  color: var(--ag-ink-muted);
+  cursor: pointer;
+}
+
+.module-workspace__mode[data-active] { color: var(--ag-ink); }
+
+.module-workspace__mode[data-active]::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -13px;
+  height: 2px;
+  background: var(--ag-ink);
+}
+
+.module-workspace__mode:focus-visible {
+  outline: 2px solid var(--ag-focus);
+  outline-offset: 3px;
+}
+
+.module-workspace__interactive {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.module-workspace__block { display: flex; flex-direction: column; gap: 10px; }
+
+.module-workspace__unsupported {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 0 8px;
+}
+
+.module-workspace__unsupported-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ag-rule-soft);
+}
+
+.module-workspace__unsupported-heading {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--ag-ink-soft);
+  margin: 0;
+}
+
+.module-workspace__unsupported code {
+  font-family: var(--ag-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 0.78rem;
+  color: var(--ag-evidence-unsupported);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .module-workspace__item,
+  .module-workspace__mode { transition: none; }
+}
+
+@media (max-width: 1024px) {
+  .module-workspace__item { grid-template-columns: 2.2rem 1fr; }
+  .module-workspace__chip { display: none; }
+}

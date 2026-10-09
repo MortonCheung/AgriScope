@@ -75,7 +75,13 @@ describe('起点 / 中点 / 终点明显不同（§33.12）', () => {
     expect(middle.position[1]).toBeGreaterThan(end.position[1]);
     const horizontal = (pose: typeof start) => Math.hypot(pose.position[0], pose.position[2]);
     expect(horizontal(start)).toBeLessThan(horizontal(end));
-    expect(start.target[1]).toBeLessThan(end.target[1]);
+    /**
+     * 视点也在移动，且位移可观（不是只有相机在动）。
+     * 方向不作要求：省域取景（规范 §8）把视点**略微下压**，让辽宁整体上移，
+     * 从而避开左右信息栏与底部主题区 —— 目标依然是"起点/中点/终点明显不同"（§33.12）。
+     */
+    expect(end.target[1]).not.toBe(start.target[1]);
+    expect(Math.abs(end.target[1] - start.target[1])).toBeGreaterThan(RADIUS * 0.02);
   });
 
   it('草稿机位仍然是高角度俯视（看得到整张纸）', () => {

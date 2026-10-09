@@ -1,84 +1,81 @@
+/*
+ * 辽宁农业态势（规范 §8）。
+ *
+ * 设计原则：
+ *   · 地图是唯一视觉主角 —— DOM 只在上方（当前市场 / 城市摘要）与底部（主题研究）两处落脚，
+ *     不铺满、不做卡片墙、不给每个指标一个图标；
+ *   · 层级靠排版（衬线大标题 / 等宽标签 / 细线）与留白，而不是靠圆角盒子；
+ *   · 动画只服务状态变化：opacity、2–8px 位移、scale 0.98–1。
+ * 非交互区域 pointer-events: none，让三维沙盘始终可以拖动。
+ */
+
 .liaoning-page {
   position: relative;
   min-height: 100dvh;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
-  align-content: end;
-  gap: var(--ag-space-6);
-  padding: calc(var(--ag-nav-height) + clamp(28px, 7vh, 84px)) var(--ag-gutter) clamp(32px, 7vh, 68px);
+  grid-template-rows: minmax(0, 1fr) auto;
+  padding-top: var(--ag-nav-height);
   pointer-events: none;
 }
-/* 左下只剩「辽宁」一个词（V4 §十九） */
-.liaoning-page__panel { display: flex; flex-direction: column; gap: var(--ag-space-4); max-width: 520px; align-self: end; }
-.liaoning-page__title { letter-spacing: 0.02em; }
 
-.liaoning-page__index { pointer-events: auto; align-self: end; display: flex; flex-direction: column; gap: var(--ag-space-3); }
-/* 视觉间隙仍为 6px，但由 li 的内边距提供，命中区域连续：
-   鼠标在两项之间移动不会经过"死区"，hover 状态不会被清空再重设。 */
-.liaoning-page__cities { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; margin: 0; padding: 0; list-style: none; }
-.liaoning-page__cities li { padding: 3px; }
+/* ---------- 上部舞台：左（当前市场）· 中（地图）· 右（城市摘要） ---------- */
+.liaoning-page__stage {
+  display: grid;
+  grid-template-columns: minmax(238px, 19vw) minmax(0, 1fr) minmax(250px, 19vw);
+  align-items: start;
+  gap: clamp(24px, 3.4vw, 56px);
+  padding: clamp(20px, 4.5vh, 56px) var(--ag-gutter) 0;
+}
 
-/*
-  城市入口（V4 §十五/§十六，V5 §27）：真的是按钮，看得见、点得到。
-  直角纸张：1px 暖灰细边 + 纸底；hover 换底色与文字色。
-  另外补一条从左侧展开的下划线：地图 hover 与按钮 hover 共用 hoveredCityId，
-  所以指针停在地图城市上时，对应按钮的线也会同时展开（V5 §27）。
-*/
-.liaoning-city {
+.liaoning-page__current,
+.liaoning-page__city {
+  position: relative;
   display: flex;
-  align-items: center;
-  width: 100%;
-  min-height: 42px;
-  padding: 9px 12px;
-  border: 1px solid color-mix(in srgb, var(--ag-rule) 70%, transparent);
-  border-radius: 0;
-  background: color-mix(in srgb, var(--ag-paper) 86%, transparent);
-  color: var(--ag-ink-muted);
-  text-align: left;
-  cursor: pointer;
-  transition:
-    background var(--ag-dur-fast) var(--ag-ease),
-    color var(--ag-dur-fast) var(--ag-ease),
-    border-color var(--ag-dur-fast) var(--ag-ease);
+  flex-direction: column;
+  gap: var(--ag-space-4);
+  pointer-events: auto;
+  /* 局部 Surface：只在文字所在处给一层极轻的纸底，向下淡出，地图仍从下方透出来。
+     没有边框、没有圆角 —— 是"文字下的纸"，不是卡片。 */
+  padding: var(--ag-space-4) var(--ag-space-3) var(--ag-space-7);
+  margin: calc(var(--ag-space-4) * -1) calc(var(--ag-space-3) * -1) calc(var(--ag-space-7) * -1);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--ag-paper) 95%, transparent) 0%,
+    color-mix(in srgb, var(--ag-paper) 86%, transparent) 58%,
+    transparent 100%
+  );
 }
-.liaoning-city__name { position: relative; font-size: var(--ag-fs-small); }
-.liaoning-city__name::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: -5px;
-  width: 100%;
-  height: 1px;
-  background: currentColor;
-  transform: scaleX(0);
-  transform-origin: left center;
-  transition: transform 260ms cubic-bezier(.16, 1, .3, 1);
-}
-.liaoning-city:hover,
-.liaoning-city[data-hovered] {
-  background: var(--ag-paper-deep);
-  border-color: var(--ag-rule);
+.liaoning-page__current { max-width: calc(44ch + var(--ag-space-5) * 2); }
+.liaoning-page__city { gap: var(--ag-space-4); }
+
+/* 中间留白列：地图从这里透出来，不接管任何指针事件。 */
+.liaoning-page__window { align-self: stretch; min-height: clamp(160px, 26vh, 320px); }
+
+.liaoning-page__title {
+  margin: 0;
+  font-family: var(--ag-font-display);
+  font-weight: 400;
+  font-size: clamp(1.7rem, 2.6vw, 2.4rem);
+  line-height: var(--ag-lh-heading);
+  letter-spacing: -0.01em;
   color: var(--ag-ink);
 }
-.liaoning-city:hover .liaoning-city__name::after,
-.liaoning-city:focus-visible .liaoning-city__name::after,
-.liaoning-city[data-hovered] .liaoning-city__name::after {
-  transform: scaleX(1);
-}
-.liaoning-city:focus-visible { outline: 2px solid var(--ag-ink); outline-offset: 2px; }
-
-@media (max-width: 820px) {
-  .liaoning-page { grid-template-columns: minmax(0, 1fr); }
-  .liaoning-page__index { max-width: 420px; }
+.liaoning-page__lead {
+  margin: 0;
+  max-width: 40ch;
+  color: var(--ag-ink-muted);
+  font-size: var(--ag-fs-small);
+  line-height: 1.7;
 }
 
-/* ---- 当前市场摘要（V3 §5）---- */
+/* ---------- 当前市场（左） ---------- */
 .market-overview {
   display: flex;
   flex-direction: column;
   gap: var(--ag-space-3);
-  max-width: 420px;
-  margin-top: var(--ag-space-4);
+  margin-top: var(--ag-space-2);
+  padding-top: var(--ag-space-4);
+  border-top: 1px solid var(--ag-rule);
 }
 .market-overview__meta {
   display: flex;
@@ -100,7 +97,6 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  max-width: 320px;
   border-top: 1px solid var(--ag-rule-soft);
 }
 .market-overview__signal {
@@ -118,31 +114,223 @@
   font-size: var(--ag-fs-micro);
   letter-spacing: 0.04em;
 }
-/* 信号色只表达语义（§30）：偏高/显著用 clay，关注用 blue-grey。 */
 .market-overview__state[data-signal="WATCH"] { color: var(--ag-blue-grey); }
 .market-overview__state[data-signal="HIGH"] { color: var(--ag-clay-soft); }
 .market-overview__state[data-signal="VERY_HIGH"] { color: var(--ag-clay); }
 
-/* 面板整体不拦截地图交互，只让真正的链接可点。 */
-.market-overview__cta {
-  pointer-events: auto;
-  align-self: flex-start;
-  margin-top: var(--ag-space-2);
-  padding-bottom: 2px;
-  border-bottom: 1px solid var(--ag-rule-strong);
+/* ---------- 当前城市摘要（右） ---------- */
+.city-summary { display: flex; flex-direction: column; gap: var(--ag-space-3); }
+.city-summary__head { display: flex; flex-direction: column; gap: var(--ag-space-2); }
+.city-summary__title-row { display: flex; align-items: baseline; gap: var(--ag-space-3); flex-wrap: wrap; }
+.city-summary__name {
+  margin: 0;
+  font-family: var(--ag-font-display);
+  font-weight: 400;
+  font-size: clamp(1.5rem, 2vw, 2rem);
+  line-height: var(--ag-lh-heading);
   color: var(--ag-ink);
-  font-size: var(--ag-fs-small);
-  transition: border-color var(--ag-dur-fast) var(--ag-ease);
 }
-.market-overview__cta:hover { border-bottom-color: var(--ag-ink); }
+.city-summary__state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ag-ink-muted);
+  font-family: var(--ag-font-mono);
+  font-size: var(--ag-fs-micro);
+  letter-spacing: 0.06em;
+}
+.city-summary__state-mark {
+  width: 9px;
+  height: 9px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  background: transparent;
+}
+/* 四态：颜色之外还有形状（=实心 / ◆菱形 / ◐半 / ×叉），不靠颜色单独表达。 */
+.city-summary__state[data-state="normal"] { color: var(--ag-olive); }
+.city-summary__state[data-state="normal"] .city-summary__state-mark { background: currentColor; }
+.city-summary__state[data-state="warning"] { color: var(--ag-clay); }
+.city-summary__state[data-state="warning"] .city-summary__state-mark {
+  border-radius: 0;
+  transform: rotate(45deg);
+}
+.city-summary__state[data-state="partial-data"] { color: var(--ag-blue-grey); }
+.city-summary__state[data-state="partial-data"] .city-summary__state-mark {
+  background: linear-gradient(to right, currentColor 50%, transparent 50%);
+}
+.city-summary__state[data-state="market-data-unavailable"] { color: var(--ag-ink-ghost); }
 
-/* 城市入口的接入状态（§5.2/§22）：在名称右侧给一个极轻的标记。 */
-.liaoning-city { justify-content: space-between; gap: var(--ag-space-3); }
+.city-summary__fields { display: flex; flex-direction: column; gap: 0; margin: 0; }
+.city-summary__field {
+  display: grid;
+  grid-template-columns: minmax(84px, 30%) minmax(0, 1fr);
+  gap: var(--ag-space-2);
+  align-items: baseline;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--ag-rule-soft);
+}
+.city-summary__field:first-child { border-top: 1px solid var(--ag-rule-soft); }
+.city-summary__field dt {
+  color: var(--ag-ink-muted);
+  font-family: var(--ag-font-mono);
+  font-size: var(--ag-fs-micro);
+  letter-spacing: 0.05em;
+}
+.city-summary__field dd {
+  margin: 0;
+  color: var(--ag-ink-soft);
+  font-size: var(--ag-fs-small);
+  line-height: 1.5;
+}
+.city-summary__signal { display: block; color: var(--ag-ink); }
+.city-summary__signal[data-signal="WATCH"] { color: var(--ag-blue-grey); }
+.city-summary__signal[data-signal="HIGH"] { color: var(--ag-clay-soft); }
+.city-summary__signal[data-signal="VERY_HIGH"] { color: var(--ag-clay); }
+.city-summary__notable { display: block; margin-top: 2px; color: var(--ag-ink-muted); font-size: var(--ag-fs-meta); }
+.city-summary__limit {
+  margin: 0;
+  color: var(--ag-ink-muted);
+  font-size: var(--ag-fs-meta);
+  line-height: 1.55;
+  border-left: 2px solid var(--ag-rule);
+  padding-left: var(--ag-space-3);
+}
+.city-summary__actions { display: flex; flex-wrap: wrap; gap: var(--ag-space-2); }
+.city-summary__actions .ag-button { min-height: 38px; padding: 0 var(--ag-space-4); }
+
+/* ---------- 六城状态（也是键盘可用的城市选择器） ---------- */
+.liaoning-city-rail { display: flex; flex-direction: column; gap: var(--ag-space-2); padding-top: var(--ag-space-3); border-top: 1px solid var(--ag-rule); }
+.liaoning-city-rail__list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.liaoning-city-rail__item { min-width: 0; }
+.liaoning-city {
+  display: flex;
+  align-items: center;
+  gap: var(--ag-space-2);
+  width: 100%;
+  min-height: 30px;
+  padding: 3px 6px;
+  line-height: 1.3;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ag-ink-muted);
+  font-size: var(--ag-fs-small);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background var(--ag-dur-fast) var(--ag-ease),
+    color var(--ag-dur-fast) var(--ag-ease);
+}
+.liaoning-city__mark { flex: none; font-size: 9px; line-height: 1; color: var(--ag-ink-ghost); }
+.liaoning-city__mark[data-state="normal"] { color: var(--ag-olive); }
+.liaoning-city__mark[data-state="warning"] { color: var(--ag-clay); }
+.liaoning-city__mark[data-state="partial-data"] { color: var(--ag-blue-grey); }
+.liaoning-city__name { color: var(--ag-ink); }
 .liaoning-city__state {
-  color: var(--ag-ink-ghost);
+  margin-left: auto;
+  color: var(--ag-ink-faint);
+  font-family: var(--ag-font-mono);
+  font-size: var(--ag-fs-micro);
+  letter-spacing: 0.03em;
+}
+.liaoning-city:hover,
+.liaoning-city[data-hovered] { background: var(--ag-hover); color: var(--ag-ink); }
+.liaoning-city[data-selected] { background: var(--ag-selected); }
+.liaoning-city[data-selected] .liaoning-city__name { font-weight: 600; }
+.liaoning-city:focus-visible { outline: 2px solid var(--ag-ink); outline-offset: -2px; }
+
+/* ---------- 底部：主题研究 ---------- */
+.liaoning-page__themes {
+  pointer-events: auto;
+  padding: var(--ag-space-4) var(--ag-gutter) clamp(16px, 3vh, 30px);
+  border-top: 1px solid var(--ag-rule-soft);
+  /* 让地图在文字上方自然收束，而不是被一条硬边切断。 */
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--ag-paper) 0%, transparent), var(--ag-paper) 22%);
+}
+.liaoning-page__theme-intro { display: flex; align-items: baseline; gap: var(--ag-space-4); margin-bottom: var(--ag-space-3); }
+.liaoning-page__theme-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ag-space-4) var(--ag-space-7);
+}
+.province-theme { display: flex; flex-direction: column; gap: var(--ag-space-2); min-width: 0; }
+.province-theme__head { display: flex; align-items: baseline; gap: var(--ag-space-2); flex-wrap: wrap; padding-bottom: var(--ag-space-2); border-bottom: 1px solid var(--ag-rule); }
+.province-theme__title { margin: 0; font-family: var(--ag-font-display); font-weight: 400; font-size: 1.1rem; letter-spacing: 0; color: var(--ag-ink); }
+.province-theme__body { display: flex; flex-direction: column; gap: 5px; }
+.province-theme__meta { display: flex; flex-direction: column; gap: 2px; margin: 0; }
+.province-theme__status {
+  color: var(--ag-ink-faint);
   font-family: var(--ag-font-mono);
   font-size: var(--ag-fs-micro);
   letter-spacing: 0.04em;
 }
-.liaoning-city[data-available] .liaoning-city__name { color: var(--ag-ink); }
+.province-theme__status[data-status="NOT_SUPPORTED"] { color: var(--ag-clay); }
+.province-theme__mtitle { color: var(--ag-ink); font-size: var(--ag-fs-small); line-height: 1.4; }
+.province-theme__summary {
+  margin: 0;
+  color: var(--ag-ink-soft);
+  font-size: var(--ag-fs-small);
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.province-theme__empty { margin: 0; color: var(--ag-ink-faint); font-size: var(--ag-fs-small); line-height: 1.6; }
 
+/* ---------- 地图标签上的状态标记（颜色之外的第二重表达） ---------- */
+.liaoning-label__state {
+  font-family: var(--ag-font-mono);
+  font-style: normal;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  padding-left: 4px;
+  margin-left: 4px;
+  border-left: 1px solid var(--ag-rule);
+  color: var(--ag-ink-faint);
+}
+.liaoning-label__state[data-state="warning"] { color: var(--ag-clay); }
+.liaoning-label__state[data-state="partial-data"] { color: var(--ag-blue-grey); }
+.liaoning-label__state[data-state="market-data-unavailable"] { color: var(--ag-ink-ghost); }
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 1180px) {
+  .liaoning-page__stage { grid-template-columns: minmax(230px, 26vw) minmax(0, 1fr) minmax(240px, 26vw); gap: var(--ag-space-6); }
+}
+/* 1100 以下四栏主题太窄：收到两栏，宁可高一点也不要挤成竖条。 */
+@media (max-width: 1100px) {
+  .liaoning-page__theme-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 1023px) {
+  /* 窄屏不再给地图留出中间列，两块面板并排，地图退到背景。 */
+  .liaoning-page__stage { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .liaoning-page__window { display: none; }
+}
+@media (max-width: 719px) {
+  .liaoning-page__stage { grid-template-columns: minmax(0, 1fr); }
+  .liaoning-page__current { max-width: none; }
+  .city-summary__field { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .liaoning-page__theme-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---------- 动效：只服务状态变化 ---------- */
+@keyframes ag-liaoning-state-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.city-summary__name,
+.city-summary__fields { animation: ag-liaoning-state-in var(--ag-dur-normal) var(--ag-ease) backwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  .city-summary__name,
+  .city-summary__fields { animation: none; }
+  .liaoning-city { transition: none; }
+}

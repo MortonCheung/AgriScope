@@ -1,10 +1,8 @@
 import { useDaily } from '../daily/useDaily';
-import { ROUTES } from '../../app/routes';
-import { TransitionLink } from '../../app/pageNavigation';
 import type { DailyCrop, DailySignal } from '../../domain/daily/types';
 
 /**
- * 辽宁农业态势的「当前市场」摘要（V3 §5）。
+ * 左栏「当前市场」（规范 §8）：回答"现在发生了什么"。
  *
  * 诚实边界（§44/§48/§69）：
  *   目前唯一接入的日度市场源是**沈阳批发市场**，其余城市没有可比日度价格。
@@ -46,7 +44,7 @@ export function MarketOverview() {
 
   return (
     <section className="market-overview" aria-label="当前市场">
-      <p className="ag-label">当前市场 · 沈阳批发</p>
+      <p className="ag-label">当前市场 · 沈阳批发（全区唯一在产日度市场源）</p>
 
       {state.status === 'loading' && (
         <div className="ag-state ag-state--loading" aria-hidden="true">
@@ -91,8 +89,6 @@ export function MarketOverview() {
           <p className="ag-caption">市场状态用于提示关注，不构成买卖建议。</p>
         </>
       )}
-
-      <TransitionLink className="market-overview__cta" to={ROUTES.decisionCenter}>进入决策中心 →</TransitionLink>
     </section>
   );
 }

@@ -4,19 +4,25 @@ import { DataTable } from '../research-v2/DataTable';
 import { REANALYSIS_NOTE, VOLUME_UNIT_NOTE } from '../../domain/research/v2/metrics';
 import { lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { ScenarioSimulation } from './ScenarioSimulation';
+import { useAppContext } from '../../app/context/appContext';
+import { EvidenceDrawer } from '../evidence/EvidenceDrawer';
 import './scenario-page.css';
+
 const DecisionStressPage=lazy(()=>import('../decision/DecisionStressPage').then(m=>({default:m.DecisionStressPage})));
 
 /**
- * 推演（本轮 §30）：暴雨专题与情景实验合并为唯一入口。
+ * 推演 / 情景模拟（本轮 §30 / V3 §16）。
  *
- * 与研究树是两个产品入口，但数据同源：
- *   研究 —— 历史与 2026 事件本身；推演 —— 改变条件看平行情景。
- * 本节**不是预测**：研究侧的门控结论（未达可靠反事实预测门槛）原样保留在首屏。
+ * 三个入口共用一个路由 `/scenario-lab`：
+ *   · 默认            → 决策中心 · 情景模拟（现实 vs 模拟；§16）
+ *   · ?mode=decision  → 决策压力页（既有）
+ *   · ?mode=research  → 2026 沈阳暴雨平行情景表（既有研究推演，§30）
+ *
+ * 研究侧的门控结论（未达可靠反事实预测门槛）原样保留在首屏；
  * 列名走受控中文映射，`gate_min_r2` / `severity_mult` 这类工程字段不出现在界面上。
  */
 
-/** 站点级页面：城市从 catalog 注册表取，不把 shenyang 写死在组件里。 */
 const CITY_ID = listCatalogCityIds()[0] ?? '';
 
 const SCENARIOS = [
@@ -35,9 +41,8 @@ function ScenarioBlock({ file, caption }: { file: string; caption: string }) {
   );
 }
 
-export function ScenarioPage() {
-  const [params]=useSearchParams();
-  if(params.get('mode')==='decision')return <Suspense fallback={<main className="scenario" role="status">情景加载中</main>}><DecisionStressPage/></Suspense>;
+/** 既有：沈阳暴雨平行情景表（研究推演）。 */
+function RainstormResearch() {
   return (
     <main className="scenario">
       <header className="scenario__head">
@@ -50,5 +55,38 @@ export function ScenarioPage() {
         <ScenarioBlock key={scenario.file} file={scenario.file} caption={scenario.caption} />
       ))}
     </main>
+  );
+}
+
+/**
+ * 开发期证据抽屉自检入口：决策中心尚未接线时可在此打开 Drawer（仅 DEV）。
+ * 不进 URL，不进生产构建。
+ */
+function EvidenceDevEntry() {
+  const cityId = useAppContext((state) => state.cityId);
+  const [params, setParams] = useSearchParams();
+  const open = params.get('evidence') === 'open';
+  return (
+    <p className="scenario__note">
+      <button type="button" className="ag-button" onClick={() => setParams((previous) => { const next = new URLSearchParams(previous); next.set('evidence', open ? 'closed' : 'open'); return next; })}>
+        {open ? '关闭证据面板（开发自检）' : '打开证据面板（开发自检）'}
+      </button>
+      <EvidenceDrawer open={open} onClose={() => setParams((previous) => { const next = new URLSearchParams(previous); next.delete('evidence'); return next; })} context={{ cityId, topic: 'forecast' }} />
+    </p>
+  );
+}
+
+export function ScenarioPage() {
+  const [params] = useSearchParams();
+  const mode = params.get('mode');
+  if (mode === 'decision') {
+    return <Suspense fallback={<main className="scenario" role="status">情景加载中</main>}><DecisionStressPage /></Suspense>;
+  }
+  if (mode === 'research') return <RainstormResearch />;
+  return (
+    <>
+      <ScenarioSimulation />
+      {import.meta.env.DEV && <div className="scenario-sim__dev"><EvidenceDevEntry /></div>}
+    </>
   );
 }

@@ -15,6 +15,9 @@ import { SketchPaper } from '../opening/SketchPaper';
 import { shouldMountSketchPaper } from '../opening/sketchMetrics';
 import { useOpeningStore, type OpeningPhase } from '../opening/openingPhase';
 import { useSpatialStageStore } from '../spatial/spatialStageStore';
+import { useAppContext } from '../../app/context/appContext';
+import { useCityMarketStates } from './useCityMarketStates';
+import { CITY_STATE_LABEL, type CityDataStateId } from './cityMarketState';
 
 export interface LiaoningCanvasProps {
   mode: 'opening' | 'province' | 'city';
@@ -218,6 +221,29 @@ function SceneContents({ mode, focusCityId, hoveredCityId, onHoverCity, onSelect
   /** Opening 阶段只在本路由生效：直接深链 /liaoning 时必须给完整沙盘。 */
   const phase: OpeningPhase = mode === 'opening' ? openingPhase : 'ready';
 
+  /**
+   * 真实市场状态（规范 §8）：只在省域路由订阅，城市/开场路由不请求。
+   * 与 LiaoningPage 共用同一份模块级缓存，不会重复打接口。
+   */
+  const market = useCityMarketStates(mode === 'province');
+  const selectedCityId = useAppContext((state) => state.cityId);
+  /** 非研究城市没有能力数据，保持 normal，不参与六态表达。 */
+  const dataStateFor = (cityId: string): CityDataStateId =>
+    studyIds.has(cityId) ? market.views[cityId]?.state ?? 'normal' : 'normal';
+
+  /**
+   * 省域路由下点击城市：只更新全局 City Context（与 ContextBar 同一份状态），
+   * **不立即跳页** —— 右侧摘要给出「进入决策 / 查看研究」两个显式入口。
+   * 其他路由（城市页 / 开场）保持原有导航行为，非研究城市也照旧进入城市页。
+   */
+  const handleSelectCity = (cityId: string) => {
+    if (mode === 'province' && studyIds.has(cityId)) {
+      useAppContext.getState().setCity(cityId);
+      return;
+    }
+    onSelectCity(cityId);
+  };
+
   const focusPoint = useMemo(() => {
     if (!model) return new THREE.Vector3();
     const city = model.cities.find((entry) => entry.id === focusCityId);
@@ -324,9 +350,11 @@ function SceneContents({ mode, focusCityId, hoveredCityId, onHoverCity, onSelect
               key={city.id}
               city={city}
               emphasis={emphasisFor(city.id, city.hasResearch)}
+              dataState={dataStateFor(city.id)}
+              selected={mode === 'province' && selectedCityId === city.id}
               hovered={hoveredCityId === city.id}
               onHover={onHoverCity}
-              onSelect={onSelectCity}
+              onSelect={handleSelectCity}
               reducedMotion={reducedMotion}
               phase={phase}
               assemblyRef={assemblyRef}
@@ -338,8 +366,9 @@ function SceneContents({ mode, focusCityId, hoveredCityId, onHoverCity, onSelect
       </group>
       {/* 草稿阶段不出现任何城市 Label / 按钮 / 研究状态（§25） */}
       {mode !== 'opening' && model.cities.map((city) => {
-        const active = hoveredCityId === city.id || focusCityId === city.id;
+        const active = hoveredCityId === city.id || (mode === 'province' && selectedCityId === city.id);
         if (!city.hasResearch && !studyIds.has(city.id) && !active) return null;
+        const dataState = dataStateFor(city.id);
         return (
           <Html
             key={`label-${city.id}`}
@@ -348,9 +377,17 @@ function SceneContents({ mode, focusCityId, hoveredCityId, onHoverCity, onSelect
             zIndexRange={[3, 0]}
             style={{ pointerEvents: 'none' }}
           >
-            <span className={`liaoning-label${active ? ' is-active' : ''}${city.hasResearch ? ' is-research' : ''}`}>
+            <span
+              className={`liaoning-label${active ? ' is-active' : ''}${city.hasResearch ? ' is-research' : ''}`}
+              data-state={dataState !== 'normal' ? dataState : undefined}
+            >
               {city.shortName}
               {city.hasResearch && <em>研究</em>}
+              {dataState !== 'normal' && (
+                <span className="liaoning-label__state" data-state={dataState}>
+                  {CITY_STATE_LABEL[dataState]}
+                </span>
+              )}
             </span>
           </Html>
         );

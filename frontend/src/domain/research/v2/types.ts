@@ -88,3 +88,40 @@ export interface V2SyncReport {
   };
   exportContracts: { article_end_marker_required: boolean; no_substring_summary: boolean };
 }
+
+/**
+ * 研究总索引（`/api/research/catalog`）。
+ *
+ * 由 `AgriScope/pipelines/publishing/publish_research.py` 从真实 article.json 派生，
+ * **不含正文**，因此研究中心首页可以只加载它。后端不会补造 article.json 里
+ * 不存在的字段（例如 `capabilities` / `updated_at` 就没有）。
+ */
+export interface V2CatalogModule {
+  module_id: string;
+  title: string;
+  status: string;
+  /** 取 `frontend_summary`，缺失时取 `abstract`；两者都缺失为 null。 */
+  summary: string | null;
+  article_path: string;
+  /** article.json 顶层是否真的带 `explorer`（沈阳历史载荷为 false）。 */
+  explorer_available: boolean;
+  tables: string[];
+  figures: string[];
+  sources: string[];
+}
+
+export interface V2CatalogCity {
+  city: string;
+  city_name: string;
+  n_modules: number;
+  n_sources?: number;
+  modules: V2CatalogModule[];
+}
+
+export interface V2Catalog {
+  schema_version: string;
+  generated_by: string;
+  n_cities: number;
+  n_modules: number;
+  cities: V2CatalogCity[];
+}

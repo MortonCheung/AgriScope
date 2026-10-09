@@ -32,7 +32,7 @@ from . import runtime_snapshot as RS
 from .dependencies import get_engine, new_request_id
 from .errors import ApiError, ErrorCode, error_body
 from .responses import SafeJSONResponse
-from .routes import capabilities, daily, decision, forecast, health, meta
+from .routes import capabilities, daily, decision, forecast, health, meta, research
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -48,6 +48,7 @@ TAGS_METADATA = [
     {"name": "decision", "description": "Final Model 推理（评估 / 压力）"},
     {"name": "daily", "description": "Daily 市场脉搏快照"},
     {"name": "forecast", "description": "Long-Horizon 长期预测（情景化，独立于 /api/decision）"},
+    {"name": "research", "description": "六城研究只读产物（研究中心证据层，路径白名单）"},
 ]
 
 
@@ -148,6 +149,7 @@ app.include_router(capabilities.router)
 app.include_router(decision.router)
 app.include_router(daily.router)
 app.include_router(forecast.router)
+app.include_router(research.router)
 
 
 @app.get("/", include_in_schema=False)

@@ -26,9 +26,37 @@ export const ENTRY_AZIMUTH_ORBIT_DEGREES = 118;
  */
 export const PROVINCE_ROOT_ROTATION = 0;
 
-/** 正式省域沙盘机位：/liaoning 与 Opening 终点共用。 */
+/**
+ * 正式省域沙盘机位：/liaoning 与 Opening 终点共用（规范 §8 取景）。
+ *
+ * 态势页左右各有一栏信息、底部有一条主题区。为了仍然让辽宁是画面主角、
+ * 又六个研究城市都落在两侧栏目之间的空白里，这里做两件事：
+ *   · `BACK` 把相机沿视野轴推远，为两侧栏目与底部主题区让出空间；
+ *   · `LIFT` 把视点再往下压一点点，相机与视点同步平移、视野方向不变，
+ *     于是整个辽宁在画面里**整体上移**，大连（最南）不会被底部主题区压住。
+ *
+ * 关键：所有量都以**省域半径为单位**（含视点高度），
+ * 因此 `maxGroundHalfSpan`（草稿纸覆盖证明）在任意半径下结论一致 —— 取景可调，
+ * 但"草稿纸平面必须盖住可见地面"这条不变。
+ */
 export function provinceView(radius: number): CameraPose {
-  return { position: [radius * 0.04, radius * 1.08, radius * 1.36], target: [0, 2, 0] };
+  /** 基准视点高度（× 半径）：略高于实体顶面（SOLID_DEPTH=1.8）。 */
+  const BASE_TARGET_Y = 0.085;
+  /** 画面整体上移量（× 半径）：视点下压，相机随之平移。 */
+  const LIFT = 0.28;
+  /** 相机沿视野轴后撤系数（>1 即推远）。 */
+  const BACK = 1.6;
+  const baseTarget = [0, radius * BASE_TARGET_Y, 0] as const;
+  const basePosition = [radius * 0.04, radius * 1.08, radius * 1.36] as const;
+  const target = [0, radius * (BASE_TARGET_Y - LIFT), 0] as const;
+  return {
+    position: [
+      target[0] + (basePosition[0] - baseTarget[0]) * BACK,
+      target[1] + (basePosition[1] - baseTarget[1]) * BACK,
+      target[2] + (basePosition[2] - baseTarget[2]) * BACK,
+    ],
+    target: [target[0], target[1], target[2]],
+  };
 }
 
 /**

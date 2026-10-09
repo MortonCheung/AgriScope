@@ -6,6 +6,7 @@ import { SCENE_TOKENS } from '../../design/sceneTokens';
 import { MOTION_DURATION } from '../../design/motion';
 import { useAnimationFrames } from './useAnimationFrames';
 import type { OpeningPhase } from '../opening/openingPhase';
+import type { CityDataStateId } from './cityMarketState';
 
 export const SOLID_DEPTH = 1.8;
 /** 抬起插值系数与收敛阈值：不收敛到阈值内就持续请求帧。 */
@@ -13,6 +14,9 @@ const LIFT_LERP = 0.14;
 const LIFT_EPSILON = 0.001;
 /** 颜色插值系数：hover 不改材质、只让当前色缓慢逼近目标色（V3 §43）。 */
 const COLOR_LERP = 0.1;
+/** 描边透明度插值系数（hover 增强 / 降权用）。 */
+const LINE_LERP = 0.14;
+const LINE_EPSILON = 0.004;
 /** 下落起始倾角（V4 §三十）：±2°。 */
 const DROP_TILT_DEG = 2;
 /** 单块区块在组装时间轴上占的下降时长；配合错峰窗口让最后一批在 0.90 落定（V5 §59）。 */
@@ -39,6 +43,10 @@ function easeOutBack(t: number): number {
 export interface CitySolidMeshProps {
   city: CitySolid;
   emphasis: 'base' | 'study' | 'focus' | 'dim';
+  /** 由真实市场数据推导的静态状态（规范 §8 六态里的四种静态态）。 */
+  dataState: CityDataStateId;
+  /** 是否为当前城市上下文（全局选择器 / 上一次点击）。 */
+  selected: boolean;
   hovered: boolean;
   onHover: (cityId: string | null) => void;
   onSelect: (cityId: string) => void;
@@ -53,7 +61,7 @@ export interface CitySolidMeshProps {
   dropHeight: number;
 }
 
-const FILL: Record<CitySolidMeshProps['emphasis'], THREE.Color> = {
+const FILL: Record<'base' | 'study' | 'focus' | 'dim', THREE.Color> = {
   base: new THREE.Color(SCENE_TOKENS.cityFill.base),
   study: new THREE.Color(SCENE_TOKENS.cityFill.study),
   focus: new THREE.Color(SCENE_TOKENS.cityFill.focus),
@@ -61,17 +69,31 @@ const FILL: Record<CitySolidMeshProps['emphasis'], THREE.Color> = {
 };
 
 /**
+ * 数据状态的填充色（暖白体系内的低饱和色，与 tokens.css 语义色一致）：
+ *   warning                  → clay-soft（风险）
+ *   partial-data             → blue-grey-soft（信息 / 部分）
+ *   market-data-unavailable  → 纸灰（退后，读作"没有内容"）
+ * 色之外还有标签与文案，颜色不是唯一表达。
+ */
+const STATE_FILL: Record<Exclude<CityDataStateId, 'normal'>, THREE.Color> = {
+  warning: new THREE.Color('#cdb6a4'),
+  'partial-data': new THREE.Color('#c7cfca'),
+  'market-data-unavailable': new THREE.Color('#e9e6de'),
+};
+
+/** 描边透明度：hover 增强、选中次之、其他城市降权。 */
+const LINE_OPACITY = { hover: 1, selected: 0.82, base: 0.6, dim: 0.28 } as const;
+
+/**
  * 单块城市实体：挤出几何 + 极细分隔线。
  *
  * 层次（V4 §三十/§三十二/§三十四）：
  *   外层 drop group —— 组装时承载"从空间落下"的位移、倾角与淡入；
- *   内层 lift group —— 承载 hover 抬起，与下落互不干扰。
+ *   内层 lift group —— 承载 hover / selected 抬起，与下落互不干扰。
  * 两层的存在让同一块 Mesh 从 Opening 一直沿用到正式沙盘，切路由时不重挂。
- *
- * Hover 的视觉权重按 V3 §45 分配：抬升为主，颜色极轻地插值过去（§43/§44）。
  */
 export function CitySolidMesh({
-  city, emphasis, hovered, onHover, onSelect, reducedMotion,
+  city, emphasis, dataState, selected, hovered, onHover, onSelect, reducedMotion,
   phase, assemblyRef, dropDelay, dropHeight,
 }: CitySolidMeshProps) {
   const dropGroup = useRef<THREE.Group>(null);
@@ -110,22 +132,39 @@ export function CitySolidMesh({
     color: SCENE_TOKENS.cityFill.base, roughness: 0.92, metalness: 0, transparent: false, opacity: 1,
   }), []);
   const line = useMemo(() => new THREE.LineBasicMaterial({
-    color: SCENE_TOKENS.outline, transparent: true, opacity: 1,
+    color: SCENE_TOKENS.outline, transparent: true, opacity: LINE_OPACITY.base,
   }), []);
 
   useEffect(() => () => { geometry.dispose(); edges.forEach((edge) => edge.dispose()); surface.dispose(); line.dispose(); },
     [edges, geometry, line, surface]);
 
-  const target = hovered ? SOLID_DEPTH * 0.5 : 0;
-  /** 目标色是模块级常量，引用稳定，适合直接作为 lerp 的终点（§43）。 */
-  const targetFill = hovered ? FILL.focus : FILL[emphasis];
+  // ---- 目标值：hover 抬起 > selected 抬起 > 静止 ----
+  const targetLift = hovered ? SOLID_DEPTH * 0.5 : selected ? SOLID_DEPTH * 0.22 : 0;
+  const lineTarget: number = hovered
+    ? LINE_OPACITY.hover
+    : emphasis === 'dim'
+      ? LINE_OPACITY.dim
+      : selected
+        ? LINE_OPACITY.selected
+        : LINE_OPACITY.base;
+
   /**
-   * 抬起与换色都是"由 hover 驱动"的插值。画布是 demand 帧循环：
+   * 目标色是模块级常量，引用稳定，适合直接作为 lerp 的终点（§43）。
+   * 优先级：hover > 被其他城市降权 > 数据状态 > 常态强调。
+   */
+  const targetFill =
+    hovered ? FILL.focus
+      : emphasis === 'dim' ? FILL.dim
+        : dataState !== 'normal' ? STATE_FILL[dataState]
+          : FILL[emphasis];
+
+  /**
+   * 抬起、换色、描边都不再由某一帧决定：画布是 demand 帧循环，
    * 没有帧就没有插值，因此每次目标变化都重新开一个有限时长的帧窗口。
    */
-  const [liftNonce, setLiftNonce] = useState(0);
-  useEffect(() => { setLiftNonce((value) => value + 1); }, [target, emphasis]);
-  useAnimationFrames(!reducedMotion && liftNonce > 0, MOTION_DURATION.slow * 3, liftNonce);
+  const [motionNonce, setMotionNonce] = useState(0);
+  useEffect(() => { setMotionNonce((value) => value + 1); }, [targetLift, emphasis, dataState, lineTarget]);
+  useAnimationFrames(!reducedMotion && motionNonce > 0, MOTION_DURATION.slow * 3, motionNonce);
 
   useFrame(() => {
     const drop = dropGroup.current;
@@ -161,19 +200,24 @@ export function CitySolidMesh({
       drop.rotation.x = 0;
       drop.rotation.z = 0;
       surface.opacity = 1;
-      line.opacity = 1;
+      // 描边透明度向目标收敛（hover 增强 / 其他城市降权）。
+      if (reducedMotion) line.opacity = lineTarget;
+      else {
+        const lineDelta = lineTarget - line.opacity;
+        line.opacity = Math.abs(lineDelta) < LINE_EPSILON ? lineTarget : line.opacity + lineDelta * LINE_LERP;
+      }
     }
 
     // ---- 颜色插值：不再瞬间换色（§43）。首帧直接落位，避免挂载淡入。 ----
     if (!seeded.current || reducedMotion) { surface.color.copy(targetFill); seeded.current = true; }
     else surface.color.lerp(targetFill, COLOR_LERP);
 
-    // ---- hover 抬起（内层，与下落互不干扰） ----
+    // ---- hover / selected 抬起（内层，与下落互不干扰） ----
     const lift = liftGroup.current;
     if (!lift) return;
-    if (reducedMotion) { lift.position.y = target; return; }
-    const delta = target - lift.position.y;
-    if (Math.abs(delta) < LIFT_EPSILON) { lift.position.y = target; return; }
+    if (reducedMotion) { lift.position.y = targetLift; return; }
+    const delta = targetLift - lift.position.y;
+    if (Math.abs(delta) < LIFT_EPSILON) { lift.position.y = targetLift; return; }
     lift.position.y += delta * LIFT_LERP;
   });
 

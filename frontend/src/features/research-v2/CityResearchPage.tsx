@@ -7,6 +7,7 @@ import { requestCityExit } from '../spatial/cityExit';
 import { useArticle } from './useV2';
 import { ResearchTree } from './ResearchTree';
 import { CityResearchPreview } from './CityResearchPreview';
+import { CityModulesWorkspace } from './CityModulesWorkspace';
 import { TransitionLink } from '../../app/pageNavigation';
 import { ROUTES } from '../../app/routes';
 import { DailyContext } from '../daily/DailyContext';
@@ -103,7 +104,10 @@ export function CityResearchPage() {
             </section>
           </div>
         ) : (
-          <div className="city-research__empty"><p>研究内容待接入</p><TransitionLink className="city-research__decision" to={`${ROUTES.decision(cityId)}?view=input`}>比较种植选择 →</TransitionLink></div>
+          /* 无策展树的城市（朝阳/锦州/大连/丹东/铁岭/跨城市）：走模块级工作台。
+             它们的研究已正式产出，只是研究侧没有导出沈阳那样的「方向→研究点」结构，
+             因此如实只呈现模块、交互探索与完整文章，绝不编造研究点。 */
+          <CityModulesWorkspace cityId={cityId} />
         )}
       </div>
     </main>

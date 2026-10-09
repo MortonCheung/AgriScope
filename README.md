@@ -9,7 +9,7 @@
 
 正式销售窗口见 `HARVEST_WINDOW_REPORT.md`。H/上市日期由用户输入；没有可信沈阳日粒度物候，不按作物名猜生育期。价格是同口径批发市场价，不等于农户实际到手价。
 
-历史 2024/2025/2026 已参与 RC1 选型。V2 重新清洗标签并分离选择/校准/历史核验，但不能把已查看历史恢复为 untouched：最终未见成绩为空，当前长期结果只作低可信度情景；150/180 天为探索结果。LLM 数值增益仍未完成真实 API 评估，不参与正式数值。详细证据以 `RC2_FINAL_REPORT.md` 与 `RC2_FREEZE_GATE.md` 为准。
+历史 2024/2025/2026 已参与 RC1 选型。V2 重新清洗标签并分离选择/校准/历史核验，但不能把已查看历史恢复为 untouched：最终未见成绩为空，当前长期结果只作低可信度情景；150/180 天为探索结果。LLM 已完成**真实回溯评估**（`REAL_LLM_EVALUATED_RETROSPECTIVE_ONLY`，356 次真实调用 / 360 条有效响应 / 0 失败）：带 PIT 上下文的 context 方式相对基线平均 **+4.62pp**，匿名盲测 **−4.71pp（无增益）**，Hybrid A/B/C 均未过门禁（`HYBRID_NO_GAIN_STATISTICAL_FALLBACK_ACTIVE`）。全部 LLM/Hybrid 数值标 `RESEARCH_ONLY`，**不进入生产 Registry**，决策中心不得用 LLM 作为正式生产模型。详细证据以 `RC3_FINAL_REPORT.md`、`LLM_REAL_EVALUATION_REPORT.md`、`LLM_ABLATION_V2_REPORT.md`、`HYBRID_V2_REPORT.md` 与 `RC3_TEST_REPORT.md` 为准。
 
 ## 目录
 

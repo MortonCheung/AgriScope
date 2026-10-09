@@ -82,3 +82,64 @@
   .research-center__city,
   .research-center__asset { grid-template-columns: minmax(0, 1fr); gap: 6px; }
 }
+
+/* LLM 评估证据（V3 §29）：四件事 + 公平对比表 + 决策中心红线 */
+.research-center__llm { display: flex; flex-direction: column; gap: var(--ag-space-6); margin-top: var(--ag-space-5); }
+.research-center__llm-facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ag-space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.research-center__llm-fact {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: var(--ag-space-4);
+  border-top: 1px solid var(--ag-rule-soft);
+}
+.research-center__llm-fact-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ag-space-4);
+  color: var(--ag-ink);
+  font-size: var(--ag-fs-lead);
+}
+.research-center__llm-fact-value {
+  color: var(--ag-ink);
+  font-family: var(--ag-font-mono);
+  font-size: var(--ag-fs-small);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.research-center__llm-fact-body { color: var(--ag-ink-soft); font-size: var(--ag-fs-body); }
+.research-center__llm-redline {
+  margin: 0;
+  padding: var(--ag-space-3) var(--ag-space-4);
+  border-left: 2px solid var(--ag-rule-strong);
+  color: var(--ag-ink);
+  font-size: var(--ag-fs-body);
+}
+.research-center__llm-subtitle { margin: 0; color: var(--ag-ink); font-size: var(--ag-fs-lead); }
+.research-center__llm-fair { display: flex; flex-direction: column; gap: var(--ag-space-3); }
+.research-center__llm-table { width: 100%; border-collapse: collapse; font-size: var(--ag-fs-small); }
+.research-center__llm-table th,
+.research-center__llm-table td {
+  padding: var(--ag-space-3) var(--ag-space-3);
+  text-align: right;
+  border-bottom: 1px solid var(--ag-rule-soft);
+}
+.research-center__llm-table th:first-child,
+.research-center__llm-table td:first-child { text-align: left; }
+.research-center__llm-table thead th {
+  color: var(--ag-ink-muted);
+  font-weight: 500;
+  font-family: var(--ag-font-mono);
+  font-size: var(--ag-fs-micro);
+  letter-spacing: 0.04em;
+}
+.research-center__llm-table tbody th { color: var(--ag-ink); font-weight: 500; }
+.research-center__llm-table tbody td { color: var(--ag-ink-soft); font-family: var(--ag-font-mono); }

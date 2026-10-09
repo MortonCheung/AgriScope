@@ -1,25 +1,29 @@
 import { parseCsv } from '../../../services/csv';
-import type { V2Article, V2Manifest, V2Source, V2SyncReport, V2Table } from './types';
+import type { V2Article, V2Catalog, V2Manifest, V2Source, V2SyncReport, V2Table } from './types';
 
 export type { V2Table };
 
 /**
  * 研究载荷访问（本轮 §5/§6：**城市无关**）。
  *
- * 关键变化：
+ * 正式数据流（Frontend V3 §6.1）：
+ *   data/research → AgriScope/pipelines/publishing → runtime/research/product/<city>
+ *   → backend 只读 /api/research/* → 本 repository → 前端研究中心
+ *
+ * 关键约定：
  *   1. 路径由 `cityId` 推导，不再把 shenyang 或某个版本号写死：
- *      `/research/<cityId>/manifest.json`、`/articles/<id>.json`、`/tables/<file>`、`/figures/<file>`
+ *      `/api/research/<cityId>/manifest.json`、`/articles/<id>.json`、`/tables/<file>`、`/figures/<file>`
+ *      后端对 city / article id / 文件名做**路径白名单**校验，前端不做任何拼接推断。
  *   2. 文章 id 用 **canonical**（A2），由 compat 层解析到当前载荷 id（A02）。
  *      canonical 存在时优先用它；不存在才回退。研究侧完成正式迁移后，回退自然失效。
  *   3. 推演表与研究树分离（§30）：`/scenario/<cityId>/<file>`。
- *
- * 载荷由 `scripts/sync-shenyang-v2.mjs` 生成，前端**只读**，不做任何拼装或推断。
- * 正式文章树（`/research/<cityId>/index.json`）与 `src/domain/research/catalog` 是同一份内容
- * （完整性校验器逐字节比对），应用直接读 catalog，因此树没有加载态。
+ *   4. `frontend/public/research/shenyang` 仅作 **legacy compatibility** 保留，
+ *      不再是正式六城架构；正式架构由 backend 提供六城 + 跨城市。
  */
 
+/** 正式研究载荷根（backend 只读 API）。 */
 export function researchRoot(cityId: string): string {
-  return `/research/${cityId}`;
+  return `/api/research/${cityId}`;
 }
 
 export function scenarioRoot(cityId: string): string {
@@ -89,6 +93,7 @@ function createResource<T>() {
 }
 
 const manifestResource = createResource<V2Manifest>();
+const catalogResource = createResource<V2Catalog>();
 const sourcesResource = createResource<V2Source[]>();
 const articleResource = createResource<V2Article>();
 const tableResource = createResource<V2Table>();
@@ -96,6 +101,15 @@ const reportResource = createResource<V2SyncReport>();
 const referenceResource = createResource<string>();
 /** canonical → 实际命中的载荷 id（只探测一次）。 */
 const resolvedArticleIds = new Map<string, string>();
+
+/** 研究总索引：研究中心首页只需要它，不必加载任何正文。 */
+export function getCatalog(): Promise<V2Catalog> {
+  return catalogResource.load('catalog', () =>
+    fetchJson<V2Catalog>('/api/research/catalog', '研究总索引'));
+}
+export function peekCatalog(): V2Catalog | null {
+  return catalogResource.peek('catalog');
+}
 
 export function getManifest(cityId: string): Promise<V2Manifest> {
   return manifestResource.load(`${cityId}:manifest`, () =>
@@ -199,6 +213,7 @@ export function peekScenarioTable(cityId: string, file: string): V2Table | null 
 }
 
 export const V2Repository = {
+  getCatalog, peekCatalog,
   getManifest, peekManifest,
   getSources, peekSources,
   getArticle, peekArticle,

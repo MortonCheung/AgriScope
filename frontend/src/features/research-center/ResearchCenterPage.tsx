@@ -1,20 +1,22 @@
 import { LIAONING_CITIES, STUDY_CITY_IDS } from '../../domain/geography/cities';
 import { hasCatalog } from '../../domain/research/catalog';
+import { cityEntry, useRuntimeCatalog } from '../../domain/research/runtime/catalog';
 import { ROUTES } from '../../app/routes';
 import { TransitionLink } from '../../app/pageNavigation';
+import { LlmEvidenceSection } from './LlmEvidenceSection';
 import './research-center.css';
 
 /**
- * 研究中心首页（V3 §17/§18/§47/§19）。
+ * 研究中心首页（Frontend V3 §19–§20）。
  *
- * 定位：AgriScope 的**证据库**。它回答的不是"有哪些文章"，而是
+ * 定位：AgriScope 的**证据层**。它回答的不是"有哪些文章"，而是
  * "这个平台凭什么这样判断" —— 数据 → 分析 → 模型 → 验证 → 决策。
  *
- * 诚实原则（§22/§58/§69）：
- *   - 只把**真的能在前端打开**的研究城市做成可进入；
- *   - 研究资产已产出、但前端浏览载荷尚未接入的部分（跨城市 / 综合研究），
- *     如实标注为"待接入"，绝不伪造一个能点进去的空壳。
- *   - 不出现"敬请期待 / Coming soon"式文案。
+ * 诚实原则：
+ *   - 城市是否可进入，以**已发布的研究索引**（`/api/research/catalog`）为准；
+ *   - 索引未就绪时如实显示"六城研究索引载入中"，不预先假定哪座城市可进入；
+ *   - 模块数量与标题来自研究侧真实导出，不由前端编造；
+ *   - 索引读取失败时明确报错，并说明原因，不用占位内容伪装。
  */
 
 const studyCities = STUDY_CITY_IDS
@@ -23,15 +25,12 @@ const studyCities = STUDY_CITY_IDS
 
 const FLOW = ['数据', '分析', '模型', '验证', '决策'] as const;
 
-/** 组织级研究资产：已有正式研究代码与数据，但前端浏览载荷尚未发布到 public/。 */
-const PENDING_ASSETS = [
-  { name: '辽宁六城比较', note: '跨城市生产结构、季节同步与相关性' },
-  { name: '六城综合研究', note: '区域差异与市场周期总研究' },
-];
-
 export function ResearchCenterPage() {
-  const openableCities = studyCities.filter((city) => hasCatalog(city.id));
-  const pendingCities = studyCities.filter((city) => !hasCatalog(city.id));
+  const catalogState = useRuntimeCatalog();
+  const published = catalogState.status === 'ready' ? catalogState.catalog : null;
+  const entryOf = (cityId: string) => (published ? cityEntry(published, cityId) : null);
+  const crossCity = entryOf('cross_city');
+  const openableCount = published ? studyCities.filter((city) => entryOf(city.id)).length : 0;
 
   return (
     <main className="ag-page">
@@ -62,18 +61,35 @@ export function ResearchCenterPage() {
             <p className="ag-body-secondary">六城研究与跨城市研究，逐条给出问题、方法、数据与局限。</p>
           </div>
 
+          {catalogState.status === 'loading' && (
+            <p className="ag-body-secondary" aria-busy="true">六城研究索引载入中</p>
+          )}
+          {catalogState.status === 'error' && (
+            <p className="ag-body" role="alert">
+              研究索引读取失败：{catalogState.message}
+              <span className="ag-caption">（后端未启动或研究产物未发布时会出现该状态；不展示占位数据。）</span>
+            </p>
+          )}
+
           <ul className="research-center__cities">
             {studyCities.map((city) => {
-              const available = hasCatalog(city.id);
+              const entry = entryOf(city.id);
               return (
-                <li key={city.id} className="research-center__city" data-available={available || undefined}>
+                <li key={city.id} className="research-center__city" data-available={entry ? true : undefined}>
                   <span className="research-center__city-name">{city.shortName}</span>
-                  {available ? (
-                    <TransitionLink className="research-center__city-link" to={ROUTES.city(city.id)}>
-                      进入研究 →
-                    </TransitionLink>
+                  {entry ? (
+                    <>
+                      <span className="ag-caption">
+                        {entry.n_modules} 个研究模块 · {hasCatalog(city.id) ? '策展树（方向 → 研究点）' : '模块级工作台'}
+                      </span>
+                      <TransitionLink className="research-center__city-link" to={ROUTES.city(city.id)}>
+                        进入研究 →
+                      </TransitionLink>
+                    </>
                   ) : (
-                    <span className="research-center__city-state">前端浏览载荷待接入</span>
+                    <span className="research-center__city-state">
+                      {catalogState.status === 'loading' ? '读取中…' : '未发布研究载荷'}
+                    </span>
                   )}
                 </li>
               );
@@ -81,19 +97,36 @@ export function ResearchCenterPage() {
           </ul>
 
           <ul className="research-center__assets">
-            {PENDING_ASSETS.map((asset) => (
-              <li key={asset.name} className="research-center__asset">
-                <span className="research-center__asset-name">{asset.name}</span>
-                <span className="research-center__asset-note">{asset.note}</span>
-                <span className="research-center__city-state">前端浏览载荷待接入</span>
+            {crossCity ? (
+              <li className="research-center__asset">
+                <span className="research-center__asset-name">辽宁六城比较与综合研究</span>
+                <span className="research-center__asset-note">
+                  {crossCity.modules.map((module) => module.title).join(' · ')}
+                </span>
+                <TransitionLink className="research-center__city-link" to={ROUTES.city('cross_city')}>
+                  进入研究 →
+                </TransitionLink>
               </li>
-            ))}
+            ) : (
+              <li className="research-center__asset">
+                <span className="research-center__asset-name">辽宁六城比较与综合研究</span>
+                <span className="research-center__asset-note">跨城市生产结构、季节同步与区域差异</span>
+                <span className="research-center__city-state">
+                  {catalogState.status === 'loading' ? '读取中…' : '未发布研究载荷'}
+                </span>
+              </li>
+            )}
           </ul>
 
-          <p className="ag-caption">
-            已接入 {openableCities.length} 座城市；另有 {pendingCities.length} 座城市的研究已产出，浏览载荷发布后在此开放。
-          </p>
+          {published && (
+            <p className="ag-caption">
+              已发布 {published.n_cities} 个研究目录、{published.n_modules} 个模块；其中 {openableCount} 座研究城市可进入。
+              沈阳为策展树，其余为模块级工作台（研究侧仅导出模块与交互元数据时，平台不代其编造研究点）。
+            </p>
+          )}
         </section>
+
+        <LlmEvidenceSection />
 
         <section className="ag-section" aria-labelledby="rc-index">
           <div className="ag-section__head">
