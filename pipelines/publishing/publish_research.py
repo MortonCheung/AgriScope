@@ -1,18 +1,23 @@
 # -*- coding: utf-8 -*-
-"""把运行时研究资产（runtime/research）发布为前端研究产品契约。
+"""把 monorepo 根 data/research 的研究资产发布为前端研究产品契约（runtime/research/product）。
 
 设计原则（见项目架构规范「标准数据流」）：
-  研发态：AgriScope/runtime/research 保存六城与跨城市研究原始产物；
+  研发态：monorepo 根 data/research 保存六城与跨城市研究**完整原始产物**（唯一源，只读）；
   发布态：由本脚本挑选前端真正消费的最小集合写入 runtime/research/product/，
-          并生成轻量总索引 research_catalog.json。
+          并生成轻量总索引 runtime/research/research_catalog.json。
+  **表/图采用超集复制**：article.json 声明的之外，模块目录下全部 tables/*.csv 与
+  figures/*.png 一并发布，以确保前端策展树（如 shenyang-tree.json）引用的表/图
+  也能命中，避免 404；研究源里不存在的文件不做任何伪造。
+  runtime/research 下只保留「产品件」（product/ + research_catalog.json），
+  不再保留任何研究原始副本；原始源始终只有 data/research 一份。
 本脚本只读取源目录、只复制/生成不删除；幂等，可反复执行。
 
 产物（对每个城市目录，含 cross_city）：
   product/<city>/manifest.json      产品清单
   product/<city>/articles/<id>.json 逐字节原样复制自模块 article.json
   product/<city>/sources.json       由 sources/source_registry.csv 转 JSON
-  product/<city>/tables/<file>      文章引用的表格（平铺）
-  product/<city>/figures/<file>     文章引用的图（平铺）
+  product/<city>/tables/<file>      模块目录内全部表格（平铺，**超集**）
+  product/<city>/figures/<file>     模块目录内全部图（平铺，**超集**）
   product/<city>/sync-report.json   本次同步审计报告
   product/<city>/references.md      来源清单（源存在则原样复制，否则据 registry 生成）
   research_catalog.json             全城市轻量总索引（不含正文）
@@ -43,9 +48,12 @@ def project_root() -> Path:
 
 ROOT = project_root()
 AGRISCOPE = ROOT / "AgriScope"
-SOURCE_ROOT = AGRISCOPE / "runtime" / "research"
-OUT_ROOT = SOURCE_ROOT / "product"
-CATALOG_PATH = SOURCE_ROOT / "research_catalog.json"
+# 研究源：monorepo 根 data/research（完整、只读）；不再从 runtime 内的副本读取。
+SOURCE_ROOT = ROOT / "data" / "research"
+# 发布落点：AgriScope/runtime/research（只放产品件，不放研究原始副本）。
+RUNTIME_RESEARCH = AGRISCOPE / "runtime" / "research"
+OUT_ROOT = RUNTIME_RESEARCH / "product"
+CATALOG_PATH = RUNTIME_RESEARCH / "research_catalog.json"
 
 GENERATED_BY = "AgriScope/pipelines/publishing/publish_research.py"
 
@@ -189,6 +197,22 @@ def list_files(directory: Path):
     return {p.name for p in directory.iterdir() if p.is_file()}
 
 
+def copy_module_assets(tables_dir: Path, figures_dir: Path, out_dir: Path) -> None:
+    """把模块目录下**全部** tables/*.csv 与 figures/*.png 复制为产品件（超集）。
+
+    article.json 声明的表/图之外，同样复制模块目录中存在的其它表/图——例如前端
+    策展树引用、但 article 未声明的表（如沈阳 A01_trend.csv）。这样前端任何合法
+    引用都能在 product 命中，消除 404。研究源里不存在的文件不复制、不伪造；
+    cross_city 根与 synthesis 的同名同内容文件由 copy_verbatim 幂等跳过。
+    """
+    if tables_dir.is_dir():
+        for src in sorted(tables_dir.glob("*.csv")):
+            copy_verbatim(src, out_dir / "tables" / src.name)
+    if figures_dir.is_dir():
+        for src in sorted(figures_dir.glob("*.png")):
+            copy_verbatim(src, out_dir / "figures" / src.name)
+
+
 def published_module(city_dir: Path, source: Path, tables_dir: Path, figures_dir: Path,
                      out_dir: Path, referenced_tables: set, referenced_figures: set):
     """复制单个模块文章/表格/图，返回该模块的产物元数据。"""
@@ -202,16 +226,12 @@ def published_module(city_dir: Path, source: Path, tables_dir: Path, figures_dir
     # article.json 逐字节原样复制
     copy_overwrite(source, out_dir / "articles" / f"{module_id}.json")
 
-    for name in table_files:
-        referenced_tables.add(name)
-        src = tables_dir / name
-        if src.is_file():
-            copy_verbatim(src, out_dir / "tables" / name)
-    for name in figure_files:
-        referenced_figures.add(name)
-        src = figures_dir / name
-        if src.is_file():
-            copy_verbatim(src, out_dir / "figures" / name)
+    # 记录 article 声明的表/图（用于 sync-report 的「存在但未引用」与「引用但缺失」口径）
+    referenced_tables.update(table_files)
+    referenced_figures.update(figure_files)
+
+    # 超集复制：模块目录下全部表/图（不止 article 声明）
+    copy_module_assets(tables_dir, figures_dir, out_dir)
 
     return {
         "id": module_id,
@@ -311,8 +331,9 @@ def publish_city(cid: str, source_root: Path, out_root: Path) -> dict:
         "counts": {
             "articles": len(modules),
             "sources": len(sources),
-            "figuresCopied": len([n for n in referenced_figures if (out_dir / "figures" / n).is_file()]),
-            "tablesCopied": len([n for n in referenced_tables if (out_dir / "tables" / n).is_file()]),
+            # 实际写入 product 的表/图数量（超集：含 article 未声明但存在/被前端引用的文件）
+            "figuresCopied": len(list_files(out_dir / "figures")),
+            "tablesCopied": len(list_files(out_dir / "tables")),
         },
         "assets": {
             "figuresReferencedButMissing": sorted(figures_missing),
@@ -341,7 +362,7 @@ def publish_city(cid: str, source_root: Path, out_root: Path) -> dict:
 
 def main() -> int:
     print(f"[publish_research] ROOT   = {ROOT}")
-    print(f"[publish_research] SOURCE = {SOURCE_ROOT.relative_to(ROOT)}")
+    print(f"[publish_research] SOURCE = {SOURCE_ROOT.relative_to(ROOT)}  (研究源，完整只读)")
     print(f"[publish_research] OUT    = {OUT_ROOT.relative_to(ROOT)}")
 
     cities = [c for c in CITY_ORDER if (SOURCE_ROOT / c).is_dir()]
