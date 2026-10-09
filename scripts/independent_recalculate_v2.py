@@ -8,9 +8,9 @@ ROOT=Path(__file__).resolve().parents[1]
 
 
 def main():
-    p=pd.read_parquet(ROOT/'models/long_horizon/artifacts/v2/predictions.parquet')
-    m=pd.read_csv(ROOT/'LONG_HORIZON_V2_METRICS.csv')
-    protocol=json.loads((ROOT/'models/long_horizon/evaluation_protocol_v2.json').read_text())
+    p=pd.read_parquet(ROOT/'pipelines/long_horizon/artifacts/v2/predictions.parquet')
+    m=pd.read_csv(ROOT.parent/'data/research/long_horizon/LONG_HORIZON_V2_METRICS.csv')
+    protocol=json.loads((ROOT/'pipelines/long_horizon/evaluation_protocol_v2.json').read_text())
     phases={q['name']:q for q in protocol['config']['phases']}
     cols=['crop','horizon','target_type','method','phase']
     recalculated=[]
@@ -35,7 +35,9 @@ def main():
     out={'status':'INDEPENDENT_RECALCULATION_PASS','prediction_rows':len(p),'metric_groups':len(m),
          'max_absolute_discrepancy':diffs,'label_maturity_and_phase_end_checks':'PASS',
          'untouched_claim':'NONE; historical periods previously viewed'}
-    (ROOT/'RC2_INDEPENDENT_RECALCULATION.json').write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\n')
+    out_path = ROOT / 'runtime' / 'RC2_INDEPENDENT_RECALCULATION.json'
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\n')
     print(json.dumps(out,ensure_ascii=False))
 
 

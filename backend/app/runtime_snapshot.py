@@ -108,9 +108,10 @@ def bind() -> Dict[str, Any]:
     _ensure_model_src()
 
     # 1) 先校正 common.ROOT / DE，再 import final.*（保证派生路径一次正确）
+    #    ROOT 指向 runtime/（fcommon 的 ROOT/"data"/... 因此解析到 runtime/data）
     import decision_engine.common as cm  # noqa: PLC0415
-    if str(cm.ROOT) != str(C.ROOT):
-        cm.ROOT = C.ROOT
+    if str(cm.ROOT) != str(C.RUNTIME_DIR):
+        cm.ROOT = C.RUNTIME_DIR
         cm.DE = C.MODELS_DIR
 
     from decision_engine.final import fcommon  # noqa: F401,PLC0415

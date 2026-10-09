@@ -67,3 +67,61 @@
   /* 只用于 Research Reader 的外壳窗口；V3 §14 起为直角。 */
   --ag-radius-window: 0px;
 }
+
+/**
+ * V3 §28–§34 增量令牌。
+ *
+ * 这一块是**附加**而非替换：上面那组暖白/墨色/数据语义色是既有页面的既有契约，
+ * 不动。这里补上 V3 需要的三件事——表面层级、语义主色、图表调色板，
+ * 让新页面不再各自发明色值与阴影。
+ */
+:root {
+  /* ---- §28 表面层级：canvas → surface-1/2/3 → raised ---- */
+  --ag-canvas: var(--ag-paper);
+  --ag-surface-1: var(--ag-paper-raised);
+  --ag-surface-2: var(--ag-paper-sunken);
+  --ag-surface-3: var(--ag-paper-deep);
+  --ag-raised: #fffefc; /* 比 surface-1 更接近白，但不刺眼 */
+  --ag-hover: rgb(26 25 23 / 0.04);
+  --ag-selected: rgb(26 25 23 / 0.07);
+
+  /* ---- §29/§30 语义色（低饱和，按下述语义使用，不随机上色）----
+     olive       → 农业 / 正常 / 生长 / 正向
+     clay        → 风险 / 异常 / 压力 / 土地
+     blue-grey   → 气象 / 信息 / 数据 / 模型
+     graphite    → 一级信息（与 --ag-ink 同值，供语义化书写）
+     warm-grey   → 二级信息（与 --ag-ink-muted 同值） */
+  --ag-olive: #6b7a54;
+  --ag-olive-soft: #8a977a;
+  --ag-clay: #a8623f;
+  --ag-clay-soft: #bd8460;
+  --ag-blue-grey: #5b6f7d;
+  --ag-blue-grey-soft: #8398a4;
+  --ag-graphite: #1a1917;
+  --ag-warm-grey: #736d65;
+
+  /* ---- §31 图表调色板：低饱和、易区分、色盲友好、黑白打印可辨 ---- */
+  --ag-chart-series-1: #4a5a6a;
+  --ag-chart-series-2: #8a7a55;
+  --ag-chart-series-3: #6e8a85;
+  --ag-chart-series-4: #9c6b5a;
+  --ag-chart-highlight: #1a1917;
+  --ag-chart-muted: #b8b1a6;
+  --ag-chart-ci: rgb(26 25 23 / 0.14);
+
+  /* ---- §34 阴影：非常克制，仅 raised 表面使用 ---- */
+  --ag-shadow-resting: 0 1px 2px rgb(26 25 23 / 0.04);
+  --ag-shadow-raised:
+    0 8px 28px -12px rgb(26 25 23 / 0.18),
+    0 2px 6px -3px rgb(26 25 23 / 0.08);
+
+  /* ---- §65 z-index 层级（与既有约定对齐：header=40、浮层=60、遮罩=90）---- */
+  --ag-z-base: 0;
+  --ag-z-sticky: 10;
+  --ag-z-header: 40;
+  --ag-z-float: 60;
+  --ag-z-overlay: 90;
+  --ag-z-drawer: 100;
+  --ag-z-modal: 120;
+  --ag-z-toast: 140;
+}

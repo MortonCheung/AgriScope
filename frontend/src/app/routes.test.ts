@@ -7,9 +7,14 @@ import {
   structuralParent,
 } from './routes';
 
-describe('ROUTES（本轮 §9）', () => {
-  it('一级入口是 研究 / 报告 / 推演 / 关于', () => {
-    expect(ROUTES.researchHome).toBe('/liaoning');
+describe('ROUTES（本轮 §9 / V3 §4）', () => {
+  it('一级入口是 辽宁农业态势 / 决策中心 / 研究中心', () => {
+    expect(ROUTES.liaoning).toBe('/liaoning');
+    expect(ROUTES.decisionCenter).toBe('/decision');
+    expect(ROUTES.researchCenter).toBe('/research');
+  });
+
+  it('报告 / 推演 / 关于 仍可达，只是不再是一级入口', () => {
     expect(ROUTES.reports).toBe('/reports');
     expect(ROUTES.scenario).toBe('/scenario-lab');
     expect(ROUTES.about).toBe('/about');
@@ -31,7 +36,6 @@ describe('ROUTES（本轮 §9）', () => {
   });
 
   it('旧路径只是 Redirect 目标，不再作为正式入口', () => {
-    expect(ROUTES.legacyProvinceResearch).toBe('/research');
     expect(ROUTES.legacyCityReport('shenyang')).toBe('/cities/shenyang/report');
     expect(ROUTES.legacyRainstorm).toBe('/shenyang-rainstorm');
   });
@@ -85,6 +89,11 @@ describe('structuralParent：两级层级（本轮 §10）', () => {
   it('推演与关于回到首页', () => {
     expect(structuralParent('/scenario-lab')).toBe('/');
     expect(structuralParent('/about')).toBe('/');
+  });
+
+  it('决策中心与研究中心回到首页', () => {
+    expect(structuralParent('/decision')).toBe('/');
+    expect(structuralParent('/research')).toBe('/');
   });
 
   it('首页没有上一级', () => {

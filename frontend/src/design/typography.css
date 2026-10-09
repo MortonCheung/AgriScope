@@ -112,3 +112,40 @@
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
 }
+
+/**
+ * V3 §32 排版层级补齐。
+ *
+ * 上面已有 display/hero/section-title/title/lead/body/label/meta/number；
+ * 这里补上 V3 明确要求但在旧页面里被各处自定义的三个——metric、caption、
+ * body-secondary，并给所有数字一个稳定的 tabular-nums 基线。
+ */
+.ag-metric {
+  margin: 0;
+  font-family: var(--ag-font-display);
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ag-ink);
+}
+
+.ag-caption {
+  margin: 0;
+  color: var(--ag-ink-faint);
+  font-size: var(--ag-fs-meta);
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+}
+
+.ag-body-secondary {
+  margin: 0;
+  max-width: var(--ag-measure, 68ch);
+  color: var(--ag-ink-muted);
+  font-size: var(--ag-fs-small);
+  line-height: 1.66;
+}
+
+/* 数据型数字统一等宽，避免更新时跳动（§32）。 */
+.ag-tabular { font-variant-numeric: tabular-nums; }

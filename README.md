@@ -15,11 +15,14 @@
 
 - `frontend/`：现有 React/Vite 产品，双目标展示与独立上市决策入口。
 - `backend/`：唯一 FastAPI 后端，短期 Final、Daily、长期只读推理与决策 API。
-- `models/src/decision_engine/final/`：冻结短期模型 `final_v1`，指纹 `b19b187268ee92db`。
-- `models/long_horizon/`：V2 目标研究、严格标签成熟清洗、Registry、评估及显式重训。
-- `data/daily/`：原 Daily 核心；`data/long_horizon/`：独立长期推理 Job。
+- `pipelines/data_foundation/`：raw → processed → model_ready 数据处理与治理。
+- `pipelines/daily/`：每日价格采集、更新、Daily 特征与信号。
+- `pipelines/modeling/`：`decision_engine` 源码、训练/调参/评估脚本与测试。
+- `pipelines/long_horizon/`：V2 目标研究、标签成熟清洗、Registry、评估与显式重训。
+- `pipelines/research/`：六城与跨城市正式可复现研究。
+- `pipelines/publishing/`：从外层 data/models 挑选正式资产生成 `runtime/`。
+- `runtime/`：产品运行时最小资产快照（data/models/manifest）；产品只读此处。
 - `llm/`：真实 Provider、匿名归一化上下文、严格校验、缓存与实验。
-- `runtime/`：immutable/generated/external/optional 资产清单。
 - `deploy/`：systemd、20:30/23:30 timer、nginx、环境模板与操作说明。
 - `scripts/`：启动、完整验收、Daily编排、独立指标重算、未来预测核验、资产和发布审计。
 - `docs/archive/rc1/`：明确已被取代的历史报告，不能作当前结论。
@@ -42,7 +45,7 @@ cd ..
 
 ```bash
 # 终端1
-PYTHONPATH=models/src:models:. .venv/bin/python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8787 --workers 1
+PYTHONPATH=backend .venv/bin/python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8787 --workers 1
 # 终端2
 cd frontend
 npm run dev
@@ -58,9 +61,9 @@ python3 scripts/run_daily_chain.py
 # 无网络采集，只用已有原始证据重建Daily并触发长期
 python3 scripts/run_daily_chain.py --no-collect
 # 单独长期推理（仅加载模型，无fit）
-python3 data/long_horizon/run_long_horizon_job.py
+python3 pipelines/long_horizon/run_long_horizon_job.py
 # 人工显式长期模型研究/重训，不改短期Final
-PYTHONPATH=models/src:models:. python3 -m long_horizon.v2 --retrain
+PYTHONPATH=pipelines/modeling/src:pipelines python3 -m long_horizon.v2 --retrain
 # 只核验事先发行的未来预测，不自动升级Registry
 python3 scripts/evaluate_prospective_v2.py
 ```

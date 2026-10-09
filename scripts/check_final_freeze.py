@@ -12,11 +12,11 @@ def check_final_freeze(root=ROOT):
     changed = [p for p, expected in baseline['files'].items()
                if not (root / p).is_file() or hashlib.sha256((root / p).read_bytes()).hexdigest() != expected]
     fingerprint = hashlib.sha256()
-    for path in sorted((root / 'models/src').rglob('*.py')):
+    for path in sorted((root / 'runtime/models/src').rglob('*.py')):
         fingerprint.update(path.name.encode())
         fingerprint.update(path.read_bytes())
     live = fingerprint.hexdigest()[:16]
-    meta = json.loads((root / 'models/reports/final/FINAL_RUN_META.json').read_text())
+    meta = json.loads((root / 'runtime/models/reports/final/FINAL_RUN_META.json').read_text())
     if changed or live != baseline['code_fingerprint'] or live != meta['code_fingerprint']:
         raise RuntimeError('Final frozen drift: ' + json.dumps({'changed': changed, 'live_fingerprint': live}))
     result = {'status': 'FINAL_FREEZE_UNCHANGED', 'files_checked': len(baseline['files']), 'code_fingerprint': live}

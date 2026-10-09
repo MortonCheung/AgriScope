@@ -19,17 +19,17 @@ venv/
 *.log
 .env
 
-# --- 大型运行时资产（不进 Git，见 runtime/manifest.json）---
-models/models/
-models/data/
-models/evaluation/
-models/outputs/
-data/raw/
-data/processed/
-data/model_ready/
-data/metadata/
-data/reports/
-data/research/
+# --- 大型运行时资产（不进 Git；由 pipelines/publishing 从外层 data/models 生成）---
+# runtime/manifest.json 仍在 Git 中，用于记录本次发布使用了哪些资产与版本。
+runtime/models/models/
+runtime/models/data/
+runtime/models/evaluation/
+runtime/models/reports/
+runtime/models/registry/
+runtime/models/src/
+runtime/data/
+runtime/research/
+runtime/*.csv
 
 # --- 归档 / 参考 / 训练缓存（不进 Git）---
 archive/
@@ -41,18 +41,5 @@ catboost_info/
 llm/artifacts/
 
 # --- Long-Horizon 研究中间产物（大 parquet/csv；源与交付报告仍进 Git）---
-models/long_horizon/artifacts/
-
-# --- 注意：以下必须保留在 Git 中，不要被上面的规则误伤 ---
-#   models/src/  models/config/  models/scripts/  models/tests/  models/docs/
-#   models/reports/final/  models/data/manifests/
-#   data/daily/  data/scripts/
-!models/src/
-!models/config/
-!models/scripts/
-!models/tests/
-!models/docs/
-!models/reports/
-!models/data/manifests/
-!data/daily/
-!data/scripts/
+pipelines/long_horizon/artifacts/
+pipelines/long_horizon/reports/

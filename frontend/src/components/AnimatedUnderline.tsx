@@ -1,31 +1,21 @@
-import { motion, useReducedMotion } from 'motion/react';
-import { MOTION_SPRING } from '../design/motion';
 import './animated-underline.css';
 
 /**
- * 全站统一的“线”（V3 §8/§9）。
+ * 全站统一的“当前状态线”（V3 §8/§9，§37 修复）。
  *
- * 线只表达"当前状态"，不再给 Hover 加下划线：
- * 三种允许的线是信息结构线、当前状态指示线、数据/图表/注释线。
- * 因此这里只保留共享指示线：传入 `layoutId`，在元素之间连续滑动，而不是消失再出现。
+ * 不再使用 `layoutId` / 共享布局：共享布局在“旧元素卸载、新元素首帧尚未测量”时，
+ * 会失去参考矩形而从默认位置（视口底部/左上角）补间飞入——这正是按钮下划线
+ * “从屏幕底部飞到按钮”的根因（V3 §36）。React StrictMode 双挂载与路由切换
+ * 会放大这一现象。
+ *
+ * 改为元素自持的过渡：位置完全由宿主决定（宿主需 position: relative），
+ * 动画只做 `transform: scaleX(0 → 1)`，不依赖任何跨元素、跨路由或视口测量。
+ * 每个宿主常驻渲染本组件，用 `active` 切换状态即可获得“生长/收起”观感。
  */
-export function AnimatedUnderline({ layoutId, tone = 'ink' }: {
-  layoutId?: string;
+export function AnimatedUnderline({ active = true, tone = 'ink' }: {
+  active?: boolean;
   tone?: 'ink' | 'soft';
 }) {
-  const reducedMotion = Boolean(useReducedMotion());
   const className = ['ag-underline', `ag-underline--${tone}`].join(' ');
-
-  if (layoutId) {
-    return (
-      <motion.span
-        aria-hidden
-        layoutId={layoutId}
-        className={className}
-        transition={reducedMotion ? { duration: 0 } : MOTION_SPRING.direct}
-      />
-    );
-  }
-
-  return <span aria-hidden className={className} />;
+  return <span aria-hidden className={className} data-active={active || undefined} />;
 }

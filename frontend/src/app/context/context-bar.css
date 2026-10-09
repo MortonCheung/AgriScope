@@ -1,0 +1,49 @@
+/* 全局上下文条（V3 §6.1）：文字型控件，不是胶囊、不是筛选栏。 */
+
+.ag-context {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ag-space-2);
+  color: var(--ag-ink-muted);
+}
+
+.ag-context__field {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.ag-context__label {
+  color: var(--ag-ink-faint);
+  font-family: var(--ag-font-mono);
+  font-size: var(--ag-fs-micro);
+  letter-spacing: var(--ag-tracking-label);
+  text-transform: uppercase;
+}
+
+/* 原生 select 去壳：只保留文字与一条细底线（与导航下划线同一语言）。 */
+.ag-context__select {
+  appearance: none;
+  padding: 2px 14px 2px 1px;
+  border: 0;
+  border-bottom: 1px solid var(--ag-rule-strong);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ag-ink);
+  font-size: var(--ag-fs-small);
+  line-height: 1.4;
+  cursor: pointer;
+  transition: border-color var(--ag-dur-fast) var(--ag-ease), color var(--ag-dur-fast) var(--ag-ease);
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: right 6px center, right 2px center;
+  background-size: 4px 4px, 4px 4px;
+  background-repeat: no-repeat;
+}
+.ag-context__select:hover { border-bottom-color: var(--ag-ink); }
+
+.ag-context__sep { color: var(--ag-ink-ghost); }
+
+@media (max-width: 860px) {
+  .ag-context__label { display: none; }
+}

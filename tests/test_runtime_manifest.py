@@ -2,30 +2,46 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from verify_assets import verify, sha256
+from verify_assets import verify
 
 
-def test_generated_refresh_does_not_refresh_immutable(tmp_path):
-    model, generated = tmp_path / "model.pkl", tmp_path / "latest.json"
-    model.write_bytes(b"frozen")
-    generated.write_text("old")
-    assets = [{"path": p.name, "asset_type": kind, "size": p.stat().st_size,
-               "sha256": sha256(p), "required": True}
-              for p, kind in [(model, "immutable"), (generated, "generated")]]
-    old_hash = assets[0]["sha256"]
-    model.write_bytes(b"corrupt")
-    generated.write_text("new")
-    result = verify({"n_assets": 2, "assets": assets}, tmp_path, refresh=True)
-    assert result["problems"] == ["hash/size mismatch: model.pkl"]
-    assert result["refreshed"] == ["latest.json"]
-    assert assets[0]["sha256"] == old_hash
+def test_ok_assets_pass(tmp_path):
+    (tmp_path / "runtime").mkdir()
+    (tmp_path / "runtime" / "a.pkl").write_bytes(b"x")
+    man = {"assets": [{"source": "s", "destination": "runtime/a.pkl",
+                       "description": "d", "status": "OK"}]}
+    result = verify(man, tmp_path)
+    assert result["problems"] == []
+    assert result["ok"] == 1 and result["total"] == 1
 
 
-def test_processed_model_cannot_be_marked_generated(tmp_path):
-    path = tmp_path / "data/processed/model.pkl"
-    path.parent.mkdir(parents=True)
-    path.write_bytes(b"model")
-    asset = {"path": "data/processed/model.pkl", "asset_type": "generated", "size": 5,
-             "sha256": sha256(path)}
-    result = verify({"n_assets": 1, "assets": [asset]}, tmp_path, refresh=True)
-    assert result["problems"] == ["protected asset must be immutable: data/processed/model.pkl"]
+def test_missing_destination_reported(tmp_path):
+    man = {"assets": [{"source": "s", "destination": "runtime/missing.pkl",
+                       "description": "d", "status": "OK"}]}
+    result = verify(man, tmp_path)
+    assert len(result["problems"]) == 1
+    assert "missing/empty destination" in result["problems"][0]
+
+
+def test_empty_destination_reported(tmp_path):
+    (tmp_path / "runtime" / "empty").mkdir(parents=True)
+    man = {"assets": [{"source": "s", "destination": "runtime/empty",
+                       "description": "d", "status": "OK"}]}
+    result = verify(man, tmp_path)
+    assert result["problems"] == ["missing/empty destination: runtime/empty"]
+
+
+def test_unavailable_source_reported(tmp_path):
+    man = {"assets": [{"source": "s", "destination": "runtime/a",
+                       "description": "d", "status": "SKIP(missing-src)"}]}
+    result = verify(man, tmp_path)
+    assert len(result["problems"]) == 1
+    assert "source unavailable" in result["problems"][0]
+
+
+def test_destination_escape_reported(tmp_path):
+    man = {"assets": [{"source": "s", "destination": "../outside.pkl",
+                       "description": "d", "status": "OK"}]}
+    result = verify(man, tmp_path)
+    assert len(result["problems"]) == 1
+    assert "escapes AgriScope" in result["problems"][0]

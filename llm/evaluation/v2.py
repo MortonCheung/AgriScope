@@ -5,7 +5,9 @@ Only price history enters the numeric benchmark; absent dated context stays NOT_
 """
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
+import threading
 from typing import Any
 import numpy as np
 import pandas as pd
@@ -33,8 +35,13 @@ class PilotConfig:
     target_types: list[str] = field(default_factory=lambda: list(LH.TARGET_TYPES))
     phases: list[dict] = field(default_factory=lambda: list(LH.PHASES))
     max_anchors_per_phase: int = 1
+    anchors_by_phase: dict[str, int] = field(default_factory=dict)
     temperature: float = 0.
     seed: int | None = 42
+    concurrency: int = 1
+
+    def anchor_limit(self, phase_name: str) -> int:
+        return max(1, int(self.anchors_by_phase.get(phase_name, self.max_anchors_per_phase)))
 
 
 class BudgetedProvider(LLMProvider):
@@ -43,9 +50,20 @@ class BudgetedProvider(LLMProvider):
         if max_calls < 1:
             raise ValueError("positive_call_budget_required")
         self.inner, self.max_calls, self.calls = provider, max_calls, 0
-        self.last_call_attempted = False
+        self._budget_lock = threading.Lock()
+        # 有界并发下 last_call_attempted 必须是**每线程独立**的，
+        # 否则并发调用会在共享属性上互相覆盖，导致失败调用的 api_called 归因错误。
+        self._local = threading.local()
         self.name, self.model = provider.name, provider.model
         self.is_real_llm, self.seed_supported = provider.is_real_llm, provider.seed_supported
+
+    @property
+    def last_call_attempted(self) -> bool:
+        return getattr(self._local, "attempted", False)
+
+    @last_call_attempted.setter
+    def last_call_attempted(self, value: bool) -> None:
+        self._local.attempted = value
 
     def is_available(self):
         return self.inner.is_available()
@@ -57,11 +75,13 @@ class BudgetedProvider(LLMProvider):
         return self.inner.call_metadata()
 
     def complete_json(self, **kwargs):
-        self.last_call_attempted = False
-        if self.calls >= self.max_calls:
-            raise LLMUnavailable("pilot_call_budget_exhausted")
-        self.calls += 1
-        self.last_call_attempted = True
+        # 计数必须原子化：并发下两个线程不得共用同一配额槽位。
+        with self._budget_lock:
+            if self.calls >= self.max_calls:
+                self.last_call_attempted = False
+                raise LLMUnavailable("pilot_call_budget_exhausted")
+            self.calls += 1
+            self.last_call_attempted = True
         return self.inner.complete_json(**kwargs)
 
 
@@ -153,21 +173,113 @@ def learn_adjustment_bounds(frame: pd.DataFrame, crop: str, train_end: str, meth
             "train_end": train_end, "max_label_end": str(train.label_end.max().date())}
 
 
+def _execute_calls(provider: LLMProvider, jobs: list[dict], concurrency: int,
+                   progress: bool) -> list[dict]:
+    """执行 API 调用：默认串行；concurrency>1 时用有界线程池并发，结果仍按 job 顺序返回。
+
+    只有在「重放/幂等」的纯调用层并发；packet 构建、泄漏审计、baseline 选择全部在
+    单线程内预先完成，因此并发不会改变任何数据事实或评分口径。
+    """
+    if not jobs:
+        return []
+
+    def one(job: dict) -> dict:
+        return _call_once(provider, job["packet"], job["baseline_arg"],
+                          "residual" if job["residual"] else "forecast",
+                          job["call_config"], host_metadata=job["host"])
+
+    if concurrency <= 1:
+        results = []
+        for job in jobs:
+            call = one(job)
+            results.append(call)
+            if progress:
+                _progress(job["index"], job["total"], job["context"], call)
+        return results
+
+    results: list[dict] = [None] * len(jobs)
+    with ThreadPoolExecutor(max_workers=concurrency) as pool:
+        futures = {pool.submit(one, job): i for i, job in enumerate(jobs)}
+        finished = 0
+        for future in as_completed(futures):
+            index = futures[future]
+            results[index] = future.result()
+            finished += 1
+            if progress:
+                _progress(finished, len(jobs), jobs[index]["context"] + "|concurrent", results[index])
+    return results
+
+
+def _build_record(job: dict, call: dict, provider: LLMProvider) -> dict:
+    row, spec, selection, bounds, host = job["row"], job["spec"], job["selection"], job["bounds"], job["host"]
+    residual = job["residual"]
+    rec = {"crop": job["crop"], "horizon": job["horizon"], "target_type": job["target"],
+           "target_definition": spec["name"], "label_start": str(row.label_start.date()),
+           "label_end": str(row.label_end.date()), "anchor": job["anchor"],
+           "phase": job["phase"]["name"], "experiment": job["experiment"],
+           "schema": "residual" if residual else "forecast", "ablation_level": job["ablation_level"],
+           "actual": float(row.actual), "current_price": float(row.price_per_kg),
+           "baseline_point": job["baseline"], "baseline_method": selection["method"],
+           "baseline_fallback_used": job["fallback"], "baseline_selection": selection,
+           "mase_scale": float(job["crop_frame"].loc[job["crop_frame"].date <= pd.Timestamp(job["learning_end"]), "price_per_kg"].diff().abs().mean()),
+           "seasonal_point": float(row.seasonal_naive) if pd.notna(row.seasonal_naive) else job["baseline"],
+           "adjustment_bounds": bounds, "provider": provider.name, "model_id": provider.model,
+           "is_real_llm": provider.is_real_llm, "inverse_transform": host,
+           "context_hash": call["context_hash"], "prompt_meta": call["prompt_meta"],
+           "provider_config": call["provider_config"], "request_config": call["request_config"],
+           "response": call["payload"], "valid": call["valid"], "errors": call["errors"],
+           "actual_method": call["method"], "fallback_used": False,
+           "numeric_llm_used": call["valid"], "range_type": "scenario_range",
+           "confidence_type": "LLM_SELF_REPORTED_NOT_CALIBRATED",
+           "cache_hit": call["cache_hit"], "latency_ms": call["latency_ms"],
+           "api_called": call["api_called"], "token_usage": call["token_usage"],
+           "response_model": call.get("response_model", "unknown"),
+           "response_id": call.get("response_id", "unknown"),
+           "system_fingerprint": call.get("system_fingerprint", "unknown"),
+           "estimated_cost_usd": call["estimated_cost_usd"],
+           "leakage_passed": True, "production_status": "RESEARCH_ONLY",
+           "untouched_metric": None, "final_effective_n": 0,
+           "evidence_status": "RETROSPECTIVE_ONLY_NO_UNTOUCHED",
+           "regime": "low" if job["packet"]["risk"]["program_proxy"]["expanding_price_percentile"] < 1/3
+           else "high" if job["packet"]["risk"]["program_proxy"]["expanding_price_percentile"] > 2/3 else "mid"}
+    if call["valid"]:
+        out = call["payload"]
+        rec["confidence"] = out["confidence"]
+        if residual:
+            rec["adjustment_pct"] = out["adjustment_pct"]
+            rec["bounded_adjustment_pct"] = float(np.clip(out["adjustment_pct"], bounds["low_pct"], bounds["high_pct"]))
+            rec["point"] = job["baseline"] * (1 + rec["bounded_adjustment_pct"] / 100)
+            rec["fallback_used"] = bounds["n"] == 0
+            if bounds["n"] == 0:
+                rec["actual_method"] = selection["method"]
+                rec["numeric_llm_used"] = False
+                rec["fallback_reason"] = "NOT_FOUND_MATURED_DEVELOPMENT_RESIDUALS"
+        else:
+            restored = restore_forecast(out, host)
+            rec.update({"point": restored["point_forecast"], "low": restored["range_low"],
+                        "high": restored["range_high"], "direction": restored["direction"]})
+    else:
+        # Auditable statistical fallback is not scored as an LLM response.
+        rec.update({"point": job["baseline"], "actual_method": selection["method"], "fallback_used": True})
+        rec["fallback_reason"] = "LLM_UNAVAILABLE_OR_SCHEMA_REJECTED"
+    return rec
+
+
 def run_v2_experiment(provider: LLMProvider, config: PilotConfig, history: pd.DataFrame,
                       harvest_definition: str, *, mode="blind", residual=False,
                       sections=None, ablation_level="full", progress=True,
                       label="") -> pd.DataFrame:
     if not provider.is_real_llm:
         raise ValueError("REAL_LLM_PROVIDER_REQUIRED_NO_STUB_BENCHMARK")
-    records = []
     experiment = "blind_numeric_forecast_v2" if mode == "blind" else "context_augmented_forecast_v2"
     call_config = ExperimentConfig(experiment=experiment, temperature=config.temperature,
                                    seed=config.seed, include_sections=sections)
     # 预算友好顺序：**phase 在最外层**。小预算下先让每个 crop×horizon×target 都拿到
     # development 响应（Hybrid 权重的唯一合法来源），再进入后续阶段；
     # 否则预算会被第一个作物的所有阶段吃光，Hybrid 永远退化为 baseline。
-    planned = (len(config.phases) * len(config.horizons) * len(config.target_types)
-               * len(config.crops) * max(1, config.max_anchors_per_phase))
+    planned = (len(config.horizons) * len(config.target_types) * len(config.crops)
+               * sum(config.anchor_limit(phase["name"]) for phase in config.phases))
+    jobs: list[dict] = []
     done = 0
     for phase in config.phases:
         for horizon in config.horizons:
@@ -179,7 +291,7 @@ def run_v2_experiment(provider: LLMProvider, config: PilotConfig, history: pd.Da
                     selection = learn_baseline(frame, crop, learning_end)
                     bounds = learn_adjustment_bounds(frame, crop, learning_end, selection["method"])
                     eligible = crop_frame[LH.evaluation_mask(crop_frame, phase)]
-                    anchors = LH.exposure_rows(eligible, spec["exposure_spacing_days"]).head(config.max_anchors_per_phase)
+                    anchors = LH.exposure_rows(eligible, spec["exposure_spacing_days"]).head(config.anchor_limit(phase["name"]))
                     for _, row in anchors.iterrows():
                         done += 1
                         anchor = str(pd.Timestamp(row.date).date())
@@ -196,63 +308,19 @@ def run_v2_experiment(provider: LLMProvider, config: PilotConfig, history: pd.Da
                         fallback = not np.isfinite(baseline) or baseline <= 0
                         if fallback:
                             baseline = float(row.price_per_kg)
-                        call = _call_once(provider, packet, baseline / host["scale"] if residual else None,
-                                          "residual" if residual else "forecast", call_config, host_metadata=host)
-                        rec = {"crop": crop, "horizon": horizon, "target_type": target,
-                               "target_definition": spec["name"], "label_start": str(row.label_start.date()),
-                               "label_end": str(row.label_end.date()), "anchor": anchor,
-                               "phase": phase["name"], "experiment": experiment,
-                               "schema": "residual" if residual else "forecast", "ablation_level": ablation_level,
-                               "actual": float(row.actual), "current_price": float(row.price_per_kg),
-                               "baseline_point": baseline, "baseline_method": selection["method"],
-                               "baseline_fallback_used": fallback, "baseline_selection": selection,
-                               "mase_scale": float(crop_frame.loc[crop_frame.date <= pd.Timestamp(learning_end), "price_per_kg"].diff().abs().mean()),
-                               "seasonal_point": float(row.seasonal_naive) if pd.notna(row.seasonal_naive) else baseline,
-                               "adjustment_bounds": bounds, "provider": provider.name, "model_id": provider.model,
-                               "is_real_llm": provider.is_real_llm, "inverse_transform": host,
-                               "context_hash": call["context_hash"], "prompt_meta": call["prompt_meta"],
-                               "provider_config": call["provider_config"], "request_config": call["request_config"],
-                               "response": call["payload"], "valid": call["valid"], "errors": call["errors"],
-                               "actual_method": call["method"], "fallback_used": False,
-                               "numeric_llm_used": call["valid"], "range_type": "scenario_range",
-                               "confidence_type": "LLM_SELF_REPORTED_NOT_CALIBRATED",
-                               "cache_hit": call["cache_hit"], "latency_ms": call["latency_ms"],
-                               "api_called": call["api_called"], "token_usage": call["token_usage"],
-                               "response_model": call.get("response_model", "unknown"),
-                               "response_id": call.get("response_id", "unknown"),
-                               "system_fingerprint": call.get("system_fingerprint", "unknown"),
-                               "estimated_cost_usd": call["estimated_cost_usd"],
-                               "leakage_passed": True, "production_status": "RESEARCH_ONLY",
-                               "untouched_metric": None, "final_effective_n": 0,
-                               "evidence_status": "RETROSPECTIVE_ONLY_NO_UNTOUCHED",
-                               "regime": "low" if packet["risk"]["program_proxy"]["expanding_price_percentile"] < 1/3
-                               else "high" if packet["risk"]["program_proxy"]["expanding_price_percentile"] > 2/3 else "mid"}
-                        if call["valid"]:
-                            out = call["payload"]
-                            rec["confidence"] = out["confidence"]
-                            if residual:
-                                rec["adjustment_pct"] = out["adjustment_pct"]
-                                rec["bounded_adjustment_pct"] = float(np.clip(out["adjustment_pct"], bounds["low_pct"], bounds["high_pct"]))
-                                rec["point"] = baseline * (1 + rec["bounded_adjustment_pct"] / 100)
-                                rec["fallback_used"] = bounds["n"] == 0
-                                if bounds["n"] == 0:
-                                    rec["actual_method"] = selection["method"]
-                                    rec["numeric_llm_used"] = False
-                                    rec["fallback_reason"] = "NOT_FOUND_MATURED_DEVELOPMENT_RESIDUALS"
-                            else:
-                                restored = restore_forecast(out, host)
-                                rec.update({"point": restored["point_forecast"], "low": restored["range_low"],
-                                            "high": restored["range_high"], "direction": restored["direction"]})
-                        else:
-                            # Auditable statistical fallback is not scored as an LLM response.
-                            rec.update({"point": baseline, "actual_method": selection["method"], "fallback_used": True})
-                            rec["fallback_reason"] = "LLM_UNAVAILABLE_OR_SCHEMA_REJECTED"
-                        if progress:
-                            _progress(done, planned,
-                                      f"{label or experiment}|{mode}|{crop}|H{horizon}|{target}|{phase['name']}|"
-                                      f"{'residual' if residual else 'forecast'}", rec)
-                        records.append(rec)
-    return pd.DataFrame(records)
+                        jobs.append({
+                            "index": done, "total": planned, "anchor": anchor, "crop": crop,
+                            "horizon": horizon, "target": target, "phase": phase, "spec": spec,
+                            "selection": selection, "bounds": bounds, "row": row, "baseline": baseline,
+                            "fallback": fallback, "packet": packet, "host": host, "residual": residual,
+                            "call_config": call_config, "experiment": experiment,
+                            "ablation_level": ablation_level, "crop_frame": crop_frame,
+                            "learning_end": learning_end,
+                            "baseline_arg": baseline / host["scale"] if residual else None,
+                            "context": f"{label or experiment}|{mode}|{crop}|H{horizon}|{target}|{phase['name']}|"
+                                       f"{'residual' if residual else 'forecast'}"})
+    calls = _execute_calls(provider, jobs, max(1, config.concurrency), progress)
+    return pd.DataFrame([_build_record(job, call, provider) for job, call in zip(jobs, calls)])
 
 
 def v2_metrics(records: pd.DataFrame) -> pd.DataFrame:
@@ -336,3 +404,63 @@ def hybrid_evaluation(direct: pd.DataFrame, residual: pd.DataFrame) -> tuple[pd.
                 row["hybrid_A_WAPE"] = _wape(paired.actual, paired.point_residual) if len(paired) else None
             output.append(row)
     return pd.DataFrame(output), locks
+
+
+LLM_VARIANTS = ("llm_blind_WAPE", "llm_context_WAPE", "llm_residual_WAPE",
+                "hybrid_A_WAPE", "hybrid_B_WAPE", "hybrid_C_WAPE")
+
+
+def fair_comparison_table(direct: pd.DataFrame, residual: pd.DataFrame,
+                          hybrid: pd.DataFrame) -> pd.DataFrame:
+    """同一 crop×horizon×target×phase（同 origins、同 label）口径下的公平对比表。
+
+    只统计 schema valid 且 numeric_llm_used 的响应；baseline 与 statistical(seasonal)
+    取自同一批 anchor。gain 为相对 baseline 的 WAPE 百分点改善（正=更好）。
+    所有行强制 `RESEARCH_ONLY / RETROSPECTIVE_ONLY_NO_UNTOUCHED`，不得据此宣称生产。
+    """
+    columns = ["crop", "horizon", "target_type", "phase", "valid_n", "baseline_WAPE",
+               "statistical_seasonal_WAPE", *LLM_VARIANTS, "best_llm_variant",
+               "best_gain_pp_vs_baseline", "status"]
+    if direct is None or direct.empty:
+        return pd.DataFrame(columns=columns)
+    keys = ["crop", "horizon", "target_type", "phase"]
+    usable = direct[direct.valid & direct.numeric_llm_used]
+    blind = usable[usable.experiment == "blind_numeric_forecast_v2"]
+    context = usable[usable.experiment == "context_augmented_forecast_v2"]
+    res = residual[residual.valid & residual.numeric_llm_used] if residual is not None and not residual.empty else None
+    lookups = {
+        "llm_blind_WAPE": {key: group for key, group in blind.groupby(keys)},
+        "llm_context_WAPE": {key: group for key, group in context.groupby(keys)},
+        "llm_residual_WAPE": {key: group for key, group in res.groupby(keys)} if res is not None else {},
+    }
+    hybrid_index = {}
+    if hybrid is not None and not hybrid.empty:
+        for _, row in hybrid.iterrows():
+            hybrid_index[(row["crop"], row["horizon"], row["target_type"], row["phase"])] = row
+    groups = sorted({tuple(item) for item in pd.concat([blind[keys], context[keys]]).drop_duplicates()
+                     .itertuples(index=False, name=None)})
+    rows = []
+    for key in groups:
+        reference = lookups["llm_blind_WAPE"].get(key) if key in lookups["llm_blind_WAPE"] else lookups["llm_context_WAPE"].get(key)
+        if reference is None:
+            continue
+        record = dict(zip(keys, key))
+        record["valid_n"] = len(reference)
+        record["baseline_WAPE"] = _wape(reference.actual, reference.baseline_point)
+        record["statistical_seasonal_WAPE"] = _wape(reference.actual, reference.seasonal_point)
+        for name in ("llm_blind_WAPE", "llm_context_WAPE", "llm_residual_WAPE"):
+            group = lookups[name].get(key)
+            record[name] = _wape(group.actual, group.point) if group is not None else None
+        hybrid_row = hybrid_index.get(key)
+        for name in ("hybrid_A_WAPE", "hybrid_B_WAPE", "hybrid_C_WAPE"):
+            value = hybrid_row.get(name) if hybrid_row is not None else None
+            record[name] = float(value) if isinstance(value, (int, float)) and np.isfinite(value) else None
+        scores = {name: record[name] for name in LLM_VARIANTS
+                  if isinstance(record[name], (int, float)) and np.isfinite(record[name])}
+        best = min(scores, key=scores.get) if scores else None
+        record["best_llm_variant"] = best
+        record["best_gain_pp_vs_baseline"] = (record["baseline_WAPE"] - scores[best]
+                                              if best and record["baseline_WAPE"] is not None else None)
+        record["status"] = "RETROSPECTIVE_ONLY_NO_UNTOUCHED / RESEARCH_ONLY"
+        rows.append(record)
+    return pd.DataFrame(rows, columns=columns)

@@ -39,7 +39,7 @@ export function LegacyStressExperiment({candidate,sourceLabel}:{candidate:Decisi
   }
   const domainRanges=[...presets.map(s=>s.profit),scenario.profit];
   return <section className="decision-stress__experiment" aria-label="压力情景实验">
-    <div className="decision-modes" aria-label="现实场景">{presets.map(s=><button key={s.id} aria-pressed={!custom&&scenario.id===s.id} onClick={()=>{setParams(p=>{p.set('stress',s.id);['price','yield','cost','delay'].forEach(k=>p.delete(k));return p;});setError('');}}>{s.label}{!custom&&scenario.id===s.id&&<AnimatedUnderline layoutId="stress-mode"/>}</button>)}</div>
+    <div className="decision-modes" aria-label="现实场景">{presets.map(s=><button key={s.id} aria-pressed={!custom&&scenario.id===s.id} onClick={()=>{setParams(p=>{p.set('stress',s.id);['price','yield','cost','delay'].forEach(k=>p.delete(k));return p;});setError('');}}>{s.label}<AnimatedUnderline active={!custom&&scenario.id===s.id}/></button>)}</div>
     {invalidLink&&<p className="decision-note" role="status">链接中的压力条件无效，当前显示原方案。</p>}
     <div className="decision-stress__reading">
       <div>

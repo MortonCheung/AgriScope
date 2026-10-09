@@ -25,6 +25,18 @@
 
 .ag-header__lead { display: flex; align-items: center; gap: var(--ag-space-5); min-width: 0; }
 
+/* 右侧：主导航 + 全局上下文条（V3 §4/§6）。 */
+.ag-header__tail {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 2.6vw, 40px);
+  min-width: 0;
+}
+.ag-header__tail > .ag-context {
+  padding-left: clamp(12px, 2vw, 28px);
+  border-left: 1px solid var(--ag-rule-soft);
+}
+
 .ag-header__brand { display: inline-flex; align-items: baseline; gap: 10px; color: var(--ag-ink); }
 /* Logo slot（V5 §19）：正式品牌 Logo 未指定，这里只**预留位形**：
    不自行设计图形，也不放占位方块，避免出现一个假的品牌符号。 */
@@ -50,9 +62,25 @@
 
 /* Hover 线与 Active 指示线统一由 components/AnimatedUnderline 提供（V2 §41）。 */
 
+@media (max-width: 1023px) {
+  /* 中屏：上下文条仍保留（三个入口都依赖它），只收窄间距。 */
+  .ag-header__tail { gap: var(--ag-space-4); }
+  .ag-header__nav { gap: clamp(12px, 2vw, 22px); }
+}
+
+@media (max-width: 860px) {
+  /* 小屏：城市选择仍然要有，周期收进 select 自身的文字里即可。 */
+  .ag-header__tail > .ag-context { padding-left: var(--ag-space-4); }
+}
+
 @media (max-width: 560px) {
-  .ag-header__nav { gap: 14px; }
+  .ag-header__nav { gap: 12px; }
   .ag-header__link { font-size: 0.8125rem; }
   .ag-header__brand-en { display: none; }
   .ag-header__lead { gap: var(--ag-space-4); }
+  /* 手机端顶栏只保留城市（周期条让位），避免三行换行。 */
+  .ag-header__tail > .ag-context { padding-left: 0; border-left: 0; }
+  .ag-header__tail > .ag-context .ag-context__field:last-of-type,
+  .ag-header__tail > .ag-context .ag-context__sep { display: none; }
 }
+

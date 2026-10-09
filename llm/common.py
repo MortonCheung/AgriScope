@@ -21,7 +21,7 @@ load_env()
 
 from decision_engine.common import ROOT, DE, ensure_dir, write_json, read_json  # noqa: E402
 
-LLM_DIR = ROOT / "llm"
+LLM_DIR = _REPO_ROOT / "llm"       # 迁移后 llm/ 仍位于 AgriScope 仓内（不随 models/data 迁出）
 LLM_ARTIFACTS = LLM_DIR / "artifacts"
 LLM_CACHE = LLM_ARTIFACTS / "cache"
 LLM_PACKETS = LLM_ARTIFACTS / "packets"

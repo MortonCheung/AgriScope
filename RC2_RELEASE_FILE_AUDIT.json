@@ -1,9 +1,0 @@
-{
-  "status": "RELEASE_FILE_AUDIT_PASS",
-  "files_checked": 900,
-  "secret_suspect_files": [],
-  "forbidden_files": [],
-  "large_files_over_10MiB": [],
-  "values_printed": false,
-  "scope": "Git tracked and nonignored new files; pattern-based scan, not a proof no unknown secret exists"
-}

@@ -10,9 +10,10 @@ import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
-for path in (ROOT, ROOT / "models", ROOT / "models/src"):
+for path in (ROOT, ROOT / "pipelines", ROOT / "pipelines" / "modeling",
+             ROOT / "pipelines" / "modeling" / "src"):
     sys.path.insert(0, str(path))
-from data.long_horizon.run_long_horizon_job import load_runtime_history, digest
+from pipelines.long_horizon.run_long_horizon_job import load_runtime_history, digest
 from long_horizon.v2 import load_bundle, target_spec, add_targets, build_base_features, exposure_rows, CONFIG
 
 

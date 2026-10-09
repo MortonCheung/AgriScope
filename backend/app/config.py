@@ -26,15 +26,21 @@ def _resolve_root() -> Path:
 ROOT = _resolve_root()
 
 # ---------------------------------------------------------------- 只读输入
-MODELS_DIR = ROOT / "models"
+# 运行时资产根：AgriScope/runtime/（由 pipelines/publishing 从根 data/models 发布而来）
+# 产品只读 runtime/，不直接依赖外层 data/models。
+RUNTIME_DIR = ROOT / "runtime"
+MODELS_DIR = RUNTIME_DIR / "models"
 MODEL_SRC = MODELS_DIR / "src"                                  # decision_engine 包所在目录
 FINAL_REPORTS_DIR = MODELS_DIR / "reports" / "final"            # 冻结报告（只读）
 FINAL_RUN_META = FINAL_REPORTS_DIR / "FINAL_RUN_META.json"
 FINAL_MODELS_DIR = MODELS_DIR / "models" / "final"              # 冻结 pkl（只读）
 FINAL_SNAPSHOT_DIR = MODELS_DIR / "data" / "snapshots" / "final_v1"
 
+# 运行时数据根（只读）
+RUNTIME_DATA_DIR = RUNTIME_DIR / "data"
+
 # Daily 冻结产物（只读）
-DAILY_PROCESSED_DIR = ROOT / "data" / "processed" / "daily"
+DAILY_PROCESSED_DIR = RUNTIME_DATA_DIR / "processed" / "daily"
 DAILY_SNAPSHOT_DIR = DAILY_PROCESSED_DIR / "snapshots"
 DAILY_LATEST = DAILY_SNAPSHOT_DIR / "latest.json"
 DAILY_MONITOR = DAILY_PROCESSED_DIR / "monitor" / "status.json"
@@ -43,11 +49,11 @@ DAILY_MONITOR = DAILY_PROCESSED_DIR / "monitor" / "status.json"
 EXTENDED_SNAPSHOT_DIR = DAILY_PROCESSED_DIR / "final_input" / "extended_snapshot"
 EXTENDED_FINGERPRINT = EXTENDED_SNAPSHOT_DIR / ".source_fingerprint.json"
 
-# Long-Horizon（独立预测 Job 的预生成产物，只读；由 data/long_horizon 生成）
-LH_PROCESSED_DIR = ROOT / "data" / "processed" / "long_horizon"
+# Long-Horizon（独立预测 Job 的预生成产物，只读；由 AgriScope/pipelines/long_horizon 生成）
+LH_PROCESSED_DIR = RUNTIME_DATA_DIR / "processed" / "long_horizon"
 LH_SNAPSHOT_DIR = LH_PROCESSED_DIR / "snapshots"
 LH_LATEST = LH_SNAPSHOT_DIR / "latest.json"
-LH_REGISTRY = ROOT / "LONG_HORIZON_V2_REGISTRY.csv"
+LH_REGISTRY = RUNTIME_DIR / "LONG_HORIZON_V2_REGISTRY.csv"
 
 # ---------------------------------------------------------------- 服务参数
 API_TITLE = "AgriScope Decision API"

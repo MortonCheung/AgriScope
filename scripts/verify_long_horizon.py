@@ -5,6 +5,13 @@ import math
 from pathlib import Path
 import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
+PROJECT = ROOT.parent                      # monorepo 根（data/ 与 models/ 所在）
+RUNTIME = ROOT / 'runtime'                 # 产品运行时资产
+# 交付报告分散在：AgriScope 根（LLM 报告）、runtime、根 data/research/long_horizon、archive
+SEARCH_DIRS = [ROOT, RUNTIME,
+               PROJECT / 'data' / 'research' / 'long_horizon',
+               PROJECT / 'archive' / 'agent_reports',
+               PROJECT / 'archive' / 'audits']
 DELIVERABLES = ['LONG_HORIZON_V2_TARGET_REPORT.md','LONG_HORIZON_V2_EVALUATION_REPORT.md',
  'LONG_HORIZON_V2_METRICS.csv','LONG_HORIZON_V2_REGISTRY.csv','HARVEST_WINDOW_REPORT.md',
  'LONG_HORIZON_SAMPLE_ACCOUNTING.csv','SAMPLE_ACCOUNTING_REPORT.md','PRODUCTION_GATE_REPORT.md',
@@ -12,15 +19,23 @@ DELIVERABLES = ['LONG_HORIZON_V2_TARGET_REPORT.md','LONG_HORIZON_V2_EVALUATION_R
  'DECISION_LONG_HORIZON_BACKTEST.md']
 
 
+def _find(name):
+    for d in SEARCH_DIRS:
+        p = d / name
+        if p.is_file():
+            return p
+    return None
+
+
 def main():
     problems = []
     for name in DELIVERABLES:
-        if not (ROOT/name).is_file(): problems.append('Missing report: '+name)
+        if _find(name) is None: problems.append('Missing report: '+name)
     if problems:
         print('\n'.join(problems));return 1
-    registry = pd.read_csv(ROOT/'LONG_HORIZON_V2_REGISTRY.csv')
-    snap = json.loads((ROOT/'data/processed/long_horizon/snapshots/latest.json').read_text())
-    index = json.loads((ROOT/'models/models/long_horizon_v2/index.json').read_text())
+    registry = pd.read_csv(RUNTIME/'LONG_HORIZON_V2_REGISTRY.csv')
+    snap = json.loads((RUNTIME/'data/processed/long_horizon/snapshots/latest.json').read_text())
+    index = json.loads((PROJECT/'models/long_horizon/index.json').read_text())
     entries = snap.get('entries', [])
     keys = lambda rows: {(r['crop'],int(r['horizon']),r['target_type']) for r in rows}
     if len(registry)!=120 or len(entries)!=120 or keys(registry.to_dict('records'))!=keys(entries):
@@ -49,10 +64,10 @@ def main():
         if e.get('llm_used'): problems.append('Unevaluated LLM enters numeric output')
     if registry.untouched_metric.notna().any() or (registry.final_effective_n!=0).any():
         problems.append('Reused historical evaluation incorrectly reported as untouched')
-    accounting=pd.read_csv(ROOT/'LONG_HORIZON_SAMPLE_ACCOUNTING.csv')
+    accounting=pd.read_csv(_find('LONG_HORIZON_SAMPLE_ACCOUNTING.csv'))
     if not {'calendar_candidates','observed_candidates','nonoverlap_samples','effective_test_samples','fold'} <= set(accounting):
         problems.append('Incomplete sample accounting')
-    daily=json.loads((ROOT/'data/processed/daily/snapshots/latest.json').read_text())
+    daily=json.loads((RUNTIME/'data/processed/daily/snapshots/latest.json').read_text())
     if snap['latest_data_date'] < daily['latest_data_date']: problems.append('Long-Horizon has not caught up to Daily')
     print(json.dumps({'status':'LONG_HORIZON_V2_ENGINEERING_ACCEPTANCE_PASS' if not problems else 'FAIL',
                       'registry_rows':len(registry),'snapshot_entries':len(entries),'as_of':snap['as_of'],

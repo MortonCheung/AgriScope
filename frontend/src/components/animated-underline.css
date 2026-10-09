@@ -1,13 +1,25 @@
 /* 全站统一的细线：位置由宿主决定，观感由这里决定（V3 §8/§9）。
-   只表达"当前状态"，不为 Hover 画线。 */
+   只表达"当前状态"，不为 Hover 画线。
+   §37 修复：不再依赖 motion 的共享布局，改为自持的 scaleX 过渡，
+   避免“从屏幕底部飞入”。 */
 .ag-underline {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
   height: 1px;
-  transform-origin: left;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--ag-dur-underline) var(--ag-ease-standard);
+  will-change: transform;
 }
+
+.ag-underline[data-active] { transform: scaleX(1); }
 
 .ag-underline--ink { background: var(--ag-ink); }
 .ag-underline--soft { background: var(--ag-ink-soft); }
+
+/* 无动画偏好下直接用最终状态，不做生长。 */
+@media (prefers-reduced-motion: reduce) {
+  .ag-underline { transition: none; }
+}

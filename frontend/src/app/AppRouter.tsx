@@ -2,6 +2,7 @@ import type { ComponentType } from 'react';
 import { createBrowserRouter, createRoutesFromElements, Navigate, Route, RouterProvider, useLocation, useParams } from 'react-router-dom';
 import { AppShell } from './AppShell';
 import { ROUTES, parseResearchPath } from './routes';
+import { useAppContext } from './context/appContext';
 
 const load = (loader: () => Promise<Record<string, unknown>>, name: string) => async () => {
   const module = await loader();
@@ -12,11 +13,23 @@ const openingPage = load(() => import('../features/opening/OpeningPage'), 'Openi
 const researchHomePage = load(() => import('../features/liaoning/LiaoningPage'), 'LiaoningPage');
 const cityResearchPage = load(() => import('../features/research-v2/CityResearchPage'), 'CityResearchPage');
 const researchRoutePage = load(() => import('../features/research-v2/ResearchRoutePage'), 'ResearchRoutePage');
+const researchCenterPage = load(() => import('../features/research-center/ResearchCenterPage'), 'ResearchCenterPage');
 const reportsIndexPage = load(() => import('../features/report/ReportsIndexPage'), 'ReportsIndexPage');
 const cityReportPage = load(() => import('../features/report/ReportPage'), 'ReportPage');
 const scenarioPage = load(() => import('../features/scenario/ScenarioPage'), 'ScenarioPage');
 const decisionPage = load(() => import('../features/decision/DecisionPage'), 'DecisionPage');
 const aboutPage = load(() => import('../features/about/AboutPage'), 'AboutPage');
+
+/**
+ * 「决策中心」全局入口（V3 §7）。
+ *
+ * 决策必须落在某座城市上，所以这里不重造页面，而是按全局上下文
+ * （ContextBar 选中的城市）落到 `/cities/<city>/decision`。
+ */
+function DecisionCenterRedirect() {
+  const cityId = useAppContext((state) => state.cityId);
+  return <Navigate to={ROUTES.decision(cityId)} replace />;
+}
 
 /** 旧 `/cities/:cityId/report` → `/reports/:cityId`（§22：不要 404）。 */
 function LegacyCityReportRedirect() {
@@ -52,6 +65,8 @@ const router = createBrowserRouter(createRoutesFromElements(
   <Route element={<AppShell />} hydrateFallbackElement={<div aria-hidden />}>
     <Route path={ROUTES.root} lazy={openingPage} />
     <Route path={ROUTES.researchHome} lazy={researchHomePage} />
+    <Route path={ROUTES.researchCenter} lazy={researchCenterPage} />
+    <Route path={ROUTES.decisionCenter} element={<DecisionCenterRedirect />} />
     <Route path="/cities/:cityId" lazy={cityResearchPage} />
     <Route path="/cities/:cityId/decision" lazy={decisionPage} />
     <Route path="/cities/:cityId/research/:researchId" lazy={researchRoutePage} />
@@ -61,7 +76,6 @@ const router = createBrowserRouter(createRoutesFromElements(
     <Route path={ROUTES.about} lazy={aboutPage} />
 
     {/* 旧路径 → 新路径 */}
-    <Route path={ROUTES.legacyProvinceResearch} element={<Navigate to={ROUTES.reports} replace />} />
     <Route path="/cities/:cityId/report" element={<LegacyCityReportRedirect />} />
     <Route path={ROUTES.legacyRainstorm} element={<Navigate to={ROUTES.scenario} replace />} />
     <Route path="/cities/:cityId/research/:researchId/article" element={<LegacyResearchRedirect />} />

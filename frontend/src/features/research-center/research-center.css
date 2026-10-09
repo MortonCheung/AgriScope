@@ -1,0 +1,84 @@
+/* 研究中心首页（V3 §18/§47）：编辑式版式，靠分组与留白，不堆卡片。 */
+
+.research-center { display: flex; flex-direction: column; gap: var(--ag-space-8); }
+.research-center > :first-child { max-width: 62ch; display: flex; flex-direction: column; gap: var(--ag-space-4); }
+
+/* 证据链：数据 → 分析 → 模型 → 验证 → 决策 */
+.research-center__flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ag-space-5) var(--ag-space-7);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.research-center__flow-item { display: flex; align-items: baseline; gap: var(--ag-space-3); }
+.research-center__flow-index {
+  color: var(--ag-ink-ghost);
+  font-family: var(--ag-font-mono);
+  font-size: var(--ag-fs-micro);
+  letter-spacing: 0.08em;
+}
+.research-center__flow-name { color: var(--ag-ink); font-size: var(--ag-fs-lead); }
+
+/* 城市列表：一行一城，不做卡片 */
+.research-center__cities,
+.research-center__assets {
+  display: flex;
+  flex-direction: column;
+  margin: var(--ag-space-5) 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--ag-rule-soft);
+}
+.research-center__city,
+.research-center__asset {
+  display: grid;
+  grid-template-columns: minmax(72px, 120px) minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--ag-space-4);
+  padding: var(--ag-space-4) 0;
+  border-bottom: 1px solid var(--ag-rule-soft);
+}
+.research-center__city[data-available] .research-center__city-name { color: var(--ag-ink); }
+.research-center__city-name,
+.research-center__asset-name { font-size: var(--ag-fs-body); color: var(--ag-ink-soft); }
+.research-center__city-link {
+  color: var(--ag-ink);
+  border-bottom: 1px solid var(--ag-rule-strong);
+  padding-bottom: 1px;
+  transition: border-color var(--ag-dur-fast) var(--ag-ease);
+}
+.research-center__city-link:hover { border-bottom-color: var(--ag-ink); }
+.research-center__asset { grid-template-columns: minmax(120px, 180px) minmax(0, 1fr) auto; }
+.research-center__asset-note { color: var(--ag-ink-muted); font-size: var(--ag-fs-small); }
+.research-center__city-state {
+  color: var(--ag-ink-faint);
+  font-size: var(--ag-fs-meta);
+  font-family: var(--ag-font-mono);
+  letter-spacing: 0.02em;
+}
+
+/* 索引 */
+.research-center__index {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--ag-space-5);
+}
+.research-center__index-link {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--ag-space-4) 0;
+  border-top: 1px solid var(--ag-rule-soft);
+  color: var(--ag-ink);
+  font-size: var(--ag-fs-body);
+  transition: color var(--ag-dur-fast) var(--ag-ease);
+}
+.research-center__index-link:hover { color: var(--ag-ink); }
+.research-center__index-link:hover .ag-caption { color: var(--ag-ink-muted); }
+
+@media (max-width: 700px) {
+  .research-center__city,
+  .research-center__asset { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+}

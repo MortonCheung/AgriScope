@@ -52,12 +52,21 @@ def audit_packet(packet: Dict[str, Any], dataset: pd.DataFrame | None = None,
         and history[-1]["day_offset"] == 0,
         "recent window is strictly increasing and ends at the anchor")
     # 月份聚合必须严格早于 anchor 月份（offset>=1），且 min<=mean<=max、n>0。
-    check("historical_monthly_aggregates", all(
-        isinstance(bucket.get("month_offset"), int) and bucket["month_offset"] >= 1
-        and isinstance(bucket.get("n"), int) and bucket["n"] > 0
-        and all(np.isfinite(bucket.get(k, np.nan)) and bucket.get(k, 0) > 0 for k in ("mean", "min", "max"))
-        and bucket["min"] <= bucket["mean"] <= bucket["max"] for bucket in monthly),
-        "older history only as cutoff-safe monthly aggregates (offset>=1, min<=mean<=max)")
+    def monthly_ok(bucket: dict) -> bool:
+        if not (isinstance(bucket.get("month_offset"), int) and bucket["month_offset"] >= 1
+                and isinstance(bucket.get("n"), int) and bucket["n"] > 0):
+            return False
+        values = [bucket.get(key, np.nan) for key in ("mean", "min", "max")]
+        if not all(np.isfinite(value) and value > 0 for value in values):
+            return False
+        mean, low, high = values
+        # 浮点求和会产生 1 ULP 级误差（如常量 2.7 的均值=2.7000000000000006 > max=2.7），
+        # 用相对容差比较，仍保持 min<=mean<=max 的实质校验。
+        tol = 1e-9 * max(abs(mean), abs(low), abs(high), 1e-12)
+        return low <= mean + tol and mean <= high + tol
+
+    check("historical_monthly_aggregates", all(monthly_ok(bucket) for bucket in monthly),
+          "older history only as cutoff-safe monthly aggregates (offset>=1, min<=mean<=max)")
 
     publications = list(packet.get("events", []))
     for key in ("production", "supply", "climate"):

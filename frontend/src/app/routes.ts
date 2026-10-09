@@ -26,12 +26,18 @@ export const ROUTES = {
   /** 研究方向（A2）或研究点（A2.2）共用这一条。 */
   research: (cityId: string, researchId: string) => `/cities/${cityId}/research/${researchId}`,
 
+  /** 「决策中心」全局入口（V3 §7）：按全局上下文落到某座城市的决策页。 */
+  decisionCenter: '/decision',
+
+  /** 「研究中心」全局入口（V3 §17/§18）：证据库首页。 */
+  researchCenter: '/research',
+
   /** 「报告」：城市正式报告 + 辽宁六城综合报告。 */
   reports: '/reports',
   cityReport: (cityId: string) => `/reports/${cityId}`,
   provinceReport: '/reports/liaoning',
 
-  /** 「推演」：2026 沈阳暴雨平行情景。 */
+  /** 「推演」：2026 沈阳暴雨平行情景（归入决策中心）。 */
   scenario: '/scenario-lab',
   /** 兼容别名。 */
   scenarioLab: '/scenario-lab',
@@ -39,7 +45,6 @@ export const ROUTES = {
   about: '/about',
 
   /** ---- 旧路径，只用于 Redirect，不再作为正式入口 ---- */
-  legacyProvinceResearch: '/research',
   legacyCityReport: (cityId: string) => `/cities/${cityId}/report`,
   legacyRainstorm: '/shenyang-rainstorm',
 } as const;
@@ -94,6 +99,8 @@ export function structuralParent(pathname: string): string | null {
   if (pathname === ROUTES.researchHome) return ROUTES.root;
   if (pathname === ROUTES.about) return ROUTES.root;
   if (pathname === ROUTES.scenario) return ROUTES.root;
+  if (pathname === ROUTES.decisionCenter) return ROUTES.root;
+  if (pathname === ROUTES.researchCenter) return ROUTES.root;
   if (pathname === ROUTES.reports) return ROUTES.root;
   if (pathname === ROUTES.provinceReport) return ROUTES.reports;
 
