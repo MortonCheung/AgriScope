@@ -27,10 +27,25 @@ CATALOG_PATH = RESEARCH_DIR / "research_catalog.json"
 
 # LLM 回溯评估产物（真实 LLM 评估报告的机器可读落点，只读）。
 # 与 `runtime/research` 发布链相互独立：这里直接读评估侧产物，不做任何补偿或重算。
-LLM_ARTIFACTS_DIR = C.ROOT / "llm" / "artifacts" / "v2"
+#
+# 路径顺序（§5.1/§6.4）：**先读正式发布快照 `runtime/llm/artifacts/v2`**，
+# 使独立运行（只拿 AgriScope/ 目录）时该端点可用；开发机上尚未 publish 时
+# 回退到仓内 `llm/artifacts/v2`（两者都在 AgriScope 内，不依赖外层 data/models）。
+LLM_ARTIFACTS_CANDIDATES: Tuple[Path, ...] = (
+    C.RUNTIME_DIR / "llm" / "artifacts" / "v2",
+    C.ROOT / "llm" / "artifacts" / "v2",
+)
 LLM_STATUS_FILE = "real_evaluation_status.json"
 LLM_OUTCOME_FILE = "outcome_labels.json"
 LLM_FAIR_FILE = "fair_comparison.csv"
+
+
+def llm_artifacts_dir() -> Path:
+    """返回实际存在的产物目录（优先正式发布快照）。"""
+    for candidate in LLM_ARTIFACTS_CANDIDATES:
+        if candidate.is_dir():
+            return candidate
+    return LLM_ARTIFACTS_CANDIDATES[0]
 
 # 公平对比表：变体 → CSV 列名（口径与评估侧一致，逐字沿用）。
 LLM_VARIANT_COLUMNS: Tuple[Tuple[str, str], ...] = (
@@ -205,11 +220,12 @@ def figure(city: str, file: str) -> Tuple[Path, str]:
 
 # ---------------------------------------------------------------- LLM 回溯评估证据
 def _llm_artifact(name: str) -> Path:
-    path = LLM_ARTIFACTS_DIR / name
+    directory = llm_artifacts_dir()
+    path = directory / name
     if not path.is_file():
         raise ApiError(503, ErrorCode.RESEARCH_UNAVAILABLE,
                        "LLM 回溯评估产物不存在，无法提供证据。",
-                       {"missing": name, "dir": "llm/artifacts/v2"})
+                       {"missing": name, "searched": ["runtime/llm/artifacts/v2", "llm/artifacts/v2"]})
     return path
 
 

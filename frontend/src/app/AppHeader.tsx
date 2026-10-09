@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, useReducedMotion } from 'motion/react';
 import { ROUTES } from './routes';
@@ -14,11 +15,29 @@ import './app-header.css';
  * 一级入口只有三件产品事：辽宁农业态势 / 决策中心 / 研究中心。
  * 右侧常驻 ContextBar，让三个入口共享同一座城市与周期。
  * Active 语义见 navItems.ts。
+ *
+ * 窄屏（≤560px）折叠：三个中文入口在本宽度下无法单行容纳，过去被硬折成两行并
+ * 溢出 Header（实测 nav 高 58px > Header 54px）。改为一个「菜单」按钮的溢出菜单：
+ * 按钮只在窄屏显示，展开的 `<nav>` 是 Header 下方的浮层；桌面仍是同行内联导航。
  */
 export function AppHeader() {
   const { pathname } = useLocation();
   const reducedMotion = Boolean(useReducedMotion());
   const concealed = pathname === ROUTES.root;
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // 路由变化（点了菜单里的入口、或其它导航）后收起菜单。
+  useEffect(() => { setMenuOpen(false); }, [pathname]);
+
+  // Escape 收起菜单（非捕获，避免抢断导览 / 页面自身的 Escape 语义）。
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMenuOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [menuOpen]);
 
   return (
     <motion.header
@@ -44,7 +63,18 @@ export function AppHeader() {
           <NavigationControls />
         </div>
         <div className="ag-header__tail">
-          <nav className="ag-header__nav" aria-label="主导航">
+          {/* 窄屏溢出菜单开关：桌面隐藏，窄屏显示。 */}
+          <button
+            type="button"
+            className="ag-header__menu-toggle"
+            aria-expanded={menuOpen}
+            aria-controls="ag-header-nav"
+            onClick={() => setMenuOpen((value) => !value)}
+          >
+            菜单
+            <span className="ag-header__menu-mark" aria-hidden>{menuOpen ? '×' : '≡'}</span>
+          </button>
+          <nav id="ag-header-nav" className="ag-header__nav" data-open={menuOpen || undefined} aria-label="主导航">
             {NAV_ITEMS.map((item) => {
               const active = item.match(pathname);
               return (

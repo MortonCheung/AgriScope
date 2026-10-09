@@ -115,7 +115,9 @@
   letter-spacing: 0.02em;
   white-space: nowrap;
 }
-.research-center__llm-fact-body { color: var(--ag-ink-soft); font-size: var(--ag-fs-body); }
+/* 正文里的受控英文枚举（如 LLM_RETROSPECTIVE_GAIN_OBSERVED）是不可断行的长标识符；
+   窄屏下它撑破行宽会产生横向滚动。允许在任意点断行即可收敛，宽屏下单词本就放得下、观感不变。 */
+.research-center__llm-fact-body { color: var(--ag-ink-soft); font-size: var(--ag-fs-body); overflow-wrap: anywhere; }
 .research-center__llm-redline {
   margin: 0;
   padding: var(--ag-space-3) var(--ag-space-4);

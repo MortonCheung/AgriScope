@@ -316,6 +316,17 @@
 }
 @media (max-width: 719px) {
   .liaoning-page__stage { grid-template-columns: minmax(0, 1fr); }
+  /*
+    单列堆叠时，两个面板之间的负外边距（尤其 margin-bottom: -48px）会被 grid 当成
+    「内容更矮」，于是下一个面板上移 32px 盖住前一个面板 —— 390×844 实测重叠 32px。
+    单列不再需要「纸底向下淡出到地图」的负外边距，直接归零，改用正常行距。
+  */
+  .liaoning-page__current,
+  .liaoning-page__city {
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-bottom: var(--ag-space-5);
+  }
   .liaoning-page__current { max-width: none; }
   .city-summary__field { grid-template-columns: minmax(0, 1fr); gap: 2px; }
   .liaoning-page__theme-grid { grid-template-columns: minmax(0, 1fr); }

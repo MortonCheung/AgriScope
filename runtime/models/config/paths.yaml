@@ -7,7 +7,10 @@
 #       冻结快照 models/data/snapshots/ 为当前实际输入（兼容映射，见下）；
 #       marts/curated 默认不读（口径与 canonical 冲突，见审计报告 §6.1）。
 
-project_root: /Users/morton_cheung/Desktop/比赛/大数据分析
+# 项目根：不再硬编码本机绝对路径（架构规范 §5.1）。
+#   ROOT 由 decision_engine/common.py 按「环境变量 PROJECT_ROOT/AGRISCOPE_ROOT → 由 __file__ 位置推导」得出；
+#   此键仅为文档性提示，消费方不得把它当作可用路径使用。
+project_root: auto
 
 # 引擎工作区（相对 project_root）
 workspace: models

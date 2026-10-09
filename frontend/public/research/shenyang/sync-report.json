@@ -1,7 +1,7 @@
 {
   "generatedBy": "scripts/sync-shenyang-v2.mjs",
   "cityId": "shenyang",
-  "sourceRoot": "/Users/morton_cheung/Desktop/比赛/大数据分析/city_data/shenyang/research",
+  "sourceRoot": "monorepo-root/city_data/shenyang/research",
   "outRoot": "public/research/shenyang",
   "assetSources": {
     "tables": "research/<A0X>/tables",

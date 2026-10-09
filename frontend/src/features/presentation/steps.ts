@@ -65,6 +65,14 @@ export const PRESENTATION_STEPS: readonly PresentationStep[] = [
     source: '决策中心页（DecisionCenter）',
   },
   {
+    id: 'short-term',
+    label: '短期预测 · 7 / 14 / 30',
+    to: ROUTES.decision('shenyang'),
+    anchor: '.center-horizon-tabs',
+    narration: '短期预测给出 7 / 14 / 30 天三个档位；切换档位只更新这一区块的图表与读数，不重载整页，区间与中心值都来自对应跨度的真实模型输出。',
+    source: '决策中心 §11 短期预测（7 / 14 / 30）',
+  },
+  {
     id: 'accumulation',
     label: '14 日累积暴露',
     to: ROUTES.research('shenyang', 'A3.8'),
@@ -95,6 +103,14 @@ export const PRESENTATION_STEPS: readonly PresentationStep[] = [
     anchor: '.cx-redline',
     narration: '跨城专用页在统一方法下比较六城的生产结构与市场同步性。六城价格口径不同，只做结构化与相对化比较，不提供六城菜价排行。',
     source: '辽宁六城比较跨城专用页（A10）',
+  },
+  {
+    id: 'synthesis',
+    label: '六城综合研究',
+    to: `${ROUTES.researchCenter}?view=synthesis`,
+    anchor: '.cx-findings',
+    narration: '六城综合研究专题汇总辽宁六城农业市场的周期、气象响应与区域差异：先给摘要与关键发现，再给研究总览图与一张总表。',
+    source: '六城综合研究专题（A11，SynthesisPage）',
   },
 ] as const;
 

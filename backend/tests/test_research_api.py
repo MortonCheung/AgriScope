@@ -158,7 +158,7 @@ LLM_ARTIFACTS = [
 
 @pytest.fixture(scope="module")
 def llm_client():
-    if not R.LLM_ARTIFACTS_DIR.is_dir():
+    if not R.llm_artifacts_dir().is_dir():
         pytest.skip("LLM 回溯评估产物未生成：llm/artifacts/v2/")
     with TestClient(app) as c:
         yield c
@@ -166,8 +166,8 @@ def llm_client():
 
 def test_llm_evaluation_is_derived_from_real_artifacts(llm_client):
     body = llm_client.get("/api/research/llm-evaluation").json()
-    status = json.loads((R.LLM_ARTIFACTS_DIR / R.LLM_STATUS_FILE).read_text(encoding="utf-8"))
-    outcomes = json.loads((R.LLM_ARTIFACTS_DIR / R.LLM_OUTCOME_FILE).read_text(encoding="utf-8"))
+    status = json.loads((R.llm_artifacts_dir() / R.LLM_STATUS_FILE).read_text(encoding="utf-8"))
+    outcomes = json.loads((R.llm_artifacts_dir() / R.LLM_OUTCOME_FILE).read_text(encoding="utf-8"))
 
     assert body["status"] == status["status"] == "REAL_LLM_EVALUATED_RETROSPECTIVE_ONLY"
     assert body["evidence_status"] == "RETROSPECTIVE_ONLY_NO_UNTOUCHED"
@@ -212,7 +212,7 @@ def test_llm_evaluation_never_leaks_keys_or_base_url(llm_client):
 
 
 def test_llm_evaluation_returns_503_when_artifacts_missing(monkeypatch, tmp_path):
-    monkeypatch.setattr(R, "LLM_ARTIFACTS_DIR", tmp_path / "absent")
+    monkeypatch.setattr(R, "LLM_ARTIFACTS_CANDIDATES", (tmp_path / "absent", tmp_path / "absent2"))
     with TestClient(app) as c:
         response = c.get("/api/research/llm-evaluation")
     assert response.status_code == 503

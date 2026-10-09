@@ -74,3 +74,37 @@
 
 `RouteTransition`、`pageNavigation`、`appHistory`、`PerformancePolicy`、`qualityPolicy`、
 `SpatialStage（重写后）`、`CameraRig（新增）`、`MotionToken` —— 属于技术层，可继续使用。
+
+## V3 收口：`src/legacy/` 目录清理记录
+
+**删除日期：2026-10-09**（分支 `feat/frontend-v3-arch-consolidation`，Phase 7）。
+
+上表有的行标注「删除」是 iTeach → AgriScope 的第一次迁移；本节的「删除」是 V3 架构收口时，
+对**已经完成迁移、确认零生产引用**的过渡目录做最终移除。删除前多路取证，全部命中才执行。
+
+| 被删目录/文件 | V3 替代物 | 删除依据 |
+|---|---|---|
+| `src/legacy/city-v1/`（`CityResearchSpacePage`、`CityReportPage`、`city-space.css`） | `features/research-v2/CityResearchPage.tsx`、`features/report/ReportPage.tsx` | 无 import / 无路由 / 无测试 / 无文档必需引用；内部 import 目标已不存在 |
+| `src/legacy/research-v1/`（含 `widgets/`、`tree/`、`workspace/`、`data/`） | `features/research-v2/`（`ResearchArticleView`、`ResearchTree`、`TopicExplorer`、`InteractivePointView`、`EvidenceRail`、`DataTable`、`Figure`、`ResearchSources`） | 同上；`../research/**` 源目录已不存在 |
+| `src/legacy/components-v1/`（`AsyncState`、`EvidenceBadge`、`KeyNumberGrid`、`ResearchFigure`、`SourceCitation`） | `features/research-v2/{Figure,ResearchSources,blocks}.tsx`、`services/asyncState.ts`、`features/evidence/EvidenceDrawer.tsx` | 同上；`components/{AsyncState,ResearchFigure,SourceCitation,EvidenceBadge,KeyNumberGrid}.tsx` 均已不存在 |
+| `src/legacy/insight-v1/`（`ResearchInsightDock`、`researchContextStore`） | `features/evidence/{EvidenceDrawer,useEvidenceLayers}.tsx` | 同上，零引用 |
+| `src/legacy/rainstorm-v1/`（`RainstormPage`） | `features/scenario/{ScenarioPage,ScenarioSimulation}.tsx` | 同上；`/shenyang-rainstorm` 已改为 `Navigate → /scenario-lab`（见 `AppRouter.tsx`），不再渲染旧页 |
+| `src/legacy/scenario-v1-{data.ts,ScenarioLabPage.tsx,.css}` | `features/scenario/{ScenarioPage,ScenarioSimulation,useScenarioSimulation}.ts` | 同上；`ROUTES.scenario` 指向新 `ScenarioPage` |
+
+**验证方式（删除当时全部通过）**：
+
+- `grep -rn "legacy/" src/{app,features,domain,providers,components,services}` 与按目录名
+  （`city-v1|components-v1|insight-v1|rainstorm-v1|research-v1|scenario-v1`）检索 → 外部引用 **0**；
+- `frontend/scripts/*.mjs`、`vite.config.ts`、`tsconfig*.json`、`index.html` 均不引用 legacy
+  （仅 `tsconfig.app.json` 有 `"exclude": ["src/legacy"]`，此排除项一并移除）；
+- `legacy/**` 内部 import 指向的目标（`components/AsyncState`、`components/ResearchFigure`、
+  `../research/**`）**早已不存在**，说明该目录即便保留也无法编译；
+- 删除前后 `npx vitest run` 均为 **43 files / 389 passed**（不变）；
+- `npx tsc --noEmit -p tsconfig.app.json`、`npm run build`、`verify:v2`、`verify:integrity`、
+  `verify:decision` 全部通过。
+
+**明确保留（规范 §10.2：仍作 fallback / 兼容 schema / 历史迁移必须文件，不得删）**：这些**不在**
+`src/legacy/` 内，与本轮清理无关 —— `src/providers/decision/legacyAdapter.ts`（旧决策 fixture →
+正式契约的适配器，仍被 demo/mock provider 与测试使用）、`public/decision/legacy-v2/**`（决策兼容
+样例）、`public/research/shenyang/**`（唯一沈阳研究兼容 schema）、`src/app/routes.ts` 的
+`legacyCityReport` / `legacyRainstorm` 重定向别名、以及 `LEGACY_FALLBACK` 状态机。

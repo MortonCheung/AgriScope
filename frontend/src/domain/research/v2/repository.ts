@@ -15,7 +15,9 @@ export type { V2Table };
  *      `/api/research/<cityId>/manifest.json`、`/articles/<id>.json`、`/tables/<file>`、`/figures/<file>`
  *      后端对 city / article id / 文件名做**路径白名单**校验，前端不做任何拼接推断。
  *   2. 文章 id 用 **canonical**（A2），由 compat 层解析到当前载荷 id（A02）。
- *      canonical 存在时优先用它；不存在才回退。研究侧完成正式迁移后，回退自然失效。
+ *      候选顺序为**先当前载荷编号（A02）、失败再试 canonical（A2）**：
+ *      现状载荷就是 A02，先试 A02 一次命中，不会先打出一发 A2 让后端 400；
+ *      研究侧完成正式迁移、只输出 A2 后，A02 落空、A2 命中，语义仍然成立。
  *   3. 推演表与研究树分离（§30）：`/scenario/<cityId>/<file>`。
  *   4. `frontend/public/research/shenyang` 仅作 **legacy compatibility** 保留，
  *      不再是正式六城架构；正式架构由 backend 提供六城 + 跨城市。
@@ -37,13 +39,18 @@ export function scenarioRoot(cityId: string): string {
  *   - 不进入 URL；
  *   - 不进入界面；
  *   - 不成为新的领域契约。
- * 研究侧开始输出 `articles/A1.json` 时，第一个候选直接命中，回退不再被使用。
+ *
+ * **候选顺序：当前载荷编号（A01）在前，canonical（A1）在后。**
+ * 原因是现状载荷仍是 A01–A08，后端白名单只认两位编号，对 `A1` 这类一位编号
+ * 直接返回 400；若先探测 canonical，每次打开页面都会先产生一发 400 再回退，
+ * 既污染网络面板又浪费一次请求。放在后位既避免现状下的 400，又保留迁移语义：
+ * 研究侧改为只输出 `A1.json` 后，首个候选落空（404），第二个候选命中，功能不变。
  */
 export function candidateArticleIds(canonicalId: string): string[] {
   const match = /^A(\d+)$/.exec(canonicalId);
   if (!match) return [canonicalId];
   const padded = `A${match[1].padStart(2, '0')}`;
-  return padded === canonicalId ? [canonicalId] : [canonicalId, padded];
+  return padded === canonicalId ? [canonicalId] : [padded, canonicalId];
 }
 
 export const assetUrl = {

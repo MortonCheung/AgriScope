@@ -5,6 +5,8 @@
   align-items: center;
   gap: var(--ag-space-2);
   color: var(--ag-ink-muted);
+  /* 窄屏不再被 Header 的 flex 挤压成一条：上下文条保持自身宽度，宁可让导航折叠。 */
+  flex: none;
 }
 
 .ag-context__field {
@@ -12,6 +14,7 @@
   display: inline-flex;
   align-items: baseline;
   gap: 6px;
+  flex: none;
 }
 
 .ag-context__label {

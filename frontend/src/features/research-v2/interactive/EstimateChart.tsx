@@ -89,6 +89,7 @@ export function EstimateChart({ rows, categoryKey, valueKey, ciLowKey, ciHighKey
   const categoryLabel = columnMeta(categoryKey)?.label ?? categoryKey;
 
   const points = useMemo(() => {
+    const seen = new Map<string, number>();
     return rows
       .map((row) => ({
         category: row[categoryKey] ?? '',
@@ -96,7 +97,15 @@ export function EstimateChart({ rows, categoryKey, valueKey, ciLowKey, ciHighKey
         low: ciLowKey ? Number(row[ciLowKey]) : undefined,
         high: ciHighKey ? Number(row[ciHighKey]) : undefined,
       }))
-      .filter((point) => point.category !== '' && Number.isFinite(point.value));
+      .filter((point) => point.category !== '' && Number.isFinite(point.value))
+      .map((point) => {
+        /* 分类取值**允许重复**：跨城序列的分类轴是 city_b，同一城市可在不同配对/作物里
+           合法地出现多条（例：西红柿 朝阳→锦州 与 大连→锦州 都含锦州）。
+           这里为每个取值记下它在序列内的出现序号，拼成唯一 key，不丢任何真实数据行。 */
+        const occurrence = seen.get(point.category) ?? 0;
+        seen.set(point.category, occurrence + 1);
+        return { ...point, key: `${point.category}#${occurrence}` };
+      });
   }, [categoryKey, ciHighKey, ciLowKey, rows, valueKey]);
 
   const scale = useMemo(() => {
@@ -176,8 +185,10 @@ export function EstimateChart({ rows, categoryKey, valueKey, ciLowKey, ciHighKey
             const hasInterval = hasCi && point.low !== undefined && point.high !== undefined
               && Number.isFinite(point.low) && Number.isFinite(point.high);
             return (
-              /* key 用**分类取值**而不是下标：切换 selector 时节点身份不变，因此能 morph 而不是重放淡入（§46）。 */
-              <g key={point.category}
+              /* key 用「分类取值 + 该取值出现序号」：分类取值本身可能重复（见上），
+                 单用它会让同一城市（如锦州）的两条真实记录撞 key；追加序号既唯一，
+                 又让同分类同序号的节点在切换 selector 时身份不变，能 morph 而不是重放淡入（§46）。 */
+              <g key={point.key}
                 onPointerEnter={() => setHover(index)}
                 onPointerLeave={() => setHover(null)}
                 style={{ animationDelay: `${Math.min(index, 24) * 14}ms` }}

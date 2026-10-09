@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-08T14:38:04.018109+00:00",
+  "generated_at": "2026-10-09T09:42:59.797614+00:00",
   "publisher": "AgriScope/pipelines/publishing/publish_runtime.py",
   "note": "运行资产快照；由 publishing 从根 data/models 生成，产品只读 runtime/。",
   "assets": [
@@ -100,10 +100,29 @@
       "status": "OK"
     },
     {
+      "source": "AgriScope/llm/artifacts/v2/real_evaluation_status.json",
+      "destination": "runtime/llm/artifacts/v2/real_evaluation_status.json",
+      "description": "LLM 回溯评估状态（机器可读）",
+      "status": "OK"
+    },
+    {
+      "source": "AgriScope/llm/artifacts/v2/outcome_labels.json",
+      "destination": "runtime/llm/artifacts/v2/outcome_labels.json",
+      "description": "LLM / Hybrid 结论标签",
+      "status": "OK"
+    },
+    {
+      "source": "AgriScope/llm/artifacts/v2/fair_comparison.csv",
+      "destination": "runtime/llm/artifacts/v2/fair_comparison.csv",
+      "description": "公平对比表（逐组 WAPE 与增益）",
+      "status": "OK"
+    },
+    {
       "source": "data/research",
       "destination": "runtime/research",
-      "description": "六城与跨城市研究资产（研究中心）",
-      "status": "OK"
+      "description": "六城与跨城市研究产品载荷（product/ + research_catalog.json，由 publish_research.py 从 data/research 按选择发布）",
+      "asset_type": "research_product",
+      "status": "PUBLISHED(research-product)"
     }
   ]
 }
