@@ -1,0 +1,93 @@
+[
+  {
+    "label": "province_default",
+    "url": "http://127.0.0.1:5173/liaoning",
+    "selected": [],
+    "preview": "选择城市，开始观察",
+    "sameCanvas": true
+  },
+  {
+    "label": "mesh_hover_shenyang",
+    "url": "http://127.0.0.1:5173/liaoning",
+    "selected": [],
+    "preview": "沈阳 · 主要作物 玉米点击观察",
+    "sameCanvas": true
+  },
+  {
+    "label": "leave_shenyang",
+    "url": "http://127.0.0.1:5173/liaoning",
+    "selected": [],
+    "preview": "选择城市，开始观察",
+    "sameCanvas": true
+  },
+  {
+    "label": "mesh_select_chaoyang",
+    "url": "http://127.0.0.1:5173/liaoning?city=chaoyang",
+    "selected": [
+      "朝阳"
+    ],
+    "preview": "选择城市，开始观察",
+    "sameCanvas": true
+  },
+  {
+    "label": "hover_jinzhou_keeps_chaoyang",
+    "url": "http://127.0.0.1:5173/liaoning?city=chaoyang",
+    "selected": [
+      "朝阳"
+    ],
+    "preview": "锦州 · 主要作物 玉米点击观察",
+    "sameCanvas": true
+  },
+  {
+    "label": "leave_keeps_chaoyang",
+    "url": "http://127.0.0.1:5173/liaoning?city=chaoyang",
+    "selected": [
+      "朝阳"
+    ],
+    "preview": "选择城市，开始观察",
+    "sameCanvas": true
+  },
+  {
+    "label": "select_jinzhou",
+    "url": "http://127.0.0.1:5173/liaoning?city=jinzhou",
+    "selected": [
+      "锦州"
+    ],
+    "preview": "选择城市，开始观察",
+    "sameCanvas": true
+  },
+  {
+    "label": "return_province",
+    "url": "http://127.0.0.1:5173/liaoning",
+    "selected": [],
+    "preview": "选择城市，开始观察",
+    "sameCanvas": true
+  },
+  {
+    "label": "browser_back_jinzhou",
+    "url": "http://127.0.0.1:5173/liaoning?city=jinzhou",
+    "selected": [
+      "锦州"
+    ],
+    "preview": "选择城市，开始观察",
+    "sameCanvas": true
+  },
+  {
+    "label": "browser_back_chaoyang",
+    "url": "http://127.0.0.1:5173/liaoning?city=chaoyang",
+    "selected": [
+      "朝阳"
+    ],
+    "preview": "选择城市，开始观察",
+    "sameCanvas": true
+  },
+  {
+    "label": "browser_forward_jinzhou",
+    "url": "http://127.0.0.1:5173/liaoning?city=jinzhou",
+    "selected": [
+      "锦州"
+    ],
+    "preview": "选择城市，开始观察",
+    "sameCanvas": true
+  }
+]

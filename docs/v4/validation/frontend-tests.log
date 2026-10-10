@@ -1,0 +1,126 @@
+
+> agriscope@1.0.0 test
+> vitest run && node scripts/verify-v2-payload.mjs && node scripts/verify-research-integrity.mjs
+
+
+ RUN  v3.2.7 /Users/morton_cheung/Desktop/比赛/大数据分析/AgriScope/frontend
+
+ ✓ src/features/decision/centerModel.test.ts (6 tests) 82ms
+ ✓ src/features/daily/dailyAdapter.test.ts (26 tests) 62ms
+ ✓ src/features/liaoning/liaoningGeometry.test.ts (6 tests) 44ms
+ ✓ src/providers/decision/finalAdapter.test.ts (37 tests) 22ms
+ ✓ src/providers/decision/decisionProviders.test.ts (25 tests) 72ms
+stdout | src/features/research-v2/markdown.test.tsx > renderInline 不泄漏数据文件名 > 没有中文名的代码片段不再原样保留
+正文里未登记的英文标识符（需补 COLUMN_META / PROSE_TERMS）：is_significant
+
+stdout | src/features/research-v2/markdown.test.tsx > renderInline 不泄漏英文工程字段（V5 §76） > 没有中文名的英文工程名不会漏出去
+正文里未登记的英文标识符（需补 COLUMN_META / PROSE_TERMS）：some_internal_flag
+
+stdout | src/features/research-v2/markdown.test.tsx > 真实研究正文渲染后不泄漏工程字段 > 共 9 篇，逐段检查
+正文里未登记的英文标识符（需补 COLUMN_META / PROSE_TERMS）：
+正文里未登记的英文标识符（需补 COLUMN_META / PROSE_TERMS）：
+正文里未登记的英文标识符（需补 COLUMN_META / PROSE_TERMS）：
+正文里未登记的英文标识符（需补 COLUMN_META / PROSE_TERMS）：
+正文里未登记的英文标识符（需补 COLUMN_META / PROSE_TERMS）：
+正文里未登记的英文标识符（需补 COLUMN_META / PROSE_TERMS）：
+正文里未登记的英文标识符（需补 COLUMN_META / PROSE_TERMS）：|z_rel|
+正文里未登记的英文标识符（需补 COLUMN_META / PROSE_TERMS）：
+正文里未登记的英文标识符（需补 COLUMN_META / PROSE_TERMS）：
+正文里未登记的英文标识符（需补 COLUMN_META / PROSE_TERMS）：|z_rel|
+正文里未登记的英文标识符（需补 COLUMN_META / PROSE_TERMS）：
+正文里未登记的英文标识符（需补 COLUMN_META / PROSE_TERMS）： HAC(14)；并估计
+正文里未登记的英文标识符（需补 COLUMN_META / PROSE_TERMS）： 与
+正文里未登记的英文标识符（需补 COLUMN_META / PROSE_TERMS）：
+正文里未登记的英文标识符（需补 COLUMN_META / PROSE_TERMS）： HAC(14)；并估计
+正文里未登记的英文标识符（需补 COLUMN_META / PROSE_TERMS）： 与
+正文里未登记的英文标识符（需补 COLUMN_META / PROSE_TERMS）：
+正文里未登记的英文标识符（需补 COLUMN_META / PROSE_TERMS）：
+正文里未登记的英文标识符（需补 COLUMN_META / PROSE_TERMS）：
+正文里未登记的英文标识符（需补 COLUMN_META / PROSE_TERMS）：
+正文里未登记的英文标识符（需补 COLUMN_META / PROSE_TERMS）：
+正文里未登记的英文标识符（需补 COLUMN_META / PROSE_TERMS）： 生产端证据（弱，部分支持） ↘ 【并列，不连接】 ↗ 市场端证据（弱，偶有可检出项）
+正文里未登记的英文标识符（需补 COLUMN_META / PROSE_TERMS）：
+
+stdout | src/features/research-v2/markdown.test.tsx > 真实研究正文渲染后不泄漏工程字段 > 研究点引文（1 个目录）逐条检查
+正文里未登记的英文标识符（需补 COLUMN_META / PROSE_TERMS）：|z_rel|
+
+ ✓ src/features/research-v2/markdown.test.tsx (21 tests) 39ms
+ ✓ src/services/csv.test.ts (5 tests) 2ms
+ ✓ src/app/navItems.test.ts (7 tests) 2ms
+ ✓ src/domain/research/catalog/catalog.test.ts (21 tests) 11ms
+ ✓ src/app/appHistory.test.ts (7 tests) 3ms
+ ✓ src/features/liaoning/cameraViews.test.ts (17 tests) 480ms
+ ✓ src/features/longHorizon/longHorizonAdapter.test.ts (8 tests) 4ms
+ ✓ src/providers/decision/capabilityFeatures.test.ts (14 tests) 5ms
+ ✓ src/providers/decision/formalHttp.test.ts (5 tests) 6ms
+ ✓ src/features/liaoning/cityMarketState.test.ts (9 tests) 5ms
+ ✓ src/features/cross-city/comparability.test.ts (8 tests) 5ms
+ ✓ src/domain/decision/planning.test.ts (5 tests) 3ms
+ ✓ src/features/opening/sketchMetrics.test.ts (13 tests) 4ms
+ ✓ src/app/routes.test.ts (15 tests) 5ms
+ ✓ src/performance/qualityPolicy.test.ts (6 tests) 2ms
+ ✓ src/domain/research/v2/selectors.test.ts (8 tests) 3ms
+ ✓ src/app/context/appContextUrl.test.ts (7 tests) 3ms
+ ✓ src/app/routeTransitions.test.ts (9 tests) 2ms
+ ✓ src/features/decision/decisionRoutes.test.ts (2 tests) 2ms
+ ✓ src/features/longHorizon/longHorizonV2.test.tsx (7 tests) 192ms
+stderr | src/features/decision/finalPresentation.test.tsx > formal UI semantics > price chart has no zero marker, profit chart has one
+You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled
+
+ ✓ src/features/decision/finalPresentation.test.tsx (10 tests) 284ms
+ ✓ src/domain/observations/useObservations.test.tsx (81 tests) 701ms
+ ✓ src/features/decision/DecisionCenter.test.tsx (9 tests) 496ms
+ ✓ src/features/research-v2/cityResearch.test.tsx (8 tests) 406ms
+ ✓ src/features/research-v2/researchLayout.test.tsx (7 tests) 199ms
+ ✓ src/features/daily/useDaily.test.tsx (4 tests) 184ms
+ ✓ src/features/decision/decisionFlow.test.tsx (9 tests) 995ms
+   ✓ decision flow & truthfulness > shows recommendation confidence, supports detail/compare/evidence and enters stress  596ms
+stdout | src/features/cross-city/CrossCityPage.test.tsx > 跨城比较专用页 > 指标切换、可比性标注与价格口径红线都在位
+未登记的取值（需补 VALUE_LABELS）：city = 朝阳
+未登记的取值（需补 VALUE_LABELS）：top3 = 玉米 82.4%
+未登记的取值（需补 VALUE_LABELS）：city = 大连
+未登记的取值（需补 VALUE_LABELS）：top3 = 玉米 66.8%
+未登记的取值（需补 VALUE_LABELS）：city = 丹东
+未登记的取值（需补 VALUE_LABELS）：top3 = 玉米 65.2%
+
+ ✓ src/features/scenario/scenarioSimulation.test.tsx (4 tests) 128ms
+stdout | src/features/cross-city/CrossCityPage.test.tsx > 跨城比较专用页 > 城际配对表用中文枚举并逐行标可比性，不泄漏 same/mixed/D/W
+未登记的取值（需补 VALUE_LABELS）：city = 朝阳
+未登记的取值（需补 VALUE_LABELS）：top3 = 玉米 82.4%
+未登记的取值（需补 VALUE_LABELS）：city = 大连
+未登记的取值（需补 VALUE_LABELS）：top3 = 玉米 66.8%
+未登记的取值（需补 VALUE_LABELS）：city = 丹东
+未登记的取值（需补 VALUE_LABELS）：top3 = 玉米 65.2%
+未登记的取值（需补 VALUE_LABELS）：city = 朝阳
+未登记的取值（需补 VALUE_LABELS）：top3 = 玉米 82.4%
+未登记的取值（需补 VALUE_LABELS）：city = 大连
+未登记的取值（需补 VALUE_LABELS）：top3 = 玉米 66.8%
+未登记的取值（需补 VALUE_LABELS）：city = 丹东
+未登记的取值（需补 VALUE_LABELS）：top3 = 玉米 65.2%
+
+ ✓ src/features/cross-city/CrossCityPage.test.tsx (2 tests) 264ms
+ ✓ src/features/opening/openingReplay.test.tsx (6 tests) 143ms
+ ✓ src/features/daily/dailyProvider.test.ts (9 tests) 20ms
+ ✓ src/features/research-center/LlmEvidence.test.tsx (4 tests) 74ms
+ ✓ src/services/decisionSession.test.tsx (4 tests) 85ms
+ ✓ src/features/evidence/EvidenceDrawer.test.tsx (9 tests) 167ms
+ ✓ src/features/daily/DailyContext.test.tsx (11 tests) 133ms
+ ✓ src/features/decision/PlanningWorkbench.test.tsx (17 tests) 2127ms
+ ✓ src/features/opening/openingPhase.test.ts (8 tests) 17ms
+ ✓ src/services/useCachedResource.test.tsx (2 tests) 12ms
+ ✓ src/app/context/useContextUrl.test.tsx (5 tests) 57ms
+ ✓ src/features/longHorizon/longHorizonProvider.test.ts (8 tests) 8ms
+ ✓ src/features/about/about.test.tsx (1 test) 25ms
+ ✓ src/features/spatial/cityExit.test.ts (5 tests) 1ms
+
+ Test Files  47 passed (47)
+      Tests  517 passed (517)
+   Start at  19:52:42
+   Duration  5.59s (transform 2.80s, setup 335ms, collect 9.70s, tests 7.59s, environment 6.42s, prepare 3.17s)
+
+[verify-v2-payload] 全部通过：9 篇 A01–A09 可发布 · 来源可解析 · 无旧 v1 编号 · 缺口已如实记录
+[verify-research-integrity] 全部通过
+  hash 校验 43 个文件，全部与源一致（不一致 0）
+  研究契约 8 个方向 / 76 个研究点：ready 54 · pending 19 · unsupported 3
+  ready 的引用原句全部能在研究正文里逐字找到；绑定的表、列、取值全部存在
+  46 个图绑定与 2 个方向页 Explorer 在 filter + 默认 selectors 下分类轴取值唯一（§36/§38/§39）

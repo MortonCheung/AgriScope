@@ -1,0 +1,3 @@
+
+> agriscope@1.0.0 typecheck
+> tsc -b --pretty false

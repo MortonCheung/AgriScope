@@ -1,0 +1,24 @@
+{
+  "skip": true,
+  "reducedMotion": true,
+  "openingCleanup": true,
+  "contextRoundTrip": [
+    "city",
+    "crop",
+    "horizon",
+    "as_of"
+  ],
+  "browserBackForward": true,
+  "refreshRestored": true,
+  "rapidRouteCycles": 8,
+  "idle": {
+    "rafRequests": 0,
+    "webglContexts": 1,
+    "webglProbeAllocations": [],
+    "canvases": 1
+  },
+  "normalPageErrors": [],
+  "geometryFallback": true,
+  "contextLossRecovery": true,
+  "observationFailure": true
+}

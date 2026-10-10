@@ -1,0 +1,14 @@
+{
+  "results": [
+    {
+      "city": "dandong",
+      "profitCny": 10000,
+      "shortPrice": false,
+      "longScenario": false,
+      "returnedContext": true,
+      "sameCanvas": true
+    }
+  ],
+  "pageErrors": [],
+  "consoleErrors": []
+}

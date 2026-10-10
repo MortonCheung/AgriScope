@@ -1,0 +1,19 @@
+{
+  "provinceDefault": true,
+  "results": [
+    {
+      "city": "shenyang",
+      "status": 200,
+      "modelVersion": "final_v1",
+      "actualModel": true
+    },
+    {
+      "city": "chaoyang",
+      "status": 200,
+      "modelVersion": "final_v1",
+      "actualModel": true
+    }
+  ],
+  "dandongPlanning": true,
+  "pageErrors": []
+}

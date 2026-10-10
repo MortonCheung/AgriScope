@@ -1,6 +1,6 @@
 # Camera Path Proof
 
-轨迹已通过数学采样，浏览器关键帧与录屏仍需在实际场景验收。
+本文件仅记录数学采样。独立浏览器验收见 V4_ACCEPTANCE_REPORT.md 与 evidence/opening.webm。
 
 - 采用 three 已安装的 centripetal CatmullRomCurve3 + getPointAt（1200 段弧长表），不新增依赖。
 - 统一线性时间轴 4800ms；分段导演内部 smoothstep；相机 Position 与 Target 独立。

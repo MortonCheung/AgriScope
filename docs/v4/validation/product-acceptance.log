@@ -1,0 +1,191 @@
+===== 0. 运行时资产清单校验 =====
+{"ok": 20, "total": 20, "problems": [], "generated_at": "2026-10-09T09:42:59.797614+00:00", "publisher": "AgriScope/pipelines/publishing/publish_runtime.py"}
+ASSETS_VERIFY_OK
+
+===== 1. Backend 正式验收 =====
+2026-10-10 19:07:34,375 INFO agriscope.api runtime snapshot bound: /Users/morton_cheung/Desktop/比赛/大数据分析/AgriScope/runtime/data/processed/daily/final_input/extended_snapshot [LIVE]
+2026-10-10 19:07:34,375 INFO agriscope.api Final engine preloaded
+2026-10-10 19:07:34,381 INFO httpx HTTP Request: GET http://testserver/health/ready "HTTP/1.1 200 OK"
+2026-10-10 19:07:34,510 INFO httpx HTTP Request: GET http://testserver/api/meta "HTTP/1.1 200 OK"
+2026-10-10 19:07:35,602 INFO httpx HTTP Request: POST http://testserver/api/decision/evaluate "HTTP/1.1 200 OK"
+2026-10-10 19:07:35,843 INFO httpx HTTP Request: POST http://testserver/api/decision "HTTP/1.1 200 OK"
+2026-10-10 19:07:35,896 INFO httpx HTTP Request: GET http://testserver/api/decision/capabilities?city=shenyang "HTTP/1.1 200 OK"
+2026-10-10 19:07:35,899 INFO httpx HTTP Request: GET http://testserver/api/decision/capabilities?city=dalian "HTTP/1.1 200 OK"
+2026-10-10 19:07:35,957 INFO httpx HTTP Request: POST http://testserver/api/decision/stress "HTTP/1.1 200 OK"
+2026-10-10 19:07:35,960 INFO httpx HTTP Request: GET http://testserver/api/daily/latest?city=shenyang "HTTP/1.1 200 OK"
+2026-10-10 19:07:35,963 INFO httpx HTTP Request: POST http://testserver/api/decision/evaluate "HTTP/1.1 400 Bad Request"
+2026-10-10 19:07:36,062 INFO agriscope.api api shutdown
+==========================================================================
+AgriScope Decision API · Backend Acceptance
+==========================================================================
+
+[静态扫描]
+  [PASS] backend 代码无 Mac 绝对路径
+  [PASS] 无旧 v1/archive 生产依赖
+  [PASS] 未 import 前端目录（AgriScope/）
+
+[运行时审计 / 契约]
+  [PASS] /health/ready 真检查通过 :: ready
+  [PASS] 版本矩阵 model_version=final_v1
+  [PASS] 运行时快照状态明确 :: LIVE @ extended_snapshot
+  [PASS] Daily 版本矩阵可得 :: 1.1.0
+  [PASS] evaluate 200（默认入口 /api/decision 亦可）
+  [PASS] request 原样回显
+  [PASS] market_as_of=请求 as_of
+  [PASS] batch.all 状态属登记枚举
+  [PASS] capabilities supported & 10 crops
+  [PASS] 大连 supported=False（不 fallback）
+  [PASS] stress 200 且 available
+  [PASS] daily latest.json 原样返回
+  [PASS] 统一错误契约 + request_id
+  [PASS] OpenAPI 覆盖核心路径 :: []
+  [PASS] 未修改 models/（canonical 只读）
+
+[契约回归 pytest]
+  [PASS] backend tests（含长期 v2）全通过 :: 99 passed in 3.64s
+
+==========================================================================
+验收结果：19/19 通过
+
+状态：BACKEND_FROZEN
+
+===== 2. Final Model 验收 =====
+{"status": "FINAL_FREEZE_UNCHANGED", "files_checked": 173, "code_fingerprint": "b19b187268ee92db"}
+                                  check   ok                                                                         detail
+                  Final Data Audit PASS True                                                                DATA_AUDIT_PASS
+              Data v1 frozen (manifest) True                                                                             19
+           no leakage (truncation test) True                                                                         leak=0
+  price_level clean (single level used) True
+                      baseline complete True                                                                        rows=90
+                 price models retrained True horizons=[np.int64(7), np.int64(14), np.int64(30), np.int64(60), np.int64(90)]
+scenario range calibrated or downgraded True                                                                 scenario_range
+        HRI validated (12w significant) True                                                                       sig=9/10
+                  Market Risk validated True
+          HRI vs MarketRisk incremental True                                                            -0.0485592141787771
+          Climate boundaries documented True
+          Profit proxy handled (graded) True                                                                       crops=10
+                  Profit Engine 三式+来源分级 True                                                                       crops=10
+                    Decision Score 实际应用 True
+                       §15 折元数据(区间+样本数) True
+                            §54 可复现性元数据 True
+    §21-23 scenario range 逐crop×horizon True
+                         极差区间已降级(不掩盖最差) True                                              worst_coverage=0.5113122171945701
+                   §24/§25 HRI 时间序列稳健验证 True
+                  §31/§35/§36/§50 生产不变量 True                                                                            9/9
+                §6/§60 Final 生产 v1 依赖=0 True                                                             static=0 runtime=0
+          §44/§46 唯一推理入口 + Contract 实运行 True
+             §12-§15 untouched + 默认策略决策 True                                                     decision=A no_overfit=True
+                             §53 时间切分明确 True
+                  Confidence calibrated True
+          Balanced root cause diagnosed True                                      C (HRI 有效，但与预测收益/价格水平高相关 → 旧 score 未有效惩罚)
+  Balanced high-HRI rate reduced vs old True     old=0.1273006134969325 fix=0.004601226993865031 profit=0.13803680981595093
+      production Balanced fix effective True        balanced_before=0.1304347826086956 after=0.0 profit=0.13043478260869565
+           historical backtest complete True                                                                   strategies=8
+                      ablation complete True
+                    robustness complete True
+                        portfolio rerun True
+                           stress rerun True
+  counterfactual (minimax regret) rerun True
+       independent metric recalculation True                                                                        887/887
+ Pareto/window/area/portfolio/stress 重跑 True                                                                        §31-§36
+  robustness 扩展(risk pref/budget/proxy) True
+                               13 交付物齐备 True                                                                     missing=[]
+
+[acceptance_final] 38/38 passed
+
+===== 3. Daily 验收 =====
+==========================================================================
+AgriScope Daily · Final Daily Acceptance  (2026-10-10 19:07:42 Asia/Shanghai)
+==========================================================================
+
+[静态扫描]
+  [PASS] 无旧 v1 生产依赖（static）
+  [PASS] 无 Mac 绝对路径（static）
+
+[运行时依赖审计]
+[2026-10-10 19:07:42] ======================================================================
+[2026-10-10 19:07:42] job_start date=2026-10-06 city=沈阳 dry_run=False adapter=final tz=Asia/Shanghai pipeline_version=1.1.0
+[2026-10-10 19:07:44] [normalize] rows_total=17645 accepted=17567 flagged=122 levels={'wholesale': 16670, 'retail_market': 546, 'supermarket': 429} max_date=2026-10-06
+[2026-10-10 19:07:44] [qc] consistency_vs_canonical={'status': 'OK', 'overlap_rows': 14100, 'max_abs_diff': 0.0, 'n_mismatch_gt_1e-6': 0, 'daily_only_rows': 2570, 'canonical_only_rows': 0}
+[2026-10-10 19:07:44] [features] rows=16626 latest_data_date=2026-10-06
+[2026-10-10 19:07:47] [inference] adapter=final model_status=PARTIAL model_version=final_v1 entry=decision_engine.final.inference.FinalDecisionEngine.evaluate n_evaluated=0 fallback=False
+[2026-10-10 19:07:47] [snapshot] status=partial freshness=FRESH latest_data_date=2026-10-06 crops=10 contract_valid=True hash=52030315fdf48a02
+[2026-10-10 19:07:47] [snapshot] signals={'土豆': 'UNKNOWN', '尖椒': 'UNKNOWN', '甘蓝': 'UNKNOWN', '芸豆': 'UNKNOWN', '芹菜': 'UNKNOWN', '茄子': 'UNKNOWN', '西红柿': 'UNKNOWN', '青椒': 'UNKNOWN', '韭菜': 'UNKNOWN', '黄瓜': 'UNKNOWN'}
+[2026-10-10 19:07:47] job_end
+  [PASS] 无旧 v1 生产依赖（runtime）
+  [PASS] 未修改 models/（snapshots / models / src / config）
+    运行时读取的 data/ 分布: {'processed': 51, 'raw': 5596, 'metadata': 1, 'model_ready': 4, 'snapshots': 20}
+    运行时读取的 models/ 文件（4）:
+      - /Users/morton_cheung/Desktop/比赛/大数据分析/models/data/snapshots/final_v1/model_ready/profit/cost_components.parquet
+      - /Users/morton_cheung/Desktop/比赛/大数据分析/models/reports/final/FINAL_RUN_META.json
+      - /Users/morton_cheung/Desktop/比赛/大数据分析/models/reports/final/tables/price_model_selection.csv
+      - /Users/morton_cheung/Desktop/比赛/大数据分析/models/reports/final/tables/scenario_range_by_crop_horizon.csv
+  [PASS] Final 生产入口被调用
+
+[数据链验收]
+  [PASS] raw archive 存在（可追溯原始证据） :: 16 个日期目录
+  [PASS] normalize 生成 Daily 主表 :: rows=17645 max_date=2026-10-06
+  [PASS] QC 完成（无未知状态） :: {'OK': 17523, 'REJECTED': 78, 'SUSPECT': 44}
+  [PASS] price_level 仅模型口径进入 features :: daily_market_price.parquet
+  [PASS] 与模型 canonical 口径一致 :: overlap=14100 max_abs_diff=0.0
+  [PASS] volume 单位标为 UNKNOWN 且未验证 :: volume_unit=UNKNOWN
+  [PASS] daily features 生成 :: rows=16626
+  [PASS] features 无 volume 字段
+  [PASS] past-only（真实数据） :: 截至 2026-10-06 00:00:00
+  [PASS] 作物清单来自 Final capability :: ['土豆', '尖椒', '甘蓝', '芸豆', '芹菜', '茄子', '西红柿', '青椒', '韭菜', '黄瓜']
+  [PASS] Final Model 生产入口可用 :: ready
+  [PASS] Final Adapter 运行且 model_status 明确 :: status=PARTIAL n_eval=0
+  [PASS] 不静默 fallback
+  [PASS] model_version 来自 RUN_META（非硬编码） :: final_v1
+  [PASS] 无用户场景不生成种植推荐
+
+[Snapshot 契约 / 监控]
+  [PASS] latest.json 存在 :: 2026-10-08
+  [PASS] latest.json 通过契约校验 :: []
+  [PASS] 契约字段 schema_version
+  [PASS] 契约字段 daily_pipeline_version
+  [PASS] 契约字段 data_version
+  [PASS] 契约字段 model_version
+  [PASS] 契约字段 generated_at
+  [PASS] 契约字段 latest_data_date
+  [PASS] 契约字段 status
+  [PASS] recommendation 为空（无用户场景）
+  [PASS] timezone 固定 Asia/Shanghai :: Asia/Shanghai
+  [PASS] freshness 基于真实数据日期 :: data=2026-10-06 freshness=DELAYED
+  [PASS] monitor 字段齐全
+
+==========================================================================
+验收结果：33/33 通过
+
+状态：DAILY_PIPELINE_FROZEN_WITH_KNOWN_LIMITATIONS
+已知限制（允许清单）：
+  - 仅沈阳（其余五城未经实时源/口径验证，未上线）
+  - 仅 wholesale 单一价格口径为主链（零售层仅存档，model_comparable=false）
+  - 官方数据为日度发布，存在自然延迟（当日数据常需次日）
+  - 无天气 / 无新闻舆情 / 无 LLM 摘要（本轮不做）
+  - 成交量单位来源未标注 → UNKNOWN，不参与任何定量计算
+
+===== 4. Long-Horizon 一致性门禁 =====
+{"status": "LONG_HORIZON_V2_ENGINEERING_ACCEPTANCE_PASS", "registry_rows": 120, "snapshot_entries": 120, "as_of": "2026-10-06", "untouched_n": 0, "scientific_status": "RETROSPECTIVE_ONLY_NO_UNTOUCHED", "problems": []}
+===== 5. 长期/LLM/运行时/契约边界测试 =====
+........................................................................ [ 72%]
+...........................                                              [100%]
+99 passed in 2.47s
+..........................                                               [100%]
+26 passed in 26.11s
+..............s...s..................................................... [100%]
+=============================== warnings summary ===============================
+pipelines/modeling/tests/test_area_constraints.py::test_area_recommended_within_tolerance
+pipelines/modeling/tests/test_candidate_generation.py::test_candidate_determinism
+pipelines/modeling/tests/test_candidate_generation.py::test_candidate_determinism
+pipelines/modeling/tests/test_recommender.py::test_recommender_schema_and_topn
+  /Users/morton_cheung/Desktop/比赛/大数据分析/AgriScope/pipelines/modeling/src/decision_engine/recommendation/candidates.py:188: FutureWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+    keep = (df.groupby(["crop", "_m"], group_keys=False)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+70 passed, 2 skipped, 4 warnings in 14.07s
+.....................                                                    [100%]
+21 passed in 62.60s (0:01:02)
+{"status": "INDEPENDENT_RECALCULATION_PASS", "prediction_rows": 586000, "metric_groups": 3840, "max_absolute_discrepancy": {"n": 0.0, "WAPE": 2.842170943040401e-14, "MAE": 4.440892098500626e-16, "sMAPE": 1.4210854715202004e-14, "bias": 4.440892098500626e-16, "direction_accuracy": 1.1102230246251565e-16}, "label_maturity_and_phase_end_checks": "PASS", "untouched_claim": "NONE; historical periods previously viewed"}
+
+ACCEPTANCE_PASS
