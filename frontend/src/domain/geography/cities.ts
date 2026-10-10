@@ -33,6 +33,12 @@ export const LIAONING: Province = {
 
 /** 计划研究的六个城市，仅用于地图与入口的权重排序。 */
 export const STUDY_CITY_IDS = ['shenyang', 'tieling', 'chaoyang', 'jinzhou', 'dandong', 'dalian'] as const;
+export type StudyCityId = (typeof STUDY_CITY_IDS)[number];
+
+/** Shared guard for mesh events, keyboard selection and route entry. */
+export function isStudyCity(cityId: string): cityId is StudyCityId {
+  return (STUDY_CITY_IDS as readonly string[]).includes(cityId);
+}
 
 export const LIAONING_REGIONS: GeoRegion[] = [
   { id: 'central', name: '中部城市群', provinceId: 'liaoning', cityIds: ['shenyang', 'anshan', 'fushun', 'benxi', 'liaoyang', 'tieling', 'yingkou', 'panjin'], description: '以沈阳为中心的平原蔬菜主产与批发集散区' },

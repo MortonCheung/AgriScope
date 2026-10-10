@@ -5,7 +5,7 @@ import { buildLiaoningSolidModel, type GeoCollection } from './liaoningGeometry'
 import {
   CAMERA_FOV_DEG, ENTRY_AZIMUTH_ORBIT_DEGREES, OPENING_DURATION_MS, OPENING_TIMELINE, PROVINCE_ROOT_ROTATION,
   azimuthDegrees, maxGroundHalfSpan, openingStageForProgress, orbitSpanDegrees, orbitView,
-  provinceCityView, provinceView, responsiveProvinceRadius, sketchView, startOpeningTimeline, type OpeningTimelineClock,
+  provinceCityView, provinceStageView, provinceView, responsiveProvinceRadius, sketchView, startOpeningTimeline, type OpeningTimelineClock, type CityFocusFrame,
 } from './cameraViews';
 
 const RADIUS = 100;
@@ -121,17 +121,7 @@ describe('完整一周的曲线导演镜头', () => {
   });
 });
 
-describe('省域选择只微调观察对象', () => {
-  it('selected 平移幅度有限且不缩小可见地图范围', () => {
-    const province = provinceView(RADIUS);
-    const selected = provinceCityView({ x: RADIUS * 5, z: -RADIUS * 5 }, RADIUS);
-    expect(selected.target[0]).toBeCloseTo(RADIUS * 0.12, 10);
-    expect(selected.target[2]).toBeCloseTo(-RADIUS * 0.12, 10);
-    expect(selected.position[1]).toBe(province.position[1]);
-    expect(distance(selected.position, selected.target)).toBeCloseTo(distance(province.position, province.target), 10);
-    expect(provinceCityView({ x: 0, z: 0 }, RADIUS)).toEqual(province);
-  });
-
+describe('省域地面覆盖', () => {
   it('网格可见阶段仍覆盖超宽屏地面', () => {
     expect(maxGroundHalfSpan(21 / 9, 0.6)).toBeLessThan(6);
     expect(maxGroundHalfSpan(21 / 9)).toBeGreaterThan(maxGroundHalfSpan(4 / 3));
@@ -185,6 +175,68 @@ describe('单条相机时间线的资源生命周期', () => {
 // 使用渲染层的真实简化几何，避免只证明理想圆形或包围盒比例。
 const realGeo = realGeoJson as GeoCollection;
 const actualModel = buildLiaoningSolidModel(realGeo);
+
+describe('真实城市 bbox 和纸条安全区的取景', () => {
+  const frames: CityFocusFrame[] = [
+    { width: 1920, height: 1080, left: 380, right: 1540, top: 128, bottom: 1012 },
+    { width: 1440, height: 900, left: 316, right: 1124, top: 122, bottom: 830 },
+    { width: 1024, height: 768, left: 270, right: 759, top: 118, bottom: 702 },
+    { width: 768, height: 440.32, left: 16, right: 752, top: 16, bottom: 416.32 },
+    { width: 390, height: 362.92, left: 16, right: 374, top: 16, bottom: 338.92 },
+  ];
+  const cameras = new WeakMap<object, PerspectiveCamera>();
+  function project(pose: ReturnType<typeof provinceView>, frame: CityFocusFrame, point: Vector3) {
+    let camera = cameras.get(pose);
+    if (!camera) {
+      camera = new PerspectiveCamera(CAMERA_FOV_DEG, frame.width / frame.height, 1, 1200);
+      camera.position.set(...pose.position); camera.lookAt(...pose.target); camera.updateMatrixWorld();
+      cameras.set(pose, camera);
+    }
+    const p = point.clone().project(camera);
+    return { x: (p.x + 1) * frame.width / 2, y: (1 - p.y) * frame.height / 2, z: p.z };
+  }
+  it.each(frames)('默认完整辽宁位于真实可见区域（$width × $height）', frame => {
+    const pose = provinceStageView(actualModel.bounds, actualModel.radius, frame);
+    for (const ring of actualModel.provinceRings) for (const p of ring) for (const y of [0, 1.8]) {
+      const projected = project(pose, frame, new Vector3(p.x, y, -p.y));
+      expect(projected.x).toBeGreaterThan(frame.left);
+      expect(projected.x).toBeLessThan(frame.right);
+      expect(projected.y).toBeGreaterThan(frame.top);
+      expect(projected.y).toBeLessThan(frame.bottom);
+      expect(projected.z).toBeGreaterThan(-1);
+      expect(projected.z).toBeLessThan(1);
+    }
+  });
+  it.each(frames)('六城显著推近，地块及选中抬升均不被纸条截住（$width × $height）', frame => {
+    const province = provinceStageView(actualModel.bounds, actualModel.radius, frame);
+    for (const city of actualModel.cities.filter(c => c.hasResearch)) {
+      const pose = provinceCityView(city.bounds, actualModel.radius, frame);
+      expect(distance(pose.position, pose.target)).toBeLessThan(distance(province.position, province.target) * 0.85);
+      const center = project(pose, frame, new Vector3((city.bounds.minX + city.bounds.maxX) / 2, 1.4, (city.bounds.minZ + city.bounds.maxZ) / 2));
+      expect(center.x).toBeCloseTo((frame.left + frame.right) / 2, 5);
+      expect(center.y).toBeCloseTo((frame.top + frame.bottom) / 2, 5);
+      for (const ring of city.rings) for (const p of ring) for (const y of [0, 2.664]) {
+        const projected = project(pose, frame, new Vector3(p.x, y, -p.y));
+        expect(projected.x).toBeGreaterThan(frame.left);
+        expect(projected.x).toBeLessThan(frame.right);
+        expect(projected.y).toBeGreaterThan(frame.top);
+        expect(projected.y).toBeLessThan(frame.bottom);
+        expect(projected.z).toBeGreaterThan(-1);
+        expect(projected.z).toBeLessThan(1);
+      }
+    }
+  });
+  it('改变纸条宽度会后撤取景，连续换城保持相同方位而非翻转', () => {
+    const city = actualModel.cities.find(c => c.id === 'chaoyang')!;
+    const wide = frames[1], narrow = { ...wide, left: 480, right: 960 };
+    const a = provinceCityView(city.bounds, actualModel.radius, wide), b = provinceCityView(city.bounds, actualModel.radius, narrow);
+    expect(distance(b.position, b.target)).toBeGreaterThan(distance(a.position, a.target));
+    for (const other of actualModel.cities.filter(c => c.hasResearch)) {
+      const p = provinceCityView(other.bounds, actualModel.radius, wide);
+      expect(Math.atan2(p.position[2] - p.target[2], p.position[0] - p.target[0])).toBeCloseTo(Math.atan2(a.position[2] - a.target[2], a.position[0] - a.target[0]), 8);
+    }
+  });
+});
 
 describe('移动端响应式省域取景：真实 GeoJSON 几何验收', () => {
   it.each([

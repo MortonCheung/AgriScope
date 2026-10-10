@@ -1,4 +1,5 @@
-import { CatmullRomCurve3, Vector3 } from 'three';
+import { CatmullRomCurve3, PerspectiveCamera, Vector3 } from 'three';
+import type { CityWorldBounds } from './liaoningGeometry';
 
 /** 相机位姿共用一份半径相对定义；模型根节点始终不绕 Y 轴旋转。 */
 export interface CameraPose {
@@ -63,16 +64,63 @@ export function cityView(target: { x: number; z: number }, radius: number): Came
   };
 }
 
-/** 保留完整省域的轻微观察偏移；只响应正式 selection，hover 不移动镜头。 */
-export function provinceCityView(target: { x: number; z: number }, radius: number): CameraPose {
-  const base = provinceView(radius);
-  const x = Math.max(-radius, Math.min(radius, target.x)) * 0.12;
-  const z = Math.max(-radius, Math.min(radius, target.z)) * 0.12;
-  return {
-    position: [base.position[0] + x, base.position[1], base.position[2] + z],
-    target: [x, base.target[1], z],
+/** Visible rectangle in Canvas pixels, after the two paper strips and Header. */
+export interface CityFocusFrame { width: number; height: number; left: number; right: number; top: number; bottom: number }
+
+/**
+ * Fit the real city bounds into the visible map stage. A stable azimuth prevents
+ * reversals between cities; nearby context and the lifted top face remain visible.
+ * The target accounts for the safe rectangle's offset within the full Canvas.
+ */
+function framedView(bounds: CityWorldBounds, provinceRadius: number, frame: CityFocusFrame, scope: 'city' | 'province'): CameraPose {
+  const width = Math.max(1, frame.width), height = Math.max(1, frame.height);
+  const left = Math.max(0, Math.min(width - 1, frame.left));
+  const right = Math.min(width, Math.max(left + 1, frame.right));
+  const top = Math.max(0, Math.min(height - 1, frame.top));
+  const bottom = Math.min(height, Math.max(top + 1, frame.bottom));
+  const center = new Vector3((bounds.minX + bounds.maxX) / 2, scope === 'city' ? 1.4 : provinceRadius * 0.035, (bounds.minZ + bounds.maxZ) / 2);
+  const elevation = scope === 'city' ? 55 * Math.PI / 180 : Math.atan2(3.1 - 0.035, Math.hypot(0.08, 3.2));
+  const offset = new Vector3(Math.cos(FINAL_THETA) * Math.cos(elevation), Math.sin(elevation), Math.sin(FINAL_THETA) * Math.cos(elevation));
+  const forward = offset.clone().negate();
+  const screenRight = new Vector3().crossVectors(forward, new Vector3(0, 1, 0)).normalize();
+  const screenUp = new Vector3().crossVectors(screenRight, forward).normalize();
+  const tanV = Math.tan(CAMERA_FOV_DEG * Math.PI / 360), tanH = tanV * width / height;
+  const centerX = (left + right) / width - 1;
+  const centerY = 1 - (top + bottom) / height;
+  const margin = scope === 'city' ? Math.max(bounds.maxX - bounds.minX, bounds.maxZ - bounds.minZ) * 0.1 + provinceRadius * 0.035 : provinceRadius * 0.025;
+  const corners: Vector3[] = [];
+  for (const x of [bounds.minX - margin, bounds.maxX + margin])
+    for (const z of [bounds.minZ - margin, bounds.maxZ + margin])
+      for (const y of [0, 3.2]) corners.push(new Vector3(x, y, z));
+  const camera = new PerspectiveCamera(CAMERA_FOV_DEG, width / height, 1, 1200);
+  const target = new Vector3(), position = new Vector3(), projected = new Vector3();
+  const poseAt = (distance: number) => {
+    target.copy(center).addScaledVector(screenRight, -centerX * distance * tanH).addScaledVector(screenUp, -centerY * distance * tanV);
+    position.copy(target).addScaledVector(offset, distance);
+    camera.position.copy(position); camera.lookAt(target); camera.updateMatrixWorld();
   };
+  const fits = (distance: number) => {
+    poseAt(distance);
+    return corners.every(corner => {
+      projected.copy(corner).project(camera);
+      const x = (projected.x + 1) * width / 2, y = (1 - projected.y) * height / 2;
+      return x >= left && x <= right && y >= top && y <= bottom && projected.z > -1 && projected.z < 1;
+    });
+  };
+  let lower = Math.max(14, provinceRadius * (scope === 'city' ? 0.9 : 3)), upper = Math.max(lower, provinceRadius * 5);
+  if (!fits(lower)) {
+    while (!fits(upper) && upper < 900) upper *= 1.2;
+    for (let step = 0; step < 40; step++) {
+      const middle = (lower + upper) / 2;
+      if (fits(middle)) upper = middle; else lower = middle;
+    }
+  } else upper = lower;
+  poseAt(upper * 1.04);
+  return { position: position.toArray() as [number, number, number], target: target.toArray() as [number, number, number] };
 }
+
+export const provinceCityView = (bounds: CityWorldBounds, radius: number, frame: CityFocusFrame): CameraPose => framedView(bounds, radius, frame, 'city');
+export const provinceStageView = (bounds: CityWorldBounds, radius: number, frame: CityFocusFrame): CameraPose => framedView(bounds, radius, frame, 'province');
 
 export function easeInOutCubic(p: number): number {
   return p < 0.5 ? 4 * p * p * p : 1 - ((-2 * p + 2) ** 3) / 2;

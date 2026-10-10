@@ -1,16 +1,23 @@
-import { getCity } from '../../domain/geography/cities';
 import { ROUTES } from '../../app/routes';
 import { cityContextUrl } from '../../app/context/provinceSelection';
 import { TransitionLink } from '../../app/pageNavigation';
-import type { CityObservation } from '../../domain/observations/types';
-export function CitySummary({ observation }: { observation: CityObservation }) {
-  const name = getCity(observation.city_id)?.shortName ?? observation.city_name;
-  const last = observation.climate.series.find(y => y.year === observation.climate.complete_year);
-  return <section className="city-summary" aria-label={`${name}观察详情`}>
-    <p className="ag-label">城市观察</p><h2 className="city-summary__name">{name}</h2>
-    <p className="city-summary__intro">把生产结构、气候条件和你的经营设想放在一起观察。</p>
-    {last && <dl className="city-summary__fields"><div><dt>{last.year} 年降水</dt><dd>{last.precipitation_mm.toFixed(1)} <small>mm</small></dd></div><div><dt>年均气温</dt><dd>{last.mean_temp_c.toFixed(1)} <small>℃</small></dd></div></dl>}
-    <section className="city-summary__attention"><h3>当前值得关注</h3><p>先比较亩产、成本与销售条件，查看保本价格，再检验价格或产量变化后的经营结果。</p></section>
-    <div className="city-summary__actions"><TransitionLink className="ag-button ag-button--primary" to={cityContextUrl(ROUTES.decision(observation.city_id),observation.city_id)}>进入决策 →</TransitionLink><TransitionLink className="city-summary__research" to={cityContextUrl(ROUTES.city(observation.city_id),observation.city_id)}>查看研究 →</TransitionLink></div>
+import type { DailyState } from '../../domain/daily/types';
+import { dailyChangeText } from '../daily/DailyContext';
+import { latestMarketRows } from './MarketOverview';
+export function CitySummary({ cityId, market }: { cityId: string | null; market: DailyState }) {
+  const snapshot = market.status === 'ready' ? market.data : null;
+  const movement = snapshot ? latestMarketRows(snapshot.crops, 2).filter(row => row.change7d !== null) : [];
+  return <section className="city-summary" aria-label={cityId ? '城市观察摘要' : '已接入市场摘要'}>
+    {snapshot && <>
+      <h2>{cityId ? '近期变化' : '已接入市场'}</h2>
+      {!cityId && <p className="city-summary__market">沈阳批发市场</p>}
+      <p className="city-summary__date">{latestMarketRows(snapshot.crops, snapshot.crops.length).length} 个品种 · {snapshot.latestDataDate}</p>
+      {movement.length > 0 && <dl className="city-summary__movement">{movement.map(row => <div key={row.crop}><dt>{row.crop}<small>7 日变化</small></dt><dd>{dailyChangeText(row.change7d)}</dd></div>)}</dl>}
+    </>}
+    {cityId && !snapshot && <div className="city-summary__tools"><h2>经营核算</h2><p>成本收益 · 盈亏平衡 · 条件情景</p></div>}
+    {cityId && <nav className="city-summary__actions" aria-label="城市工作空间">
+      <TransitionLink className="city-summary__action" to={cityContextUrl(ROUTES.decision(cityId), cityId)}>决策 <span aria-hidden>↗</span></TransitionLink>
+      <TransitionLink className="city-summary__action" to={cityContextUrl(ROUTES.city(cityId), cityId)}>报告 <span aria-hidden>↗</span></TransitionLink>
+    </nav>}
   </section>;
 }

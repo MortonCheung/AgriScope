@@ -18,6 +18,13 @@ interface GeoFeature {
 
 export interface GeoCollection { features: GeoFeature[] }
 
+export interface CityWorldBounds {
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+}
+
 export interface CitySolid {
   id: string;
   name: string;
@@ -29,11 +36,14 @@ export interface CitySolid {
   centroid: THREE.Vector2;
   /** 包围盒半径，用于取景与缩放 */
   radius: number;
+  /** The actual projected bounds, with source y mapped to world -z. */
+  bounds: CityWorldBounds;
 }
 
 export interface LiaoningSolidModel {
   cities: CitySolid[];
   radius: number;
+  bounds: CityWorldBounds;
   centroid: THREE.Vector2;
   /**
    * 全省（14 个地级市）的边界环，供草稿纸画"辽宁手稿"（§23）。
@@ -117,6 +127,7 @@ export function buildLiaoningSolidModel(collection: GeoCollection, scale = 11, s
       rings,
       centroid,
       radius: Math.max(size.x, size.y) / 2,
+      bounds: { minX: box.min.x, maxX: box.max.x, minZ: -box.max.y, maxZ: -box.min.y },
     });
   }
 
@@ -128,6 +139,7 @@ export function buildLiaoningSolidModel(collection: GeoCollection, scale = 11, s
   return {
     cities,
     radius: Math.max(overallSize.x, overallSize.y) / 2,
+    bounds: { minX: overall.min.x, maxX: overall.max.x, minZ: -overall.max.y, maxZ: -overall.min.y },
     centroid: overall.getCenter(new THREE.Vector2()),
     provinceRings,
     // 覆盖率过高说明相邻边界没能配对，宁可不画外轮廓，也不画一条错的线。
@@ -213,4 +225,3 @@ export function provinceOutline(rings: THREE.Vector2[][], quantize = 0.05): Outl
 
 /** 外轮廓覆盖率低于这个值才认为配对成功（内部边被正确消掉）。 */
 export const OUTLINE_COVERAGE_LIMIT = 0.45;
-

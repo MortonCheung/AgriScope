@@ -1,94 +1,50 @@
-import { useDaily } from '../daily/useDaily';
-import type { DailyCrop, DailySignal } from '../../domain/daily/types';
-
-/**
- * 左栏「当前市场」（规范 §8）：回答"现在发生了什么"。
- *
- * 诚实边界（§44/§48/§69）：
- *   目前唯一接入的日度市场源是**沈阳批发市场**，其余城市没有可比日度价格。
- *   因此这里只陈述沈阳批发市场的事实，并在标题里写清口径，
- *   绝不把它包装成"辽宁整体市场"，也不虚构六城合并指标。
- *
- * 数据缺失不写成"暂无数据"，而是按状态给出具体说明（§44）。
- */
-
-const SIGNAL_LABEL: Record<DailySignal, string> = {
-  NORMAL: '正常',
-  WATCH: '关注',
-  HIGH: '偏高',
-  VERY_HIGH: '显著',
-  UNKNOWN: '未知',
-};
-
-const FRESHNESS_LABEL: Record<string, string> = {
-  FRESH: '当日',
-  DELAYED: '延迟',
-  STALE: '偏旧',
-  MISSING: '缺失',
-};
-
-/** 风险从高到低；无风险信息的排最后。 */
-function riskOf(crop: DailyCrop): number {
-  return crop.marketRisk ?? crop.hri ?? -1;
+import { useState } from 'react';
+import { getCity } from '../../domain/geography/cities';
+import type { DailyCrop } from '../../domain/daily/types';
+import type { useDailyResource } from '../daily/useDaily';
+import { dailyChangeText } from '../daily/DailyContext';
+export type MarketResource = ReturnType<typeof useDailyResource>;
+type Period = 'changePreviousObservation' | 'change7d' | 'change30d';
+const PERIODS: readonly [Period, string][] = [['changePreviousObservation', '前观测'], ['change7d', '7 日'], ['change30d', '30 日']];
+const price = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 2 });
+/** Published observations only; sort visible rows by recorded seven-day change. */
+export function latestMarketRows(crops: readonly DailyCrop[], limit = 4): DailyCrop[] {
+  return [...crops].filter(row => row.pricePerKg !== null && row.dataDate && row.sourceId)
+    .sort((a, b) => Math.abs(b.change7d ?? 0) - Math.abs(a.change7d ?? 0) || a.crop.localeCompare(b.crop, 'zh-CN'))
+    .slice(0, limit);
 }
-
-function notable(crops: DailyCrop[]): DailyCrop[] {
-  return [...crops]
-    .filter((crop) => crop.signal && crop.signal !== 'NORMAL' && crop.signal !== 'UNKNOWN')
-    .sort((a, b) => riskOf(b) - riskOf(a))
-    .slice(0, 4);
+export function MarketOverview({ cityId, resource }: { cityId: string; resource: MarketResource }) {
+  const { state, refresh, refreshing, refreshError } = resource;
+  const [period, setPeriod] = useState<Period>('change7d');
+  if (state.status === 'unsupported') return <section className="market-overview" aria-label={`${getCity(cityId)?.shortName}市场口径`}>
+    <p className="market-overview__note">本城日度批发观测尚未接入。</p>
+  </section>;
+  const ready = state.status === 'ready' ? state.data : null;
+  const rows = ready ? latestMarketRows(ready.crops) : [];
+  return <section className="market-overview" aria-label="沈阳批发市场">
+    <div className="market-overview__head"><h2>沈阳批发市场</h2><button type="button" className="market-overview__refresh" onClick={refresh} disabled={refreshing}>{refreshing ? '读取中…' : '刷新'}</button></div>
+    {state.status === 'loading' && <p role="status" className="market-overview__note">读取最新观测…</p>}
+    {state.status === 'error' && <p role="alert" className="market-overview__note">{state.error}</p>}
+    {ready && <>
+      <p className="market-overview__date">观测截至 <time dateTime={ready.latestDataDate ?? undefined}>{ready.latestDataDate ?? '日期未发布'}</time></p>
+      <div className="market-overview__periods" role="group" aria-label="价格变化口径">{PERIODS.map(([key, label]) => <button type="button" key={key} aria-pressed={period === key} onClick={() => setPeriod(key)}>{label}</button>)}</div>
+      {rows.length ? <ul className="market-overview__prices">{rows.map(row => <PriceRow key={row.crop} row={row} period={period} latestDate={ready.latestDataDate}/>)}</ul> : <p className="market-overview__note">最近快照没有可核验的价格观测。</p>}
+      <p className="market-overview__unit">批发价 · 元 / 公斤</p>
+      <details className="market-overview__details"><summary>全部品种与来源</summary>
+        <p className="market-overview__note">首屏按已发布的 7 日变幅排列。</p>
+        <ul className="market-overview__prices">{latestMarketRows(ready.crops, ready.crops.length).map(row => <PriceRow key={row.crop} row={row} period={period} latestDate={ready.latestDataDate}/>)}</ul>
+        {ready.sources.map(source => <a className="market-overview__source" key={source.id} href={source.url} target="_blank" rel="noreferrer">{source.name} ↗</a>)}
+        <dl className="market-overview__publication"><div><dt>快照生成</dt><dd>{ready.sourceMeta.generatedAt}</dd></div><div><dt>运行日期</dt><dd>{ready.runDate}</dd></div></dl>
+      </details>
+    </>}
+    {refreshError && <p role="status" className="market-overview__refresh-error">刷新失败，仍显示以上日期的观测。{refreshError}</p>}
+  </section>;
 }
-
-export function MarketOverview({cityId = 'shenyang'}: {cityId?: string}) {
-  const state = useDaily(cityId);
-
-  return (
-    <section className="market-overview" aria-label="当前市场">
-      <p className="ag-label">{cityId === 'shenyang' ? '市场观察 · 沈阳批发' : '市场观察'}</p>
-
-      {state.status === 'loading' && (
-        <div className="ag-state ag-state--loading" aria-hidden="true">
-          <i className="ag-skeleton" />
-          <i className="ag-skeleton" />
-        </div>
-      )}
-
-      {state.status === 'error' && (
-        <p className="market-overview__note">{state.error}</p>
-      )}
-
-      {state.status === 'unsupported' && (
-        <p className="market-overview__note">经营分析可使用你设定的销售价格；历史市场情况可在研究中查看。</p>
-      )}
-
-      {state.status === 'ready' && (
-        <>
-          <p className="market-overview__meta">
-            <span>数据日期 {state.data.latestDataDate ?? '—'}</span>
-            <span className="market-overview__dot" aria-hidden>·</span>
-            <span>{FRESHNESS_LABEL[state.data.freshness] ?? state.data.freshness}</span>
-          </p>
-          {(() => {
-            const items = notable(state.data.crops);
-            if (items.length === 0) {
-              return <p className="market-overview__note">本期作物价格处于正常季节波动区间，没有明显异常信号。</p>;
-            }
-            return (
-              <ul className="market-overview__signals">
-                {items.map((crop) => (
-                  <li className="market-overview__signal" key={crop.crop}>
-                    <span className="market-overview__crop">{crop.crop}</span>
-                    <span className="market-overview__state" data-signal={crop.signal ?? undefined}>
-                      {crop.signal ? SIGNAL_LABEL[crop.signal] : '—'}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            );
-          })()}
-          <p className="ag-caption">市场状态用于提示关注，不构成买卖建议。</p>
-        </>
-      )}
-    </section>
-  );
+function PriceRow({ row, period, latestDate }: { row: DailyCrop; period: Period; latestDate: string | null }) {
+  const change = row[period];
+  return <li className="market-overview__price" data-source-id={row.sourceId} data-observed-at={row.dataDate}>
+    <span className="market-overview__crop">{row.crop}{row.dataDate !== latestDate && <small>{row.dataDate}</small>}</span>
+    <strong>{row.pricePerKg === null ? '—' : price.format(row.pricePerKg)}</strong>
+    <span className="market-overview__change" data-direction={change === null || change === 0 ? 'flat' : change > 0 ? 'up' : 'down'}>{dailyChangeText(change)}</span>
+  </li>;
 }

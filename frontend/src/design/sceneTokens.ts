@@ -1,3 +1,15 @@
+import type { StudyCityId } from '../domain/geography/cities';
+
+/** City identity only: price risk and model confidence use separate UI semantics. */
+export const CITY_COLOR_TOKENS: Record<StudyCityId, string> = {
+  shenyang: '#b8c5ae',
+  tieling: '#c7b897',
+  chaoyang: '#c5a9a2',
+  jinzhou: '#b4aac4',
+  dandong: '#9fbdbb',
+  dalian: '#9daec4',
+};
+
 /**
  * 三维沙盘配色令牌。
  *

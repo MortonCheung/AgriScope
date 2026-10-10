@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useReducedMotion } from 'motion/react';
 import { Outlet, useLocation, NavigationType } from 'react-router-dom';
-import { getCity } from '../../domain/geography/cities';
+import { isStudyCity } from '../../domain/geography/cities';
 import { LiaoningCanvas } from '../liaoning/LiaoningCanvas';
 import { useSpatialStageStore, type SpatialStageMode } from './spatialStageStore';
 import { useCityExitStore } from './cityExit';
@@ -139,11 +139,10 @@ export function SpatialShell() {
 
   /**
    * 六个城市一律可进入（V4 §十七）：路由立刻切换，相机与纸面随后同时动画。
-   * 没有研究数据的城市同样进入 `/cities/:cityId`，由页面自己说明「研究内容待接入」，
-   * 而不是静默 return —— 那会让点击看起来毫无反应。
+   * 其余行政区只保留几何，不允许从任何选择入口进入城市路由。
    */
   const handleSelectCity = useCallback((cityId: string) => {
-    if (!getCity(cityId)) return;
+    if (!isStudyCity(cityId)) return;
     if (mode === 'opening') return;
     if (mode === 'province') {
       const target = provinceUrl(cityId);

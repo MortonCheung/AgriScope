@@ -1,8 +1,9 @@
 import { Component, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { CameraControls, CameraControlsImpl, ContactShadows, Html, PerspectiveCamera } from '@react-three/drei';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { STUDY_CITY_IDS } from '../../domain/geography/cities';
+import type { CityWorldBounds } from './liaoningGeometry';
 import { CitySolidMesh, DROP_SPAN, SOLID_DEPTH } from './CitySolidMesh';
 import { PaperGround } from './PaperGround';
 import { useLiaoningModel } from './useLiaoningModel';
@@ -10,7 +11,7 @@ import { useAnimationFrames } from './useAnimationFrames';
 import { QUALITY_CONFIG, resolveAutoQualityTier, resolveDpr, readRuntimeQualitySignals } from '../../performance/qualityPolicy';
 import { SCENE_TOKENS } from '../../design/sceneTokens';
 import { MOTION_DURATION } from '../../design/motion';
-import { PROVINCE_ROOT_ROTATION, CAMERA_FOV_DEG, cityView, orbitView, provinceView, provinceCityView, sketchView, startOpeningTimeline, responsiveProvinceRadius } from './cameraViews';
+import { PROVINCE_ROOT_ROTATION, CAMERA_FOV_DEG, cityView, orbitView, provinceView, provinceCityView, provinceStageView, sketchView, startOpeningTimeline, responsiveProvinceRadius, type CityFocusFrame } from './cameraViews';
 import { SketchPaper } from '../opening/SketchPaper';
 import { shouldMountSketchPaper } from '../opening/sketchMetrics';
 import { useOpeningStore, type OpeningPhase } from '../opening/openingPhase';
@@ -31,61 +32,6 @@ type Emphasis = 'base' | 'study' | 'focus' | 'dim';
 /** 地块在镜头环绕前半段完成组装。 */
 const DROP_DELAY_BASE = 0.08;
 const DROP_DELAY_SPAN = 0.20;
-
-/** 视差强度（V4 §二十一）：省域 0.7°。 */
-const PARALLAX_DEG = { province: 0.7 } as const;
-const PARALLAX_LERP = 0.08;
-const PARALLAX_EPSILON = 0.0002;
-
-/**
- * 极轻的鼠标视差（V4 §二十/§64）。
- *
- * 不依赖任何固定时长：pointermove → target → invalidate()；
- * useFrame 向 target 收敛，未收敛继续 invalidate()，收敛即停。
- * 只在正式省域生效；组装期间关闭，避免与相机环绕抢控制权。
- */
-function ParallaxGroup({ enabled, children }: { enabled: boolean; children: ReactNode }) {
-  const group = useRef<THREE.Group>(null);
-  const pointer = useRef({ x: 0, y: 0 });
-  const invalidate = useThree((state) => state.invalidate);
-
-  useEffect(() => {
-    if (!enabled) return;
-    const onMove = (event: PointerEvent) => {
-      pointer.current = {
-        x: (event.clientX / window.innerWidth) * 2 - 1,
-        y: (event.clientY / window.innerHeight) * 2 - 1,
-      };
-      invalidate();
-    };
-    const onLeave = () => { pointer.current = { x: 0, y: 0 }; invalidate(); };
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerleave', onLeave);
-    return () => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerleave', onLeave);
-    };
-  }, [enabled, invalidate]);
-
-  useFrame(() => {
-    const instance = group.current;
-    if (!instance) return;
-    const limit = enabled ? THREE.MathUtils.degToRad(PARALLAX_DEG.province) : 0;
-    const targetZ = enabled ? -pointer.current.x * limit : 0;
-    const targetX = enabled ? pointer.current.y * limit : 0;
-    const deltaZ = targetZ - instance.rotation.z;
-    const deltaX = targetX - instance.rotation.x;
-    if (Math.abs(deltaZ) < PARALLAX_EPSILON && Math.abs(deltaX) < PARALLAX_EPSILON) {
-      instance.rotation.set(targetX, 0, targetZ);
-      return;
-    }
-    instance.rotation.z += deltaZ * PARALLAX_LERP;
-    instance.rotation.x += deltaX * PARALLAX_LERP;
-    invalidate();
-  });
-
-  return <group ref={group}>{children}</group>;
-}
 
 /** 单条可取消时间线同时驱动地块与相机；模型不绕 Y 轴旋转。 */
 function AssemblyDriver({ active, reducedMotion, assemblyRef, controlsRef, radius, onProgress }: {
@@ -128,13 +74,17 @@ function AssemblyDriver({ active, reducedMotion, assemblyRef, controlsRef, radiu
   return null;
 }
 
-function CameraRig({ mode, active, phase, focusCityId, reducedMotion, targetPoint, provinceRadius, controlsRef }: {
+function CameraRig({ mode, active, phase, focusCityId, reducedMotion, targetPoint, focusBounds, provinceBounds, focusFrame, geometryRadius, provinceRadius, controlsRef }: {
   mode: LiaoningCanvasProps['mode'];
   active: boolean;
   phase: OpeningPhase;
   focusCityId: string | null;
   reducedMotion: boolean;
   targetPoint: THREE.Vector3;
+  focusBounds: CityWorldBounds | null;
+  provinceBounds: CityWorldBounds;
+  focusFrame: CityFocusFrame;
+  geometryRadius: number;
   provinceRadius: number;
   controlsRef: RefObject<CameraControlsImpl | null>;
 }) {
@@ -171,12 +121,12 @@ function CameraRig({ mode, active, phase, focusCityId, reducedMotion, targetPoin
       move(cityView({ x: targetPoint.x, z: targetPoint.z }, radius));
       return;
     }
-    if (mode === 'province' && focusCityId) {
-      move(provinceCityView({ x: targetPoint.x, z: targetPoint.z }, radius));
+    if (mode === 'province' && focusCityId && focusBounds) {
+      move(provinceCityView(focusBounds, geometryRadius, focusFrame));
       return;
     }
-    move(provinceView(radius));
-  }, [active, controlsRef, focusCityId, invalidate, mode, phase, provinceRadius, reducedMotion, setCameraMoving, targetPoint]);
+    move(provinceStageView(provinceBounds, geometryRadius, focusFrame));
+  }, [active, controlsRef, focusBounds, focusCityId, focusFrame, geometryRadius, invalidate, mode, phase, provinceBounds, provinceRadius, reducedMotion, setCameraMoving, targetPoint]);
 
   return (
     <CameraControls
@@ -184,21 +134,43 @@ function CameraRig({ mode, active, phase, focusCityId, reducedMotion, targetPoin
       makeDefault
       enabled={active && mode !== 'opening'}
       minDistance={14}
-      maxDistance={provinceRadius * 5}
+      maxDistance={provinceRadius * 9}
       minPolarAngle={0.12}
       maxPolarAngle={Math.PI / 2.25}
-      smoothTime={reducedMotion ? 0 : MOTION_DURATION.fast}
+      smoothTime={reducedMotion ? 0 : 0.18}
       draggingSmoothTime={MOTION_DURATION.fast}
       dollySpeed={0.7}
-      onRest={() => setCameraMoving(false)}
     />
   );
 }
 
 function SceneContents({ mode, active = true, focusCityId, hoveredCityId, onHoverCity, onSelectCity, reducedMotion }: LiaoningCanvasProps) {
   const state = useLiaoningModel();
-  const aspect = useThree((store) => store.size.width / Math.max(1,store.size.height));
+  const viewport = useThree((store) => store.size);
+  const gl = useThree((store) => store.gl);
+  const aspect = viewport.width / Math.max(1, viewport.height);
+  const [focusFrame, setFocusFrame] = useState<CityFocusFrame>(() => ({ width: viewport.width, height: viewport.height, left: 16, right: viewport.width - 16, top: 16, bottom: viewport.height - 24 }));
+  useEffect(() => {
+    if (!active || mode !== 'province') return;
+    const stage = document.querySelector<HTMLElement>('.liaoning-page__window');
+    const measure = () => {
+      const canvas = gl.domElement.getBoundingClientRect();
+      const rect = stage?.getBoundingClientRect();
+      const frame: CityFocusFrame = rect && rect.width > 0 && rect.height > 0
+        ? { width: viewport.width, height: viewport.height, left: rect.left - canvas.left + 18, right: rect.right - canvas.left - 18, top: rect.top - canvas.top + 24, bottom: rect.bottom - canvas.top - 24 }
+        : { width: viewport.width, height: viewport.height, left: 16, right: viewport.width - 16, top: 16, bottom: viewport.height - 24 };
+      setFocusFrame(previous => Object.keys(frame).every(key => previous[key as keyof CityFocusFrame] === frame[key as keyof CityFocusFrame]) ? previous : frame);
+    };
+    measure();
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+    if (stage) observer?.observe(stage);
+    return () => observer?.disconnect();
+  }, [active, gl, mode, viewport.height, viewport.width]);
   const studyIds = useMemo(() => new Set<string>(STUDY_CITY_IDS), []);
+  useEffect(() => {
+    gl.domElement.style.cursor = active && mode === 'province' && hoveredCityId && studyIds.has(hoveredCityId) ? 'pointer' : '';
+    return () => { gl.domElement.style.cursor = ''; };
+  }, [active, gl, hoveredCityId, mode, studyIds]);
   const model = state.status === 'ready' ? state.model : null;
   const openingPhase = useOpeningStore((store) => store.phase);
   /** 组装进度：驱动组件写、行政区每帧读，中间不经过 React state。 */
@@ -219,7 +191,7 @@ function SceneContents({ mode, active = true, focusCityId, hoveredCityId, onHove
   /**
    * 省域路由下点击城市：更新 /liaoning?city= 的显式选择，
    * **不立即跳页** —— 右侧摘要给出「进入决策 / 查看研究」两个显式入口。
-   * 其他路由（城市页 / 开场）保持原有导航行为，非研究城市也照旧进入城市页。
+   * 未开放研究的行政区不承担选择或导航。
    */
   const handleSelectCity = (cityId: string) => {
     if (mode !== 'opening' && studyIds.has(cityId)) onSelectCity(cityId);
@@ -231,6 +203,7 @@ function SceneContents({ mode, active = true, focusCityId, hoveredCityId, onHove
     if (!city) return new THREE.Vector3(0, 0, 0);
     return new THREE.Vector3(city.centroid.x, 0, -city.centroid.y);
   }, [model, focusCityId]);
+  const focusBounds = model?.cities.find(city => city.id === focusCityId)?.bounds ?? null;
 
   /**
    * 下落顺序与高度（§29/§30/§59）：按"到沈阳重心距离"确定性排序，不用 Math.random()；
@@ -279,6 +252,10 @@ function SceneContents({ mode, active = true, focusCityId, hoveredCityId, onHove
         focusCityId={focusCityId}
         reducedMotion={reducedMotion}
         targetPoint={focusPoint}
+        focusBounds={focusBounds}
+        provinceBounds={model.bounds}
+        focusFrame={focusFrame}
+        geometryRadius={model.radius}
         provinceRadius={fitRadius}
         controlsRef={controlsRef}
       />
@@ -323,18 +300,16 @@ function SceneContents({ mode, active = true, focusCityId, hoveredCityId, onHove
       />
       {/*
         省域根节点（本轮 §24）：**全程不绕 Y 轴旋转** —— 转的是相机，不是模型。
-        唯一的旋转是落定之后由指针驱动的 ±0.7° 轻微倾斜（ParallaxGroup，且组装期间关闭），
-        那属于"纸放在桌上的手感"，不是模型自转。
+        固定姿态保证屏幕中的地块与可点击表面保持一致。
       */}
       <group rotation-y={PROVINCE_ROOT_ROTATION} name="province-root">
-        {/* 视差只服务正式省域（§64）：组装期间关闭 */}
-        <ParallaxGroup enabled={active && !reducedMotion && mode === 'province'}>
+        {/* 固定沙盘姿态；选择仅改变相机与地块强调。 */}
+        <group>
           {dropPlan.map(({ city, delay, dropHeight }) => (
             <CitySolidMesh
               key={city.id}
               city={city}
               emphasis={emphasisFor(city.id, city.hasResearch)}
-              dataState="normal"
               selected={mode === 'province' && selectedCityId === city.id}
               hovered={hoveredCityId === city.id}
               onHover={onHoverCity}
@@ -346,12 +321,12 @@ function SceneContents({ mode, active = true, focusCityId, hoveredCityId, onHove
               dropHeight={dropHeight}
             />
           ))}
-        </ParallaxGroup>
+        </group>
       </group>
       {/* 草稿阶段不出现任何城市 Label / 按钮 / 研究状态（§25） */}
       {mode !== 'opening' && model.cities.map((city) => {
         const active = hoveredCityId === city.id || (mode === 'province' && selectedCityId === city.id);
-        if (!city.hasResearch && !studyIds.has(city.id) && !active) return null;
+        if (!studyIds.has(city.id)) return null;
         return (
           <Html
             key={`label-${city.id}`}

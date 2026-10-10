@@ -2,11 +2,11 @@ import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { ringsToShapes, type CitySolid } from './liaoningGeometry';
-import { SCENE_TOKENS } from '../../design/sceneTokens';
+import { CITY_COLOR_TOKENS, SCENE_TOKENS } from '../../design/sceneTokens';
+import { isStudyCity } from '../../domain/geography/cities';
 import { MOTION_DURATION } from '../../design/motion';
 import { useAnimationFrames } from './useAnimationFrames';
 import type { OpeningPhase } from '../opening/openingPhase';
-import type { CityDataStateId } from './cityMarketState';
 
 export const SOLID_DEPTH = 1.8;
 /** 抬起插值系数与收敛阈值：不收敛到阈值内就持续请求帧。 */
@@ -43,8 +43,6 @@ function easeOutBack(t: number): number {
 export interface CitySolidMeshProps {
   city: CitySolid;
   emphasis: 'base' | 'study' | 'focus' | 'dim';
-  /** 由真实市场数据推导的静态状态（规范 §8 六态里的四种静态态）。 */
-  dataState: CityDataStateId;
   /** 是否为当前城市上下文（全局选择器 / 上一次点击）。 */
   selected: boolean;
   hovered: boolean;
@@ -61,28 +59,8 @@ export interface CitySolidMeshProps {
   dropHeight: number;
 }
 
-const FILL: Record<'base' | 'study' | 'focus' | 'dim', THREE.Color> = {
-  base: new THREE.Color(SCENE_TOKENS.cityFill.base),
-  study: new THREE.Color(SCENE_TOKENS.cityFill.study),
-  focus: new THREE.Color(SCENE_TOKENS.cityFill.focus),
-  dim: new THREE.Color(SCENE_TOKENS.cityFill.dim),
-};
-
-/**
- * 数据状态的填充色（暖白体系内的低饱和色，与 tokens.css 语义色一致）：
- *   warning                  → clay-soft（风险）
- *   partial-data             → blue-grey-soft（信息 / 部分）
- *   market-data-unavailable  → 纸灰（退后，读作"没有内容"）
- * 色之外还有标签与文案，颜色不是唯一表达。
- */
-const STATE_FILL: Record<Exclude<CityDataStateId, 'normal'>, THREE.Color> = {
-  warning: new THREE.Color('#cdb6a4'),
-  'partial-data': new THREE.Color('#c7cfca'),
-  'market-data-unavailable': new THREE.Color('#e9e6de'),
-};
-
 /** 描边透明度：hover 增强、选中次之、其他城市降权。 */
-const LINE_OPACITY = { hover: 1, selected: 0.82, base: 0.6, dim: 0.28 } as const;
+const LINE_OPACITY = { hover: 1, selected: 1, base: 0.6, dim: 0.28 } as const;
 
 /**
  * 单块城市实体：挤出几何 + 极细分隔线。
@@ -93,13 +71,18 @@ const LINE_OPACITY = { hover: 1, selected: 0.82, base: 0.6, dim: 0.28 } as const
  * 两层的存在让同一块 Mesh 从 Opening 一直沿用到正式沙盘，切路由时不重挂。
  */
 export function CitySolidMesh({
-  city, emphasis, dataState, selected, hovered, onHover, onSelect, reducedMotion,
+  city, emphasis, selected, hovered, onHover, onSelect, reducedMotion,
   phase, assemblyRef, dropDelay, dropHeight,
 }: CitySolidMeshProps) {
   const dropGroup = useRef<THREE.Group>(null);
   const liftGroup = useRef<THREE.Group>(null);
   /** 首帧直接落到目标色，避免挂载时从初值淡入。 */
   const seeded = useRef(false);
+  const interactive = isStudyCity(city.id);
+  const fills = useMemo(() => {
+    const base = new THREE.Color(isStudyCity(city.id) ? CITY_COLOR_TOKENS[city.id] : SCENE_TOKENS.cityFill.base);
+    return { base, focus: base.clone().multiplyScalar(0.94), dim: base.clone().lerp(new THREE.Color(SCENE_TOKENS.paper), 0.6) };
+  }, [city.id]);
 
   const geometry = useMemo(() => {
     const shapes = ringsToShapes(city.rings);
@@ -139,7 +122,7 @@ export function CitySolidMesh({
     [edges, geometry, line, surface]);
 
   // ---- 目标值：hover 抬起 > selected 抬起 > 静止 ----
-  const targetLift = hovered ? SOLID_DEPTH * 0.5 : selected ? SOLID_DEPTH * 0.22 : 0;
+  const targetLift = interactive && hovered ? SOLID_DEPTH * 0.6 : interactive && selected ? SOLID_DEPTH * 0.48 : 0;
   const lineTarget: number = hovered
     ? LINE_OPACITY.hover
     : emphasis === 'dim'
@@ -148,22 +131,15 @@ export function CitySolidMesh({
         ? LINE_OPACITY.selected
         : LINE_OPACITY.base;
 
-  /**
-   * 目标色是模块级常量，引用稳定，适合直接作为 lerp 的终点（§43）。
-   * 优先级：hover > 被其他城市降权 > 数据状态 > 常态强调。
-   */
-  const targetFill =
-    hovered ? FILL.focus
-      : emphasis === 'dim' ? FILL.dim
-        : dataState !== 'normal' ? STATE_FILL[dataState]
-          : FILL[emphasis];
+  // Interaction preserves each city's identity; risk never recolors the map.
+  const targetFill = interactive && (hovered || selected) ? fills.focus : emphasis === 'dim' ? fills.dim : fills.base;
 
   /**
    * 抬起、换色、描边都不再由某一帧决定：画布是 demand 帧循环，
    * 没有帧就没有插值，因此每次目标变化都重新开一个有限时长的帧窗口。
    */
   const [motionNonce, setMotionNonce] = useState(0);
-  useEffect(() => { setMotionNonce((value) => value + 1); }, [targetLift, emphasis, dataState, lineTarget]);
+  useEffect(() => { setMotionNonce((value) => value + 1); }, [targetLift, emphasis, lineTarget, targetFill]);
   useAnimationFrames(!reducedMotion && motionNonce > 0, MOTION_DURATION.slow * 3, motionNonce);
 
   useFrame(() => {
@@ -222,14 +198,16 @@ export function CitySolidMesh({
   });
 
   return (
-    <group ref={dropGroup}>
+    <group ref={dropGroup} name={city.id} userData={{ cityId: city.id }}>
       <group ref={liftGroup}>
         <mesh
           geometry={geometry}
           material={surface}
-          onPointerOver={(event) => { event.stopPropagation(); onHover(city.id); }}
-          onPointerOut={() => onHover(null)}
-          onClick={(event) => { event.stopPropagation(); onSelect(city.id); }}
+          // Every visible solid blocks objects behind it. Removing non-study
+          // handlers lets Fiber raycast through e.g. Fushun into Tieling.
+          onPointerOver={(event) => { event.stopPropagation(); if (interactive && phase === 'ready') onHover(city.id); }}
+          onPointerOut={interactive ? () => onHover(null) : undefined}
+          onClick={(event) => { event.stopPropagation(); if (interactive && phase === 'ready') onSelect(city.id); }}
         />
         {edges.map((outline, index) => (
           <lineSegments key={index} geometry={outline} material={line} />
