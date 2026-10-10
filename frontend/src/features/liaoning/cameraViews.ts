@@ -1,87 +1,61 @@
-/**
- * 相机位姿的唯一来源（本轮 §24）。
- *
- * 三条硬约束：
- *   1. Opening 的**最后一帧**必须与正式省域的机位**完全相同** —— 两边调用同一个
- *      `provinceView()`，不写"差不多"的近似值；
- *   2. 组装期的相机方位变化是 **118°**，不是整整一圈（§24 参考 iTeach 的 entryShot：
- *      空间感来自"方位变化 + 距离变化 + target 变化"，360° 会让人眩晕、像模型自己在转）；
- *   3. **省域根节点全程 rotation = 0**，转的是相机，不是模型。
- */
+import { CatmullRomCurve3, Vector3 } from 'three';
 
+/** 相机位姿共用一份半径相对定义；模型根节点始终不绕 Y 轴旋转。 */
 export interface CameraPose {
   position: readonly [number, number, number];
   target: readonly [number, number, number];
 }
 
-/**
- * 组装期相机的总方位变化（度）。
- * 取自参考实现 `src/scene/entryShot.ts` 的 `ENTRY_AZIMUTH_ORBIT_DEGREES = 118`。
- */
-export const ENTRY_AZIMUTH_ORBIT_DEGREES = 118;
-
-/**
- * 省域根节点的旋转：全过程保持 0（§24）。
- * 写成一个具名常量，是为了让"模型不转"这件事可被测试与复查，而不是靠肉眼看代码。
- */
+export const ENTRY_AZIMUTH_ORBIT_DEGREES = 360;
 export const PROVINCE_ROOT_ROTATION = 0;
+export const CAMERA_FOV_DEG = 38;
+export const OPENING_DURATION_MS = 4800;
+
+/** 位置曲线弧长采样；每个镜头段独立缓入缓出，最后严格接到正式机位。 */
+export const OPENING_TIMELINE = [
+  { id: 'draft', label: '图纸建立', start: 0, end: 0.04 },
+  { id: 'assembly', label: '地块组装与镜头下降', start: 0.04, end: 0.18 },
+  { id: 'orbit', label: '环省飞行 · 完整一周', start: 0.18, end: 0.88 },
+  { id: 'settle', label: '上升落位', start: 0.88, end: 1 },
+] as const;
+export type OpeningCameraStage = (typeof OPENING_TIMELINE)[number]['id'];
+
+const clamp01 = (value: number) => Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
+const lerp = (from: number, to: number, p: number) => from + (to - from) * p;
+const smoothstep = (p: number) => p * p * (3 - 2 * p);
+const FINAL_THETA = Math.atan2(3.2, 0.08);
+const RING_RADIUS = 2.75;
+const RING_HEIGHT = 2.85;
+const RING_TARGET_Y = 0.03;
 
 /**
- * 正式省域沙盘机位：/liaoning 与 Opening 终点共用（规范 §8 取景）。
- *
- * 态势页左右各有一栏信息、底部有一条主题区。为了仍然让辽宁是画面主角、
- * 又六个研究城市都落在两侧栏目之间的空白里，这里做两件事：
- *   · `BACK` 把相机沿视野轴推远，为两侧栏目与底部主题区让出空间；
- *   · `LIFT` 把视点再往下压一点点，相机与视点同步平移、视野方向不变，
- *     于是整个辽宁在画面里**整体上移**，大连（最南）不会被底部主题区压住。
- *
- * 关键：所有量都以**省域半径为单位**（含视点高度），
- * 因此 `maxGroundHalfSpan`（草稿纸覆盖证明）在任意半径下结论一致 —— 取景可调，
- * 但"草稿纸平面必须盖住可见地面"这条不变。
+ * 保持辽宁全图的响应式取景半径，依据 Canvas 的真实 width/height，而非整页尺寸。
+ * 0.875 是全轨迹水平构图的基准比例；真实 GeoJSON 的移动端投影检查锁定这个边界。
+ * 只改变摄影机距离，不缩放几何。Opening 与省域共享同一舞台时必须传入相同 aspect。
  */
+export function responsiveProvinceRadius(actualRadius: number, aspect: number): number {
+  if (!Number.isFinite(actualRadius) || actualRadius <= 0) throw new RangeError('省域几何半径必须为正有限值。');
+  const canvasAspect = Number.isFinite(aspect) && aspect > 0 ? aspect : 0.875;
+  return actualRadius * Math.max(1, 0.875 / canvasAspect);
+}
+
+/** 正式沙盘居中，不再为已移除的底部主题区压低 target；窄屏额外 fit 由场景控制。 */
 export function provinceView(radius: number): CameraPose {
-  /** 基准视点高度（× 半径）：略高于实体顶面（SOLID_DEPTH=1.8）。 */
-  const BASE_TARGET_Y = 0.085;
-  /** 画面整体上移量（× 半径）：视点下压，相机随之平移。 */
-  const LIFT = 0.28;
-  /** 相机沿视野轴后撤系数（>1 即推远）。 */
-  const BACK = 1.6;
-  const baseTarget = [0, radius * BASE_TARGET_Y, 0] as const;
-  const basePosition = [radius * 0.04, radius * 1.08, radius * 1.36] as const;
-  const target = [0, radius * (BASE_TARGET_Y - LIFT), 0] as const;
   return {
-    position: [
-      target[0] + (basePosition[0] - baseTarget[0]) * BACK,
-      target[1] + (basePosition[1] - baseTarget[1]) * BACK,
-      target[2] + (basePosition[2] - baseTarget[2]) * BACK,
-    ],
-    target: [target[0], target[1], target[2]],
+    position: [radius * 0.08, radius * 3.1, radius * 3.2],
+    target: [0, radius * 0.035, 0],
   };
 }
 
-/**
- * 草稿态机位：接近垂直俯视，能看全整张图纸。
- *
- * 方位角 = 省域方位角 − 118°，这样从草稿到省域的**方位变化恰好是 118°**：
- * 起点仍然是高角度俯视（高度 3.4r 对水平 0.55r，视仰角约 81°），
- * 只是站在另一个方位上，于是镜头会"明显向侧方飞行"而不是原地旋转。
- */
+/** 草稿在同一方位高角度俯视；完整一周发生在独立的环绕段。 */
 export function sketchView(radius: number): CameraPose {
-  const to = provinceView(radius);
-  const startTheta = Math.atan2(to.position[2], to.position[0])
-    - (ENTRY_AZIMUTH_ORBIT_DEGREES * Math.PI) / 180;
-  const horizontalRadius = radius * 0.55;
   return {
-    position: [
-      Math.cos(startTheta) * horizontalRadius,
-      radius * 3.4,
-      Math.sin(startTheta) * horizontalRadius,
-    ],
+    position: [Math.cos(FINAL_THETA) * radius * 0.65, radius * 3.9, Math.sin(FINAL_THETA) * radius * 0.65],
     target: [0, 0, 0],
   };
 }
 
-/** 城市推近机位：省域推近与城市路由共用同一组数值，切路由时相机不跳。 */
+/** 城市研究工作台机位；正式省域选城不使用这一整段推近。 */
 export function cityView(target: { x: number; z: number }, radius: number): CameraPose {
   return {
     position: [target.x + radius * 0.24, radius * 0.5, target.z + radius * 0.5],
@@ -89,60 +63,125 @@ export function cityView(target: { x: number; z: number }, radius: number): Came
   };
 }
 
-/** 进度自带 easing：这里用平滑的 S 曲线，避免相机起步/收尾生硬。 */
+/** 保留完整省域的轻微观察偏移；只响应正式 selection，hover 不移动镜头。 */
+export function provinceCityView(target: { x: number; z: number }, radius: number): CameraPose {
+  const base = provinceView(radius);
+  const x = Math.max(-radius, Math.min(radius, target.x)) * 0.12;
+  const z = Math.max(-radius, Math.min(radius, target.z)) * 0.12;
+  return {
+    position: [base.position[0] + x, base.position[1], base.position[2] + z],
+    target: [x, base.target[1], z],
+  };
+}
+
 export function easeInOutCubic(p: number): number {
   return p < 0.5 ? 4 * p * p * p : 1 - ((-2 * p + 2) ** 3) / 2;
 }
 
-const clamp01 = (value: number) => (value < 0 ? 0 : value > 1 ? 1 : value);
-const horizontal = (position: readonly [number, number, number]) => Math.hypot(position[0], position[2]);
-const lerp = (from: number, to: number, p: number) => from + (to - from) * p;
+function radialPoint(horizontal: number, height: number): Vector3 {
+  return new Vector3(Math.cos(FINAL_THETA) * horizontal, height, Math.sin(FINAL_THETA) * horizontal);
+}
+
+// 所有曲线先在 r=1 的归一化空间中构建；运行时仅缩放，避免逐帧重建曲线与弧长缓存。
+const assemblyCurve = new CatmullRomCurve3([
+  radialPoint(0.65, 3.9), radialPoint(0.95, 3.83), radialPoint(1.85, 3.3), radialPoint(RING_RADIUS, RING_HEIGHT),
+], false, 'centripetal');
+const ringCurve = new CatmullRomCurve3(Array.from({ length: 24 }, (_, index) => {
+  const angle = (index / 24) * Math.PI * 2;
+  const theta = FINAL_THETA + angle;
+  const horizontal = RING_RADIUS * (1 + 0.012 * Math.sin(angle));
+  return new Vector3(Math.cos(theta) * horizontal, RING_HEIGHT + 0.045 * Math.sin(angle * 2), Math.sin(theta) * horizontal);
+}), true, 'centripetal');
+const settleCurve = new CatmullRomCurve3([
+  radialPoint(RING_RADIUS, RING_HEIGHT), radialPoint(2.93, 2.93), radialPoint(3.12, 3.04),
+  new Vector3(...provinceView(1).position),
+], false, 'centripetal');
+// 充分细的弧长表，令每个镜头段的 getPointAt 与实际路径长度一致。
+for (const curve of [assemblyCurve, ringCurve, settleCurve]) {
+  curve.arcLengthDivisions = 1200;
+  curve.updateArcLengths();
+}
+
+export function openingStageForProgress(progress: number): { stage: OpeningCameraStage; localProgress: number } {
+  const p = clamp01(progress);
+  const segment = OPENING_TIMELINE.find((entry) => p < entry.end) ?? OPENING_TIMELINE[3];
+  return { stage: segment.id, localProgress: clamp01((p - segment.start) / (segment.end - segment.start)) };
+}
 
 /**
- * 组装期的相机轨迹（§24）。
- *
- * 一条进度同时驱动四件事：方位角（118°）、水平半径、高度、target。
- * 于是"镜头在空间里绕辽宁飞过去"和"行政区一直在落"是同一件事，
- * 不会出现"地图先落完、镜头再明显动"。
+ * 导演时间线：图纸 → 组装 → 360° 曲线环绕 → 上升落位。
+ * 传入原始线性时间进度；内部按段缓入缓出，不再在调用方套第二次 easing。
+ * Camera Position 与 Target 独立控制，0/1 两端直接返回共享位姿，避免切路由时浮点差异。
  */
 export function orbitView(radius: number, progress: number): CameraPose {
-  const from = sketchView(radius);
-  const to = provinceView(radius);
   const p = clamp01(progress);
-
-  const fromTheta = Math.atan2(from.position[2], from.position[0]);
-  const toTheta = Math.atan2(to.position[2], to.position[0]);
-  const theta = lerp(fromTheta, toTheta, p);
-
-  const orbitRadius = lerp(horizontal(from.position), horizontal(to.position), p);
-  const height = lerp(from.position[1], to.position[1], p);
-
+  if (p === 0) return sketchView(radius);
+  if (p === 1) return provinceView(radius);
+  const { stage, localProgress } = openingStageForProgress(p);
+  if (stage === 'draft') return sketchView(radius);
+  const u = smoothstep(localProgress);
+  const curve = stage === 'assembly' ? assemblyCurve : stage === 'orbit' ? ringCurve : settleCurve;
+  const point = curve.getPointAt(u);
+  const targetY = stage === 'assembly' ? lerp(0, RING_TARGET_Y, u)
+    : stage === 'orbit' ? RING_TARGET_Y : lerp(RING_TARGET_Y, 0.035, u);
   return {
-    position: [Math.cos(theta) * orbitRadius, height, Math.sin(theta) * orbitRadius],
-    target: [
-      lerp(from.target[0], to.target[0], p),
-      lerp(from.target[1], to.target[1], p),
-      lerp(from.target[2], to.target[2], p),
-    ],
+    position: [point.x * radius, point.y * radius, point.z * radius],
+    target: [0, targetY * radius, 0],
   };
 }
 
-/** 位姿的方位角（度），供测试与调试核对"总变化是不是 118°"。 */
+export interface OpeningTimelineClock {
+  now: () => number;
+  requestFrame: (callback: FrameRequestCallback) => number;
+  cancelFrame: (handle: number) => void;
+}
+
+/** 可取消的单条 RAF 时间线；已排队的旧回调在中断后也不能完成或继续排帧。 */
+export function startOpeningTimeline(
+  onProgress: (progress: number) => void,
+  onComplete: () => void,
+  clock: OpeningTimelineClock = {
+    now: () => performance.now(),
+    requestFrame: (callback) => requestAnimationFrame(callback),
+    cancelFrame: (handle) => cancelAnimationFrame(handle),
+  },
+): () => void {
+  const startedAt = clock.now();
+  let frame = 0;
+  let stopped = false;
+  const tick = () => {
+    if (stopped) return;
+    const progress = clamp01((clock.now() - startedAt) / OPENING_DURATION_MS);
+    onProgress(progress);
+    if (stopped) return;
+    if (progress === 1) {
+      stopped = true;
+      onComplete();
+    } else frame = clock.requestFrame(tick);
+  };
+  frame = clock.requestFrame(tick);
+  return () => {
+    if (stopped) return;
+    stopped = true;
+    clock.cancelFrame(frame);
+  };
+}
+
 export function azimuthDegrees(pose: CameraPose): number {
   return (Math.atan2(pose.position[2], pose.position[0]) * 180) / Math.PI;
 }
 
-/** 从草稿到省域，相机在方位上实际走过的角度（度）。 */
+/** 累计展开方位角，而非首尾角差；闭合一圈的首尾角差本来就是 0。 */
 export function orbitSpanDegrees(radius: number): number {
-  const span = azimuthDegrees(provinceView(radius)) - azimuthDegrees(sketchView(radius));
-  return ((span % 360) + 360) % 360;
+  let previous = azimuthDegrees(orbitView(radius, 0));
+  let span = 0;
+  for (let step = 1; step <= 720; step += 1) {
+    const next = azimuthDegrees(orbitView(radius, step / 720));
+    span += ((next - previous + 540) % 360) - 180;
+    previous = next;
+  }
+  return span;
 }
-
-/**
- * 省域沙盘相机的垂直视场角（°）。LiaoningCanvas 的 PerspectiveCamera 必须用同一个值，
- * 否则地面覆盖范围的计算会与实际渲染不一致（§13 的前提）。
- */
-export const CAMERA_FOV_DEG = 38;
 
 type V3 = readonly [number, number, number];
 const sub = (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'motion/react';
 import { ROUTES } from '../../app/routes';
@@ -9,8 +9,8 @@ import './opening.css';
 /**
  * 首页：一张当代研究草稿纸（V5 §22–§34、§57–§63）。
  *
- * 流程：草稿研究图 → 用户点击「进入」→ 一条 3.6s 的时间轴同时驱动
- * 「14 块行政区从空间落下」与「相机螺旋环绕一圈后落到省域机位」→ 切到 /liaoning。
+ * 流程：草稿研究图 → 用户点击「进入」→ 一条 4.8s 的导演时间轴同时驱动
+ * 「14 块行政区从空间落下」与「摄影机在省域外围完整环绕一周，再上升接正式机位」→ /liaoning。
  *
  * 本轮 §10/§11 修订：**每次真正进入 `/` 都重放开场**。
  * 挂载时用 `reset()` 把状态机拉回草稿态（幂等，StrictMode 安全），
@@ -27,7 +27,10 @@ export function OpeningPage() {
   const phase = useOpeningStore((state) => state.phase);
   const begin = useOpeningStore((state) => state.begin);
   const reset = useOpeningStore((state) => state.reset);
+  const finish = useOpeningStore((state) => state.finish);
   const [assembleStarted, setAssembleStarted] = useState(false);
+  const navigated = useRef(false);
+  const skipRef = useRef<HTMLButtonElement>(null);
 
   /**
    * 每次打开 `/` 都回到草稿态。
@@ -37,9 +40,14 @@ export function OpeningPage() {
   useLayoutEffect(() => { reset(); }, [reset]);
 
   useEffect(() => {
-    if (!assembleStarted || phase !== 'ready') return;
+    if (!assembleStarted || phase !== 'ready' || navigated.current) return;
+    navigated.current = true;
     navigate(ROUTES.liaoning, { viewTransition: true });
   }, [assembleStarted, navigate, phase]);
+
+  useEffect(() => {
+    if (phase === 'assembling') skipRef.current?.focus({ preventScroll: true });
+  }, [phase]);
 
   /** 完成态：直接给沙盘，入口仍在，但不再触发组装（§36）。 */
   const settled = phase === 'ready';
@@ -48,10 +56,21 @@ export function OpeningPage() {
 
   return (
     <main className="opening" data-phase={phase} data-leaving={leaving || undefined}>
+      {leaving && (
+        <button
+          type="button"
+          className="ag-button ag-button--quiet opening__skip"
+          ref={skipRef}
+          onClick={finish}
+        >
+          跳过动画
+        </button>
+      )}
       <motion.div
         className="opening__inner"
+        aria-hidden={leaving || undefined}
         initial={reducedMotion || settled ? false : { opacity: 0, y: 14 }}
-        animate={{ opacity: 1, y: 0 }}
+        animate={{ opacity: leaving ? 0 : 1, y: 0 }}
         transition={{ duration: reducedMotion ? 0 : MOTION_DURATION.slow, ease: [0.16, 1, 0.3, 1] }}
       >
         <h1 className="opening__wordmark">
@@ -68,6 +87,7 @@ export function OpeningPage() {
             <button
               type="button"
               className="ag-button ag-button--primary opening__cta"
+              disabled={leaving}
               onClick={() => { setAssembleStarted(true); begin(); }}
             >
               进入 →

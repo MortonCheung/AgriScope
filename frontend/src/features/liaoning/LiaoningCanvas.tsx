@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { Component, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { CameraControls, CameraControlsImpl, ContactShadows, Html, PerspectiveCamera } from '@react-three/drei';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
@@ -10,17 +10,15 @@ import { useAnimationFrames } from './useAnimationFrames';
 import { QUALITY_CONFIG, resolveAutoQualityTier, resolveDpr, readRuntimeQualitySignals } from '../../performance/qualityPolicy';
 import { SCENE_TOKENS } from '../../design/sceneTokens';
 import { MOTION_DURATION } from '../../design/motion';
-import { PROVINCE_ROOT_ROTATION, CAMERA_FOV_DEG, cityView, easeInOutCubic, orbitView, provinceView, sketchView } from './cameraViews';
+import { PROVINCE_ROOT_ROTATION, CAMERA_FOV_DEG, cityView, orbitView, provinceView, provinceCityView, sketchView, startOpeningTimeline, responsiveProvinceRadius } from './cameraViews';
 import { SketchPaper } from '../opening/SketchPaper';
 import { shouldMountSketchPaper } from '../opening/sketchMetrics';
 import { useOpeningStore, type OpeningPhase } from '../opening/openingPhase';
 import { useSpatialStageStore } from '../spatial/spatialStageStore';
-import { useAppContext } from '../../app/context/appContext';
-import { useCityMarketStates } from './useCityMarketStates';
-import { CITY_STATE_LABEL, type CityDataStateId } from './cityMarketState';
 
 export interface LiaoningCanvasProps {
   mode: 'opening' | 'province' | 'city';
+  active?: boolean;
   focusCityId: string | null;
   hoveredCityId: string | null;
   onHoverCity: (cityId: string | null) => void;
@@ -30,15 +28,9 @@ export interface LiaoningCanvasProps {
 
 type Emphasis = 'base' | 'study' | 'focus' | 'dim';
 
-/**
- * 组装总时长（V5 §59：3.2–4.0 秒）。
- * 这一条时间轴同时驱动行政区下落与相机环绕，不是两段动画接在一起。
- */
-const ASSEMBLY_MS = 3600;
-/** 第一批行政区开始下落的时间点（§59：0.10）。 */
-const DROP_DELAY_BASE = 0.1;
-/** 错峰窗口：最后一批在 0.65 开始，配合 DROP_SPAN=0.25 时 0.90 全部落定（§59）。 */
-const DROP_DELAY_SPAN = 0.55;
+/** 地块在镜头环绕前半段完成组装。 */
+const DROP_DELAY_BASE = 0.08;
+const DROP_DELAY_SPAN = 0.20;
 
 /** 视差强度（V4 §二十一）：省域 0.7°。 */
 const PARALLAX_DEG = { province: 0.7 } as const;
@@ -95,15 +87,7 @@ function ParallaxGroup({ enabled, children }: { enabled: boolean; children: Reac
   return <group ref={group}>{children}</group>;
 }
 
-/**
- * 组装驱动（V5 §58/§59/§60/§61）。
- *
- * 一条 0→1 的时间轴，**每帧**同时做两件事：
- *   1. 写 assemblyRef —— 14 块行政区据此下落；
- *   2. 按 orbitView 写相机 —— 方位变化 118° 后精确落到省域位姿（不是绕一整圈，§24）。
- * 因为 progress 本身已经 easing，每帧调用 setLookAt(..., false)，
- * 不能再套 smooth=true，否则每帧再平滑一次会产生滞后（§61）。
- */
+/** 单条可取消时间线同时驱动地块与相机；模型不绕 Y 轴旋转。 */
 function AssemblyDriver({ active, reducedMotion, assemblyRef, controlsRef, radius, onProgress }: {
   active: boolean;
   reducedMotion: boolean;
@@ -127,32 +111,26 @@ function AssemblyDriver({ active, reducedMotion, assemblyRef, controlsRef, radiu
       finish();
       return;
     }
-    const start = performance.now();
-    let frame = 0;
     let lastReported = 0;
-    const step = () => {
-      const progress = Math.min(1, (performance.now() - start) / ASSEMBLY_MS);
-      assemblyRef.current = progress;
-      const pose = orbitView(radius, easeInOutCubic(progress));
+    return startOpeningTimeline((progress) => {
+      assemblyRef.current = Math.min(1, progress / 0.45);
+      const pose = orbitView(radius, progress);
       void controls?.setLookAt(...pose.position, ...pose.target, false);
       invalidate();
-      if (progress - lastReported > 0.04 || progress === 1) {
+      if (progress - lastReported > 0.025 || progress === 1) {
         lastReported = progress;
         onProgress(progress);
       }
-      if (progress < 1) frame = requestAnimationFrame(step);
-      else finish();
-    };
-    frame = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(frame);
+    }, finish);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, assemblyRef, controlsRef, finish, invalidate, radius, reducedMotion]);
 
   return null;
 }
 
-function CameraRig({ mode, phase, focusCityId, reducedMotion, targetPoint, provinceRadius, controlsRef }: {
+function CameraRig({ mode, active, phase, focusCityId, reducedMotion, targetPoint, provinceRadius, controlsRef }: {
   mode: LiaoningCanvasProps['mode'];
+  active: boolean;
   phase: OpeningPhase;
   focusCityId: string | null;
   reducedMotion: boolean;
@@ -161,39 +139,50 @@ function CameraRig({ mode, phase, focusCityId, reducedMotion, targetPoint, provi
   controlsRef: RefObject<CameraControlsImpl | null>;
 }) {
   /** 相机是否正在移动：为真时逐帧请求渲染，否则静止画布上的 setLookAt 不会开始也不会结束。 */
+  const moveSequence = useRef(0);
+  const invalidate = useThree((store) => store.invalidate);
   const dollying = useSpatialStageStore((state) => state.cameraMoving);
   const setCameraMoving = useSpatialStageStore((state) => state.setCameraMoving);
-  useAnimationFrames(dollying, MOTION_DURATION.camera * 3);
+  useAnimationFrames(dollying && active, MOTION_DURATION.camera * 3);
+  useEffect(() => () => { moveSequence.current += 1; setCameraMoving(false); }, [setCameraMoving]);
 
   useEffect(() => {
+    if (!active) { moveSequence.current += 1; setCameraMoving(false); return; }
     const instance = controlsRef.current;
     if (!instance) return;
-    const smooth = !reducedMotion;
     const radius = Math.max(12, provinceRadius);
-    const move = (pose: { position: readonly [number, number, number]; target: readonly [number, number, number] }) => {
-      if (smooth) setCameraMoving(true);
-      void instance.setLookAt(...pose.position, ...pose.target, smooth);
-      if (!smooth) setCameraMoving(false);
+    const move = (pose: { position: readonly [number, number, number]; target: readonly [number, number, number] }, animate = !reducedMotion) => {
+      setCameraMoving(animate);
+      const ticket = ++moveSequence.current;
+      invalidate();
+      void instance.setLookAt(...pose.position, ...pose.target, animate).then(() => {
+        if (ticket === moveSequence.current) setCameraMoving(false);
+      });
     };
 
     if (mode === 'opening') {
-      if (phase === 'sketch') { move(sketchView(radius)); return; }
+      if (phase === 'sketch') { move(sketchView(radius), false); return; }
       // assembling 期间相机由 AssemblyDriver 逐帧写；这里只在完成态补一次收尾。
-      if (phase === 'ready') move(provinceView(radius));
+      if (phase === 'ready') move(provinceView(radius), false);
       return;
     }
 
-    if (mode === 'city' || focusCityId) {
+    if (mode === 'city') {
       move(cityView({ x: targetPoint.x, z: targetPoint.z }, radius));
       return;
     }
+    if (mode === 'province' && focusCityId) {
+      move(provinceCityView({ x: targetPoint.x, z: targetPoint.z }, radius));
+      return;
+    }
     move(provinceView(radius));
-  }, [controlsRef, focusCityId, mode, phase, provinceRadius, reducedMotion, setCameraMoving, targetPoint]);
+  }, [active, controlsRef, focusCityId, invalidate, mode, phase, provinceRadius, reducedMotion, setCameraMoving, targetPoint]);
 
   return (
     <CameraControls
       ref={controlsRef}
       makeDefault
+      enabled={active && mode !== 'opening'}
       minDistance={14}
       maxDistance={provinceRadius * 5}
       minPolarAngle={0.12}
@@ -206,8 +195,9 @@ function CameraRig({ mode, phase, focusCityId, reducedMotion, targetPoint, provi
   );
 }
 
-function SceneContents({ mode, focusCityId, hoveredCityId, onHoverCity, onSelectCity, reducedMotion }: LiaoningCanvasProps) {
+function SceneContents({ mode, active = true, focusCityId, hoveredCityId, onHoverCity, onSelectCity, reducedMotion }: LiaoningCanvasProps) {
   const state = useLiaoningModel();
+  const aspect = useThree((store) => store.size.width / Math.max(1,store.size.height));
   const studyIds = useMemo(() => new Set<string>(STUDY_CITY_IDS), []);
   const model = state.status === 'ready' ? state.model : null;
   const openingPhase = useOpeningStore((store) => store.phase);
@@ -222,26 +212,17 @@ function SceneContents({ mode, focusCityId, hoveredCityId, onHoverCity, onSelect
   const phase: OpeningPhase = mode === 'opening' ? openingPhase : 'ready';
 
   /**
-   * 真实市场状态（规范 §8）：只在省域路由订阅，城市/开场路由不请求。
-   * 与 LiaoningPage 共用同一份模块级缓存，不会重复打接口。
+   * 城市选择仅来自省域 URL；hover 不覆盖锁定选择。
    */
-  const market = useCityMarketStates(mode === 'province');
-  const selectedCityId = useAppContext((state) => state.cityId);
-  /** 非研究城市没有能力数据，保持 normal，不参与六态表达。 */
-  const dataStateFor = (cityId: string): CityDataStateId =>
-    studyIds.has(cityId) ? market.views[cityId]?.state ?? 'normal' : 'normal';
+  const selectedCityId = mode === 'province' ? focusCityId : null;
 
   /**
-   * 省域路由下点击城市：只更新全局 City Context（与 ContextBar 同一份状态），
+   * 省域路由下点击城市：更新 /liaoning?city= 的显式选择，
    * **不立即跳页** —— 右侧摘要给出「进入决策 / 查看研究」两个显式入口。
    * 其他路由（城市页 / 开场）保持原有导航行为，非研究城市也照旧进入城市页。
    */
   const handleSelectCity = (cityId: string) => {
-    if (mode === 'province' && studyIds.has(cityId)) {
-      useAppContext.getState().setCity(cityId);
-      return;
-    }
-    onSelectCity(cityId);
+    if (mode !== 'opening' && studyIds.has(cityId)) onSelectCity(cityId);
   };
 
   const focusPoint = useMemo(() => {
@@ -280,9 +261,11 @@ function SceneContents({ mode, focusCityId, hoveredCityId, onHoverCity, onSelect
   }, [mode, phase]);
 
   if (!model) return null;
+  const fitRadius = responsiveProvinceRadius(model.radius,aspect);
 
   const emphasisFor = (cityId: string, hasResearch: boolean): Emphasis => {
     if (hoveredCityId) return hoveredCityId === cityId ? 'focus' : 'dim';
+    if (selectedCityId) return selectedCityId === cityId ? 'focus' : 'base';
     if (hasResearch) return 'study';
     return studyIds.has(cityId) ? 'study' : 'base';
   };
@@ -291,11 +274,12 @@ function SceneContents({ mode, focusCityId, hoveredCityId, onHoverCity, onSelect
     <>
       <CameraRig
         mode={mode}
+        active={active}
         phase={phase}
         focusCityId={focusCityId}
         reducedMotion={reducedMotion}
         targetPoint={focusPoint}
-        provinceRadius={model.radius}
+        provinceRadius={fitRadius}
         controlsRef={controlsRef}
       />
       <PaperGround radius={model.radius} />
@@ -334,7 +318,7 @@ function SceneContents({ mode, focusCityId, hoveredCityId, onHoverCity, onSelect
         reducedMotion={reducedMotion}
         assemblyRef={assemblyRef}
         controlsRef={controlsRef}
-        radius={model.radius}
+        radius={fitRadius}
         onProgress={setPaperProgress}
       />
       {/*
@@ -344,13 +328,13 @@ function SceneContents({ mode, focusCityId, hoveredCityId, onHoverCity, onSelect
       */}
       <group rotation-y={PROVINCE_ROOT_ROTATION} name="province-root">
         {/* 视差只服务正式省域（§64）：组装期间关闭 */}
-        <ParallaxGroup enabled={!reducedMotion && mode === 'province'}>
+        <ParallaxGroup enabled={active && !reducedMotion && mode === 'province'}>
           {dropPlan.map(({ city, delay, dropHeight }) => (
             <CitySolidMesh
               key={city.id}
               city={city}
               emphasis={emphasisFor(city.id, city.hasResearch)}
-              dataState={dataStateFor(city.id)}
+              dataState="normal"
               selected={mode === 'province' && selectedCityId === city.id}
               hovered={hoveredCityId === city.id}
               onHover={onHoverCity}
@@ -368,7 +352,6 @@ function SceneContents({ mode, focusCityId, hoveredCityId, onHoverCity, onSelect
       {mode !== 'opening' && model.cities.map((city) => {
         const active = hoveredCityId === city.id || (mode === 'province' && selectedCityId === city.id);
         if (!city.hasResearch && !studyIds.has(city.id) && !active) return null;
-        const dataState = dataStateFor(city.id);
         return (
           <Html
             key={`label-${city.id}`}
@@ -379,15 +362,9 @@ function SceneContents({ mode, focusCityId, hoveredCityId, onHoverCity, onSelect
           >
             <span
               className={`liaoning-label${active ? ' is-active' : ''}${city.hasResearch ? ' is-research' : ''}`}
-              data-state={dataState !== 'normal' ? dataState : undefined}
             >
               {city.shortName}
-              {city.hasResearch && <em>研究</em>}
-              {dataState !== 'normal' && (
-                <span className="liaoning-label__state" data-state={dataState}>
-                  {CITY_STATE_LABEL[dataState]}
-                </span>
-              )}
+
             </span>
           </Html>
         );
@@ -396,8 +373,21 @@ function SceneContents({ mode, focusCityId, hoveredCityId, onHoverCity, onSelect
   );
 }
 
+function MapFallback() {
+  return <div className="liaoning-map-fallback" role="alert"><p>地图暂时无法显示。</p><p>你仍可从六城列表选择城市，查看观测和经营计划。</p><button className="ag-button" onClick={() => window.location.reload()}>重新载入地图</button></div>;
+}
+class MapBoundary extends Component<{children:ReactNode},{failed:boolean}> {
+  state={failed:false};
+  static getDerivedStateFromError(){return {failed:true};}
+  render(){return this.state.failed?<MapFallback/>:this.props.children;}
+}
+
 /** 省域 3D 沙盘画布。整站共享一个 Canvas，路由只切换相机与可见性。 */
 export function LiaoningCanvas(props: LiaoningCanvasProps) {
+  const modelState=useLiaoningModel();
+  const [contextLost,setContextLost]=useState(false);
+  const contextCleanup=useRef<(() => void)|null>(null);
+  useEffect(()=>()=>contextCleanup.current?.(),[]);
   const [viewport, setViewport] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
   useEffect(() => {
     const update = () => setViewport({ width: window.innerWidth, height: window.innerHeight });
@@ -407,13 +397,22 @@ export function LiaoningCanvas(props: LiaoningCanvasProps) {
   const quality = props.reducedMotion ? 'performance' : resolveAutoQualityTier(readRuntimeQualitySignals());
   const dpr = resolveDpr(viewport.width, viewport.height, window.devicePixelRatio || 1, QUALITY_CONFIG[quality]);
 
+  if(modelState.status==='error') return <MapFallback/>;
   return (
+    <MapBoundary>
+    {contextLost&&<MapFallback/>}
     <Canvas
+      fallback={<MapFallback/>}
       dpr={dpr}
       frameloop="demand"
       gl={{ antialias: quality === 'quality', alpha: true, powerPreference: 'high-performance', stencil: false }}
       onPointerMissed={() => props.onHoverCity(null)}
       onCreated={({ gl }) => {
+        contextCleanup.current?.();
+        const lost=()=>setContextLost(true);const restored=()=>setContextLost(false);
+        gl.domElement.addEventListener('webglcontextlost',lost);
+        gl.domElement.addEventListener('webglcontextrestored',restored);
+        contextCleanup.current=()=>{gl.domElement.removeEventListener('webglcontextlost',lost);gl.domElement.removeEventListener('webglcontextrestored',restored);};
         gl.domElement.setAttribute('role', 'img');
         gl.domElement.setAttribute('aria-label', '辽宁省农业气候研究空间 · 三维行政区域沙盘');
       }}
@@ -425,5 +424,6 @@ export function LiaoningCanvas(props: LiaoningCanvasProps) {
       <directionalLight position={[30, 40, -50]} intensity={0.25} />
       <SceneContents {...props} />
     </Canvas>
+    </MapBoundary>
   );
 }

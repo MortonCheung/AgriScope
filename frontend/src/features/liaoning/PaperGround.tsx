@@ -18,7 +18,7 @@ export function PaperGround({ radius }: { radius: number }) {
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.03, 0]}>
       <planeGeometry args={[size, size]} />
-      <meshStandardMaterial color={SCENE_TOKENS.ground} roughness={1} metalness={0} />
+      <meshBasicMaterial color={SCENE_TOKENS.paper} toneMapped={false} />
     </mesh>
   );
 }

@@ -119,7 +119,7 @@ export function CitySolidMesh({
        * 注意：海岸上那排明暗梳齿来自挤出侧立面在掠射角下的光照，是既有几何与光照的结果，
        * 与本行无关，也不在本次改动范围内。
        */
-      outline.translate(0, EDGE_LIFT, 0);
+      outline.translate(0, SOLID_DEPTH + EDGE_LIFT, 0);
       list.push(outline);
     }
     return list;

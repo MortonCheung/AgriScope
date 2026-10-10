@@ -32,11 +32,15 @@
 /* 收束阶段：首页文字先安静退场，路由切换发生在已经"停下来"的画面上，
    避免出现页面闪白（V4 §六十八）。 */
 .opening[data-leaving] .opening__inner {
-  opacity: 0;
-  transition: opacity 420ms var(--ag-ease);
+  pointer-events: none;
 }
-@media (prefers-reduced-motion: reduce) {
-  .opening[data-leaving] .opening__inner { transition: none; }
+.opening__skip {
+  position: absolute;
+  top: clamp(24px, 4vh, 40px);
+  right: var(--ag-gutter);
+  z-index: 2;
+  min-height: 44px;
+  pointer-events: auto;
 }
 
 @media (max-width: 720px) {
