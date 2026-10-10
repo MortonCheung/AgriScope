@@ -3,10 +3,13 @@
 生成时间：2026-10-08（Asia/Shanghai）
 唯一正式仓库：`/Users/morton_cheung/Desktop/比赛/大数据分析/AgriScope`（分支 `feat/llm-real-evaluation-and-deploy`）
 
+2026-10-10 口径复核：评估运行时间与分支为历史记录；工程基准已推进到 `5035668`。
+以下胜出数与配对均值由已发布的 `runtime/llm/artifacts/v2/fair_comparison.csv` 重新计算，未调用 API 或重训。
+
 ## 0. 一句话结论
 
 **真实 LLM 评估已完成**（`REAL_LLM_EVALUATED_RETROSPECTIVE_ONLY`，0 失败）：
-- **带 PIT 上下文的 LLM 预测相对基线有稳定增益（平均 +4.62pp，74/96 组更优，60/90/120/150 全档为正）；**
+- **带 PIT 上下文的 LLM 预测在已查看历史中观察到平均增益（+4.62pp，65/96 组更优，60/90/120/150 各档平均增益为正）；**
 - **匿名盲测 blind 无增益（−4.71pp）；残差调整无增益（−4.21pp）；**
 - **Hybrid A/B/C 全部未过门禁 → `HYBRID_NO_GAIN_STATISTICAL_FALLBACK_ACTIVE`；**
 - 所有 LLM/Hybrid 数值**停留在 `RESEARCH_ONLY`**，**不进入生产 Registry**（本轮历史为 reused retrospective）。
@@ -28,20 +31,23 @@
 
 ## 2. 公平对比（同一 origins / crop / horizon / target / label）
 
-96 组；均值 WAPE（越低越好）：
+共 96 个 crop × horizon × target × phase 组；每行仅对该方法有结果的同组基线计算配对均值，WAPE 越低越好。
+不同方法覆盖的组数不同，不能把 residual 或 Hybrid 的均值直接与全体 96 组 baseline 均值相减。
 
-| 方案 | 平均 WAPE | 相对 baseline 增益 |
-|---|---|---|
-| baseline（PIT last_value 等） | 16.55 | — |
-| statistical（seasonal） | 21.56 | −5.01pp |
-| **LLM blind**（匿名） | 21.27 | **−4.71pp** |
-| **LLM context**（PIT 上下文） | 11.93 | **+4.62pp** |
-| LLM residual | 12.62 | −4.21pp |
-| Hybrid A（baseline+残差） | 9.02 | −0.62pp |
-| Hybrid B（权重集成） | 15.27 | −2.72pp |
-| Hybrid C（regime 门控，退化为 baseline） | 12.55 | 0.00pp |
+| 方案 | 配对组数 | 配对 baseline WAPE | 方法平均 WAPE | 配对增益 |
+|---|---|---|---|---|
+| baseline（PIT last_value 等） | 96 | 16.55 | 16.55 | — |
+| statistical（seasonal） | 96 | 16.55 | 21.56 | −5.01pp |
+| **LLM blind**（匿名） | 96 | 16.55 | 21.27 | **−4.71pp** |
+| **LLM context**（PIT 上下文） | 96 | 16.55 | 11.93 | **+4.62pp** |
+| LLM residual | 24 | 8.41 | 12.62 | −4.21pp |
+| Hybrid A（baseline+残差） | 24 | 8.41 | 9.02 | −0.62pp |
+| Hybrid B（权重集成） | 72 | 12.55 | 15.27 | −2.72pp |
+| Hybrid C（regime 门控，退化为 baseline） | 72 | 12.55 | 12.55 | 0.00pp |
 
-- **最佳变体优于 baseline 的组合：74 / 96**；最佳变体分布：context 49、blind 25、hybrid_B 9、hybrid_C 8、hybrid_A 4、residual 1。
+- **Context 单一方案优于 baseline：65 / 96**。
+- **逐组事后选择的最佳变体优于 baseline：74 / 96**；最佳变体分布：context 49、blind 25、hybrid_B 9、hybrid_C 8、hybrid_A 4、residual 1。
+  该最佳变体结果使用每组已知评估结果选择方法，仅作描述，不代表预先锁定方案的胜率或可实现的生产增益。
 
 分维度 context 增益：
 
@@ -118,6 +124,6 @@
 ## 8. 未完成项
 
 - **阿里云部署**：SSH 公钥认证被外部阻塞 → 未部署（见 `RC3_DEPLOYMENT_REPORT.md`，含 264 MB 一键部署包与服务器侧验收清单）。
-- **资产重冻结**：`runtime/manifest.json` 仍记 RC2 哈希（`RC3_TEST_REPORT.md` 已说明），发布前需运行 `scripts/freeze_runtime_manifest.py`。
-- **Git**：未提交、未合并、未打 tag（`v1.0.0-rc3` 未创建）。
+- **当前资产门禁**：2026-10-10 只读复核为 `20/20 ASSETS_VERIFY_OK`。当前清单已由 publishing 生成，校验发布状态、目的路径边界与非空；不是 RC2 逐文件哈希清单。旧重冻结待办不适用于当前清单。
+- **Git（本地引用复核）**：评估代码与后续工程已提交至 `feat/frontend-v3-phase3-rc`（复核基准 `5035668`）；`main` 仍为 RC2 的 `c79f38b`，本地未创建 `v1.0.0-rc3`。历史“未提交”记录不能描述当前工程。
 - **prospective 验证**：等未来标签成熟，`PROSPECTIVE_VALIDATION_PENDING_BY_TIME`。

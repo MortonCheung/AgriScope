@@ -1,5 +1,10 @@
 # AgriScope RC3 测试报告
 
+> 2026-10-10 复核说明：本文保留 2026-10-08 的历史测试与失败记录。
+> 当前工程基准 `5035668` 使用 publishing 发布清单，资产门禁只读复核为 **20/20，`ASSETS_VERIFY_OK`**，
+> 已接受 `PUBLISHED(research-product)`；下文 RC2 哈希清单失败不是当前门禁状态。
+> 本次没有重新执行本文所列全量测试，当前状态见 `PROJECT_STATUS.md`。
+
 生成时间：2026-10-08（Asia/Shanghai）
 执行命令：`./scripts/test_all.sh`（不训练、不部署）
 环境：`PROJECT_ROOT=$PWD`，`PYTHONPATH=$PWD/models/src:$PWD/models:$PWD/models/tests:$PWD`

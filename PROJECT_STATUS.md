@@ -1,8 +1,8 @@
 # AgriScope 当前状态 · RC3
 
-更新于 2026-10-08。唯一正式仓库为 MortonCheung/AgriScope；当前交付包含前端、后端、冻结 Final、Daily、长期双目标、**真实 LLM 评估**及部署/验收工具。
+更新于 2026-10-10（只读状态与评估口径复核；工程基准 `5035668`）。唯一正式仓库为 MortonCheung/AgriScope；当前交付包含前端、后端、冻结 Final、Daily、长期双目标、**真实 LLM 评估**及部署/验收工具。
 
-短期 Final 保持 final_v1，实时源码指纹 b19b187268ee92db，施工前 173 个源码/报告/模型文件全部逐字节未变。
+短期运行时仍登记 Final `final_v1` 与冻结指纹 `b19b187268ee92db`。173 个源码/报告/模型文件逐字节未变属于 RC2 验收记录，本次没有重新执行该冻结审计。
 
 长期 V2 已完成标签成熟清洗、目标/模型选择与校准分离、历史回测、独立指标重算、120 项 Registry 和上市决策接口。正式上市目标为基准日后第 H 至 H+13 天的平均批发市场价；周期目标为第 1 至 H 天的市场均价。两者不可互换。
 
@@ -10,6 +10,10 @@
 
 Daily 与长期结果最新观测均为 2026-10-06，Daily 标记发布延迟。长期任务在 Daily 成功后独立推理、不重训；异常不破坏短期或 Daily。
 
-真实 LLM 评估已完成（`REAL_LLM_EVALUATED_RETROSPECTIVE_ONLY`）：356 次真实调用、360 条有效响应、0 失败；带 PIT 上下文的 LLM 预测相对基线平均 **+4.62pp**（74/96 组更优，60/90/120/150 全档为正），匿名盲测 **−4.71pp**（无增益），残差 −4.21pp（无增益）；Hybrid A/B/C 均未过门禁，标 `HYBRID_NO_GAIN_STATISTICAL_FALLBACK_ACTIVE`。LLM/Hybrid 一律 `RESEARCH_ONLY`，不进入生产 Registry。服务器地址可达但 SSH 公钥认证被外部阻塞，部署包与 systemd/nginx 手册已备，**本机联调不等于服务器上线**。
+真实 LLM 评估已完成（`REAL_LLM_EVALUATED_RETROSPECTIVE_ONLY`）：历史运行累计 356 次真实调用、360 条有效响应、0 失败；发布的权威状态记录最后一轮 16 次调用、353 次缓存命中。基于发布的 `runtime/llm/artifacts/v2/fair_comparison.csv` 重算：带 PIT 上下文的 LLM 预测相对配对基线平均 **+4.62pp**（**65/96** 组更优，60/90/120/150 各档平均增益为正），匿名盲测 **−4.71pp**（无增益），残差 −4.21pp（无增益）。74/96 是逐组事后选择最佳变体的结果，不是 context 单一方案的胜出数。残差与 Hybrid 的配对组数量不同，详见 RC3_FINAL_REPORT.md。Hybrid A/B/C 均未过门禁，标 `HYBRID_NO_GAIN_STATISTICAL_FALLBACK_ACTIVE`；LLM/Hybrid 一律 `RESEARCH_ONLY`，不进入生产 Registry。
 
-实际全量验证：前端 322 tests；Python 全层 168 tests + Daily 84 tests；Backend 19/19；Final 38/38；Daily 33/33；长期产物 120 条门禁通过；独立指标重算 586,000 行最大偏差 ≈2.8e-14。唯一未过项是资产哈希门禁（RC3 改动文件与 RC2 manifest 不一致，发布前需重冻结）。更完整证据见 RC3_FINAL_REPORT.md、RC3_TEST_REPORT.md、RC3_DEPLOYMENT_REPORT.md 与三份 LLM 报告。
+2026-10-10 非交互 SSH 复核仍返回 `Permission denied (publickey)`，未在服务器执行变更。2026-10-08 的部署包是历史产物，不能视作当前工程版本的已验证部署包；**本机联调不等于服务器上线**。
+
+2026-10-08 的历史全量验证记录：前端 322 tests；Python 全层 168 tests + Daily 84 tests；Backend 19/19；Final 38/38；Daily 33/33；长期产物 120 条门禁通过；独立指标重算 586,000 行最大偏差 ≈2.8e-14。这些记录不代表当前工程基准的重新验收。
+
+2026-10-10 当前发布清单复核 **20/20，`ASSETS_VERIFY_OK`**；校验器已接受 `PUBLISHED(research-product)`。此门禁检查发布状态、目的路径边界与非空，不提供逐文件哈希冻结证明。旧 RC2 哈希清单失败已不是当前门禁状态，本次未重跑全量测试、训练或付费 API。历史报告见 RC3_FINAL_REPORT.md、RC3_TEST_REPORT.md、RC3_DEPLOYMENT_REPORT.md 与三份 LLM 报告。

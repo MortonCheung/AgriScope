@@ -136,10 +136,10 @@ python3 -m pytest backend/tests -q
 `python3 pipelines/publishing/publish_runtime.py` 后 `python3 scripts/verify_assets.py`。
 密钥扫描：`python3 scripts/secret_scan.py`（须为 `SECRET_SCAN_CLEAN`）。
 
-> 已知既有问题：第 0 步资产清单校验目前对「研究产品件」这一发布项报 `ASSETS_VERIFY_FAILED` ——
-> `publish_runtime.py` 为该发布项写状态 `PUBLISHED(research-product)`，而 `verify_assets.py` 只接受 `OK`。
-> 其余各步（Backend / Final / Daily / Long-Horizon 门禁 / 各层 pytest / 独立重算）均通过。
-> 该项属 publishing 与资产校验器的状态约定不一致，待修。
+清单校验器已同时接受 `OK` 与 `PUBLISHED(<asset_type>)`，研究产品件的状态约定问题已修复。
+2026-10-10 对当前发布资产只读复核：**20/20，`ASSETS_VERIFY_OK`**。
+此检查覆盖发布状态、目的路径边界与非空检查，不等同于逐文件内容哈希审计；
+历史 RC2 哈希清单的失败记录不能用来描述当前 publishing 清单。
 
 ## API（唯一后端）
 
