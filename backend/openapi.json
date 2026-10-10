@@ -432,6 +432,462 @@
           }
         }
       }
+    },
+    "/api/research/catalog": {
+      "get": {
+        "tags": [
+          "research"
+        ],
+        "summary": "研究总索引（轻量，不含正文）",
+        "operationId": "catalog_api_research_catalog_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Catalog Api Research Catalog Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/research/cities": {
+      "get": {
+        "tags": [
+          "research"
+        ],
+        "summary": "已发布研究城市与模块概况",
+        "operationId": "cities_api_research_cities_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Cities Api Research Cities Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/research/llm-evaluation": {
+      "get": {
+        "tags": [
+          "research"
+        ],
+        "summary": "LLM 回溯评估证据（真实产物派生，只读）",
+        "operationId": "llm_evaluation_api_research_llm_evaluation_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Llm Evaluation Api Research Llm Evaluation Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/research/{city}/manifest.json": {
+      "get": {
+        "tags": [
+          "research"
+        ],
+        "summary": "城市研究清单",
+        "operationId": "manifest_api_research__city__manifest_json_get",
+        "parameters": [
+          {
+            "name": "city",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "City"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Manifest Api Research  City  Manifest Json Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/research/{city}/sources.json": {
+      "get": {
+        "tags": [
+          "research"
+        ],
+        "summary": "城市数据来源清单",
+        "operationId": "sources_api_research__city__sources_json_get",
+        "parameters": [
+          {
+            "name": "city",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "City"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response Sources Api Research  City  Sources Json Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/research/{city}/sync-report.json": {
+      "get": {
+        "tags": [
+          "research"
+        ],
+        "summary": "城市研究同步报告",
+        "operationId": "sync_report_api_research__city__sync_report_json_get",
+        "parameters": [
+          {
+            "name": "city",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "City"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Sync Report Api Research  City  Sync Report Json Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/research/{city}/articles/{article_id}.json": {
+      "get": {
+        "tags": [
+          "research"
+        ],
+        "summary": "研究模块正文",
+        "operationId": "article_api_research__city__articles__article_id__json_get",
+        "parameters": [
+          {
+            "name": "city",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "City"
+            }
+          },
+          {
+            "name": "article_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Article Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Article Api Research  City  Articles  Article Id  Json Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/research/{city}/references.md": {
+      "get": {
+        "tags": [
+          "research"
+        ],
+        "summary": "来源与参考文献清单（纯文本）",
+        "operationId": "references_api_research__city__references_md_get",
+        "parameters": [
+          {
+            "name": "city",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "City"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/research/{city}/tables/{file}": {
+      "get": {
+        "tags": [
+          "research"
+        ],
+        "summary": "研究数据表（CSV，按需加载）",
+        "operationId": "table_api_research__city__tables__file__get",
+        "parameters": [
+          {
+            "name": "city",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "City"
+            }
+          },
+          {
+            "name": "file",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "File"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/research/{city}/figures/{file}": {
+      "get": {
+        "tags": [
+          "research"
+        ],
+        "summary": "研究插图（按需加载）",
+        "operationId": "figure_api_research__city__figures__file__get",
+        "parameters": [
+          {
+            "name": "city",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "City"
+            }
+          },
+          {
+            "name": "file",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "File"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/observations": {
+      "get": {
+        "tags": [
+          "observations"
+        ],
+        "summary": "六城农业与完整年度历史气候观测（不含未来预测）",
+        "operationId": "observations_api_observations_get",
+        "parameters": [
+          {
+            "name": "city",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "六城 slug；省略返回六城研究区，非全省总量。",
+              "title": "City"
+            },
+            "description": "六城 slug；省略返回六城研究区，非全省总量。"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/CityObservationResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ResearchAreaObservationResponse"
+                    }
+                  ],
+                  "title": "Response Observations Api Observations Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -490,6 +946,9 @@
               }
             ],
             "title": "Limitation"
+          },
+          "features": {
+            "$ref": "#/components/schemas/DecisionFeaturesModel"
           }
         },
         "additionalProperties": false,
@@ -503,9 +962,161 @@
           "model_version",
           "data_version",
           "code_fingerprint",
-          "limitation"
+          "limitation",
+          "features"
         ],
         "title": "CapabilityResponse"
+      },
+      "CityObservationResponse": {
+        "properties": {
+          "contract_version": {
+            "type": "string",
+            "const": "1",
+            "title": "Contract Version"
+          },
+          "scope": {
+            "type": "string",
+            "const": "city",
+            "title": "Scope"
+          },
+          "city_id": {
+            "type": "string",
+            "title": "City Id"
+          },
+          "city_name": {
+            "type": "string",
+            "title": "City Name"
+          },
+          "production": {
+            "$ref": "#/components/schemas/ProductionObservationModel"
+          },
+          "climate": {
+            "$ref": "#/components/schemas/ClimateObservationModel"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "contract_version",
+          "scope",
+          "city_id",
+          "city_name",
+          "production",
+          "climate"
+        ],
+        "title": "CityObservationResponse"
+      },
+      "ClimateObservationModel": {
+        "properties": {
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          },
+          "period_start": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period Start"
+          },
+          "period_end": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period End"
+          },
+          "complete_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Complete Year"
+          },
+          "series": {
+            "items": {
+              "$ref": "#/components/schemas/ClimateObservationYear"
+            },
+            "type": "array",
+            "title": "Series"
+          },
+          "source_paths": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Source Paths"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "available",
+          "period_start",
+          "period_end",
+          "complete_year",
+          "series",
+          "source_paths",
+          "limitations"
+        ],
+        "title": "ClimateObservationModel"
+      },
+      "ClimateObservationYear": {
+        "properties": {
+          "year": {
+            "type": "integer",
+            "maximum": 2025.0,
+            "minimum": 2010.0,
+            "title": "Year"
+          },
+          "precipitation_mm": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Precipitation Mm"
+          },
+          "mean_temp_c": {
+            "type": "number",
+            "title": "Mean Temp C"
+          },
+          "growing_season_precipitation_mm": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Growing Season Precipitation Mm"
+          },
+          "growing_season_mean_temp_c": {
+            "type": "number",
+            "title": "Growing Season Mean Temp C"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "year",
+          "precipitation_mm",
+          "mean_temp_c",
+          "growing_season_precipitation_mm",
+          "growing_season_mean_temp_c"
+        ],
+        "title": "ClimateObservationYear"
       },
       "CropCapabilityModel": {
         "properties": {
@@ -533,6 +1144,111 @@
           "horizons"
         ],
         "title": "CropCapabilityModel"
+      },
+      "DecisionFeatureModel": {
+        "properties": {
+          "supported": {
+            "type": "boolean",
+            "title": "Supported"
+          },
+          "result_type": {
+            "type": "string",
+            "enum": [
+              "VERIFIED_MODEL",
+              "OBSERVATIONAL_ANALYSIS",
+              "DETERMINISTIC_CALCULATION",
+              "USER_ASSUMPTION_SCENARIO",
+              "EXPLORATORY_REFERENCE",
+              "NOT_SUPPORTED"
+            ],
+            "title": "Result Type"
+          },
+          "data_sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Data Sources"
+          },
+          "required_inputs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Required Inputs"
+          },
+          "validated_model": {
+            "type": "boolean",
+            "title": "Validated Model"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          },
+          "horizons": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Horizons"
+          },
+          "crop_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Crop Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "supported",
+          "result_type",
+          "data_sources",
+          "required_inputs",
+          "validated_model",
+          "limitations",
+          "horizons",
+          "crop_ids"
+        ],
+        "title": "DecisionFeatureModel"
+      },
+      "DecisionFeaturesModel": {
+        "properties": {
+          "short_term_price": {
+            "$ref": "#/components/schemas/DecisionFeatureModel"
+          },
+          "long_horizon_scenario": {
+            "$ref": "#/components/schemas/DecisionFeatureModel"
+          },
+          "production_structure": {
+            "$ref": "#/components/schemas/DecisionFeatureModel"
+          },
+          "historical_climate": {
+            "$ref": "#/components/schemas/DecisionFeatureModel"
+          },
+          "break_even": {
+            "$ref": "#/components/schemas/DecisionFeatureModel"
+          },
+          "user_scenario": {
+            "$ref": "#/components/schemas/DecisionFeatureModel"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "short_term_price",
+          "long_horizon_scenario",
+          "production_structure",
+          "historical_climate",
+          "break_even",
+          "user_scenario"
+        ],
+        "title": "DecisionFeaturesModel"
       },
       "HTTPValidationError": {
         "properties": {
@@ -770,6 +1486,237 @@
         ],
         "title": "LongHorizonUserContext"
       },
+      "ObservationRangeModel": {
+        "properties": {
+          "min": {
+            "type": "number",
+            "title": "Min"
+          },
+          "max": {
+            "type": "number",
+            "title": "Max"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "min",
+          "max"
+        ],
+        "title": "ObservationRangeModel"
+      },
+      "ProductionObservationItem": {
+        "properties": {
+          "crop": {
+            "type": "string",
+            "title": "Crop"
+          },
+          "area_ha": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Area Ha"
+          },
+          "share": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Share"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "crop",
+          "area_ha",
+          "share"
+        ],
+        "title": "ProductionObservationItem"
+      },
+      "ProductionObservationModel": {
+        "properties": {
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          },
+          "period_start": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period Start"
+          },
+          "period_end": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period End"
+          },
+          "latest_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Year"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "eight_agricultural_districts",
+              "eight_crop_categories"
+            ],
+            "title": "Scope"
+          },
+          "unit": {
+            "type": "string",
+            "const": "ha",
+            "title": "Unit"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProductionObservationItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "source_paths": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Source Paths"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "available",
+          "period_start",
+          "period_end",
+          "latest_year",
+          "scope",
+          "unit",
+          "items",
+          "source_paths",
+          "limitations"
+        ],
+        "title": "ProductionObservationModel"
+      },
+      "ResearchAreaObservationResponse": {
+        "properties": {
+          "contract_version": {
+            "type": "string",
+            "const": "1",
+            "title": "Contract Version"
+          },
+          "scope": {
+            "type": "string",
+            "const": "six_city_research_area",
+            "title": "Scope"
+          },
+          "cities": {
+            "items": {
+              "$ref": "#/components/schemas/CityObservationResponse"
+            },
+            "type": "array",
+            "title": "Cities"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/ResearchAreaObservationSummary"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "contract_version",
+          "scope",
+          "cities",
+          "summary",
+          "limitations"
+        ],
+        "title": "ResearchAreaObservationResponse"
+      },
+      "ResearchAreaObservationSummary": {
+        "properties": {
+          "city_count": {
+            "type": "integer",
+            "title": "City Count"
+          },
+          "climate_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Climate Year"
+          },
+          "precipitation_range_mm": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ObservationRangeModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mean_temp_range_c": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ObservationRangeModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "city_count",
+          "climate_year",
+          "precipitation_range_mm",
+          "mean_temp_range_c"
+        ],
+        "title": "ResearchAreaObservationSummary"
+      },
       "StressChangesModel": {
         "properties": {
           "price_pct": {
@@ -954,6 +1901,14 @@
     {
       "name": "forecast",
       "description": "Long-Horizon 长期预测（情景化，独立于 /api/decision）"
+    },
+    {
+      "name": "research",
+      "description": "六城研究只读产物（研究中心证据层，路径白名单）"
+    },
+    {
+      "name": "observations",
+      "description": "六城农业与历史气候摘要（非全省总量、非未来预测）"
     }
   ]
 }
