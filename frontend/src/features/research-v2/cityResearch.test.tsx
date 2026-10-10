@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { listTopics } from '../../domain/research/catalog';
 import { CityResearchPage } from './CityResearchPage';
+import { ResearchRoutePage } from './ResearchRoutePage';
 import { useCityExitStore } from '../spatial/cityExit';
 
 /**
@@ -25,14 +26,14 @@ function Probe() {
   return <output data-testid="path">{location.pathname + location.search}</output>;
 }
 
-function renderCity() {
+function renderCity(url = '/cities/shenyang') {
   return render(
-    <MemoryRouter initialEntries={['/cities/shenyang']}>
+    <MemoryRouter initialEntries={[url]}>
       <Probe />
       <Routes>
         <Route path="/cities/:cityId" element={<CityResearchPage />} />
         <Route path="/liaoning" element={<div>LIAONING_PAGE</div>} />
-        <Route path="/cities/:cityId/research/:researchId" element={<div>RESEARCH_PAGE</div>} />
+        <Route path="/cities/:cityId/research/:researchId" element={<ResearchRoutePage />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -54,14 +55,17 @@ describe('城市研究三栏工作台', () => {
     useCityExitStore.getState().reset();
   });
 
-  it('结构：chrome / 研究树 / 中栏 / 证据栏 / 关闭按钮齐全（§59-7/11）', () => {
+  it('三栏和局部抽屉保留，重复页面退出/跨任务按钮已删除', () => {
     const { container } = renderCity();
     expect(container.querySelector('.city-research__chrome')).not.toBeNull();
     expect(container.querySelector('.city-research__body')?.getAttribute('data-layout')).toBe('workbench');
     expect(container.querySelector('.city-research__sidebar')).not.toBeNull();
     expect(container.querySelector('.city-research__column')).not.toBeNull();
     expect(container.querySelector('.city-research__evidence')).not.toBeNull();
-    expect(screen.getByRole('button', { name: '返回城市概览' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: '返回城市概览' })).toBeNull();
+    expect(screen.queryByRole('link', { name: /进入决策/ })).toBeNull();
+    expect(container.textContent).not.toContain('研究工作台');
+    expect(container.querySelector('.city-research__chrome')?.textContent).not.toContain('个研究点');
   });
 
   it('默认选中第一个方向；点击另一个方向只改选中与中栏，URL 保留研究选择（§59-8）', () => {
@@ -114,17 +118,11 @@ describe('城市研究三栏工作台', () => {
     expect(container.textContent ?? '').not.toContain('来源待补充');
   });
 
-  it('点击概览 进入空间退出协调器（§59-12）', () => {
-    renderCity();
-    fireEvent.click(screen.getByRole('button', { name: '返回城市概览' }));
-    expect(useCityExitStore.getState().status).toBe('exiting');
-    expect(useCityExitStore.getState().target).toBe('/liaoning?city=shenyang');
-  });
-
-  it('Esc 与概览 走同一条退出路径；抽屉打开时先关抽屉（§23/§59-12）', () => {
+  it('Esc直接回父级；抽屉打开时先关抽屉，不启动折纸等待', () => {
     renderCity();
     fireEvent.keyDown(window, { key: 'Escape' });
-    expect(useCityExitStore.getState().status).toBe('exiting');
+    expect(path()).toBe('/liaoning?city=shenyang');
+    expect(useCityExitStore.getState().status).toBe('idle');
 
     cleanup();
     useCityExitStore.getState().reset();
@@ -145,5 +143,25 @@ describe('城市研究三栏工作台', () => {
     expect(toggle.getAttribute('aria-controls')).toBe('city-research-evidence');
     fireEvent.click(toggle);
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('选择研究点和文章模式时实体纸面与目录不重新挂载', () => {
+    const { container } = renderCity();
+    const paper = container.querySelector('.city-research__paper');
+    const sidebar = container.querySelector('.city-research__sidebar');
+    fireEvent.click(container.querySelector('.tree__point-link')!);
+    fireEvent.click(screen.getByRole('tab', { name: '完整文章' }));
+    expect(container.querySelector('.city-research__paper')).toBe(paper);
+    expect(container.querySelector('.city-research__sidebar')).toBe(sidebar);
+  });
+
+  it('深链路径定位优先，树选择更新路径而非保留冲突research query', () => {
+    const { container } = renderCity('/cities/shenyang/research/A2.2?research=A1.1');
+    expect(container.querySelector('.evidence-rail__id')?.textContent).toBe('A2.2');
+    const selected = container.querySelector('.tree__topic[data-selected] .tree__point-link')
+      ?? container.querySelector('.tree__point-link');
+    fireEvent.click(selected!);
+    expect(path()).toContain('/cities/shenyang/research/');
+    expect(path()).not.toContain('research=A1.1');
   });
 });

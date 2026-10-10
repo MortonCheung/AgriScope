@@ -1,4 +1,6 @@
 import { researchParent, researchIdKind } from '../domain/research/catalog';
+import { readContextFromSearch } from './context/appContext';
+import { STUDY_CITY_IDS } from '../domain/geography/cities';
 
 /**
  * AgriScope 正式路由。
@@ -55,7 +57,8 @@ export const REPORTS_ROUTE_PREFIX = '/reports/';
 /** 从路径里取 cityId / researchId，供路由与外壳共用。 */
 export function parseResearchPath(pathname: string): { cityId: string; researchId: string } | null {
   const match = /^\/cities\/([^/]+)\/research\/([^/]+)\/?$/.exec(pathname);
-  return match ? { cityId: match[1], researchId: decodeURIComponent(match[2]) } : null;
+  if (!match) return null;
+  try { return { cityId: match[1], researchId: decodeURIComponent(match[2]) }; } catch { return null; }
 }
 
 export function parseCityPath(pathname: string): string | null {
@@ -93,10 +96,10 @@ export function isLegacyPayloadResearchId(raw: string): boolean {
  * 旧实现把所有 `/research/*` 直接跳到城市，跳过了"方向"这一层；
  * 现在按 catalog 的两级结构走。
  */
-export function structuralParent(pathname: string): string | null {
+export function structuralParent(pathname: string, search = ''): string | null {
   if (pathname === ROUTES.root) return null;
 
-  if (pathname === ROUTES.researchHome) return ROUTES.root;
+  if (pathname === ROUTES.researchHome) return readContextFromSearch(search).cityId ? ROUTES.liaoning : ROUTES.root;
   if (pathname === ROUTES.about) return ROUTES.root;
   if (pathname === ROUTES.scenario) return ROUTES.root;
   if (pathname === ROUTES.decisionCenter) return ROUTES.root;
@@ -109,21 +112,47 @@ export function structuralParent(pathname: string): string | null {
 
   const research = parseResearchPath(pathname);
   if (research) {
+    if (!(STUDY_CITY_IDS as readonly string[]).includes(research.cityId)) return ROUTES.liaoning;
     const canonical = canonicalResearchId(research.researchId);
     // 只有 catalog 认得这个 id 时才按它推层级；认不得就退回城市页，避免造出不存在的父级。
     const kind = researchIdKind(research.cityId, canonical);
     if (kind === 'point') {
       const parent = researchParent(research.cityId, canonical);
-      return ROUTES.research(research.cityId, parent.id);
+      return parentBusinessUrl(ROUTES.research(research.cityId, parent.id), research.cityId, search);
     }
-    return ROUTES.city(research.cityId);
+    return parentBusinessUrl(ROUTES.city(research.cityId), research.cityId, search);
   }
 
   const decision = /^\/cities\/([^/]+)\/decision\/?$/.exec(pathname);
-  if (decision) return ROUTES.city(decision[1]);
+  if (decision) return selectedProvince(decision[1]);
 
   const city = parseCityPath(pathname);
-  if (city) return ROUTES.researchHome;
+  if (city) {
+    if (!(STUDY_CITY_IDS as readonly string[]).includes(city)) return ROUTES.liaoning;
+    const selected = new URLSearchParams(search).get('research');
+    if (selected) {
+      const canonical = canonicalResearchId(selected);
+      if (researchIdKind(city, canonical) === 'point') return parentBusinessUrl(ROUTES.research(city, researchParent(city, canonical).id), city, search);
+      if (researchIdKind(city, canonical) === 'topic') return parentBusinessUrl(ROUTES.city(city), city, search);
+    }
+    return selectedProvince(city);
+  }
 
   return ROUTES.root;
+}
+
+function selectedProvince(cityId: string): string {
+  return (STUDY_CITY_IDS as readonly string[]).includes(cityId)
+    ? `${ROUTES.liaoning}?${new URLSearchParams({ city: cityId })}` : ROUTES.liaoning;
+}
+
+/** Keep valid business conditions, discard child selection/mode/plan on an Up action. */
+function parentBusinessUrl(pathname: string, cityId: string, search: string): string {
+  const current = readContextFromSearch(search);
+  const params = new URLSearchParams();
+  if (current.cityId || current.crop || current.horizon !== undefined || current.asOf) params.set('city', cityId);
+  if (current.crop) params.set('crop', current.crop);
+  if (current.horizon !== undefined) params.set('horizon', String(current.horizon));
+  if (current.asOf) params.set('as_of', current.asOf);
+  return params.size ? `${pathname}?${params}` : pathname;
 }

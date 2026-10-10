@@ -10,7 +10,6 @@
   background: var(--ag-paper);
   backdrop-filter: none;
 }
-.ag-header[data-concealed] { pointer-events: none; }
 
 .ag-header__inner {
   display: flex;
@@ -23,7 +22,7 @@
   padding-inline: var(--ag-gutter);
 }
 
-.ag-header__lead { display: flex; align-items: center; gap: var(--ag-space-5); min-width: 0; }
+.ag-header__lead { display: flex; align-items: center; gap: var(--ag-space-5); min-width: 0; flex: none; }
 
 /* 右侧主导航。 */
 .ag-header__tail {
@@ -38,7 +37,7 @@
    不自行设计图形，也不放占位方块，避免出现一个假的品牌符号。 */
 /* 空占位方块已按 §28 移除：没有真实 Logo 时只写品牌名。 */
 .ag-header__brand-en {
-  color: var(--ag-ink-faint);
+  color: var(--ag-ink-soft);
   font-family: var(--ag-font-mono);
   font-size: 0.6875rem;
   letter-spacing: 0.18em;
@@ -53,6 +52,7 @@
   padding: 6px 2px;
   color: var(--ag-ink-muted);
   font-size: var(--ag-fs-small);
+  white-space: nowrap;
   transition: color var(--ag-dur-fast) var(--ag-ease);
 }
 .ag-header__link:hover { color: var(--ag-ink); }
@@ -111,4 +111,3 @@
   .ag-header__nav .ag-header__link:last-child { border-bottom: 0; }
 
 }
-

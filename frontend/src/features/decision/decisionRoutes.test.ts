@@ -5,7 +5,7 @@ import { getRouteDirection, isSpatialEntry } from '../../app/routeTransitions';
 describe('decision extends the existing city hierarchy',()=>{
   it('is a city child, preserving research and province parents',()=>{
     const url=ROUTES.decision('shenyang');expect(url).toBe('/cities/shenyang/decision');
-    expect(structuralParent(url)).toBe('/cities/shenyang');expect(structuralParent('/cities/shenyang')).toBe('/liaoning');
+    expect(structuralParent(url)).toBe('/liaoning?city=shenyang');expect(structuralParent('/cities/shenyang')).toBe('/liaoning?city=shenyang');
     expect(parseCityPath(url)).toBeNull();
   });
   it('uses the existing page transition without becoming a map camera entry',()=>{

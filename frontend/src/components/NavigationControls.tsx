@@ -1,8 +1,7 @@
 import { useLocation } from 'react-router-dom';
 import { useAppHistory } from '../app/appHistory';
 import { usePageNavigate } from '../app/pageNavigation';
-import { ROUTES, parseCityPath, structuralParent } from '../app/routes';
-import { requestCityExit } from '../features/spatial/cityExit';
+import { ROUTES, structuralParent } from '../app/routes';
 import './navigation-controls.css';
 
 /** 细线 chevron：不依赖字体里的 ‹ › ^ 字形，跨 Safari / Chromium / WebKit 一致（V4 §十二/§五十二）。 */
@@ -31,13 +30,10 @@ function Chevron({ dir }: { dir: 'back' | 'forward' | 'up' }) {
  * 不把「后退 / 前进 / 上一级」三个中文显示出来，只用 aria-label。
  */
 export function NavigationControls() {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const history = useAppHistory();
   const navigate = usePageNavigate();
-  const up = structuralParent(pathname);
-  const inCity = /^\/cities\/[^/]+(?:\/|$)/.test(pathname);
-  // 只有城市概览的退出需要空间动画；工作台深链接按真实访问历史返回。
-  const atCityRoot = parseCityPath(pathname) !== null;
+  const up = structuralParent(pathname, search);
 
   return (
     <div className="ag-nav-controls" role="group" aria-label="页面导航">
@@ -48,8 +44,7 @@ export function NavigationControls() {
         aria-label="后退"
         disabled={!history?.canGoBack}
         onClick={() => {
-          if (atCityRoot) requestCityExit({ via: 'back' });
-          else history?.goBack({ to: up ?? ROUTES.root });
+          history?.goBack({ to: up ?? ROUTES.liaoning });
         }}
       >
         <Chevron dir="back" />
@@ -64,7 +59,7 @@ export function NavigationControls() {
       >
         <Chevron dir="forward" />
       </button>
-      {!inCity && <button
+      <button
         type="button"
         className="ag-nav-control"
         data-dir="up"
@@ -72,12 +67,11 @@ export function NavigationControls() {
         disabled={!up}
         onClick={() => {
           if (!up) return;
-          if (inCity) requestCityExit({ target: up, via: 'push' });
-          else navigate(up);
+          navigate(up);
         }}
       >
         <Chevron dir="up" />
-      </button>}
+      </button>
     </div>
   );
 }

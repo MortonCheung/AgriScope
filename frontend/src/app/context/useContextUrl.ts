@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { readContextFromSearch, useAppContext } from './appContext';
 import { selectedCityFromSearch } from './provinceSelection';
 import { STUDY_CITY_IDS } from '../../domain/geography/cities';
+import { rememberReportLocation } from './navigationContext';
 
 /** URL only hydrates state. User events own URL writes; there is no reverse effect. */
 export function useContextUrlSync(): void {
@@ -20,5 +21,6 @@ export function useContextUrlSync(): void {
     if (parsed.crop !== undefined) state.setCrop(parsed.crop);
     if (parsed.horizon !== undefined) state.setHorizon(parsed.horizon);
     if (parsed.asOf !== undefined) state.setAsOf(parsed.asOf);
+    rememberReportLocation({ pathname, search });
   }, [pathname, search]);
 }

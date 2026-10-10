@@ -26,49 +26,12 @@
 
 /* ---- chrome：城市名 + 统计 + 关闭 ---- */
 .city-research__chrome {
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: space-between;
   gap: var(--ag-space-5);
   padding: 14px clamp(16px, 2vw, 26px);
   border-bottom: 1px solid var(--ag-rule-soft);
-}
-.city-research__titles { display: flex; align-items: baseline; gap: var(--ag-space-5); min-width: 0; }
-.city-research__city {
-  margin: 0;
-  color: var(--ag-ink);
-  font-family: var(--ag-font-display);
-  font-size: clamp(1.1rem, 1.6vw, 1.35rem);
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  white-space: nowrap;
-}
-.city-research__meta {
-  margin: 0;
-  color: var(--ag-ink-muted);
-  font-family: var(--ag-font-mono);
-  font-size: var(--ag-fs-micro);
-  letter-spacing: 0.06em;
-  white-space: nowrap;
-}
-/* 关闭：极简、无背景、细线，hover 轻微 opacity + rotation（§23） */
-.city-research__close {
-  flex: none;
-  padding: 2px 6px;
-  border: 0;
-  background: none;
-  color: var(--ag-ink-soft);
-  font-family: var(--ag-font-text);
-  font-size: 20px;
-  line-height: 1;
-  cursor: pointer;
-  transition: opacity var(--ag-dur-fast) var(--ag-ease), transform var(--ag-dur-fast) var(--ag-ease);
-}
-.city-research__close:hover { opacity: 0.55; transform: rotate(90deg); }
-.city-research__close:focus-visible { outline: 2px solid var(--ag-ink); outline-offset: 2px; }
-@media (prefers-reduced-motion: reduce) {
-  .city-research__close { transition: none; }
-  .city-research__close:hover { transform: none; }
 }
 
 /* ---- body：Sidebar + Preview，两个独立滚动区（模块级工作台） ---- */
@@ -96,8 +59,6 @@
   padding: clamp(28px, 4vw, 56px) clamp(24px, 4.5vw, 72px);
 }
 .city-research__empty { margin: clamp(28px, 5vw, 56px); color: var(--ag-ink-muted); font-size: var(--ag-fs-body); }
-.city-research__decision { display: flex; align-items: center; min-height: 44px; margin-bottom: var(--ag-space-4); color: var(--ag-ink-soft); font-size: var(--ag-fs-small); }
-.city-research__decision:hover { color: var(--ag-ink); }
 
 /* ---- 右侧预览 ---- */
 .city-preview { display: flex; flex-direction: column; gap: var(--ag-space-4); max-width: 68ch; }
@@ -317,6 +278,7 @@
 
 /* ---- tablet（≤1024）：左栏变抽屉 + 主区（中栏 + 证据栏） ---- */
 @media (max-width: 1024px) {
+  .city-research__chrome { display: flex; }
   .city-research__body[data-layout='workbench'] { grid-template-columns: minmax(0, 1fr) minmax(210px, 250px); overflow: hidden; }
   .city-research__body[data-layout='workbench'] .city-research__sidebar {
     position: absolute;
@@ -366,8 +328,3 @@
   .city-research__body[data-layout='workbench'] .city-research__sidebar,
   .city-research__body[data-layout='workbench'] .city-research__sidebar[data-drawer-open] { transition: none; }
 }
-
-/* One explicit return control shared by all six workspaces. */
-.city-research__close {width:auto;min-width:72px;font-size:13px;white-space:nowrap;padding:8px 10px;}
-.city-research__actions .city-research__decision {margin:0;white-space:nowrap;}
-@media(max-width:600px) {.city-research__chrome{flex-wrap:wrap;gap:12px;}.city-research__titles{flex:1;}.city-research__actions{order:3;flex-basis:100%;}.city-research__close{align-self:flex-start;}}

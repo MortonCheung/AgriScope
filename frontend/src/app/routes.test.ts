@@ -66,7 +66,7 @@ describe('structuralParent：两级层级（本轮 §10）', () => {
   it('研究点 → 方向 → 城市 → 辽宁 → 首页', () => {
     expect(structuralParent('/cities/shenyang/research/A2.2')).toBe('/cities/shenyang/research/A2');
     expect(structuralParent('/cities/shenyang/research/A2')).toBe('/cities/shenyang');
-    expect(structuralParent('/cities/shenyang')).toBe('/liaoning');
+    expect(structuralParent('/cities/shenyang')).toBe('/liaoning?city=shenyang');
     expect(structuralParent('/liaoning')).toBe('/');
   });
 
@@ -98,5 +98,21 @@ describe('structuralParent：两级层级（本轮 §10）', () => {
 
   it('首页没有上一级', () => {
     expect(structuralParent('/')).toBeNull();
+  });
+
+  it('选城主页回全省，决策直接回本城地图，不误进报告', () => {
+    expect(structuralParent('/liaoning', '?city=dandong')).toBe('/liaoning');
+    expect(structuralParent('/cities/chaoyang/decision', '?city=shenyang&horizon=30')).toBe('/liaoning?city=chaoyang');
+    expect(structuralParent('/cities/unknown/decision')).toBe('/liaoning');
+  });
+
+  it('点到方向再到城市，保留有效经营条件而移除下级定位', () => {
+    const search = '?city=dandong&crop=黄瓜&horizon=30&as_of=2026-10-06&research=A1.1&mode=article&plan=old';
+    const parent = structuralParent('/cities/shenyang/research/A2.2', search)!;
+    const [path, query] = parent.split('?');
+    expect(path).toBe('/cities/shenyang/research/A2');
+    expect(Object.fromEntries(new URLSearchParams(query))).toEqual({ city: 'shenyang', crop: '黄瓜', horizon: '30', as_of: '2026-10-06' });
+    expect(structuralParent('/cities/shenyang', '?research=A2.2')).toBe('/cities/shenyang/research/A2');
+    expect(structuralParent('/cities/shenyang', '?research=A2')).toBe('/cities/shenyang');
   });
 });

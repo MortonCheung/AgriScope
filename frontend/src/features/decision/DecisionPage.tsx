@@ -1,7 +1,7 @@
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { TransitionLink } from '../../app/pageNavigation';
-import { cityContextUrl, provinceUrl } from '../../app/context/provinceSelection';
+import { provinceUrl } from '../../app/context/provinceSelection';
 import { usePageNavigate } from '../../app/pageNavigation';
 import { PlanningWorkbench } from './PlanningWorkbench';
 import { ROUTES } from '../../app/routes';
@@ -57,7 +57,6 @@ export function DecisionPage(){
   },[state.status,view,candidate?.id]);
   if(!city)return <main className="decision"><h1 className="ag-section-title">城市入口不存在</h1><TransitionLink to={ROUTES.liaoning} className="ag-button">返回辽宁</TransitionLink></main>;
   return <main className="decision" ref={main}>
-    <header className="decision-chrome"><p className="ag-label">{city.shortName} · 决策工作台</p><div><TransitionLink to={cityContextUrl(ROUTES.city(cityId),cityId)}>查看研究 →</TransitionLink><TransitionLink className="ag-button" aria-label="返回城市概览" to={provinceUrl(cityId)}>← 概览</TransitionLink></div></header>
     <nav className="decision-modes" aria-label="决策工具"><button aria-pressed={view==='planning'} onClick={()=>switchView('planning')}>经营计划</button>{priceSupported&&<><button aria-pressed={view==='center'} onClick={()=>switchView('center')}>市场观察</button><button aria-pressed={view==='input'} onClick={()=>switchView('input')}>短期市场比较</button></>}{longSupported&&<button aria-pressed={view==='long-horizon'} onClick={()=>switchView('long-horizon')}>上市窗口情景</button>}</nav>
     {view==='planning'?<PlanningWorkbench cityId={cityId}/>:!cap&&!explicitDemo?<section role="status" className="center-loading"><p>{capState.error??'读取当前城市的市场能力…'}</p><button className="ag-button" onClick={()=>switchView('planning')}>使用经营计划</button></section>:(!priceSupported||(view==='long-horizon'&&!longSupported))?<><p className="decision-note">该城市可通过自己的投入、产量和销售假设核算盈亏，历史研究可辅助判断条件。</p><PlanningWorkbench cityId={cityId}/></>:view==='center'?<DecisionCenter cityId={cityId} savedRequest={session.savedRequest} onAdjustConditions={()=>switchView('input')}/>
       :view==='long-horizon'?<LongHorizonPlanning cityId={cityId}/>:view==='input'?<DecisionInput key={cityId} cityId={cityId} provider={provider} expandInputs={result?.status==='user_input_required'||result?.issues.includes('user_input_required')} initial={session.savedRequest} onSubmit={request=>{setParams(p=>{p.set('view','result');p.delete('plan');return p;});void session.run(request);}}/>

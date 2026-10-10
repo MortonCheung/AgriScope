@@ -1,12 +1,12 @@
 import { forwardRef, useCallback } from 'react';
 import { Link, NavLink, useLocation, useNavigate, type LinkProps, type NavLinkProps, type NavigateFunction, type NavigateOptions, type To } from 'react-router-dom';
-import { isSpatialEntry } from './routeTransitions';
+import { isSpatialEntry, isWorkspaceNavigation } from './routeTransitions';
 
 function canAnimateNavigation(from: string, to: To) {
   const pathname = typeof to === 'string' ? to.split(/[?#]/, 1)[0] : to.pathname;
   return typeof document.startViewTransition === 'function'
     && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    && Boolean(pathname && pathname !== from && !isSpatialEntry(from, pathname));
+    && Boolean(pathname && pathname !== from && !isSpatialEntry(from, pathname) && !isWorkspaceNavigation(from, pathname));
 }
 
 export const BEFORE_PAGE_NAVIGATION_EVENT = 'agriscope:before-page-navigation';

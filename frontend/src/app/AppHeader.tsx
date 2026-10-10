@@ -1,32 +1,22 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { motion, useReducedMotion } from 'motion/react';
 import { ROUTES } from './routes';
 import { NAV_ITEMS } from './navItems';
 import { AnimatedUnderline } from '../components/AnimatedUnderline';
 import { NavigationControls } from '../components/NavigationControls';
-import { MOTION_DURATION } from '../design/motion';
+import { useAppContext } from './context/appContext';
+import { primaryNavigationTarget } from './context/navigationContext';
 import './app-header.css';
 
-/**
- * 全局导航（V3 §4/§6）。
- *
- * 一级入口只有三件产品事：辽宁农业态势 / 决策中心 / 研究中心。
- * 城市由地图或显式城市路由选择，作物与周期放在对应工具中。
- * Active 语义见 navItems.ts。
- *
- * 窄屏（≤560px）折叠：三个中文入口在本宽度下无法单行容纳，过去被硬折成两行并
- * 溢出 Header（实测 nav 高 58px > Header 54px）。改为一个「菜单」按钮的溢出菜单：
- * 按钮只在窄屏显示，展开的 `<nav>` 是 Header 下方的浮层；桌面仍是同行内联导航。
- */
+/** Stable brand/history and four task entrances; narrow screens use the same ordered menu. */
 export function AppHeader() {
-  const { pathname } = useLocation();
-  const reducedMotion = Boolean(useReducedMotion());
-  const concealed = pathname === ROUTES.root;
+  const location = useLocation();
+  const { pathname, search } = location;
+  const context = useAppContext();
   const [menuOpen, setMenuOpen] = useState(false);
 
   // 路由变化（点了菜单里的入口、或其它导航）后收起菜单。
-  useEffect(() => { setMenuOpen(false); }, [pathname]);
+  useEffect(() => { setMenuOpen(false); }, [pathname, search]);
 
   // Escape 收起菜单（非捕获，避免抢断导览 / 页面自身的 Escape 语义）。
   useEffect(() => {
@@ -39,15 +29,10 @@ export function AppHeader() {
   }, [menuOpen]);
 
   return (
-    <motion.header
+    <header
       className="ag-header"
       aria-label="全域导航"
-      data-concealed={concealed || undefined}
-      inert={concealed}
       style={{ viewTransitionName: 'ag-header' }}
-      initial={false}
-      animate={{ opacity: concealed ? 0 : 1, y: concealed ? -12 : 0 }}
-      transition={{ duration: reducedMotion ? 0 : MOTION_DURATION.normal, ease: [0.16, 1, 0.3, 1] }}
     >
       <div className="ag-header__inner">
         <div className="ag-header__lead">
@@ -55,7 +40,7 @@ export function AppHeader() {
             品牌：仓库与设计参考里都没有用户指定的正式 Logo，
             因此**不渲染空的占位方块**，只写 AGRISCOPE；有真实 Logo 再插进去。
           */}
-          <NavLink to={ROUTES.root} className="ag-header__brand" aria-label="AgriScope">
+          <NavLink to={ROUTES.liaoning} className="ag-header__brand" aria-label="AgriScope">
             <span className="ag-header__brand-en">AGRISCOPE</span>
           </NavLink>
           {/* ‹ › ^：始终渲染，保证 Header 的 DOM 在路由切换时稳定 */}
@@ -79,7 +64,7 @@ export function AppHeader() {
               return (
                 <NavLink
                   key={item.label}
-                  to={item.to}
+                  to={primaryNavigationTarget(item.id, location, context)}
                   className="ag-header__link"
                   aria-current={active ? 'page' : undefined}
                   data-active={active || undefined}
@@ -93,6 +78,6 @@ export function AppHeader() {
           </nav>
         </div>
       </div>
-    </motion.header>
+    </header>
   );
 }

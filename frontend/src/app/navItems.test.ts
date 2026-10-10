@@ -18,32 +18,32 @@ const PATHS = [
   '/',
 ];
 
-describe('导航 Active 语义（V3 §4）', () => {
+describe('四入口的 Active 语义', () => {
   it('辽宁农业态势高亮省域入口', () => {
-    expect(labelOf('/liaoning')).toBe('辽宁农业态势');
+    expect(labelOf('/liaoning')).toBe('主页');
   });
 
   it('决策中心覆盖全局入口、城市决策页与情景推演', () => {
-    expect(labelOf('/decision')).toBe('决策中心');
-    expect(labelOf('/cities/shenyang/decision')).toBe('决策中心');
-    expect(labelOf('/scenario-lab')).toBe('决策中心');
+    expect(labelOf('/decision')).toBe('决策');
+    expect(labelOf('/cities/shenyang/decision')).toBe('决策');
+    expect(labelOf('/scenario-lab')).toBe('决策');
   });
 
   it('研究中心覆盖研究中心首页、报告、城市与城市研究、关于', () => {
-    expect(labelOf('/research')).toBe('研究中心');
-    expect(labelOf('/reports')).toBe('研究中心');
-    expect(labelOf('/reports/shenyang')).toBe('研究中心');
-    expect(labelOf('/cities/shenyang')).toBe('研究中心');
-    expect(labelOf('/cities/shenyang/research/A03')).toBe('研究中心');
-    expect(labelOf('/about')).toBe('研究中心');
+    expect(labelOf('/research')).toBe('报告');
+    expect(labelOf('/reports')).toBe('报告');
+    expect(labelOf('/reports/shenyang')).toBe('报告');
+    expect(labelOf('/cities/shenyang')).toBe('报告');
+    expect(labelOf('/cities/shenyang/research/A03')).toBe('报告');
+    expect(labelOf('/about')).toBe('关于');
   });
 
   it('城市决策页不得被研究中心抢走高亮', () => {
-    expect(labelOf('/cities/shenyang/decision')).not.toBe('研究中心');
+    expect(labelOf('/cities/shenyang/decision')).not.toBe('报告');
   });
 
-  it('首页不高亮任何一项', () => {
-    expect(labelOf('/')).toBeNull();
+  it('开场归主页且导航仍可见', () => {
+    expect(labelOf('/')).toBe('主页');
   });
 
   it('任一时刻最多只有一项高亮', () => {
@@ -53,7 +53,7 @@ describe('导航 Active 语义（V3 §4）', () => {
     }
   });
 
-  it('一级导航冻结为 辽宁农业态势 / 决策中心 / 研究中心', () => {
-    expect(NAV_ITEMS.map((item) => item.label)).toEqual(['辽宁农业态势', '决策中心', '研究中心']);
+  it('一级导航按用户指定的四个任务排列', () => {
+    expect(NAV_ITEMS.map((item) => item.label)).toEqual(['主页', '决策', '报告', '关于']);
   });
 });

@@ -1,6 +1,6 @@
 import { NavigationType } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
-import { getRouteDirection, isSpatialEntry } from './routeTransitions';
+import { getRouteDirection, isSpatialEntry, isWorkspaceNavigation } from './routeTransitions';
 
 describe('route transition direction', () => {
   const research = '/cities/shenyang/research/G1';
@@ -29,5 +29,13 @@ describe('route transition direction', () => {
     expect(isSpatialEntry('/', '/liaoning')).toBe(true);
     expect(isSpatialEntry('/liaoning', '/cities/shenyang')).toBe(true);
     expect(isSpatialEntry('/cities/shenyang', '/cities/shenyang/report')).toBe(false);
+  });
+
+  it('同城工作台切点或业务任务不重新演出整页转场', () => {
+    expect(isWorkspaceNavigation('/cities/shenyang/research/A2.2', '/cities/shenyang/research/A3')).toBe(true);
+    expect(isWorkspaceNavigation('/cities/shenyang', '/cities/shenyang/research/A2')).toBe(true);
+    expect(isWorkspaceNavigation('/cities/shenyang/decision', '/cities/shenyang/research/A2')).toBe(true);
+    expect(isWorkspaceNavigation('/cities/shenyang/research/A2', '/cities/dandong/research/A2')).toBe(false);
+    expect(isWorkspaceNavigation('/liaoning', '/cities/shenyang/decision')).toBe(false);
   });
 });

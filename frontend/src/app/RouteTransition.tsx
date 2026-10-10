@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { NavigationType } from 'react-router-dom';
 import { MOTION_DURATION } from '../design/motion';
-import { isSpatialEntry } from './routeTransitions';
+import { isSpatialEntry, isWorkspaceNavigation } from './routeTransitions';
 
 /**
  * One live Outlet. Native transitions animate inert images of the old/new page.
@@ -22,6 +22,7 @@ export function RouteTransition({ routeKey, pathname, direction, navigationType,
     // 同路径（replace / 只换 state）不是一次页面转场。
     if (from === pathname) return;
     if (isSpatialEntry(from, pathname)) return;
+    if (isWorkspaceNavigation(from, pathname)) return;
     if ((typeof document.startViewTransition === 'function' && navigationType !== NavigationType.Pop) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     // Older browsers keep the same component tree and receive a light entry.
     const animation = page.current?.animate?.([

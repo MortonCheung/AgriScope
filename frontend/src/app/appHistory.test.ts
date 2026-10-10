@@ -1,6 +1,6 @@
 import { NavigationType } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
-import { createAppHistoryState, recordAppLocation } from './appHistory';
+import { createAppHistoryState, recordAppLocation, restoreAppHistoryState } from './appHistory';
 
 const location = (key: string, pathname: string) => ({ key, pathname });
 
@@ -61,5 +61,26 @@ describe('session app history', () => {
     const second = recordAppLocation(state, location('tree', '/library/computer/tree/tree-408/path'), NavigationType.Push);
     expect(second).toBe(first);
     expect(state.entries).toHaveLength(2);
+  });
+
+  it('刷新只恢复匹配当前key与完整URL的应用内历史', () => {
+    const state = createAppHistoryState({ key: 'province', pathname: '/liaoning', search: '' });
+    recordAppLocation(state, { key: 'selected', pathname: '/liaoning', search: '?city=dandong' }, NavigationType.Push);
+    recordAppLocation(state, { key: 'decision', pathname: '/cities/dandong/decision', search: '?crop=玉米' }, NavigationType.Push);
+    const raw = JSON.stringify({ entries: state.entries });
+    const restored = restoreAppHistoryState({ key: 'selected', pathname: '/liaoning', search: '?city=dandong' }, raw);
+    expect(restored.index).toBe(1);
+    expect(restored.entries).toHaveLength(3);
+    const unknown = restoreAppHistoryState({ key: 'new', pathname: '/liaoning', search: '?city=dandong' }, raw);
+    expect(unknown.index).toBe(0);
+    expect(unknown.entries).toHaveLength(1);
+    expect(restoreAppHistoryState({ key: 'selected', pathname: '/liaoning', search: '?city=shenyang' }, raw).entries).toHaveLength(1);
+  });
+
+  it('损坏、重复key和外部路径不会成为可回退历史', () => {
+    const current = { key: 'city', pathname: '/cities/dandong', search: '' };
+    expect(restoreAppHistoryState(current, '{broken').entries).toHaveLength(1);
+    expect(restoreAppHistoryState(current, JSON.stringify({ entries: [current, current] })).entries).toHaveLength(1);
+    expect(restoreAppHistoryState(current, JSON.stringify({ entries: [current, { key: 'external', pathname: 'https://example.org' }] })).entries).toHaveLength(1);
   });
 });

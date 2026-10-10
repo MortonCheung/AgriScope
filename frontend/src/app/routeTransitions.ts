@@ -12,6 +12,13 @@ export function isSpatialEntry(from: string, to: string) {
   return isSpatialRoute(from) && isSpatialRoute(to);
 }
 
+/** A city workspace owns one paper; changing its point/module never animates the page. */
+export function isWorkspaceNavigation(from: string, to: string): boolean {
+  const cityOf = (path: string) => /^\/cities\/([^/]+)(?:\/(?:decision|research\/[^/]+))?\/?$/.exec(path)?.[1];
+  const city = cityOf(from);
+  return Boolean(city && city === cityOf(to));
+}
+
 function routeLayer(path: string) {
   if (path === '/' || path === '/liaoning') return 0;
   if (/^\/cities\/[^/]+\/?$/.test(path)) return 0;

@@ -10,6 +10,7 @@ export interface AppBackTarget {
 interface HistoryEntry {
   key: string;
   pathname: string;
+  search?: string;
 }
 
 interface PendingDirection {
@@ -36,10 +37,14 @@ interface AppHistoryValue {
 }
 
 const AppHistoryContext = createContext<AppHistoryValue | null>(null);
+export const APP_HISTORY_STORAGE_KEY = 'agriscope.observed-history.v4-final';
+type HistoryLocation = Pick<Location, 'key' | 'pathname'> & Partial<Pick<Location, 'search'>>;
+const entryFor = (location: HistoryLocation): HistoryEntry => ({ key: location.key, pathname: location.pathname,
+  ...(location.search !== undefined ? { search: location.search } : {}) });
 
-export function createAppHistoryState(location: Pick<Location, 'key' | 'pathname'>): AppHistoryState {
+export function createAppHistoryState(location: HistoryLocation): AppHistoryState {
   return {
-    entries: [{ key: location.key, pathname: location.pathname }],
+    entries: [entryFor(location)],
     index: 0,
     direction: 0,
     action: NavigationType.Pop,
@@ -47,10 +52,31 @@ export function createAppHistoryState(location: Pick<Location, 'key' | 'pathname
   };
 }
 
+/** Restore only a previously observed matching location; browser history length is never trusted. */
+export function restoreAppHistoryState(location: HistoryLocation, raw?: string | null): AppHistoryState {
+  try {
+    const saved: unknown = JSON.parse(raw === undefined ? window.sessionStorage.getItem(APP_HISTORY_STORAGE_KEY) ?? 'null' : raw ?? 'null');
+    if (!saved || typeof saved !== 'object' || !('entries' in saved) || !Array.isArray(saved.entries) || !saved.entries.length || saved.entries.length > 2000) return createAppHistoryState(location);
+    const entries = saved.entries as unknown[];
+    if (entries.some(entry => !entry || typeof entry !== 'object' || !('key' in entry) || typeof entry.key !== 'string' || !entry.key
+      || !('pathname' in entry) || typeof entry.pathname !== 'string' || !entry.pathname.startsWith('/') || entry.pathname.startsWith('//')
+      || ('search' in entry && typeof entry.search !== 'string'))) return createAppHistoryState(location);
+    const known = entries as HistoryEntry[];
+    if (new Set(known.map(entry => entry.key)).size !== known.length) return createAppHistoryState(location);
+    const index = known.findIndex(entry => entry.key === location.key && entry.pathname === location.pathname && (entry.search ?? '') === (location.search ?? ''));
+    if (index < 0) return createAppHistoryState(location);
+    return { entries: known, index, direction: 0, action: NavigationType.Pop, pending: null };
+  } catch { return createAppHistoryState(location); }
+}
+
+export function persistAppHistoryState(state: AppHistoryState): void {
+  try { window.sessionStorage.setItem(APP_HISTORY_STORAGE_KEY, JSON.stringify({ entries: state.entries })); } catch { /* Storage failure only disables reload recovery. */ }
+}
+
 /** Record only locations observed during this app session; external browser history is never trusted. */
 export function recordAppLocation(
   state: AppHistoryState,
-  location: Pick<Location, 'key' | 'pathname'>,
+  location: HistoryLocation,
   action: NavigationType,
 ) {
   const current = state.entries[state.index];
@@ -64,21 +90,21 @@ export function recordAppLocation(
   state.action = action;
 
   if (action === 'PUSH') {
-    state.entries = [...state.entries.slice(0, state.index + 1), { key: location.key, pathname: location.pathname }];
+    state.entries = [...state.entries.slice(0, state.index + 1), entryFor(location)];
     state.index = state.entries.length - 1;
     state.direction = pending?.direction ?? getRouteDirection(previousPath, location.pathname, { action });
     return state;
   }
 
   if (action === 'REPLACE') {
-    state.entries[state.index] = { key: location.key, pathname: location.pathname };
+    state.entries[state.index] = entryFor(location);
     state.direction = pending?.direction ?? 0;
     return state;
   }
 
   const nextIndex = state.entries.findIndex((entry) => entry.key === location.key);
   if (nextIndex < 0) {
-    state.entries = [{ key: location.key, pathname: location.pathname }];
+    state.entries = [entryFor(location)];
     state.index = 0;
     state.direction = pending?.direction ?? 0;
     return state;
@@ -95,7 +121,7 @@ export function AppHistoryProvider({ children }: { children: ReactNode }) {
   const navigationType = useNavigationType();
   const navigate = useNavigate();
   const state = useRef<AppHistoryState | null>(null);
-  if (!state.current) state.current = createAppHistoryState(location);
+  if (!state.current) state.current = restoreAppHistoryState(location);
 
   const snapshot = useMemo(
     () => recordAppLocation(state.current!, location, navigationType),
@@ -103,6 +129,7 @@ export function AppHistoryProvider({ children }: { children: ReactNode }) {
   );
 
   useLayoutEffect(() => {
+    persistAppHistoryState(snapshot);
     document.documentElement.dataset.routeDirection = snapshot.direction > 0
       ? 'forward'
       : snapshot.direction < 0
@@ -119,7 +146,7 @@ export function AppHistoryProvider({ children }: { children: ReactNode }) {
       direction: -1,
     };
     if (canGoBack) navigate(-1);
-    else navigate(fallback.to, { replace: true, state: fallback.state, viewTransition: true });
+    else navigate(fallback.to, { replace: true, state: fallback.state });
   }, [navigate]);
 
   /**
