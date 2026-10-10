@@ -58,11 +58,11 @@ describe('provinceOutline 的算法行为', () => {
 describe('真实省界数据上的模型', () => {
   const raw = Object.values(geoRaw)[0];
 
-  it('同一份省界数据：14 个地级市，当前只有沈阳已发布研究', () => {
+  it('同一份省界数据：14 个地级市，六城已发布研究', () => {
     expect(raw, '缺少 public/geo/liaoning.json').toBeTruthy();
     const model = buildLiaoningSolidModel(JSON.parse(raw));
     expect(model.cities).toHaveLength(14);
-    expect(model.cities.filter((city) => city.hasResearch).map((city) => city.id)).toEqual(['shenyang', 'tieling', 'chaoyang', 'jinzhou', 'dandong', 'dalian']);
+    expect(model.cities.filter((city) => city.hasResearch).map((city) => city.id).sort()).toEqual(['shenyang', 'tieling', 'chaoyang', 'jinzhou', 'dandong', 'dalian'].sort());
     expect(model.provinceRings.length).toBeGreaterThanOrEqual(14);
     expect(model.radius).toBeGreaterThan(0);
   });

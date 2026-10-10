@@ -54,7 +54,7 @@ export function LiaoningPage() {
       </aside>
     </div>
     <div className="liaoning-map-footer">
-      <p className="liaoning-hover-preview" aria-live="polite">{hover ? <>{getCity(hover)?.shortName}{preview ? ` · 主要作物 ${principalItems(preview)[0]?.crop ?? '见生产结构'}` : ''}<span>点击观察</span></> : '选择城市，开始观察'}</p>
+      <p className="liaoning-hover-preview" aria-live="polite">{hover ? <>{getCity(hover)?.shortName}{preview ? ` · 主要作物 ${principalItems(preview)[0]?.crop ?? '见生产结构'}` : ''}<span>{(STUDY_CITY_IDS as readonly string[]).includes(hover) ? '点击观察' : '研究范围暂未覆盖'}</span></> : '选择城市，开始观察'}</p>
       <nav className="liaoning-city-rail" aria-label="选择观察城市">{STUDY_CITY_IDS.map(id => <button key={id} aria-pressed={selectedCityId === id} onPointerEnter={()=>setHover(id)} onPointerLeave={()=>setHover(null)} onFocus={()=>setHover(id)} onBlur={()=>setHover(null)} onClick={()=>select(id)}>{getCity(id)?.shortName}</button>)}</nav>
     </div>
   </main>;

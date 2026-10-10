@@ -87,7 +87,7 @@ export function ScenarioPage() {
     return <Suspense fallback={<main className="scenario" role="status">情景加载中</main>}><DecisionStressPage /></Suspense>;
   }
   if (mode === 'research') return <RainstormResearch />;
-  if (!params.get('city') && !contextCity) return <main className="scenario"><header className="scenario__head"><h1 className="scenario__title">从经营条件开始推演</h1><p className="scenario__lead">先选择城市、填写自己的条件，比较价格、亩产和成本变化带来的经营结果。</p></header><TransitionLink className="ag-button" to={ROUTES.decisionRoot}>选择城市与经营计划 →</TransitionLink><p className="scenario__note"><TransitionLink to={cityContextUrl(ROUTES.scenario, 'shenyang')}>查看沈阳上市窗口研究情景 →</TransitionLink></p></main>;
+  if (!params.get('city') && !contextCity) return <main className="scenario"><header className="scenario__head"><h1 className="scenario__title">从经营条件开始推演</h1><p className="scenario__lead">先选择城市、填写自己的条件，比较价格、亩产和成本变化带来的经营结果。</p></header><TransitionLink className="ag-button" to={ROUTES.decisionCenter}>选择城市与经营计划 →</TransitionLink><p className="scenario__note"><TransitionLink to={cityContextUrl(ROUTES.scenario, 'shenyang')}>查看沈阳上市窗口研究情景 →</TransitionLink></p></main>;
   return (
     <>
       <ScenarioSimulation />
