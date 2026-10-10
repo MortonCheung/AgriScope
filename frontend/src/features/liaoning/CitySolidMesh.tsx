@@ -7,6 +7,7 @@ import { isStudyCity } from '../../domain/geography/cities';
 import { MOTION_DURATION } from '../../design/motion';
 import { useAnimationFrames } from './useAnimationFrames';
 import type { OpeningPhase } from '../opening/openingPhase';
+import { assemblyHeight, assemblyProgress, assemblyTilt } from '../opening/assemblyMetrics';
 
 export const SOLID_DEPTH = 1.8;
 /** 抬起插值系数与收敛阈值：不收敛到阈值内就持续请求帧。 */
@@ -17,28 +18,8 @@ const COLOR_LERP = 0.1;
 /** 描边透明度插值系数（hover 增强 / 降权用）。 */
 const LINE_LERP = 0.14;
 const LINE_EPSILON = 0.004;
-/** 下落起始倾角（V4 §三十）：±2°。 */
-const DROP_TILT_DEG = 2;
-/** 单块区块在组装时间轴上占的下降时长；配合错峰窗口让最后一批在 0.90 落定（V5 §59）。 */
-export const DROP_SPAN = 0.25;
 /** 边线相对实体底面的抬升量，用于避开共面 z-fighting。 */
 const EDGE_LIFT = 0.012;
-
-function clamp01(value: number): number {
-  return value < 0 ? 0 : value > 1 ? 1 : value;
-}
-
-/** 位置：单调缓出。刻意**不做过冲**，否则区块会短暂穿进纸面（§三十 只允许极轻过冲）。 */
-function easeOutCubic(t: number): number {
-  return 1 - (1 - t) ** 3;
-}
-
-/** 姿态：允许极轻过冲后回稳，读作"落地"而不是弹球（§三十）。 */
-function easeOutBack(t: number): number {
-  const c1 = 1.15;
-  const c3 = c1 + 1;
-  return 1 + c3 * (t - 1) ** 3 + c1 * (t - 1) ** 2;
-}
 
 export interface CitySolidMeshProps {
   city: CitySolid;
@@ -162,11 +143,9 @@ export function CitySolidMesh({
     if (surface.transparent !== fading) { surface.transparent = fading; surface.needsUpdate = true; }
 
     if (fading) {
-      const t = clamp01((assemblyRef.current - dropDelay) / DROP_SPAN);
-      const fall = easeOutCubic(t);
-      const pose = easeOutBack(t);
-      drop.position.y = Math.max(0, dropHeight * (1 - fall));
-      const tilt = THREE.MathUtils.degToRad(DROP_TILT_DEG) * (1 - pose);
+      const t = assemblyProgress(assemblyRef.current, dropDelay);
+      drop.position.y = assemblyHeight(assemblyRef.current, dropDelay, dropHeight);
+      const tilt = assemblyTilt(assemblyRef.current, dropDelay);
       drop.rotation.x = tilt;
       drop.rotation.z = -tilt;
       surface.opacity = t;

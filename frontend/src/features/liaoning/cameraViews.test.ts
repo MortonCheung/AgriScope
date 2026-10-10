@@ -1,12 +1,13 @@
 import realGeoJson from '../../../public/geo/liaoning.json';
-import { PerspectiveCamera, Vector3 } from 'three';
+import { Euler, PerspectiveCamera, Vector3 } from 'three';
 import { describe, expect, it, vi } from 'vitest';
 import { buildLiaoningSolidModel, type GeoCollection } from './liaoningGeometry';
 import {
-  CAMERA_FOV_DEG, ENTRY_AZIMUTH_ORBIT_DEGREES, OPENING_DURATION_MS, OPENING_TIMELINE, PROVINCE_ROOT_ROTATION,
-  azimuthDegrees, maxGroundHalfSpan, openingStageForProgress, orbitSpanDegrees, orbitView,
-  provinceCityView, provinceStageView, provinceView, responsiveProvinceRadius, sketchView, startOpeningTimeline, type OpeningTimelineClock, type CityFocusFrame,
+  CAMERA_FOV_DEG, OPENING_DURATION_MS, PROVINCE_ROOT_ROTATION,
+  openingView, provinceCityView, provinceStageView, provinceView, responsiveProvinceRadius, startOpeningTimeline,
+  type OpeningTimelineClock, type CityFocusFrame,
 } from './cameraViews';
+import { assemblyHeight, assemblyProgress, assemblyTilt, DROP_DELAY_BASE, DROP_DELAY_SPAN, OPENING_SETTLE_PROGRESS } from '../opening/assemblyMetrics';
 
 const RADIUS = 100;
 const distance = (a: readonly number[], b: readonly number[]) => Math.hypot(...a.map((value, index) => value - b[index]));
@@ -31,100 +32,51 @@ function fakeClock() {
   };
 }
 
-describe('完整一周的曲线导演镜头', () => {
-  it('精确共用草稿起点与正式省域终点，越界进度也安全', () => {
-    expect(orbitView(RADIUS, 0)).toEqual(sketchView(RADIUS));
-    expect(orbitView(RADIUS, 1)).toEqual(provinceView(RADIUS));
-    expect(orbitView(RADIUS, -2)).toEqual(sketchView(RADIUS));
-    expect(orbitView(RADIUS, 5)).toEqual(provinceView(RADIUS));
-    expect(orbitView(RADIUS, Number.NaN)).toEqual(sketchView(RADIUS));
-  });
-
-  it('累计方位实际走过 360°，首尾角相同不能误判成没有环绕', () => {
-    expect(ENTRY_AZIMUTH_ORBIT_DEGREES).toBe(360);
-    expect(orbitSpanDegrees(RADIUS)).toBeCloseTo(360, 7);
-    expect(azimuthDegrees(orbitView(RADIUS, 0))).toBeCloseTo(azimuthDegrees(orbitView(RADIUS, 1)), 7);
-    let previous = azimuthDegrees(orbitView(RADIUS, 0));
-    let unwrapped = 0;
-    for (let index = 1; index <= 720; index++) {
-      const current = azimuthDegrees(orbitView(RADIUS, index / 720));
-      const delta = ((current - previous + 540) % 360) - 180;
-      expect(delta).toBeGreaterThanOrEqual(-1e-7);
-      unwrapped += delta;
-      previous = current;
-    }
-    expect(unwrapped).toBeCloseTo(360, 7);
-  });
-
-  it('每个阶段边界保持位置与独立 target 连续；曲线不穿地块', () => {
-    for (const segment of OPENING_TIMELINE.slice(1)) {
-      const before = orbitView(RADIUS, segment.start - 1e-6);
-      const after = orbitView(RADIUS, segment.start + 1e-6);
-      expect(distance(before.position, after.position)).toBeLessThan(RADIUS * 1e-4);
-      expect(distance(before.target, after.target)).toBeLessThan(RADIUS * 1e-4);
-    }
-    for (let index = 0; index <= 720; index++) {
-      const pose = orbitView(RADIUS, index / 720);
-      expect(pose.position[1]).toBeGreaterThan(RADIUS * 2.7);
-      expect(pose.target[0]).toBe(0);
-      expect(pose.target[2]).toBe(0);
-    }
-    expect(orbitView(RADIUS, 0.88).position[1]).toBeLessThan(provinceView(RADIUS).position[1]);
-  });
-
-  it('固定 60Hz 下无单帧远距离跳跃，半径变化保持相同归一化构图', () => {
-    let previous = orbitView(RADIUS, 0);
-    for (let frame = 1; frame <= OPENING_DURATION_MS / (1000 / 60); frame++) {
-      const current = orbitView(RADIUS, frame / (OPENING_DURATION_MS / (1000 / 60)));
-      expect(distance(previous.position, current.position)).toBeLessThan(RADIUS * 0.16);
-      previous = current;
-    }
-    for (const radius of [12, 28.781682, 60]) {
-      for (const progress of [0, 0.18, 0.5, 0.88, 1]) {
-        const pose = orbitView(radius, progress);
-        const normalized = orbitView(1, progress);
-        pose.position.forEach((value, index) => expect(value / radius).toBeCloseTo(normalized.position[index], 10));
-        pose.target.forEach((value, index) => expect(value / radius).toBeCloseTo(normalized.target[index], 10));
-      }
-    }
-  });
-
-  it('弧长采样避免控制点疏密导致环绕速度突跳', () => {
-    const inverseSmoothstep = (value: number) => {
-      let low = 0, high = 1;
-      for (let iteration = 0; iteration < 40; iteration++) {
-        const midpoint = (low + high) / 2;
-        if (midpoint * midpoint * (3 - 2 * midpoint) < value) low = midpoint;
-        else high = midpoint;
-      }
-      return (low + high) / 2;
-    };
-    const lengths = [];
-    let previous = orbitView(RADIUS, 0.18);
-    for (let index = 1; index <= 160; index++) {
-      const pose = orbitView(RADIUS, 0.18 + inverseSmoothstep(index / 160) * 0.7);
-      lengths.push(distance(previous.position, pose.position));
-      previous = pose;
-    }
-    expect(Math.max(...lengths) / Math.min(...lengths)).toBeLessThan(1.01);
-  });
-
-  it('草稿高俯视、四段时间线和正式机位均符合空间任务', () => {
-    const pose = sketchView(RADIUS);
-    expect(Math.atan2(pose.position[1], Math.hypot(pose.position[0], pose.position[2])) * 180 / Math.PI).toBeGreaterThan(75);
-    expect(openingStageForProgress(0).stage).toBe('draft');
-    expect(openingStageForProgress(0.08).stage).toBe('assembly');
-    expect(openingStageForProgress(0.5).stage).toBe('orbit');
-    expect(openingStageForProgress(1).stage).toBe('settle');
+describe('单条同步推近镜头', () => {
+  const endPose = provinceView(RADIUS);
+  it('2–3 秒内推近，在最后地块落定时精确共用省域终点', () => {
+    expect(OPENING_DURATION_MS).toBeGreaterThanOrEqual(2000);
+    expect(OPENING_DURATION_MS).toBeLessThanOrEqual(3000);
+    expect(openingView(endPose, 1)).toBe(endPose);
+    expect(openingView(endPose, OPENING_SETTLE_PROGRESS)).toBe(endPose);
+    expect(openingView(endPose, 5)).toBe(endPose);
+    expect(openingView(endPose, -2)).toEqual(openingView(endPose, 0));
+    expect(openingView(endPose, Number.NaN)).toEqual(openingView(endPose, 0));
     expect(PROVINCE_ROOT_ROTATION).toBe(0);
-    expect(Object.keys(orbitView(RADIUS, 0.42)).sort()).toEqual(['position', 'target']);
   });
-});
-
-describe('省域地面覆盖', () => {
-  it('网格可见阶段仍覆盖超宽屏地面', () => {
-    expect(maxGroundHalfSpan(21 / 9, 0.6)).toBeLessThan(6);
-    expect(maxGroundHalfSpan(21 / 9)).toBeGreaterThan(maxGroundHalfSpan(4 / 3));
+  it('高角度远景沿同一方位连续推近，直到约 0.92；之后镜头静止', () => {
+    const first = openingView(endPose, 0);
+    const elevation = (pose: typeof endPose) => Math.atan2(pose.position[1] - pose.target[1], Math.hypot(pose.position[0] - pose.target[0], pose.position[2] - pose.target[2]));
+    expect(elevation(first) * 180 / Math.PI).toBeGreaterThan(75);
+    expect(distance(first.position, first.target)).toBeGreaterThan(distance(endPose.position, endPose.target) * 1.3);
+    let previousDistance = Infinity, previousElevation = Infinity;
+    const theta = Math.atan2(first.position[2] - first.target[2], first.position[0] - first.target[0]);
+    for (let step = 0; step <= 200; step++) {
+      const pose = openingView(endPose, step / 200);
+      const currentDistance = distance(pose.position, pose.target);
+      expect(currentDistance).toBeLessThanOrEqual(previousDistance + 1e-8);
+      expect(elevation(pose)).toBeLessThanOrEqual(previousElevation + 1e-8);
+      expect(Math.atan2(pose.position[2] - pose.target[2], pose.position[0] - pose.target[0])).toBeCloseTo(theta, 10);
+      expect(pose.position[1]).toBeGreaterThan(RADIUS * 3);
+      previousDistance = currentDistance;
+      previousElevation = elevation(pose);
+    }
+    expect(openingView(endPose, 0.9)).not.toEqual(endPose);
+    for (const p of [0.92, 0.95, 1]) expect(openingView(endPose, p)).toBe(endPose);
+  });
+  it('60Hz 下连续，末帧无额外跳跃；camera target 不绑定模型原点', () => {
+    const offsetPose = { position: [60, 310, 400] as const, target: [52, 3.5, 80] as const };
+    let previous = openingView(offsetPose, 0);
+    for (let frame = 1; frame <= 168; frame++) {
+      const current = openingView(offsetPose, frame / 168);
+      expect(distance(previous.position, current.position)).toBeLessThan(8);
+      expect(distance(previous.target, current.target)).toBeLessThan(0.08);
+      expect(current.target[0]).toBe(52);
+      expect(current.target[2]).toBe(80);
+      previous = current;
+    }
+    const before = openingView(offsetPose, OPENING_SETTLE_PROGRESS - 1e-6);
+    expect(distance(before.position, offsetPose.position)).toBeLessThan(1e-8);
   });
 });
 
@@ -238,53 +190,50 @@ describe('真实城市 bbox 和纸条安全区的取景', () => {
   });
 });
 
-describe('移动端响应式省域取景：真实 GeoJSON 几何验收', () => {
+describe('同步 Opening：实际十四城几何投影', () => {
   it.each([
-    ['全屏 Opening 的保守检查', 390, 844],
-    ['紧凑省域舞台的检查', 390, 363],
-    ['正式共用手机舞台', 390, 362.92],
-    ['正式共用平板舞台', 768, 440.32],
-  ] as const)('%s（%d × %d）：完整轨迹不截地块', (_name, width, height) => {
-    const aspect = width / height;
-    const fittedRadius = responsiveProvinceRadius(actualModel.radius, aspect);
-    const camera = new PerspectiveCamera(CAMERA_FOV_DEG, aspect, 1, 1200);
+    [1440, 900, 316, 1124, 122, 830],
+    [1024, 768, 270, 759, 118, 702],
+    [390, 362.92, 16, 374, 16, 338.92],
+    [768, 440.32, 16, 752, 16, 416.32],
+  ])('%s × %s：下降过程不截断地块，终点等于真实纸条取景', (width, height, left, right, top, bottom) => {
+    const frame = { width, height, left, right, top, bottom };
+    const endPose = provinceStageView(actualModel.bounds, actualModel.radius, frame);
+    const camera = new PerspectiveCamera(CAMERA_FOV_DEG, width / height, 1, 1200);
     const projected = new Vector3();
+    const origin = actualModel.cities.find(city => city.id === 'shenyang')!.centroid;
+    const cities = [...actualModel.cities].sort((a, b) => a.centroid.distanceTo(origin) - b.centroid.distanceTo(origin));
     let minimumMargin = 1;
     let minimumDepth = 1, maximumDepth = -1;
-    for (let frame = 0; frame <= 180; frame++) {
-      const pose = orbitView(fittedRadius, frame / 180);
-      camera.position.set(...pose.position);
-      camera.lookAt(...pose.target);
-      camera.updateMatrixWorld();
-      for (const ring of actualModel.provinceRings) {
-        for (const point of ring) {
-          for (const y of [0, 1.8]) {
-            projected.set(point.x, y, -point.y).project(camera);
-            minimumMargin = Math.min(minimumMargin, 1 - Math.max(Math.abs(projected.x), Math.abs(projected.y)));
-            minimumDepth = Math.min(minimumDepth, projected.z);
-            maximumDepth = Math.max(maximumDepth, projected.z);
-          }
+    const rotation = new Euler();
+    for (let tick = 0; tick <= 180; tick++) {
+      const progress = tick / 180;
+      const pose = openingView(endPose, progress);
+      camera.position.set(...pose.position); camera.lookAt(...pose.target); camera.updateMatrixWorld();
+      cities.forEach((city, index) => {
+        const delay = DROP_DELAY_BASE + index / (cities.length - 1) * DROP_DELAY_SPAN;
+        if (assemblyProgress(progress, delay) === 0) return;
+        const height = assemblyHeight(progress, delay, actualModel.radius * 0.5 + city.radius * 1.3);
+        const tilt = assemblyTilt(progress, delay);
+        rotation.set(tilt, 0, -tilt);
+        for (const ring of city.rings) for (const p of ring) for (const y of [0, 1.8]) {
+          projected.set(p.x, y, -p.y).applyEuler(rotation);
+          projected.y += height;
+          projected.project(camera);
+          minimumMargin = Math.min(minimumMargin, 1 - Math.max(Math.abs(projected.x), Math.abs(projected.y)));
+          minimumDepth = Math.min(minimumDepth, projected.z);
+          maximumDepth = Math.max(maximumDepth, projected.z);
         }
-      }
+      });
     }
     expect(minimumMargin).toBeGreaterThan(0.04);
     expect(minimumDepth).toBeGreaterThan(-1);
     expect(maximumDepth).toBeLessThan(1);
-    expect(orbitView(fittedRadius, 1)).toEqual(provinceView(fittedRadius));
+    expect(openingView(endPose, 1)).toBe(endPose);
   });
 
-  it('同一个真实 Canvas 舞台为 Opening 末帧和省域首帧提供相同 fit', () => {
-    for (const [width, height] of [[390, 362.92], [768, 440.32]]) {
-      const openingFit = responsiveProvinceRadius(actualModel.radius, width / height);
-      const provinceFit = responsiveProvinceRadius(actualModel.radius, width / height);
-      expect(openingFit).toBe(provinceFit);
-      expect(orbitView(openingFit, 1)).toEqual(provinceView(provinceFit));
-    }
-  });
-
-  it('只缩窄屏幕时后撤相机，宽屏不改变正式半径；未布局的比例不产生 NaN', () => {
+  it('研究工作台的旧半径适配仍对未知 aspect 有安全边界', () => {
     expect(responsiveProvinceRadius(actualModel.radius, 390 / 844)).toBeGreaterThan(actualModel.radius);
-    expect(responsiveProvinceRadius(actualModel.radius, 390 / 363)).toBe(actualModel.radius);
     expect(responsiveProvinceRadius(actualModel.radius, 16 / 9)).toBe(actualModel.radius);
     expect(responsiveProvinceRadius(actualModel.radius, Number.NaN)).toBe(actualModel.radius);
     expect(() => responsiveProvinceRadius(0, 1)).toThrow(RangeError);

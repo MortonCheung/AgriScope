@@ -1,0 +1,32 @@
+:root {
+  --ag-map-column-left: clamp(220px, 18vw, 270px);
+  --ag-map-column-right: clamp(215px, 18vw, 270px);
+  --ag-map-column-gap: clamp(18px, 2.4vw, 38px);
+  --ag-map-gutter-x: var(--ag-gutter);
+  --ag-map-gutter-y: clamp(24px, 4vh, 44px);
+  --ag-map-mobile-height: 43dvh;
+}
+
+/* Shared geometry only: it predicts the paper window even before the page mounts. */
+.liaoning-map-frame {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
+  top: calc(var(--ag-nav-height) + var(--ag-map-gutter-y) + 24px);
+  bottom: calc(var(--ag-map-gutter-y) + 24px);
+  left: calc(var(--ag-map-gutter-x) + var(--ag-map-column-left) + var(--ag-map-column-gap) + 18px);
+  right: calc(var(--ag-map-gutter-x) + var(--ag-map-column-right) + var(--ag-map-column-gap) + 18px);
+}
+
+@media (max-width: 1100px) {
+  :root {
+    --ag-map-column-left: 210px;
+    --ag-map-column-right: 205px;
+    --ag-map-column-gap: 18px;
+    --ag-map-gutter-x: 24px;
+  }
+}
+
+@media (max-width: 900px) {
+  .liaoning-map-frame { inset: 16px 16px 24px; }
+}

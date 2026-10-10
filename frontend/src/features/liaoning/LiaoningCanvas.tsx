@@ -1,21 +1,24 @@
-import { Component, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { Component, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { CameraControls, CameraControlsImpl, ContactShadows, Html, PerspectiveCamera } from '@react-three/drei';
 import { Canvas, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { STUDY_CITY_IDS } from '../../domain/geography/cities';
 import type { CityWorldBounds } from './liaoningGeometry';
-import { CitySolidMesh, DROP_SPAN, SOLID_DEPTH } from './CitySolidMesh';
+import { CitySolidMesh, SOLID_DEPTH } from './CitySolidMesh';
 import { PaperGround } from './PaperGround';
 import { useLiaoningModel } from './useLiaoningModel';
 import { useAnimationFrames } from './useAnimationFrames';
 import { QUALITY_CONFIG, resolveAutoQualityTier, resolveDpr, readRuntimeQualitySignals } from '../../performance/qualityPolicy';
 import { SCENE_TOKENS } from '../../design/sceneTokens';
 import { MOTION_DURATION } from '../../design/motion';
-import { PROVINCE_ROOT_ROTATION, CAMERA_FOV_DEG, cityView, orbitView, provinceView, provinceCityView, provinceStageView, sketchView, startOpeningTimeline, responsiveProvinceRadius, type CityFocusFrame } from './cameraViews';
+import { PROVINCE_ROOT_ROTATION, CAMERA_FOV_DEG, cityView, openingView, provinceCityView, provinceStageView, startOpeningTimeline, responsiveProvinceRadius, type CameraPose, type CityFocusFrame } from './cameraViews';
+import { mapStageFrame } from './mapStageFrame';
+import { DROP_DELAY_BASE, DROP_DELAY_SPAN } from '../opening/assemblyMetrics';
 import { SketchPaper } from '../opening/SketchPaper';
 import { shouldMountSketchPaper } from '../opening/sketchMetrics';
 import { useOpeningStore, type OpeningPhase } from '../opening/openingPhase';
 import { useSpatialStageStore } from '../spatial/spatialStageStore';
+import './map-stage-layout.css';
 
 export interface LiaoningCanvasProps {
   mode: 'opening' | 'province' | 'city';
@@ -29,38 +32,39 @@ export interface LiaoningCanvasProps {
 
 type Emphasis = 'base' | 'study' | 'focus' | 'dim';
 
-/** 地块在镜头环绕前半段完成组装。 */
-const DROP_DELAY_BASE = 0.08;
-const DROP_DELAY_SPAN = 0.20;
-
 /** 单条可取消时间线同时驱动地块与相机；模型不绕 Y 轴旋转。 */
-function AssemblyDriver({ active, reducedMotion, assemblyRef, controlsRef, radius, onProgress }: {
+function AssemblyDriver({ active, reducedMotion, assemblyRef, controlsRef, endPose, onProgress }: {
   active: boolean;
   reducedMotion: boolean;
   assemblyRef: RefObject<number>;
   controlsRef: RefObject<CameraControlsImpl | null>;
-  radius: number;
+  endPose: CameraPose;
   onProgress: (progress: number) => void;
 }) {
   const invalidate = useThree((state) => state.invalidate);
   const finish = useOpeningStore((state) => state.finish);
+  const poseRef = useRef(endPose);
+  useLayoutEffect(() => { poseRef.current = endPose; }, [endPose]);
 
   useEffect(() => {
     if (!active) return;
     const controls = controlsRef.current;
-    if (reducedMotion) {
+    const settle = () => {
       assemblyRef.current = 1;
       onProgress(1);
-      const pose = provinceView(radius);
+      const pose = poseRef.current;
       void controls?.setLookAt(...pose.position, ...pose.target, false);
       invalidate();
+    };
+    if (reducedMotion) {
+      settle();
       finish();
       return;
     }
     let lastReported = 0;
-    return startOpeningTimeline((progress) => {
-      assemblyRef.current = Math.min(1, progress / 0.45);
-      const pose = orbitView(radius, progress);
+    const stop = startOpeningTimeline((progress) => {
+      assemblyRef.current = progress;
+      const pose = openingView(poseRef.current, progress);
       void controls?.setLookAt(...pose.position, ...pose.target, false);
       invalidate();
       if (progress - lastReported > 0.025 || progress === 1) {
@@ -68,13 +72,20 @@ function AssemblyDriver({ active, reducedMotion, assemblyRef, controlsRef, radiu
         onProgress(progress);
       }
     }, finish);
+    // Skip settles the actual controller synchronously, before the route can change.
+    const unsubscribe = useOpeningStore.subscribe((state) => {
+      if (state.phase === 'assembling') return;
+      stop();
+      if (state.phase === 'ready') settle();
+    });
+    return () => { stop(); unsubscribe(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, assemblyRef, controlsRef, finish, invalidate, radius, reducedMotion]);
+  }, [active, assemblyRef, controlsRef, finish, invalidate, reducedMotion]);
 
   return null;
 }
 
-function CameraRig({ mode, active, phase, focusCityId, reducedMotion, targetPoint, focusBounds, provinceBounds, focusFrame, geometryRadius, provinceRadius, controlsRef }: {
+function CameraRig({ mode, active, phase, focusCityId, reducedMotion, targetPoint, focusBounds, endPose, focusFrame, geometryRadius, provinceRadius, controlsRef }: {
   mode: LiaoningCanvasProps['mode'];
   active: boolean;
   phase: OpeningPhase;
@@ -82,7 +93,7 @@ function CameraRig({ mode, active, phase, focusCityId, reducedMotion, targetPoin
   reducedMotion: boolean;
   targetPoint: THREE.Vector3;
   focusBounds: CityWorldBounds | null;
-  provinceBounds: CityWorldBounds;
+  endPose: CameraPose;
   focusFrame: CityFocusFrame;
   geometryRadius: number;
   provinceRadius: number;
@@ -111,9 +122,9 @@ function CameraRig({ mode, active, phase, focusCityId, reducedMotion, targetPoin
     };
 
     if (mode === 'opening') {
-      if (phase === 'sketch') { move(sketchView(radius), false); return; }
+      if (phase === 'sketch') { move(openingView(endPose, 0), false); return; }
       // assembling 期间相机由 AssemblyDriver 逐帧写；这里只在完成态补一次收尾。
-      if (phase === 'ready') move(provinceView(radius), false);
+      if (phase === 'ready') move(endPose, false);
       return;
     }
 
@@ -125,8 +136,8 @@ function CameraRig({ mode, active, phase, focusCityId, reducedMotion, targetPoin
       move(provinceCityView(focusBounds, geometryRadius, focusFrame));
       return;
     }
-    move(provinceStageView(provinceBounds, geometryRadius, focusFrame));
-  }, [active, controlsRef, focusBounds, focusCityId, focusFrame, geometryRadius, invalidate, mode, phase, provinceBounds, provinceRadius, reducedMotion, setCameraMoving, targetPoint]);
+    move(endPose);
+  }, [active, controlsRef, endPose, focusBounds, focusCityId, focusFrame, geometryRadius, invalidate, mode, phase, provinceRadius, reducedMotion, setCameraMoving, targetPoint]);
 
   return (
     <CameraControls
@@ -149,23 +160,20 @@ function SceneContents({ mode, active = true, focusCityId, hoveredCityId, onHove
   const viewport = useThree((store) => store.size);
   const gl = useThree((store) => store.gl);
   const aspect = viewport.width / Math.max(1, viewport.height);
-  const [focusFrame, setFocusFrame] = useState<CityFocusFrame>(() => ({ width: viewport.width, height: viewport.height, left: 16, right: viewport.width - 16, top: 16, bottom: viewport.height - 24 }));
-  useEffect(() => {
-    if (!active || mode !== 'province') return;
-    const stage = document.querySelector<HTMLElement>('.liaoning-page__window');
+  const measureFrame = () => mapStageFrame(gl.domElement.getBoundingClientRect(), gl.domElement.closest('.spatial-shell__canvas')?.querySelector('.liaoning-map-frame')?.getBoundingClientRect(), viewport);
+  const [focusFrame, setFocusFrame] = useState<CityFocusFrame>(measureFrame);
+  useLayoutEffect(() => {
+    const stage = gl.domElement.closest('.spatial-shell__canvas')?.querySelector('.liaoning-map-frame');
     const measure = () => {
-      const canvas = gl.domElement.getBoundingClientRect();
-      const rect = stage?.getBoundingClientRect();
-      const frame: CityFocusFrame = rect && rect.width > 0 && rect.height > 0
-        ? { width: viewport.width, height: viewport.height, left: rect.left - canvas.left + 18, right: rect.right - canvas.left - 18, top: rect.top - canvas.top + 24, bottom: rect.bottom - canvas.top - 24 }
-        : { width: viewport.width, height: viewport.height, left: 16, right: viewport.width - 16, top: 16, bottom: viewport.height - 24 };
+      const frame = mapStageFrame(gl.domElement.getBoundingClientRect(), stage?.getBoundingClientRect(), viewport);
       setFocusFrame(previous => Object.keys(frame).every(key => previous[key as keyof CityFocusFrame] === frame[key as keyof CityFocusFrame]) ? previous : frame);
     };
     measure();
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
     if (stage) observer?.observe(stage);
+    observer?.observe(gl.domElement);
     return () => observer?.disconnect();
-  }, [active, gl, mode, viewport.height, viewport.width]);
+  }, [gl, viewport.height, viewport.width]);
   const studyIds = useMemo(() => new Set<string>(STUDY_CITY_IDS), []);
   useEffect(() => {
     gl.domElement.style.cursor = active && mode === 'province' && hoveredCityId && studyIds.has(hoveredCityId) ? 'pointer' : '';
@@ -204,10 +212,11 @@ function SceneContents({ mode, active = true, focusCityId, hoveredCityId, onHove
     return new THREE.Vector3(city.centroid.x, 0, -city.centroid.y);
   }, [model, focusCityId]);
   const focusBounds = model?.cities.find(city => city.id === focusCityId)?.bounds ?? null;
+  const endPose = useMemo(() => model ? provinceStageView(model.bounds, model.radius, focusFrame) : null, [model, focusFrame]);
 
   /**
    * 下落顺序与高度（§29/§30/§59）：按"到沈阳重心距离"确定性排序，不用 Math.random()；
-   * 起始高度按省域与城市比例决定，并在 0.10–0.65 之间错峰，0.90 全部落定。
+   * 起始高度按省域与城市比例决定，少量错峰后在 0.92 全部落定。
    */
   const dropPlan = useMemo(() => {
     if (!model) return [];
@@ -233,7 +242,7 @@ function SceneContents({ mode, active = true, focusCityId, hoveredCityId, onHove
     setPaperProgress(0);
   }, [mode, phase]);
 
-  if (!model) return null;
+  if (!model || !endPose) return null;
   const fitRadius = responsiveProvinceRadius(model.radius,aspect);
 
   const emphasisFor = (cityId: string, hasResearch: boolean): Emphasis => {
@@ -253,7 +262,7 @@ function SceneContents({ mode, active = true, focusCityId, hoveredCityId, onHove
         reducedMotion={reducedMotion}
         targetPoint={focusPoint}
         focusBounds={focusBounds}
-        provinceBounds={model.bounds}
+        endPose={endPose}
         focusFrame={focusFrame}
         geometryRadius={model.radius}
         provinceRadius={fitRadius}
@@ -268,6 +277,7 @@ function SceneContents({ mode, active = true, focusCityId, hoveredCityId, onHove
       {shouldMountSketchPaper(mode) && (
         <SketchPaper
           radius={model.radius}
+          endPose={endPose}
           provinceRings={model.provinceRings}
           outlineRings={model.provinceOutlineRings}
           phase={phase}
@@ -295,7 +305,7 @@ function SceneContents({ mode, active = true, focusCityId, hoveredCityId, onHove
         reducedMotion={reducedMotion}
         assemblyRef={assemblyRef}
         controlsRef={controlsRef}
-        radius={fitRadius}
+        endPose={endPose}
         onProgress={setPaperProgress}
       />
       {/*
@@ -375,6 +385,7 @@ export function LiaoningCanvas(props: LiaoningCanvasProps) {
   if(modelState.status==='error') return <MapFallback/>;
   return (
     <MapBoundary>
+    <div className="liaoning-map-frame" aria-hidden="true" inert />
     {contextLost&&<MapFallback/>}
     <Canvas
       fallback={<MapFallback/>}

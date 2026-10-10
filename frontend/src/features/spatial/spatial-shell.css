@@ -2,6 +2,7 @@
 
 .spatial-shell__canvas {
   position: fixed;
+  overflow: hidden;
   inset: 0;
   z-index: 0;
   opacity: 1;
@@ -107,7 +108,7 @@
 /* 手机共用地图舞台，开场末帧与省域保持位置和投影尺寸一致。 */
 @media (max-width: 900px) {
   .spatial-shell[data-stage-mode='opening'] .spatial-shell__canvas,
-  .spatial-shell[data-stage-mode='province'] .spatial-shell__canvas { top: var(--ag-nav-height); bottom: auto; height: 43dvh; }
+  .spatial-shell[data-stage-mode='province'] .spatial-shell__canvas { top: var(--ag-nav-height); bottom: auto; height: var(--ag-map-mobile-height); }
 }
 
 .liaoning-map-fallback { position:absolute; left:50%; top:40%; transform:translate(-50%,-50%); max-width:380px; padding:24px; background:var(--ag-paper); color:var(--ag-ink-soft); font-size:14px; pointer-events:auto; z-index:5; }

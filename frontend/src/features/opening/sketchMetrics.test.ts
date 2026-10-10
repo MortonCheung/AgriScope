@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { maxGroundHalfSpan } from '../liaoning/cameraViews';
+import { maxGroundHalfSpan, provinceView } from '../liaoning/cameraViews';
 import {
   CELLS_PER_RADIUS,
   GRID_CELLS,
   GRID_FADE_END,
-  GRID_REPEAT,
+  gridRepeatForHalfSpan,
+  sketchHalfSpan,
   PLANE_HALF_SPAN,
   draftFadeAt,
   draftLineOpacityAt,
@@ -77,17 +78,23 @@ describe('平面覆盖所有目标屏幕比例（§13/§59-6）', () => {
 
   it.each(Object.entries(ASPECTS))('%s：平面半宽足以覆盖画面内所有地面', (_label, aspect) => {
     // 只要求覆盖网格仍然可见的那段进度（0 → GRID_FADE_END）；此后网格已不可见。
-    expect(maxGroundHalfSpan(aspect, GRID_FADE_END)).toBeLessThanOrEqual(PLANE_HALF_SPAN);
+    const endPose = provinceView(28.8);
+    const half = sketchHalfSpan(28.8, aspect, endPose);
+    expect(half).toBeGreaterThanOrEqual(28.8 * PLANE_HALF_SPAN);
+    expect(maxGroundHalfSpan(endPose, aspect, GRID_FADE_END)).toBeLessThan(half);
   });
 });
 
 describe('格子世界尺寸恒定（§13）', () => {
-  it('平面放大不改变格子密度：GRID_REPEAT 由几何导出', () => {
-    expect(GRID_REPEAT).toBeCloseTo((2 * PLANE_HALF_SPAN * CELLS_PER_RADIUS) / GRID_CELLS, 12);
+  it.each([8, 12, 24])('扩大到 %s 个半径仍保持每格世界尺寸', halfRadius => {
+    const radius = 28.8, half = radius * halfRadius;
+    const repeat = gridRepeatForHalfSpan(half, radius);
+    expect(2 * half / (repeat * GRID_CELLS)).toBeCloseTo(radius / CELLS_PER_RADIUS, 12);
   });
-
-  it('每个次要格恰好是 半径 / CELLS_PER_RADIUS', () => {
-    const cellWorldPerRadius = (2 * PLANE_HALF_SPAN) / (GRID_REPEAT * GRID_CELLS);
-    expect(cellWorldPerRadius).toBeCloseTo(1 / CELLS_PER_RADIUS, 12);
+  it('实际相机后撤时自动扩大纸面，不露出固定 8r 边缘', () => {
+    const pose = { position: [0, 180, 180] as const, target: [0, 0, 0] as const };
+    const half = sketchHalfSpan(10, 21 / 9, pose);
+    expect(half).toBeGreaterThan(10 * PLANE_HALF_SPAN);
+    expect(half).toBeGreaterThan(maxGroundHalfSpan(pose, 21 / 9, GRID_FADE_END));
   });
 });

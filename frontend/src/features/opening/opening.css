@@ -36,7 +36,7 @@
 }
 .opening__skip {
   position: absolute;
-  top: clamp(24px, 4vh, 40px);
+  top: calc(var(--ag-nav-height) + clamp(24px, 4vh, 40px));
   right: var(--ag-gutter);
   z-index: 2;
   min-height: 44px;

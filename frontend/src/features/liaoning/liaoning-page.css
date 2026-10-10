@@ -1,9 +1,8 @@
 /* Only the two paper inspectors accept DOM input; the central stage belongs to the map. */
-.spatial-shell__canvas {overflow:hidden;}
 .liaoning-page {position:relative;min-height:100dvh;padding-top:var(--ag-nav-height);pointer-events:none;}
-.liaoning-page__stage {display:grid;grid-template-columns:clamp(220px,18vw,270px) minmax(0,1fr) clamp(215px,18vw,270px);gap:clamp(18px,2.4vw,38px);padding:clamp(24px,4vh,44px) var(--ag-gutter);min-height:calc(100dvh - var(--ag-nav-height));align-items:start;}
+.liaoning-page__stage {display:grid;grid-template-columns:var(--ag-map-column-left) minmax(0,1fr) var(--ag-map-column-right);gap:var(--ag-map-column-gap);padding:var(--ag-map-gutter-y) var(--ag-map-gutter-x);min-height:calc(100dvh - var(--ag-nav-height));align-items:start;}
 .liaoning-paper {pointer-events:auto;min-width:0;position:relative;background:var(--ag-paper-raised);border:1px solid rgb(26 25 23 / .08);box-shadow:0 3px 10px rgb(26 25 23 / .045);padding:24px 20px 22px;}
-.liaoning-page__window {min-height:calc(100dvh - var(--ag-nav-height) - 2 * clamp(24px,4vh,44px));}
+.liaoning-page__window {min-height:calc(100dvh - var(--ag-nav-height) - 2 * var(--ag-map-gutter-y));}
 .liaoning-page__title {font-family:var(--ag-font-display);font-size:clamp(27px,2.5vw,36px);font-weight:400;line-height:1.25;letter-spacing:-.025em;margin:12px 0 24px;}
 .liaoning-panel-content {opacity:1;transform:translateY(0);transition:opacity 110ms linear,transform 110ms var(--ag-ease);}
 .liaoning-panel-content[data-phase=out] {opacity:.28;transform:translateY(-3px);pointer-events:none;}
@@ -49,10 +48,10 @@
 .city-summary__action:hover {border-bottom-color:var(--ag-ink);}
 .liaoning-page button:focus-visible,.liaoning-page a:focus-visible,.liaoning-page select:focus-visible {outline:2px solid var(--ag-olive);outline-offset:4px;}
 @keyframes ag-paper-selection-in {from {opacity:.35;transform:translateY(3px);}to {opacity:1;transform:translateY(0);}}
-@media(max-width:1100px) {.liaoning-page__stage {grid-template-columns:210px minmax(0,1fr) 205px;gap:18px;padding-inline:24px;}.liaoning-paper {padding-inline:16px;}.market-overview__price {gap:5px;grid-template-columns:minmax(0,1fr) auto 51px;}}
+@media(max-width:1100px) {.liaoning-paper {padding-inline:16px;}.market-overview__price {gap:5px;grid-template-columns:minmax(0,1fr) auto 51px;}}
 @media(max-width:900px) {
- .spatial-shell[data-stage-mode=province] .spatial-shell__canvas {top:var(--ag-nav-height);bottom:auto;height:43dvh;}
- .liaoning-page {padding-top:calc(var(--ag-nav-height) + 43dvh);}
+ .spatial-shell[data-stage-mode=province] .spatial-shell__canvas {top:var(--ag-nav-height);bottom:auto;height:var(--ag-map-mobile-height);}
+ .liaoning-page {padding-top:calc(var(--ag-nav-height) + var(--ag-map-mobile-height));}
  .liaoning-page__stage {grid-template-columns:1fr 1fr;gap:20px;padding:24px 28px 36px;min-height:0;}
  .liaoning-page__window {display:none;}
  .liaoning-paper {padding:22px;}

@@ -6,21 +6,7 @@ import { MOTION_DURATION } from '../../design/motion';
 import { useOpeningStore } from './openingPhase';
 import './opening.css';
 
-/**
- * 首页：一张当代研究草稿纸（V5 §22–§34、§57–§63）。
- *
- * 流程：草稿研究图 → 用户点击「进入」→ 一条 4.8s 的导演时间轴同时驱动
- * 「14 块行政区从空间落下」与「摄影机在省域外围完整环绕一周，再上升接正式机位」→ /liaoning。
- *
- * 本轮 §10/§11 修订：**每次真正进入 `/` 都重放开场**。
- * 挂载时用 `reset()` 把状态机拉回草稿态（幂等，StrictMode 安全），
- * 因此不再需要 sessionStorage，也不会出现"一个 session 只看一次"。
- *
- * 两个仍然成立的关键点：
- *   - 只有真的点击过（assembleStarted）才会在组装结束后跳转，
- *     否则减少动效的用户一进首页就会被自动带走；
- *   - 相机不再决定路由提交：时间轴走完即完成态（§58/§67）。
- */
+/** Each visit starts a fresh sketch. One 2.8-second push assembles the province. */
 export function OpeningPage() {
   const navigate = useNavigate();
   const reducedMotion = Boolean(useReducedMotion());
@@ -42,7 +28,7 @@ export function OpeningPage() {
   useEffect(() => {
     if (!assembleStarted || phase !== 'ready' || navigated.current) return;
     navigated.current = true;
-    navigate(ROUTES.liaoning, { viewTransition: true });
+    navigate(ROUTES.liaoning);
   }, [assembleStarted, navigate, phase]);
 
   useEffect(() => {

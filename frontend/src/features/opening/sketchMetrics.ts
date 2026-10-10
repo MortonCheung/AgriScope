@@ -1,11 +1,6 @@
-/**
- * Opening 草稿纸的**纯数值策略**（本轮 §12–§15）。
- *
- * 刻意不依赖 three / @react-three，方便在 jsdom 里直接单测：
- *   · 平面覆盖范围（§13）——平面要大到目标屏幕比例下都看不到边界；
- *   · 淡出时序（§15）——0.82 之后网格与手稿完全不透明为 0（§59-5）；
- *   · 挂载门（§14/§15）——只有 Opening 路由才挂载草稿纸（§59-4）。
- */
+import { maxGroundHalfSpan, type CameraPose } from '../liaoning/cameraViews';
+
+/** Opening paper metrics, shared by the renderer and projection checks. */
 
 /** 方格纹理画布边长（px）。 */
 export const GRID_TEXTURE_SIZE = 2048;
@@ -29,33 +24,22 @@ export const OUTLINE_LINE_WIDTH = 2.2;
 export const DRAFT_OPACITY = 0.5;
 export const OUTLINE_OPACITY = 0.62;
 
-/**
- * 平面半宽（× 省域半径）。
- *
- * 取 8 倍：草稿纸只在 progress < GRID_FADE_END（0.65）期间可见，而这段里最"露边"的
- * 是接近 0.65 的掠射机位 —— 画面顶边射线几乎水平，地面交点可到 ~6.3r（16:10）乃至
- * ~7.3r（21:9）。8r 对目标屏幕比例（1512×982、1440×900、16:9、16:10）与更宽的
- * 21:9 都有余量。是否够大由 `maxGroundHalfSpan(aspect, GRID_FADE_END)` 与单测共同证明（§13/§59-6）。
- */
+/** Minimum paper half-width; the actual camera's visible ground can enlarge it. */
 export const PLANE_HALF_SPAN = 8;
-/** 每 1 个省域半径排多少个次要格（决定格子的世界尺寸，与原稿一致）。 */
+/** Minor grid density per province radius. */
 export const CELLS_PER_RADIUS = 36;
-/**
- * 纹理重复次数 = 平面世界尺寸 / 单个 tile 世界尺寸
- *             = (2·PLANE_HALF_SPAN·r) / (GRID_CELLS / CELLS_PER_RADIUS · r)
- *             = 2·PLANE_HALF_SPAN·CELLS_PER_RADIUS / GRID_CELLS
- * 与 r 无关，因此平面放大时格子不会被一起拉成巨格（§13）。
- */
-export const GRID_REPEAT = (2 * PLANE_HALF_SPAN * CELLS_PER_RADIUS) / GRID_CELLS;
 
-/**
- * 淡出区间（组装进度 0→1，§15）。
- *
- * 网格必须在 0.60 前完全消失：相机在组装后段会从俯视切向近似水平，
- * 当"画面顶边射线"逼近地平线时，地面可见范围会迅速发散（p≈0.71 是极点）。
- * 只要网格在掠射前已隐没，有限的平面就不会露出边界（§13）。
- * 0.60 仍满足"约 0.65 网格基本消失"，并给覆盖率留出安全余量。
- */
+/** The paper covers the entire shared trajectory while the grid is visible. */
+export function sketchHalfSpan(radius: number, aspect: number, endPose: CameraPose): number {
+  return Math.max(radius * PLANE_HALF_SPAN, maxGroundHalfSpan(endPose, aspect, GRID_FADE_END) * 1.05);
+}
+
+/** Increasing paper coverage preserves the world-space cell size. */
+export function gridRepeatForHalfSpan(half: number, radius: number): number {
+  return 2 * half * CELLS_PER_RADIUS / (radius * GRID_CELLS);
+}
+
+/** The draft fades while solids approach their final positions. */
 export const FADE_START = 0.15;
 export const GRID_FADE_END = 0.6;
 export const DRAFT_FADE_END = 0.82;
