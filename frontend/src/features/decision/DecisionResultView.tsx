@@ -2,18 +2,14 @@ import { TransitionLink } from '../../app/pageNavigation';
 import { ROUTES } from '../../app/routes';
 import type { DecisionCandidate, DecisionResult } from '../../domain/decision/types';
 import { ConfidenceMark, dateWindow, formatNumber, money, RangePlot, rangeText, RiskScale } from './DecisionVisuals';
-import { DailyContext } from '../daily/DailyContext';
-import { LongHorizonPanel } from '../longHorizon/LongHorizonPanel';
 import { actualProfit, evaluationLabel, profitLabel, shownConfidence } from './presentation';
 
-export function DecisionSummary({result,candidate,onDetail,onCompare,onEvidence,stressUrl}:{result:DecisionResult;candidate:DecisionCandidate;onDetail:()=>void;onCompare:()=>void;onEvidence:()=>void;stressUrl:string}){
-  const noWinner=result.issues.includes('no_clear_winner');
-  const primaryProfit=actualProfit(candidate);const confidence=shownConfidence(result,candidate);
-  const warning=result.issues.includes('high_risk')?'市场压力偏高，留意下行情景。':candidate.warnings.some(w=>w.includes('高估'))?'成本可能缺项，收益可能高估。':candidate.warnings[0];
+export function DecisionSummary({result,candidate,onDetail,stressUrl}:{result:DecisionResult;candidate:DecisionCandidate;onDetail:()=>void;onCompare:()=>void;onEvidence:()=>void;stressUrl:string}){
+  const primaryProfit=actualProfit(candidate);
   return <section className="decision-result" aria-labelledby="decision-plan-title">
     <div className="decision-result__main">
-      <p className="ag-label">{noWinner||result.recommendation.candidate_id!==candidate.id?'一个可比较的选择':'当前推荐'}</p>
-      <h1 className="decision-result__crop" id="decision-plan-title">{candidate.crop}<span>{formatNumber(candidate.area_mu)} 亩</span></h1>
+      <p className="ag-label">{result.issues.includes('no_clear_winner')||result.recommendation.candidate_id!==candidate.id?'一个可比较的选择':'当前推荐'}</p>
+      <h1 className="decision-result__crop workbench__title" id="decision-plan-title">{candidate.crop}<span>{formatNumber(candidate.area_mu)} 亩</span></h1>
       <p className="decision-result__window">{evaluationLabel(candidate)}</p>
       {candidate.reasons[0]&&<p className="decision-result__reason">{candidate.reasons[0]}</p>}
       <div className="decision-result__profit"><p className="ag-label">{primaryProfit?profitLabel(candidate):'市场价格情景'} {candidate.profit.is_mock?'· 演示':''}</p><p className="decision-result__range">{rangeText(primaryProfit?candidate.profit:candidate.price)}</p></div>
@@ -21,14 +17,7 @@ export function DecisionSummary({result,candidate,onDetail,onCompare,onEvidence,
       <div className="decision-actions"><button type="button" className="ag-button ag-button--primary" onClick={onDetail}>看收益与风险</button><TransitionLink to={stressUrl} className="ag-button">如果条件变差 →</TransitionLink></div>
       <RangePlot title={primaryProfit?'方案净收益情景':'市场价格情景'} rows={[{label:'下行 — 上行',range:primaryProfit?candidate.profit:candidate.price}]}/>
     </div>
-    <aside className="decision-result__aside">
-      <ConfidenceMark confidence={confidence}/>
-      <div className="decision-result__caution">{noWinner&&<p>方案差异较小，不作强烈推荐。</p>}{warning&&<p>{warning}</p>}</div>
-      <DailyContext cityId={result.request.user_context.city_id} crop={candidate.crop}/>
-      <LongHorizonPanel cityId={result.request.user_context.city_id} crop={candidate.crop}/>
-      <button type="button" className="decision-text-button" onClick={onCompare}>比较替代方案 →</button>
-      <button type="button" className="decision-text-button" onClick={onEvidence}>查看依据 →</button>
-    </aside>
+
   </section>;
 }
 export function DecisionDetail({candidate,result}:{candidate:DecisionCandidate;result:DecisionResult}){
@@ -63,4 +52,26 @@ export function DecisionEvidence({candidate,result}:{candidate:DecisionCandidate
     <ConfidenceMark confidence={shownConfidence(result,candidate)}/>
     <ul className="decision-limitations">{[...new Set([...candidate.warnings,...result.warnings,...result.assumptions])].map(w=><li key={w}>{w}</li>)}</ul>
   </section>;
+}
+
+
+/** 当前候选的右侧读数；与中栏图表共用同一个正式模型结果。 */
+export function DecisionResultRail({ result, candidate }: { result: DecisionResult; candidate: DecisionCandidate }) {
+  const warning = result.issues.includes('high_risk') ? '市场压力偏高，留意下行情景。' : candidate.warnings.some(w => w.includes('高估')) ? '成本可能缺项，收益可能高估。' : candidate.warnings[0];
+  return <>
+    <h2 className="ag-title">{candidate.crop}</h2>
+    <dl className="decision-detail__facts">
+      <div><dt>当前周期</dt><dd>{candidate.market_context?.horizon_days ?? '—'} 天</dd></div>
+      <div><dt>数据基准日</dt><dd>{candidate.market_context?.as_of ?? '—'}</dd></div>
+      <div><dt>价格情景区间</dt><dd>{rangeText(candidate.price)}</dd></div>
+      {actualProfit(candidate) && <div><dt>实际投入净收益情景</dt><dd>{rangeText(candidate.profit)}</dd></div>}
+      <div><dt>市场风险评分</dt><dd>{formatNumber(candidate.risks.market_risk)}</dd></div>
+      <div><dt>跟风环境评分 HRI</dt><dd>{formatNumber(candidate.risks.hri)}</dd></div>
+    </dl>
+    <ConfidenceMark confidence={shownConfidence(result, candidate)} />
+    {result.issues.includes('no_clear_winner') && <p className="decision-note">方案差异较小，不作强烈推荐。</p>}
+    {warning && <p className="decision-note">{warning}</p>}
+    <p className="decision-note">区间用于情景比较；风险评分不是事件发生概率。</p>
+    <details className="decision-disclosure"><summary>假设与限制</summary><ul className="decision-limitations">{[...new Set([...candidate.warnings, ...result.warnings, ...result.assumptions])].map(note => <li key={note}>{note}</li>)}</ul></details>
+  </>;
 }

@@ -213,3 +213,28 @@
 .decision-city-entry { max-width:760px; display:grid; grid-template-columns:repeat(3,1fr); gap:24px; margin-top:36px; }
 .decision-city-entry__cities { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; margin-top:36px; }
 @media(max-width:600px) { .decision-city-entry { grid-template-columns:repeat(2,1fr); } .decision-modes { flex-wrap:wrap; } }
+
+/* 共享工作台接替大标题与内部嵌套双栏；业务图表继续使用原读数样式。 */
+.decision-workbench .decision-input { display: block; padding-top: 0; }
+.decision-workbench .decision-input__form { margin-top: var(--ag-space-5); }
+.decision-workbench .decision-input__intro { margin-bottom: var(--ag-space-5); }
+.decision-workbench .decision-result { display: block; padding-top: var(--ag-space-5); }
+.decision-workbench .decision-result__crop, .decision-workbench .ag-hero { font-size: var(--ag-fs-title); max-width: none; }
+.decision-workbench .decision-result__main { display: flex; }
+.decision-workbench .decision-detail__grid { grid-template-columns: minmax(0, 1fr); gap: var(--ag-space-6); }
+.decision-workbench .decision-section-head { margin-block: var(--ag-space-5); }
+.decision-workbench .decision-loading { min-height: 240px; }
+.decision-workbench .decision-plot svg text { font-size: 12px; }
+.decision-workbench .decision-risk svg text { font-size: 12px; }
+.decision-workbench .long-horizon-result { padding-top: 0; }
+.market-observation__crop { display: flex; flex-direction: column; gap: var(--ag-space-2); margin-bottom: var(--ag-space-5); font-size: var(--ag-fs-small); }
+.market-observation__crop select { min-height: 44px; border: 0; border-bottom: 1px solid var(--ag-rule-strong); background: transparent; color: var(--ag-ink); font: inherit; }
+.market-observation__series { display: flex; flex-direction: column; gap: var(--ag-space-2); margin-bottom: var(--ag-space-5); }
+.market-observation__series button { min-height: 44px; padding: 8px 0; border: 0; border-bottom: 1px solid var(--ag-rule-soft); text-align: left; background: transparent; color: var(--ag-ink-muted); font: inherit; font-size: var(--ag-fs-small); }
+.market-observation__series button[aria-pressed='true'] { color: var(--ag-ink); border-bottom-color: var(--ag-ink); }
+.market-observation__series small { display: block; margin-top: 4px; font-size: var(--ag-fs-micro); }
+.market-observation__chart svg { display: block; width: 100%; overflow: visible; }
+.market-observation__chart text { fill: var(--ag-ink-muted); font-size: 12px; font-family: var(--ag-font-mono); }
+.market-observation__line { stroke: var(--ag-ink); stroke-width: 1.5; }
+.market-observation__point { fill: var(--ag-ink); }
+.market-observation__point:hover { r: 4; }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { ROUTES } from './routes';
 import { NAV_ITEMS } from './navItems';
@@ -14,18 +14,23 @@ export function AppHeader() {
   const { pathname, search } = location;
   const context = useAppContext();
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuToggle = useRef<HTMLButtonElement>(null);
 
   // 路由变化（点了菜单里的入口、或其它导航）后收起菜单。
   useEffect(() => { setMenuOpen(false); }, [pathname, search]);
 
-  // Escape 收起菜单（非捕获，避免抢断导览 / 页面自身的 Escape 语义）。
+  // An open menu consumes Escape before a page can treat it as structural Up.
   useEffect(() => {
     if (!menuOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMenuOpen(false);
+      if (event.key !== 'Escape' || document.querySelector('[role="dialog"][aria-modal="true"]')) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setMenuOpen(false);
+      menuToggle.current?.focus({ preventScroll: true });
     };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
   }, [menuOpen]);
 
   return (
@@ -50,6 +55,7 @@ export function AppHeader() {
           {/* 窄屏溢出菜单开关：桌面隐藏，窄屏显示。 */}
           <button
             type="button"
+            ref={menuToggle}
             className="ag-header__menu-toggle"
             aria-expanded={menuOpen}
             aria-controls="ag-header-nav"

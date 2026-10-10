@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import type { DecisionCapability, DecisionProvider, FinalDecisionRequest, RiskPreference } from '../../domain/decision/types';
 import { validateRequest } from '../../domain/decision/validation';
+import { WorkbenchMain, WorkbenchRail } from '../../components/workbench/WorkbenchLayout';
 import { getCity } from '../../domain/geography/cities';
 
 export function FinalDecisionInput({cityId,initial,onSubmit,provider,expandInputs=false}:{cityId:string;initial:FinalDecisionRequest|null;onSubmit:(request:FinalDecisionRequest)=>void;provider:DecisionProvider;expandInputs?:boolean}){
@@ -33,8 +34,9 @@ export function FinalDecisionInput({cityId,initial,onSubmit,provider,expandInput
     if(Object.keys(request.user_context.actual_inputs).some(c=>!cap?.crops.some(s=>s.id===c)))issues.push('实际投入需要对应支持的作物。');
     setErrors(issues);if(!issues.length)onSubmit(request);
   }
-  return <section className="decision-input" aria-labelledby="decision-input-title">
-    <div className="decision-input__intro"><p className="ag-label">{getCity(cityId)?.shortName} · 种植选择</p><h1 id="decision-input-title" className="ag-hero">这季，怎么种。</h1><p className="ag-lead">比较市场情景，再核对你的实际投入。</p>{cap?.market_as_of&&<p className="decision-note">模型数据截至 {cap.market_as_of} · 市场评估跨度不是作物生长周期。</p>}</div>
+  return <><WorkbenchMain label="短期市场比较条件"><section className="decision-input" aria-labelledby="decision-input-title">
+    <h1 id="decision-input-title" className="workbench__title">短期市场比较</h1>
+    <p className="decision-note">比较市场情景，再核对你的实际投入。评估跨度不是作物生长周期。</p>
     {capError?<div className="ag-state" role="alert"><p>{capError}</p><button className="ag-button" onClick={()=>setRetry(retry+1)}>重新确认城市能力</button></div>:!cap?<div className="ag-state" role="status" aria-busy="true">确认这个城市的决策范围<i className="ag-skeleton"/></div>:!cap.supported?<div className="ag-state"><h2 className="ag-title">这个城市暂不支持种植决策</h2><p className="decision-note">{cap.limitation??'可继续查看已有研究与市场背景。'}</p></div>:<form className="decision-input__form" onSubmit={submit} noValidate>
       <div className="decision-input__fields"><label>种植面积 <span className="decision-input__unit">亩</span><input name="area" type="number" inputMode="decimal" min="0" step="any" value={area} onChange={e=>setArea(e.target.value)}/></label><label>可用预算 <span className="decision-input__unit">万元</span><input name="budget" type="number" inputMode="decimal" min="0" step="any" value={budget} onChange={e=>setBudget(e.target.value)}/></label>
         <label>市场评估跨度<select name="horizon" value={horizon} onChange={e=>setHorizon(Number(e.target.value))}>{horizons.map(h=><option key={h.days} value={h.days}>{h.days} 天{h.mode==='scenario_only'?' · 仅情景':''}</option>)}</select></label>
@@ -49,5 +51,15 @@ export function FinalDecisionInput({cityId,initial,onSubmit,provider,expandInput
       {errors.length>0&&<ul className="decision-errors" role="alert">{errors.map(e=><li key={e}>{e}</li>)}</ul>}
       <button type="submit" className="ag-button ag-button--primary">比较种植选择 →</button>
     </form>}
-  </section>;
+  </section></WorkbenchMain><WorkbenchRail>
+    <p className="ag-label">{getCity(cityId)?.shortName} · 当前比较条件</p>
+    <dl className="decision-detail__facts">
+      <div><dt>作物范围</dt><dd>{crops.length ? crops.join('、') : '全部支持作物'}</dd></div>
+      <div><dt>市场评估跨度</dt><dd>{horizon} 天</dd></div>
+      <div><dt>数据基准日</dt><dd>{asOf || '确认中'}</dd></div>
+      <div><dt>面积</dt><dd>{area ? `${area} 亩` : '未填写'}</dd></div>
+      <div><dt>预算</dt><dd>{budget ? `${budget} 万元` : '未填写'}</dd></div>
+    </dl>
+    <p className="decision-note">提交条件后展示本城模型区间。实际成本与亩产齐备时才核算实际投入收益。</p>
+  </WorkbenchRail></>;
 }

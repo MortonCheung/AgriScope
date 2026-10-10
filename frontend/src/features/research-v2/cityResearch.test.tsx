@@ -1,11 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { listTopics } from '../../domain/research/catalog';
 import { CityResearchPage } from './CityResearchPage';
-import { ResearchRoutePage } from './ResearchRoutePage';
-import { useCityExitStore } from '../spatial/cityExit';
 
 /**
  * 城市研究空间（本轮 §21–§23 / §37 / §59 的 7–12 条）。
@@ -14,7 +12,7 @@ import { useCityExitStore } from '../spatial/cityExit';
  *   1. 结构是**三栏工作台**（研究树 / 中栏交互探索 / 证据栏）+ chrome + 关闭，三块各自滚动；
  *   2. 单击研究树只改选择，**URL 保留研究选择**；中栏默认「交互探索」，「完整文章」是次入口；
  *   3. 右栏只呈现研究侧真实元数据 —— 载荷取不到时**整块不渲染**，不写占位；
- *   4. `×` 与 `Esc` 都进入同一个空间退出协调器（小屏抽屉打开时 `Esc` 先关抽屉）。
+ *   4. `Esc` 先关闭局部抽屉，随后直接进入父级；全局 Header 负责页面导航。
  */
 
 const topics = listTopics('shenyang');
@@ -33,7 +31,7 @@ function renderCity(url = '/cities/shenyang') {
       <Routes>
         <Route path="/cities/:cityId" element={<CityResearchPage />} />
         <Route path="/liaoning" element={<div>LIAONING_PAGE</div>} />
-        <Route path="/cities/:cityId/research/:researchId" element={<ResearchRoutePage />} />
+        <Route path="/cities/:cityId/research/:researchId" element={<CityResearchPage />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -47,12 +45,10 @@ describe('城市研究三栏工作台', () => {
   beforeEach(() => {
     // 城市页的结构与选择逻辑与载荷无关；让文章取不到即可。
     vi.stubGlobal('fetch', () => Promise.reject(new Error('offline')));
-    useCityExitStore.getState().reset();
   });
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
-    useCityExitStore.getState().reset();
   });
 
   it('三栏和局部抽屉保留，重复页面退出/跨任务按钮已删除', () => {
@@ -122,25 +118,22 @@ describe('城市研究三栏工作台', () => {
     renderCity();
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(path()).toBe('/liaoning?city=shenyang');
-    expect(useCityExitStore.getState().status).toBe('idle');
 
     cleanup();
-    useCityExitStore.getState().reset();
     renderCity();
     const toggle = screen.getByRole('button', { name: '研究方向' });
-    expect(toggle.getAttribute('aria-controls')).toBe('city-research-tree');
+    expect(document.getElementById(toggle.getAttribute('aria-controls')!)?.getAttribute('aria-label')).toBe('研究方向');
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(toggle);
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
-    expect(useCityExitStore.getState().status).toBe('idle');
   });
 
   it('证据折叠面板开关带 aria 关联（§37/§38）', () => {
     renderCity();
     const toggle = screen.getByRole('button', { name: '研究证据' });
-    expect(toggle.getAttribute('aria-controls')).toBe('city-research-evidence');
+    expect(document.getElementById(toggle.getAttribute('aria-controls')!)?.getAttribute('aria-label')).toBe('研究证据');
     fireEvent.click(toggle);
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
   });
@@ -164,4 +157,24 @@ describe('城市研究三栏工作台', () => {
     expect(path()).toContain('/cities/shenyang/research/');
     expect(path()).not.toContain('research=A1.1');
   });
+
+  it('城市目录与深链使用同组件时，来回跳转仍保留实体纸面与目录', () => {
+    function Controls() { const navigate = useNavigate(); return <><button onClick={() => navigate('/cities/shenyang/research/A2.2?research=A1.1')}>深链跳转</button><button onClick={() => navigate('/cities/shenyang')}>目录跳转</button></>; }
+    const { container } = render(<MemoryRouter initialEntries={['/cities/shenyang']}><Controls /><Routes><Route path="/cities/:cityId" element={<CityResearchPage />} /><Route path="/cities/:cityId/research/:researchId" element={<CityResearchPage />} /></Routes></MemoryRouter>);
+    const paper = container.querySelector('.workbench__paper'); const sidebar = container.querySelector('.workbench__sidebar');
+    fireEvent.click(screen.getByRole('button', { name: '深链跳转' }));
+    expect(container.querySelector('.evidence-rail__id')?.textContent).toBe('A2.2');
+    expect(container.querySelector('.workbench__paper')).toBe(paper); expect(container.querySelector('.workbench__sidebar')).toBe(sidebar);
+    fireEvent.click(screen.getByRole('button', { name: '目录跳转' }));
+    expect(container.querySelector('.workbench__paper')).toBe(paper); expect(container.querySelector('.workbench__sidebar')).toBe(sidebar);
+  });
+
+  it('不存在条目显示真实状态，旧载荷编号仍重定向到 canonical 路径', () => {
+    renderCity('/cities/shenyang/research/A8.999');
+    expect(screen.getByRole('heading', { name: '研究条目不存在' })).toBeTruthy();
+    cleanup();
+    renderCity('/cities/shenyang/research/A02.2?mode=article');
+    expect(path()).toBe('/cities/shenyang/research/A2.2?mode=article');
+  });
+
 });

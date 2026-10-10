@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { getCity } from '../../domain/geography/cities';
 import type { DecisionProvider, DecisionRequest, LegacyDecisionRequest, RiskPreference } from '../../domain/decision/types';
+import { WorkbenchMain, WorkbenchRail } from '../../components/workbench/WorkbenchLayout';
 import { FinalDecisionInput } from './FinalDecisionInput';
 import { validateRequest } from '../../domain/decision/validation';
 type DecisionSample={id:string;label:string;request:LegacyDecisionRequest};
@@ -48,10 +49,10 @@ function LegacyDecisionInput({cityId,initial,onSubmit,provider,expandInputs=fals
     setRequest(prepared);setCrops('');setActualCrop('');setCost('');setYield('');setHarvestStart('');setErrors([]);
     onSubmit(prepared);
   }
-  return <section className="decision-input" aria-labelledby="decision-input-title">
+  return <><WorkbenchMain label="短期市场比较条件"><section className="decision-input" aria-labelledby="decision-input-title">
     <div className="decision-input__intro">
       <p className="ag-label">{getCity(cityId)?.shortName} · 种植选择</p>
-      <h1 id="decision-input-title" className="ag-hero">这季，怎么种。</h1>
+      <h1 id="decision-input-title" className="workbench__title">短期市场比较</h1>
       <p className="ag-lead">从你的土地、预算和上市时间开始。</p>
       <p className="decision-note">{provider.data_mode==='api'?'按实际条件提交，返回方案供你比较。':'历史样例与演示情景 · 最终模型待接入'}</p>
     </div>
@@ -81,5 +82,9 @@ function LegacyDecisionInput({cityId,initial,onSubmit,provider,expandInputs=fals
       <div className="decision-input__sample-options">{samples.map(s=><button key={s.id} type="button" className="ag-button" onClick={()=>useSample(s)}>{s.label}</button>)}</div>
       {sampleError&&<p className="decision-note">历史样例暂时无法加载，可填写自己的条件。</p>}
     </details>}
-  </section>;
+  </section></WorkbenchMain><WorkbenchRail>
+    <p className="ag-label">{getCity(cityId)?.shortName} · 历史演示条件</p>
+    <dl className="decision-detail__facts"><div><dt>面积</dt><dd>{c.area_mu || '未填写'} 亩</dd></div><div><dt>预算</dt><dd>{c.budget_cny ? c.budget_cny / 10000 : '未填写'} 万元</dd></div><div><dt>作物范围</dt><dd>{crops || '演示支持作物'}</dd></div></dl>
+    <p className="decision-note">历史样例与演示情景。</p>
+  </WorkbenchRail></>;
 }

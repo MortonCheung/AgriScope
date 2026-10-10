@@ -1,4 +1,5 @@
 import { NavigationType } from 'react-router-dom';
+import { isStudyCity } from '../domain/geography/cities';
 import './route-transitions.css';
 
 export type RouteDirection = -1 | 0 | 1;
@@ -14,7 +15,11 @@ export function isSpatialEntry(from: string, to: string) {
 
 /** A city workspace owns one paper; changing its point/module never animates the page. */
 export function isWorkspaceNavigation(from: string, to: string): boolean {
-  const cityOf = (path: string) => /^\/cities\/([^/]+)(?:\/(?:decision|research\/[^/]+))?\/?$/.exec(path)?.[1];
+  const cityOf = (path: string) => {
+    const city = /^\/cities\/([^/]+)(?:\/(?:decision|research\/[^/]+))?\/?$/.exec(path)?.[1]
+      ?? /^\/reports\/([^/]+)\/?$/.exec(path)?.[1];
+    return city && isStudyCity(city) ? city : null;
+  };
   const city = cityOf(from);
   return Boolean(city && city === cityOf(to));
 }

@@ -1,8 +1,6 @@
 .planning-workbench { color: var(--ag-ink); }
-.planning-header { margin-block: 1rem 3rem; max-width: 52rem; }
-.planning-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); border-block: 1px solid var(--ag-rule-strong); }
-.planning-form { padding: 2rem 2.5rem 2rem 0; }
-.planning-result { padding: 2rem 0 2rem 2.5rem; border-left: 1px solid var(--ag-rule); }
+.planning-form { padding: 0; }
+.planning-result { padding: 0; min-width: 0; }
 .planning-inputs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.1rem 1rem; margin-block: 1.2rem; }
 .planning-field { display: grid; gap: .45rem; min-width: 0; font-size: .88rem; }
 .planning-field > span { display: flex; justify-content: space-between; gap: .6rem; }
@@ -51,13 +49,18 @@
 .planning-climate-select select { width: auto; flex: 1; }
 .planning-evidence-actions { display: flex; gap: .7rem; flex-wrap: wrap; margin-top: 1.5rem; }
 @media (max-width: 800px) {
-  .planning-main, .planning-observations { grid-template-columns: 1fr; }
-  .planning-form { padding: 1.5rem 0; }
-  .planning-result { border-left: 0; border-top: 1px solid var(--ag-rule); padding: 1.5rem 0; }
+  .planning-observations { grid-template-columns: 1fr; }
   .planning-observations { gap: 2rem; }
-  .planning-header { margin-bottom: 2rem; }
 }
 @media (max-width: 420px) {
   .planning-inputs { grid-template-columns: 1fr; }
   .planning-table-scroll td, .planning-table-scroll th { padding-inline: .5rem; }
 }
+
+/* Phase 4：中央条件与右栏结果各自由共享工作台滚动。 */
+.planning-workbench { min-width: 0; }
+.planning-result .planning-readings > div { display: grid; gap: .35rem; }
+.planning-result .planning-readings dd { overflow-wrap: anywhere; }
+.planning-background { margin-top: var(--ag-space-6); border-top: 1px solid var(--ag-rule-soft); }
+.planning-background > summary { min-height: 44px; padding-block: 12px; cursor: pointer; color: var(--ag-ink-soft); font-size: var(--ag-fs-small); }
+.planning-workbench .planning-observations { grid-template-columns: minmax(0, 1fr); }

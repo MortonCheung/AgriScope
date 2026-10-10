@@ -152,10 +152,3 @@
   .module-workspace__item { grid-template-columns: 2.2rem 1fr; }
   .module-workspace__chip { display: none; }
 }
-@media (max-width: 900px) {
-  .city-research__body[data-layout='modules'] { display: flex; flex-direction: column; }
-  .city-research__body[data-layout='modules'] .city-research__sidebar { display: block; width: 100%; flex: none; padding: 10px 18px; max-height: 145px; overflow: auto; border-bottom: 1px solid var(--ag-rule); }
-  .city-research__body[data-layout='modules'] .module-workspace__list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
-  .city-research__body[data-layout='modules'] .module-workspace__item { grid-template-columns: 2rem 1fr; }
-  .city-research__body[data-layout='modules'] .city-research__preview { min-height: 0; flex: 1; overflow: auto; }
-}

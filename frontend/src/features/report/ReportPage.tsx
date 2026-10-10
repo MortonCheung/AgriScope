@@ -1,4 +1,5 @@
-import { Link, useParams } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { getCity } from '../../domain/geography/cities';
 import { ROUTES } from '../../app/routes';
 import { assetUrl } from '../../domain/research/v2/repository';
@@ -6,8 +7,12 @@ import { reportArticleId } from '../../domain/research/catalog';
 import { MarkdownBlocks, TableAsset } from '../research-v2/blocks';
 import { renderInline, stripListPrefix } from '../research-v2/markdown';
 import { V2Figure } from '../research-v2/Figure';
-import { ResearchSources } from '../research-v2/ResearchSources';
-import { useArticle, useSources } from '../research-v2/useV2';
+import { ModuleEvidenceRail } from '../research-v2/EvidenceRail';
+import { WorkbenchLayout, WorkbenchMain, WorkbenchRail } from '../../components/workbench/WorkbenchLayout';
+import { usePageNavigate } from '../../app/pageNavigation';
+import { structuralParent } from '../../app/routes';
+import { useArticle } from '../research-v2/useV2';
+import '../research-v2/research.css';
 import './reports.css';
 
 /**
@@ -19,12 +24,13 @@ import './reports.css';
 export function ReportPage() {
   const { cityId = '' } = useParams();
   const city = getCity(cityId);
+  const location = useLocation();
+  const navigate = usePageNavigate();
+  const [activeSection, setActiveSection] = useState('abstract');
+  const onEscape = () => navigate(structuralParent(location.pathname, location.search) ?? ROUTES.reports);
   /** 城市综合报告（A9）：它不属于研究树，因此单独由 catalog 声明（§29）。 */
   const reportId = reportArticleId(cityId);
   const articleState = useArticle(cityId, reportId);
-  const sourcesState = useSources(cityId);
-  const allSources = sourcesState.status === 'ready' ? sourcesState.data : [];
-
   if (!city) {
     /**
      * §29：报告入口包含「城市正式报告」与「辽宁六城综合报告」两级。
@@ -33,36 +39,32 @@ export function ReportPage() {
      */
     const isProvinceReport = cityId !== '' && ROUTES.cityReport(cityId) === ROUTES.provinceReport;
     return (
-      <main className="report">
+      <WorkbenchLayout className="report-workbench" resetKey={cityId} sidebarLabel="报告章节" railLabel="报告依据" sidebar={() => null} onEscape={onEscape}><WorkbenchMain>
         <div className="report__body">
           <p className="report__meta">{isProvinceReport ? '综合 · 报告' : '报告'}</p>
           <h1 className="report__title">{isProvinceReport ? '辽宁六城综合研究' : '报告目录里没有这个入口'}</h1>
           <p className="report__empty">{isProvinceReport ? '研究内容待接入' : '请从报告目录进入。'}</p>
           <Link className="ag-button" to={ROUTES.reports}>返回报告目录</Link>
         </div>
-      </main>
+      </WorkbenchMain><WorkbenchRail>{null}</WorkbenchRail></WorkbenchLayout>
     );
   }
 
   if (articleState.status !== 'ready') {
     return (
-      <main className="report">
+      <WorkbenchLayout className="report-workbench" resetKey={cityId} sidebarLabel="报告章节" railLabel="报告依据" sidebar={() => null} onEscape={onEscape}><WorkbenchMain>
         <div className="report__body">
           <header className="report__head">
             <p className="report__meta">{city.shortName} · 报告</p>
             <h1 className="report__title">{city.shortName}</h1>
           </header>
-          <p className="report__empty">研究内容待接入</p>
+          <p className="report__empty" role={articleState.status === 'error' ? 'alert' : 'status'}>{articleState.status === 'loading' ? '研究正文载入中' : '研究正文读取失败；不展示占位内容。'}</p>
         </div>
-      </main>
+      </WorkbenchMain><WorkbenchRail>{null}</WorkbenchRail></WorkbenchLayout>
     );
   }
 
   const article = articleState.data;
-  const sources = article.source_ids
-    .map((id) => allSources.find((source) => source.source_id === id))
-    .filter((source): source is (typeof allSources)[number] => Boolean(source));
-
   /**
    * 图 / 表编号（V5 §35）：报告按研究自己声明的顺序编号，
    * 正文里的文件名因此可以换成「表 2」「图 1」，既不泄漏文件名又能对上号（§38）。
@@ -97,7 +99,16 @@ export function ReportPage() {
   const refOrder = (ref: string | undefined) => Number((ref ?? '').replace(/\D/g, '')) || 1;
 
   return (
-    <main className="report">
+    <WorkbenchLayout className="report-workbench" resetKey={cityId} sidebarLabel="报告章节" railLabel="报告依据" onEscape={onEscape}
+      sidebar={close => <ol className="workbench__menu">
+        {[{ id: 'abstract', title: '摘要' }, ...article.sections.map(section => ({ id: `section-${section.number}`, title: section.title })),
+          ...(looseFigures.size ? [{ id: 'report-figures', title: '图表' }] : []), ...(looseTables.size ? [{ id: 'report-tables', title: '数据表' }] : []),
+          ...(showConclusion ? [{ id: 'report-conclusion', title: '结论' }] : []), ...(showMethods ? [{ id: 'report-methods', title: '方法' }] : []),
+          ...(showLimitations && article.limitations.length ? [{ id: 'report-limitations', title: '研究限制' }] : [])].map(section => <li key={section.id}>
+            <button type="button" aria-pressed={activeSection === section.id} onClick={() => { setActiveSection(section.id); const node = document.getElementById(section.id); node?.scrollIntoView?.({ block: 'start' }); const heading = node?.querySelector<HTMLElement>('h2'); heading?.setAttribute('tabindex', '-1'); heading?.focus({ preventScroll: true }); close(); }}>{section.title}</button>
+          </li>)}
+      </ol>}
+    ><WorkbenchMain>
       <div className="report__body">
         <header className="report__head">
           <p className="report__meta">{reportId} · {city.shortName} · 综合研究</p>
@@ -105,7 +116,7 @@ export function ReportPage() {
           <p className="report__summary">{renderInline(article.frontend_summary, 'summary')}</p>
         </header>
 
-        <section className="report__section">
+        <section className="report__section" id="abstract">
           <h2 className="report__section-title">摘要</h2>
           <MarkdownBlocks source={article.abstract} refs={assetRefs} />
         </section>
@@ -128,7 +139,7 @@ export function ReportPage() {
         ))}
 
         {looseFigures.size > 0 && (
-          <section className="report__section">
+          <section className="report__section" id="report-figures">
             <h2 className="report__section-title">图表</h2>
             {article.figures.filter((figure) => looseFigures.has(figure.file)).map((figure) => (
               <div className="report__asset-wide" key={figure.file}>
@@ -139,7 +150,7 @@ export function ReportPage() {
         )}
 
         {looseTables.size > 0 && (
-          <section className="report__section">
+          <section className="report__section" id="report-tables">
             <h2 className="report__section-title">数据表</h2>
             {article.tables.filter((table) => looseTables.has(table.file)).map((table) => (
               <div className="report__asset-wide" key={table.file}>
@@ -150,21 +161,21 @@ export function ReportPage() {
         )}
 
         {showConclusion && (
-          <section className="report__section">
+          <section className="report__section" id="report-conclusion">
             <h2 className="report__section-title">结论</h2>
             <MarkdownBlocks source={article.conclusion} refs={assetRefs} />
           </section>
         )}
 
         {showMethods && (
-          <section className="report__section">
+          <section className="report__section" id="report-methods">
             <h2 className="report__section-title">方法</h2>
             {article.methods.map((method, index) => <MarkdownBlocks key={index} source={method.summary} refs={assetRefs} />)}
           </section>
         )}
 
         {showLimitations && article.limitations.length > 0 && (
-          <section className="report__section">
+          <section className="report__section" id="report-limitations">
             <h2 className="report__section-title">研究限制</h2>
             <ul className="report__list">
               {article.limitations.map((item, index) => (
@@ -174,8 +185,8 @@ export function ReportPage() {
           </section>
         )}
 
-        <ResearchSources sources={sources} />
+
       </div>
-    </main>
+    </WorkbenchMain><WorkbenchRail><ModuleEvidenceRail cityId={cityId} moduleId={reportId} title={article.title} article={article} /></WorkbenchRail></WorkbenchLayout>
   );
 }

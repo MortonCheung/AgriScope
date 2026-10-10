@@ -3,8 +3,9 @@ import { pointStatusLabel } from '../../domain/research/catalog/labels';
 import { readExplorer } from '../../domain/research/runtime/catalog';
 import { columnLabel, columnMeta, formatMetricValue } from '../../domain/research/v2/metrics';
 import { filterRows } from '../../domain/research/v2/selectors';
-import type { V2Source } from '../../domain/research/v2/types';
+import type { V2Article, V2Source } from '../../domain/research/v2/types';
 import { useArticle, useSources, useTable } from './useV2';
+import './city-research.css';
 import { countStatuses } from './CityResearchPreview';
 import { MarkdownBlocks } from './blocks';
 import { renderInline, stripListPrefix } from './markdown';
@@ -106,20 +107,10 @@ export function EvidenceRail({ cityId, topic, point }: {
 }) {
   /** hook 位置固定：无论选中方向还是研究点，都读同一篇文章与同一份来源表。 */
   const articleState = useArticle(cityId, topic?.articleId ?? null);
-  const sourcesState = useSources(cityId);
 
   if (!topic) return null;
 
   const article = articleState.status === 'ready' ? articleState.data : null;
-  const allSources = sourcesState.status === 'ready' ? sourcesState.data : [];
-  const sources = article
-    ? article.source_ids
-      .map((id) => allSources.find((source) => source.source_id === id))
-      .filter((source): source is V2Source => Boolean(source))
-    : [];
-  const methods = article?.methods ?? [];
-  const limitations = article?.limitations ?? [];
-  const methodology = article ? readExplorer(article)?.methodology ?? '' : '';
   const counts = point ? null : countStatuses(topic);
 
   return (
@@ -139,6 +130,31 @@ export function EvidenceRail({ cityId, topic, point }: {
 
       {point && <PointStatistics cityId={cityId} point={point} />}
 
+      <ArticleMetadata cityId={cityId} article={article} />
+    </div>
+  );
+}
+
+/** 无策展树城市同样有正式文章与来源，沿用相同证据栏。 */
+export function ModuleEvidenceRail({ cityId, moduleId, title, article }: { cityId: string; moduleId: string | null; title?: string; article: V2Article | null }) {
+  return <div className="evidence-rail">
+    <header className="evidence-rail__ident">
+      {moduleId && <p className="evidence-rail__id">{moduleId}</p>}
+      {title && <p className="evidence-rail__title">{title}</p>}
+    </header>
+    <ArticleMetadata cityId={cityId} article={article} />
+  </div>;
+}
+
+function ArticleMetadata({ cityId, article }: { cityId: string; article: V2Article | null }) {
+  const sourcesState = useSources(cityId);
+  const allSources = sourcesState.status === 'ready' ? sourcesState.data : [];
+  const sources = article ? article.source_ids.map(id => allSources.find(source => source.source_id === id)).filter((source): source is V2Source => Boolean(source)) : [];
+  const methods = article?.methods ?? [];
+  const explorer = article ? readExplorer(article) : null;
+  const limitations = [...new Set([...(article?.limitations ?? []), ...(explorer?.limitations ?? [])])];
+  const methodology = explorer?.methodology ?? '';
+  return <>
       {sources.length > 0 && (
         <section className="evidence-rail__block">
           <h2 className="evidence-rail__label">来源</h2>
@@ -154,6 +170,8 @@ export function EvidenceRail({ cityId, topic, point }: {
                       : source.title}
                   </span>
                   {typeLabel && <span className="evidence-rail__type">{typeLabel}</span>}
+                  {source.data_period && <span className="evidence-rail__type">{source.data_period}</span>}
+                  {source.source_grade && <span className="evidence-rail__type">等级 {source.source_grade}</span>}
                 </li>
               );
             })}
@@ -189,6 +207,5 @@ export function EvidenceRail({ cityId, topic, point }: {
           </ul>
         </section>
       )}
-    </div>
-  );
+  </>;
 }

@@ -8,8 +8,8 @@ import { create } from 'zustand';
  * 需要它来标记那一次请求；现在路由先切，相机由 focusCityId / mode 直接推导，
  * 一次性令牌已无存在必要。
  *
- * 本轮新增 `cameraMoving`：城市 → 省域的退出协调器要等相机真正回到 provinceView
- * 并停稳（§25）。它由 CameraRig 的 setLookAt / onRest 维护，只读消费。
+ * `cameraMoving` 由 CameraRig 的 setLookAt Promise 维护，
+ * 为 demand Canvas 请求有限渲染帧；它不再控制路由导航。
  */
 export type SpatialStageMode = 'opening' | 'province' | 'city' | 'none';
 

@@ -13,6 +13,7 @@ import {
   type PlanningClimateMetric, type PlanningDraft, type PlanningResult, type PlanningSession, type SensitivityLine,
 } from '../../domain/decision/planning';
 import { EvidenceDrawer, type EvidenceContext } from '../evidence/EvidenceDrawer';
+import { WorkbenchMain, WorkbenchRail } from '../../components/workbench/WorkbenchLayout';
 import './planning.css';
 
 export interface PlanningWorkbenchProps { cityId: string }
@@ -91,13 +92,9 @@ function PlanningCity({ cityId, observation, observationStatus, observationError
     if (!errors.crop && result && lines) setSession(previous => updatePlanningDraft(previous, crop, draft, true));
   };
 
-  return <div className="planning-workbench">
-    <header className="planning-header">
-      <p className="ag-label">{city.shortName} · 经营工具</p>
-      <h1 className="ag-hero">投入多少，怎样保本。</h1>
-      <p className="decision-note">填写自己的经营条件，核算收入、成本与盈亏。数字保持为空，直到你提供实际计划。</p>
-    </header>
-    <div className="planning-main">
+  return <><WorkbenchMain label="经营计划操作"><div className="planning-workbench">
+    <h1 className="workbench__title">经营计划</h1>
+    <p className="decision-note">填写自己的条件，核算收入、成本与盈亏。</p>
       <form className="planning-form" noValidate onSubmit={event => { event.preventDefault(); calculate(); }} aria-label={`${city.shortName}经营条件`}>
         <h2 className="ag-title">我的条件</h2>
         <label className="planning-field" htmlFor={`${id}-crop`}><span>计划作物</span>
@@ -121,17 +118,7 @@ function PlanningCity({ cityId, observation, observationStatus, observationError
         {submitted && errors.calculation && <p className="planning-error" role="alert">{errors.calculation}</p>}
         <button type="submit" className="ag-button ag-button--primary">核算我的计划</button>
       </form>
-      <section className="planning-result" aria-label="经营核算结果" aria-live="polite">
-        <p className="ag-label">基于用户设定条件的情景结果</p>
-        {showResult ? <>
-          <h2 className="ag-title">{crop} · {number(validation.inputs!.areaMu)} 亩</h2>
-          <ResultReadings result={result}/>
-          <p className="decision-note">可销售数量 {number(result.soldKg)} kg。保本读数已计入销售比例；“无法计算”表示当前价格、亩产或销售比例为零。</p>
-          <button type="button" className="ag-button" onClick={() => setSession(previous => ({ ...previous, baseline: { crop, draft: { ...draft } } }))}>保存为方案 A</button>
-        </> : <div className="planning-empty"><h2 className="ag-title">从你的实际条件开始</h2><p className="decision-note">补全作物与五项条件后生成结果。观测面积不会自动成为你的亩产、成本或销售价格。</p></div>}
-        <p className="planning-boundary">这组结果来自公式核算，不保证未来价格、产量或收益。敏感性变化幅度由工具设定，不代表事件发生概率。</p>
-      </section>
-    </div>
+
     {showResult && <section className="planning-section" aria-labelledby={`${id}-sensitivity`}>
       <header className="decision-section-head"><p className="ag-label">条件变化</p><h2 className="ag-title" id={`${id}-sensitivity`}>价格、亩产和成本，谁会改变盈亏</h2><p className="decision-note">分别将一项条件调整 −20% 至 +20%，其他条件保持不变。</p></header>
       <SensitivityChart lines={lines}/>
@@ -141,7 +128,7 @@ function PlanningCity({ cityId, observation, observationStatus, observationError
       <Comparison baselineCrop={session.baseline.crop} baselineDraft={session.baseline.draft} baseline={baselineResult} crop={crop} draft={draft} current={showResult ? result : null}/>
       <button type="button" className="ag-button" onClick={() => setSession(previous => ({ ...previous, baseline: null }))}>移除方案 A</button>
     </section>}
-    <section className="planning-section" aria-labelledby={`${id}-observations`}>
+    <details className="planning-background"><summary>本城生产与历史气候</summary><section className="planning-section" aria-labelledby={`${id}-observations`}>
       <header className="decision-section-head"><p className="ag-label">已有观测</p><h2 className="ag-title" id={`${id}-observations`}>{city.shortName}的农业结构与历史气候</h2><p className="decision-note">用于了解本地生产与气候背景，独立于上方用户情景。</p></header>
       {observationStatus === 'loading' ? <p role="status">农业观测载入中</p> : observationStatus === 'error' ? <p role="alert">{observationError} 仍可填写自定义作物完成核算。</p> : !observation ? <p>该城市暂无可用农业观测。</p> : <>
         <div className="planning-observations">
@@ -154,9 +141,22 @@ function PlanningCity({ cityId, observation, observationStatus, observationError
           <TransitionLink className="ag-button" to={cityContextUrl(ROUTES.city(cityId), cityId)}>进入{city.shortName}正式研究 →</TransitionLink>
         </div>
       </>}
-    </section>
+    </section></details>
+    </div></WorkbenchMain>
+    <WorkbenchRail>
+      <section className="planning-result" aria-label="经营核算结果" aria-live="polite">
+        <p className="ag-label">{city.shortName}</p><p className="ag-label">基于用户设定条件的情景结果</p>
+        {showResult ? <>
+          <h2 className="ag-title">{crop} · {number(validation.inputs!.areaMu)} 亩</h2>
+          <ResultReadings result={result}/>
+          <p className="decision-note">可销售数量 {number(result.soldKg)} kg。保本读数已计入销售比例；“无法计算”表示当前价格、亩产或销售比例为零。</p>
+          <button type="button" className="ag-button" onClick={() => setSession(previous => ({ ...previous, baseline: { crop, draft: { ...draft } } }))}>保存为方案 A</button>
+        </> : <div className="planning-empty"><h2 className="ag-title">从你的实际条件开始</h2><p className="decision-note">补全作物与五项条件后生成结果。观测面积不会自动成为你的亩产、成本或销售价格。</p></div>}
+        <p className="planning-boundary">这组结果来自公式核算，不保证未来价格、产量或收益。敏感性变化幅度由工具设定，不代表事件发生概率。</p>
+      </section>
+    </WorkbenchRail>
     <EvidenceDrawer open={drawer.open} onClose={() => setDrawer(previous => ({ ...previous, open: false }))} context={drawer.context}/>
-  </div>;
+  </>;
 }
 
 function ResultReadings({ result }: { result: PlanningResult }) {

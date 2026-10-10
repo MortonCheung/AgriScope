@@ -68,4 +68,21 @@ describe('Header和历史控件生命周期', () => {
     open({ ...current, key: 'unobserved' });
     expect(button('后退').disabled).toBe(true);
   });
+
+  it('菜单消费Escape且恢复焦点，页面不会同时返回', () => {
+    open('/cities/shenyang/research/A2.2');
+    const toggle = button('菜单');
+    let pageEscapes = 0;
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape' && !event.defaultPrevented) pageEscapes++; };
+    window.addEventListener('keydown', onKey);
+    fireEvent.click(toggle);
+    fireEvent.keyDown(toggle, { key: 'Escape', cancelable: true });
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(toggle);
+    expect(pageEscapes).toBe(0);
+    expect(screen.getByTestId('location').textContent).toBe('/cities/shenyang/research/A2.2');
+    fireEvent.keyDown(toggle, { key: 'Escape', cancelable: true });
+    expect(pageEscapes).toBe(1);
+    window.removeEventListener('keydown', onKey);
+  });
 });

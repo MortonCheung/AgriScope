@@ -24,7 +24,7 @@ function renderAt(url: string) {
 }
 
 const shellChildren = (container: HTMLElement): string[] =>
-  [...(container.querySelector('.city-research__body')?.children ?? [])].map((element) => element.className);
+  [...(container.querySelector('.city-research__body')?.children ?? [])].map((element) => [...element.classList].find(name => name.startsWith('city-research__')) ?? '');
 
 describe('交互研究的中栏是一个网格子项', () => {
   beforeEach(() => {

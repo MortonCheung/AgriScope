@@ -38,4 +38,19 @@ describe('route transition direction', () => {
     expect(isWorkspaceNavigation('/cities/shenyang/research/A2', '/cities/dandong/research/A2')).toBe(false);
     expect(isWorkspaceNavigation('/liaoning', '/cities/shenyang/decision')).toBe(false);
   });
+
+  it.each(['shenyang','tieling','chaoyang','jinzhou','dandong','dalian'])('正式%s报告与本城工作区双向无整页转场', city => {
+    const report = `/reports/${city}`;
+    for (const path of [`/cities/${city}`, `/cities/${city}/decision`, `/cities/${city}/research/A2`]) {
+      expect(isWorkspaceNavigation(report, path)).toBe(true);
+      expect(isWorkspaceNavigation(path, report)).toBe(true);
+    }
+    expect(isWorkspaceNavigation(report, '/reports')).toBe(false);
+    expect(isWorkspaceNavigation(report, '/reports/liaoning')).toBe(false);
+    expect(isWorkspaceNavigation(report, '/cities/unknown/decision')).toBe(false);
+  });
+  it('城市目录与未知城市不冒充同城工作台', () => {
+    expect(isWorkspaceNavigation('/reports/shenyang','/cities/dandong/decision')).toBe(false);
+    expect(isWorkspaceNavigation('/reports/unknown','/cities/unknown/decision')).toBe(false);
+  });
 });

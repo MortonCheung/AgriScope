@@ -14,7 +14,6 @@ const load = (loader: () => Promise<Record<string, unknown>>, name: string) => a
 const openingPage = load(() => import('../features/opening/OpeningPage'), 'OpeningPage');
 const researchHomePage = load(() => import('../features/liaoning/LiaoningPage'), 'LiaoningPage');
 const cityResearchPage = load(() => import('../features/research-v2/CityResearchPage'), 'CityResearchPage');
-const researchRoutePage = load(() => import('../features/research-v2/ResearchRoutePage'), 'ResearchRoutePage');
 const researchCenterPage = load(() => import('../features/research-center/ResearchCenterPage'), 'ResearchCenterPage');
 const reportsIndexPage = load(() => import('../features/report/ReportsIndexPage'), 'ReportsIndexPage');
 const cityReportPage = load(() => import('../features/report/ReportPage'), 'ReportPage');
@@ -73,7 +72,7 @@ const router = createBrowserRouter(createRoutesFromElements(
     <Route path={ROUTES.decisionCenter} element={<DecisionCenterRedirect />} />
     <Route path="/cities/:cityId" lazy={cityResearchPage} />
     <Route path="/cities/:cityId/decision" lazy={decisionPage} />
-    <Route path="/cities/:cityId/research/:researchId" lazy={researchRoutePage} />
+    <Route path="/cities/:cityId/research/:researchId" lazy={cityResearchPage} />
     <Route path={ROUTES.reports} lazy={reportsIndexPage} />
     <Route path="/reports/:cityId" lazy={cityReportPage} />
     <Route path={ROUTES.scenario} lazy={scenarioPage} />
