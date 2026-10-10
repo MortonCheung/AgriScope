@@ -45,7 +45,7 @@ export function DecisionCenter({ cityId, savedRequest, onAdjustConditions }: {
   const [drawer, setDrawer] = useState<{ open: boolean; context: EvidenceContext }>({ open: false, context: { cityId } });
 
   const saved = savedRequest && savedRequest.contract_version === '1' ? savedRequest : null;
-  const { capabilities, daily, short, longRows, compare, marketAsOf, activeCrop } = useDecisionCenter(cityId, crop, saved);
+  const { capabilities, daily, short, longRows, compare, marketAsOf, activeCrop, longSupported } = useDecisionCenter(cityId, crop, saved);
 
   const supportedCrops = capabilities.data?.crops ?? [];
   const activeDaily = dailyRowFor(daily.data, activeCrop);
@@ -74,17 +74,13 @@ export function DecisionCenter({ cityId, savedRequest, onAdjustConditions }: {
 
   const capability = capabilities.data;
   if (!capability) return null;
-  if (!capability.supported || !supportedCrops.length || !marketAsOf) {
+  if (!(capability.features?.short_term_price.supported ?? capability.supported) || !supportedCrops.length || !marketAsOf) {
     return <section className="center-insufficient" role="status">
-      <p className="ag-label">INSUFFICIENT_MARKET_DATA</p>
-      <h1 className="ag-section-title">{city.shortName}的决策数据待接入</h1>
-      <p className="decision-note">{capability.limitation ?? '这个城市暂时没有与沈阳同一价格口径的可用市场数据，因此不提供模型判断，也不做回退估算。'}</p>
-      <dl className="decision-detail__facts">
-        <div><dt>能力层级</dt><dd>{capability.tier}</dd></div>
-        <div><dt>市场数据日期</dt><dd>{capability.market_as_of ?? '未就绪'}</dd></div>
-        <div><dt>模型版本</dt><dd>{capability.model_version}</dd></div>
-      </dl>
-      <p className="decision-actions"><TransitionLink to={ROUTES.city(cityId)} className="ag-button">返回{city.shortName}研究</TransitionLink></p>
+      <p className="ag-label">价格参考 · 数据范围</p>
+      <h1 className="ag-section-title">{city.shortName}暂未提供短期价格参考</h1>
+      <p className="decision-note">{capability.limitation ?? '这个城市尚未发布可用的市场价格模型。'}</p>
+      {(capability.features?.break_even.supported || capability.features?.user_scenario.supported) && <p className="decision-note">经营工具可按你填写的亩产、成本与销售条件核算保本和情景盈亏。</p>}
+      <p className="decision-actions"><button type="button" className="ag-button" onClick={onAdjustConditions}>填写经营条件</button><TransitionLink to={ROUTES.city(cityId)} className="ag-button">进入{city.shortName}正式研究 →</TransitionLink></p>
     </section>;
   }
 
@@ -106,7 +102,14 @@ export function DecisionCenter({ cityId, savedRequest, onAdjustConditions }: {
     marketRisk: shortData?.marketRisk ?? null, priceRelWidth: relativeWidth(shortData),
     climateExposure: shortData?.climateExposure ?? null, hri: shortData?.hri ?? null,
     confidence: shortData?.confidence ?? null, priceLow: shortData?.low ?? null, priceHigh: shortData?.high ?? null, unit: UNIT,
-  });
+  }).map(item => ({
+    ...item,
+    ...(item.id === 'concentration' ? {
+      label: '跟风环境强度',
+      why: 'HRI 描述扩种诱因与跟风环境强度，是环境提示，不表示实际生产面积集中程度、农户行为概率或因果关系。',
+    } : {}),
+    ...(cityId !== 'shenyang' ? { researchId: item.researchId.split('.')[0], researchLabel: `${item.researchLabel}（正式研究模块）` } : {}),
+  }));
 
   const anchors = activeDaily
     ? historyAnchors(activeDaily.pricePerKg, [
@@ -131,16 +134,12 @@ export function DecisionCenter({ cityId, savedRequest, onAdjustConditions }: {
 
   return <>
     <header className="center-hero">
-      <p className="ag-label">决策中心 · {city.shortName}</p>
+      <p className="ag-label">价格参考 · {city.shortName}</p>
       <h1 className="ag-hero">现在怎么样，未来会怎样。</h1>
-      <p className="decision-note">数据基准 {marketAsOf} · 模型 {capability.model_version} · 数据版本 {capability.data_version} · 日度快照 {daily.data?.sourceMeta.snapshotHash?.slice(0, 8) ?? '—'}</p>
+      <p className="decision-note">市场数据截至 {marketAsOf}。价格参考用于观察市场变化，经营盈亏请结合自己的投入条件核算。</p>
       <div className="center-selectors">
-        <label>城市<input name="center-city" value={city.shortName} readOnly aria-readonly="true" aria-label="当前城市"/></label>
         <label>作物<select name="center-crop" aria-label="选择作物" value={activeCrop} onChange={(e) => setCrop(e.target.value)}>
           {supportedCrops.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-        </select></label>
-        <label>短期周期<select name="center-short-horizon" aria-label="选择短期周期" value={shortHorizon} onChange={(e) => setShortHorizon(Number(e.target.value))}>
-          {SHORT_HORIZONS.map((h) => <option key={h} value={h}>{h} 天</option>)}
         </select></label>
       </div>
     </header>
@@ -156,24 +155,24 @@ export function DecisionCenter({ cityId, savedRequest, onAdjustConditions }: {
         <div><span className="ag-label">7 日变化</span><strong>{pctText(activeDaily?.change7d)}</strong></div>
         <div><span className="ag-label">30 日变化</span><strong>{pctText(activeDaily?.change30d)}</strong></div>
       </div>
-      <p className="decision-note">判断句由 market_state（分位）/ forecast_direction（中心值 vs 当前价）/ risk_band（市场风险、HRI）/ confidence / evidence_status 经固定模板拼装，不调用在线 LLM。</p>
+      <p className="decision-note">判断综合价格位置、市场风险与数据支持情况。区间是模型情景范围，不代表收益保证。</p>
       <button type="button" className="ag-button" onClick={() => openEvidence('forecast')}>为什么？看这句结论的来源</button>
     </section>
 
     <section className="center-ops" aria-label="操作区">
-      <button type="button" className="ag-button" onClick={onAdjustConditions}>调整条件</button>
-      <TransitionLink to={ROUTES.scenario} className="ag-button">情景模拟</TransitionLink>
+      <button type="button" className="ag-button" onClick={onAdjustConditions}>填写经营条件</button>
+      {cityId === 'shenyang' && <TransitionLink to={ROUTES.scenario} className="ag-button">沈阳暴雨推演</TransitionLink>}
       <button type="button" className="ag-button ag-button--primary" onClick={() => openEvidence('forecast')}>为什么？</button>
     </section>
 
     <div className="center-divider" aria-hidden="true">
       <span className="center-divider__short">短期预测 ──── 7 / 14 / 30</span>
-      <span className="center-divider__long">长期场景 ──── 30 / 60 / 90 / 120 / 150 / 180</span>
+      {longSupported && <span className="center-divider__long">长期场景 ──── 30 / 60 / 90 / 120 / 150 / 180</span>}
     </div>
 
     <section className="center-section" aria-labelledby="center-short-title">
       <header className="decision-section-head">
-        <p className="ag-label">§11 短期预测 · 7 / 14 / 30</p>
+        <p className="ag-label">短期价格 · 7 / 14 / 30 天</p>
         <h2 className="ag-title" id="center-short-title">未来价格参考：中心值与情景区间</h2>
       </header>
       <nav className="center-horizon-tabs" aria-label="短期周期">
@@ -183,15 +182,15 @@ export function DecisionCenter({ cityId, savedRequest, onAdjustConditions }: {
       <ForecastChart anchors={anchors} horizon={shortHorizon} mid={shortData?.mid ?? null} low={shortData?.low ?? null} high={shortData?.high ?? null} unit={UNIT}
         label={`${city.shortName}${activeCrop}历史价格与${shortHorizon}天预测`}/>
       <p className="decision-note">
-        {FORECAST_LABEL[direction]} · 中心 {n2(shortData?.mid)} {UNIT} · 区间 {n2(shortData?.low)}–{n2(shortData?.high)} · 更新 {marketAsOf} · 模型 {capability.model_version} · horizon {shortHorizon} 天 · {EVIDENCE_LABEL[evidence]}
+        {FORECAST_LABEL[direction]} · 中心 {n2(shortData?.mid)} {UNIT} · 区间 {n2(shortData?.low)}–{n2(shortData?.high)} · {shortHorizon} 天 · {EVIDENCE_LABEL[evidence]}
       </p>
       <HorizonSpread unit={UNIT} rows={spreadRows}/>
-      <p className="decision-note">切换 7 / 14 / 30 只更新本区块的图表与读数，不重载整页；区间与中心值都来自对应跨度的真实模型输出。</p>
+      <p className="decision-note">中心值与区间来自所选周期的模型输出。</p>
     </section>
 
-    <section className="center-section center-section--long" aria-labelledby="center-long-title">
+    {longSupported && <section className="center-section center-section--long" aria-labelledby="center-long-title">
       <header className="decision-section-head">
-        <p className="ag-label">§12 长期场景 · 30 / 60 / 90 / 120 / 150 / 180</p>
+        <p className="ag-label">沈阳长期场景 · 探索参考</p>
         <h2 className="ag-title" id="center-long-title">长期上市窗口的行情场景</h2>
         <p className="center-long-fixed">用于种植与上市周期参考，不等同于短期生产预测。</p>
       </header>
@@ -203,15 +202,15 @@ export function DecisionCenter({ cityId, savedRequest, onAdjustConditions }: {
         : longLoading
           ? <div className="decision-plot__empty" role="status">读取长期情景</div>
           : <LongBands rows={longRowList} unit={UNIT} selected={longHorizon} onSelect={setLongHorizon}/>}
-      <p className="decision-note">150 / 180 天为探索性结果（production_status = EXPLORATORY_SCENARIO_ONLY），已降低视觉确定性，不装成精确答案。长期结果只读取预生成快照，不触发训练或采集。</p>
+      <p className="decision-note">长期结果均为探索参考，不能视为经过独立验证的未来行情预测。150 / 180 天的不确定性尤其需要关注。</p>
       <button type="button" className="ag-button" onClick={() => openEvidence('long-horizon', longHorizon)}>为什么？看长期依据</button>
-    </section>
+    </section>}
 
-    <section className="center-section" aria-labelledby="center-compare-title">
+    {longSupported && <section className="center-section" aria-labelledby="center-compare-title">
       <header className="decision-section-head">
-        <p className="ag-label">§13 作物比较</p>
+        <p className="ag-label">长期作物比较 · 探索参考</p>
         <h2 className="ag-title" id="center-compare-title">同一市场环境下，谁更值得关注</h2>
-        <p className="decision-note">结论仅取「{COMPARE_LABELS.join(' / ')}」五个词，由真实档位判定；不做评分、不排名、不推荐具体种什么。</p>
+        <p className="decision-note">「{COMPARE_LABELS.join(' / ')}」描述市场关注程度，不能替代你的种植与销售安排。</p>
       </header>
       {compare.status === 'error'
         ? <p className="decision-note" role="alert">{compare.error}</p>
@@ -219,20 +218,19 @@ export function DecisionCenter({ cityId, savedRequest, onAdjustConditions }: {
           ? <div className="decision-plot__empty" role="status">读取作物长期对比</div>
           : <CompareTable crops={supportedCrops.map((c) => c.id)} compare={compare.data ?? []} daily={daily.data}
               onWhy={(cropId) => setDrawer({ open: true, context: { cityId, crop: cropId, horizon: 90, topic: 'compare' } })}/>}
-    </section>
+    </section>}
 
     <section className="center-section" aria-labelledby="center-risk-title">
       <header className="decision-section-head">
-        <p className="ag-label">§14 风险剖面</p>
+        <p className="ag-label">风险参考</p>
         <h2 className="ag-title" id="center-risk-title">风险不是一个数</h2>
-        <p className="decision-note">横向拆成五个条，每一个都对应一个真实字段；点击展开来源、真实数值与研究链接。</p>
+        <p className="decision-note">从市场波动、历史气候与数据支持分别观察，展开可查看来源与限制。</p>
       </header>
       <RiskProfile items={profile} onWhy={(item) => openEvidence(`risk:${item.id}`)} researchHref={(id) => ROUTES.research(cityId, id)}/>
     </section>
 
     <p className="decision-boundary">
-      决策中心只呈现真实模型与快照结果，不做回退估算。短期（7/14/30）与长期（30–180）语义分区，两者不可混为一谈；
-      情景区间未校准为概率区间，长期结果不能当作短期生产预测使用。
+      价格情景区间未校准为概率区间，不能表示事件发生概率。{longSupported ? '长期结果仅作探索参考。' : ''}经营盈亏需要你提供实际投入与销售条件。
     </p>
 
     <EvidenceDrawer open={drawer.open} onClose={() => setDrawer((previous) => ({ ...previous, open: false }))} context={drawer.context}/>
@@ -271,7 +269,7 @@ function CompareTable({ crops, compare, daily, onWhy }: {
 }) {
   return <div className="center-compare" role="group" aria-label="作物比较">
     <div className="center-compare__head" aria-hidden="true">
-      <span>作物</span><span>市场环境</span><span>价格风险</span><span>数据支持</span><span>生产集中风险</span><span>长期不确定性</span><span>结论</span>
+      <span>作物</span><span>市场环境</span><span>价格风险</span><span>数据支持</span><span>跟风环境强度</span><span>长期不确定性</span><span>结论</span>
     </div>
     <ul className="center-compare__rows">
       {crops.map((cropName) => {

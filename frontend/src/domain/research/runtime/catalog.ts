@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { V2Article, V2Catalog, V2CatalogCity, V2CatalogModule } from '../v2/types';
 import { V2Repository } from '../v2/repository';
 import type { TopicExplorer } from '../catalog/types';
+import { columnMeta } from '../v2/metrics';
 
 /**
  * 运行时研究目录（Frontend V3 §6.3/§6.5）。
@@ -97,8 +98,8 @@ export function explorerConfigs(article: V2Article, moduleId: string): TopicExpl
       const columns = [item.group, item.facet].filter((value): value is string => Boolean(value));
       return {
         id: `${moduleId}.${item.id ?? index + 1}`,
-        title: `研究侧序列 ${index + 1}`,
-        note: `列：x=${item.x} · y=${item.y}${item.group ? ` · group=${item.group}` : ''}${item.facet ? ` · facet=${item.facet}` : ''}`,
+        title: `${columnMeta(item.y)?.label ?? '观测指标'} · 按${columnMeta(item.x)?.label ?? '类别'}`,
+        note: '数值来自已发布研究统计表，按原统计口径展示。',
         table: item.table,
         filter: {},
         selectors: columns,

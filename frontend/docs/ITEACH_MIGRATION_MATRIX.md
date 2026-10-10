@@ -108,3 +108,14 @@
 正式契约的适配器，仍被 demo/mock provider 与测试使用）、`public/decision/legacy-v2/**`（决策兼容
 样例）、`public/research/shenyang/**`（唯一沈阳研究兼容 schema）、`src/app/routes.ts` 的
 `legacyCityReport` / `legacyRainstorm` 重定向别名、以及 `LEGACY_FALLBACK` 状态机。
+
+## V4 清理记录（2026-10-10）
+
+用户明确删除讲解模式；源码审计确认它是固定步骤导航/旁白/高亮浮窗，与业务无独立能力。删除前已检索全生产引用：AppShell 的挂载已移除，其他引用仅在自身目录与旧 README 中。
+
+- 删除 `src/features/presentation/GuidedPresentation.tsx`、`GuidedPresentation.test.tsx`、`steps.test.ts`、`guided-presentation.css`、`steps.ts`：功能整体退役，其生命周期测试随已删除产品功能移除；V4 Opening/URL/六城经营测试覆盖新主流程。
+- 删除 `src/app/context/ContextBar.tsx`、`context-bar.css`：AppHeader 已停止挂载；省域城市选择由真实地图和六城选择栏承担，作物/周期在相应决策工具内渐进呈现。
+- 保留 `src/domain/decision/presentation.ts` 与决策视图：名称相似，但属于正式决策业务，不能删除。
+- 保留 Three.js 几何、单 Canvas、研究原文、模型和 runtime 资产；没有数据/模型迁移。
+
+后续以 V4 验收报告中的实际测试数量和浏览器证据为准，旧 V3 数量不是本轮验证。

@@ -62,32 +62,35 @@ function shortRequest(cityId: string, crop: string, horizon: number, asOf: strin
   };
 }
 
-/** 泛型资源 hook：以 key 缓存，切换 key 不清空旧跨度（保留平滑更新）。 */
+/** 资源只在 key 一致时可见；切城不把上一城市结果带入新上下文。 */
 function useResource<T>(key: string | null, factory: () => (signal: AbortSignal) => Promise<T>, cache: Map<string, T>): Resource<T> {
   const factoryRef = useRef(factory);
   factoryRef.current = factory;
-  const [state, setState] = useState<Resource<T>>(() => {
-    if (!key) return { status: 'idle' };
+  const [state, setState] = useState<Resource<T> & { key: string | null }>(() => {
+    if (!key) return { key, status: 'idle' };
     const hit = cache.get(key);
-    return hit === undefined ? { status: 'loading' } : { status: 'ready', data: hit };
+    return hit === undefined ? { key, status: 'loading' } : { key, status: 'ready', data: hit };
   });
   useEffect(() => {
     if (!key) return undefined;
     const hit = cache.get(key);
-    if (hit !== undefined) { setState({ status: 'ready', data: hit }); return undefined; }
+    if (hit !== undefined) { setState({ key, status: 'ready', data: hit }); return undefined; }
     const controller = new AbortController();
     let alive = true;
-    setState({ status: 'loading' });
+    setState({ key, status: 'loading' });
     factoryRef.current()(controller.signal)
-      .then((data) => { if (!alive) return; cache.set(key, data); setState({ status: 'ready', data }); })
+      .then((data) => { if (!alive) return; cache.set(key, data); setState({ key, status: 'ready', data }); })
       .catch((error: unknown) => {
         if (!alive || controller.signal.aborted) return;
-        setState({ status: 'error', error: error instanceof Error ? error.message : '数据暂时无法加载。' });
+        setState({ key, status: 'error', error: error instanceof Error ? error.message : '数据暂时无法加载。' });
       });
     return () => { alive = false; controller.abort(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
-  return state;
+  if (!key) return { status: 'idle' };
+  if (state.key === key) return state;
+  const cached = cache.get(key);
+  return cached === undefined ? { status: 'loading' } : { status: 'ready', data: cached };
 }
 
 export interface DecisionCenterData {
@@ -98,6 +101,7 @@ export interface DecisionCenterData {
   compare: Resource<CompareRow[]>;
   marketAsOf: string | null;
   activeCrop: string;
+  longSupported: boolean;
 }
 
 function toShortRow(result: { candidates: { crop: string; price: { base: number | null; low: number | null; high: number | null; is_calibrated_interval: boolean }; risks: { hri: number | null; market_risk: number | null; climate_exposure: number | null }; confidence: { score: number | null }; market_context?: { range_status: string } }[] }, crop: string, horizon: number): ShortRow {
@@ -121,12 +125,14 @@ export function useDecisionCenter(cityId: string, crop: string, saved: FinalDeci
   }).current;
 
   const capabilities = useResource<DecisionCapability>(cityId || null, () => (signal) => getDecisionProvider().capabilities!(cityId, { signal }), caches.caps);
-  const daily = useResource<DailySnapshot>(cityId || null, () => (signal) => getDailyProvider().latest(cityId, { signal }), caches.daily);
+  const daily = useResource<DailySnapshot>(cityId === 'shenyang' ? cityId : null, () => (signal) => getDailyProvider().latest(cityId, { signal }), caches.daily);
 
   const marketAsOf = capabilities.data?.market_as_of ?? daily.data?.latestDataDate ?? null;
-  const activeCrop = crop || capabilities.data?.crops[0]?.id || '';
-  const supported = capabilities.data?.supported === true && Boolean(activeCrop);
-  const shortFor = (horizon: number) => supported && marketAsOf
+  const cap = capabilities.data;
+  const activeCrop = cap?.crops.some(item => item.id === crop) ? crop : cap?.crops[0]?.id || '';
+  const supported = (cap?.features?.short_term_price.supported ?? cap?.supported) === true && Boolean(activeCrop);
+  const shortFeature = cap?.features?.short_term_price;
+  const shortFor = (horizon: number) => supported && marketAsOf && (!shortFeature || shortFeature.horizons.includes(horizon) && shortFeature.crop_ids.includes(activeCrop))
     ? `short:${cityId}:${activeCrop}:${horizon}:${marketAsOf}`
     : null;
   const shortLoad = (horizon: number) => (signal: AbortSignal) => getDecisionProvider()
@@ -139,7 +145,10 @@ export function useDecisionCenter(cityId: string, crop: string, saved: FinalDeci
     30: useResource<ShortRow>(shortFor(30), () => shortLoad(30), caches.short),
   };
 
-  const longFor = (horizon: number) => supported ? `long:${cityId}:${activeCrop}:${horizon}` : null;
+  const longFeature = cap?.features?.long_horizon_scenario;
+  // 无新合同的旧 Provider 仅沿用沈阳；绝不由短期 supported 推断朝阳长期能力。
+  const longSupported = cityId === 'shenyang' && (longFeature ? longFeature.supported && longFeature.crop_ids.includes(activeCrop) : supported);
+  const longFor = (horizon: number) => longSupported && (!longFeature || longFeature.horizons.includes(horizon)) ? `long:${cityId}:${activeCrop}:${horizon}` : null;
   const longLoad = (horizon: number) => (signal: AbortSignal) => getLongHorizonProvider()
     .forecast({ cityId, crop: activeCrop, horizonDays: horizon }, { signal })
     .then((entry) => ({
@@ -157,12 +166,12 @@ export function useDecisionCenter(cityId: string, crop: string, saved: FinalDeci
   };
 
   const compare = useResource<CompareRow[]>(
-    capabilities.data?.supported && capabilities.data.crops.length ? `compare:${cityId}:${LONG_COMPARE_HORIZON}` : null,
+    longSupported && (!longFeature || longFeature.horizons.includes(LONG_COMPARE_HORIZON)) && cap?.crops.length ? `compare:${cityId}:${LONG_COMPARE_HORIZON}` : null,
     () => (signal) => getLongHorizonDecisionProvider().decision({
       contract_version: '2',
       user_context: {
         city_id: cityId, area_mu: REFERENCE_AREA_MU, budget_cny: REFERENCE_BUDGET_CNY, risk_preference: 'balanced',
-        crop_preferences: capabilities.data!.crops.map((item) => item.id), actual_inputs: {},
+        crop_preferences: capabilities.data!.crops.filter(item => !longFeature || longFeature.crop_ids.includes(item.id)).map((item) => item.id), actual_inputs: {},
         market_context: { expected_harvest_horizon_days: LONG_COMPARE_HORIZON },
       },
       input_source: { kind: 'structured' },
@@ -176,7 +185,7 @@ export function useDecisionCenter(cityId: string, crop: string, saved: FinalDeci
     caches.compare,
   );
 
-  return { capabilities, daily, short, longRows, compare, marketAsOf, activeCrop };
+  return { capabilities, daily, short, longRows, compare, marketAsOf, activeCrop, longSupported };
 }
 
 export function dailyRowFor(snapshot: DailySnapshot | undefined, crop: string) {

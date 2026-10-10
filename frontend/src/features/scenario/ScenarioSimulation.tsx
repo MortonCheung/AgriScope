@@ -40,7 +40,7 @@ const STATUS_LABEL: Record<string, string> = {
 export function ScenarioSimulation() {
   const [params, setParams] = useSearchParams();
   const contextCity = useAppContext((state) => state.cityId);
-  const cityId = params.get('city') ?? contextCity;
+  const cityId = params.get('city') ?? contextCity ?? '';
   const city = getCity(cityId);
   const simulation = useScenarioSimulation(cityId, params.get('crop') ?? undefined);
   const daily = useDaily(cityId);

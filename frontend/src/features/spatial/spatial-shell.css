@@ -10,7 +10,8 @@
 .spatial-shell__canvas:not([data-visible]) { opacity: 0; pointer-events: none; }
 .spatial-shell__canvas canvas { display: block; width: 100% !important; height: 100% !important; touch-action: none; }
 
-.spatial-shell__dom { position: relative; z-index: 1; }
+.spatial-shell__dom { position: relative; z-index: 1; pointer-events:none; }
+.spatial-shell__dom main:not(.liaoning-page):not(.opening) { pointer-events:auto; }
 
 /*
   省域 → 城市的纸面展开（本轮 §25）。
@@ -102,3 +103,12 @@
 }
 /* 地图侧 hover：与右下城市入口共用同一个状态，只加深文字，不再画下划线（V3 §8/§46） */
 .liaoning-label.is-active { color: var(--ag-ink); }
+
+/* 手机共用地图舞台，开场末帧与省域保持位置和投影尺寸一致。 */
+@media (max-width: 900px) {
+  .spatial-shell[data-stage-mode='opening'] .spatial-shell__canvas,
+  .spatial-shell[data-stage-mode='province'] .spatial-shell__canvas { top: var(--ag-nav-height); bottom: auto; height: 43dvh; }
+}
+
+.liaoning-map-fallback { position:absolute; left:50%; top:40%; transform:translate(-50%,-50%); max-width:380px; padding:24px; background:var(--ag-paper); color:var(--ag-ink-soft); font-size:14px; pointer-events:auto; z-index:5; }
+.liaoning-map-fallback .ag-button { margin-top:16px; }

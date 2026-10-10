@@ -1,4 +1,4 @@
-import type { DecisionCandidate, DecisionCapability, DecisionProvider, DecisionRequest, DecisionResult, StressScenario } from '../../domain/decision/types';
+import { DECISION_FEATURE_IDS, type DecisionCandidate, type DecisionCapability, type DecisionProvider, type DecisionRequest, type DecisionResult, type StressScenario } from '../../domain/decision/types';
 import { parseDecisionResult, sameDecisionContext, validateRequest, isDate } from '../../domain/decision/validation';
 import { adaptFinalDecision } from './finalAdapter';
 import { resolveProviderMode } from './providerPolicy';
@@ -14,7 +14,21 @@ async function readApi(endpoint:string,body:unknown|undefined,signal?:AbortSigna
 export function parseCapability(value:unknown,cityId:string):DecisionCapability{
   if(!object(value)||value.city_id!==cityId||typeof value.supported!=='boolean'||typeof value.tier!=='string'||!(value.market_as_of===null||isDate(value.market_as_of))||!Array.isArray(value.crops)||!value.crops.every(c=>object(c)&&typeof c.id==='string'&&c.id&&typeof c.label==='string'&&Array.isArray(c.horizons)&&c.horizons.every(h=>object(h)&&[7,14,30,60,90].includes(Number(h.days))&&typeof h.days==='number'&&['model','scenario_only'].includes(String(h.mode)))))throw new Error('城市决策能力暂时无法确认。');
   if(value.supported&&(!value.market_as_of||value.crops.length===0))throw new Error('城市市场数据日期尚未就绪。');
-  if(typeof value.model_version!=='string'||typeof value.data_version!=='string'||typeof value.code_fingerprint!=='string'||!(value.limitation===null||typeof value.limitation==='string'))throw new Error('城市能力缺少版本信息。');return value as unknown as DecisionCapability;
+  if(typeof value.model_version!=='string'||typeof value.data_version!=='string'||typeof value.code_fingerprint!=='string'||!(value.limitation===null||typeof value.limitation==='string'))throw new Error('城市能力缺少版本信息。');
+  if (value.features !== undefined) {
+    const features = value.features;
+    const strings = (v: unknown) => Array.isArray(v) && v.every(item => typeof item === 'string');
+    if (!object(features) || Object.keys(features).length !== DECISION_FEATURE_IDS.length || !DECISION_FEATURE_IDS.every(key => {
+      const feature = features[key];
+      return object(feature) && typeof feature.supported === 'boolean' && typeof feature.validated_model === 'boolean'
+        && ['VERIFIED_MODEL','OBSERVATIONAL_ANALYSIS','DETERMINISTIC_CALCULATION','USER_ASSUMPTION_SCENARIO','EXPLORATORY_REFERENCE','NOT_SUPPORTED'].includes(String(feature.result_type))
+        && strings(feature.data_sources) && strings(feature.required_inputs) && strings(feature.limitations) && strings(feature.crop_ids)
+        && Array.isArray(feature.horizons) && feature.horizons.every(n => typeof n === 'number' && Number.isInteger(n) && n > 0)
+        && feature.supported === (feature.result_type !== 'NOT_SUPPORTED')
+        && feature.validated_model === (feature.result_type === 'VERIFIED_MODEL');
+    })) throw new Error('城市功能能力格式不完整。');
+  }
+  return value as unknown as DecisionCapability;
 }
 export class HttpDecisionProvider implements DecisionProvider {
   readonly data_mode='api' as const;

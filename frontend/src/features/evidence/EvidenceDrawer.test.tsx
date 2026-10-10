@@ -127,7 +127,7 @@ describe('evidence layer helpers', () => {
   it('maps topics to real modules and hides the entry when no research tree exists', () => {
     expect(resolveModuleId(shenyangCatalog, 'forecast')).toBe('A06');
     expect(resolveModuleId(shenyangCatalog, 'risk:12')).toBe('A01');
-    expect(resolveResearchEntry('shenyang', shenyangCatalog, 'forecast')?.href).toBe('/cities/shenyang/research/A06');
+    expect(resolveResearchEntry('shenyang', shenyangCatalog, 'forecast')?.href).toContain('/cities/shenyang/research/A6?city=shenyang');
     expect(resolveResearchEntry('tieling', shenyangCatalog, 'forecast')).toBeNull();
   });
 });

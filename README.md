@@ -32,13 +32,13 @@
 - **六城研究 / Cross-city / Synthesis**：沈阳、朝阳、锦州、大连、丹东、铁岭六城，以及跨城市比较与
   六城综合专题；逐条给出研究问题、方法、数据与局限。跨城页与综合专题是研究中心的视图，无独立路由。
 - **Evidence Drawer**：推入式证据抽屉，主页面不离开、不跳路由，把每个数字连回研究正文与来源。
-- **讲解模式**：演示导览按步骤高亮；`prefers-reduced-motion` 下只滚动到位、不做入场动画。
+- **空间观察与六城经营**：初始全省概览、连续城市选择、真实生产/历史气候观测、用户条件盈亏核算与敏感性比较。开场沿真实地图完整环绕一周，支持跳过与减少动效。
 - **上市窗口决策**：`POST /api/decision/long-horizon`（契约 v2）。用户给城市、面积、预算、风险偏好、
   作物、实际成本/亩产与预计上市跨度或日期；日期必须精确对应已登记跨度，**不静默选取最近档位**。
 
 ## 仓库结构
 
-- `frontend/`：React 19 + Vite 7 产品前端（三模块 + 证据层 + 讲解模式）。
+- `frontend/`：React 19 + Vite 7 产品前端（空间观察 + 六城经营 + 研究证据层）。
 - `backend/`：唯一 FastAPI 后端（短期 Final、Daily、长期只读推理与决策、研究只读产物）。
 - `pipelines/`
   - `data_foundation/`：raw → processed → model_ready 数据处理与治理；
@@ -117,7 +117,7 @@ python3 pipelines/publishing/publish_runtime.py
 # 前端
 cd frontend
 npm run typecheck          # tsc -b
-npm run test:unit          # vitest run（当前 43 files / 389 tests）
+npm run test:unit          # vitest run（V4：47 files / 517 tests）
 npm test                   # vitest + verify:v2（研究载荷）+ verify:integrity（研究完整性）
 npm run build              # tsc -b + vite build + verify-production-boundary + verify:ui（禁用字样须为 0）
 npm run preview            # 预览 dist
@@ -185,6 +185,8 @@ H / 上市日期由用户输入；没有可信的沈阳日粒度物候，因此*
 `LLM_ABLATION_V2_REPORT.md`、`HYBRID_V2_REPORT.md`、`RC3_TEST_REPORT.md`、`PROJECT_STATUS.md` 为准。
 
 ## 报告与文档索引
+
+前端 V4 的实现、逐阶段验收和浏览器证据见 [V4 设计说明](docs/v4/V4_DESIGN_NOTES.md)、[V4 验收报告](docs/v4/V4_ACCEPTANCE_REPORT.md)、[六城能力矩阵](docs/v4/CITY_DECISION_CAPABILITY_MATRIX.md)。默认从全省观察进入；六城均支持用户条件经营核算，正式短期价格仅沈阳/朝阳，沈阳长期保留探索情景语义。
 
 - 长期目标 / 评估 / 门禁 / 回测：`pipelines/long_horizon/artifacts/v2/`
   （`LONG_HORIZON_V2_TARGET_REPORT.md`、`LONG_HORIZON_V2_EVALUATION_REPORT.md`、

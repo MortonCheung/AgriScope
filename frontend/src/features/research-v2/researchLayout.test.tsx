@@ -24,7 +24,7 @@ function renderAt(url: string) {
 }
 
 const shellChildren = (container: HTMLElement): string[] =>
-  [...(container.querySelector('.research__shell')?.children ?? [])].map((element) => element.className);
+  [...(container.querySelector('.city-research__body')?.children ?? [])].map((element) => element.className);
 
 describe('交互研究的中栏是一个网格子项', () => {
   beforeEach(() => {
@@ -38,21 +38,21 @@ describe('交互研究的中栏是一个网格子项', () => {
 
   it('研究点：三栏依次是 研究树 / 中栏 / 证据栏', () => {
     const { container } = renderAt('/cities/shenyang/research/A2.2');
-    expect(shellChildren(container)).toEqual(['research__tree', 'research__column', 'research__rail']);
+    expect(shellChildren(container)).toEqual(['city-research__drawer-backdrop', 'city-research__sidebar', 'city-research__column', 'city-research__evidence']);
   });
 
   it('方向入口：同样是三栏', () => {
     const { container } = renderAt('/cities/shenyang/research/A2');
-    expect(shellChildren(container)).toEqual(['research__tree', 'research__column', 'research__rail']);
+    expect(shellChildren(container)).toEqual(['city-research__drawer-backdrop', 'city-research__sidebar', 'city-research__column', 'city-research__evidence']);
   });
 
   it('切换条与正文同属中栏，正文不是网格的直接子项', () => {
     const { container } = renderAt('/cities/shenyang/research/A2.2');
-    const column = container.querySelector('.research__column');
-    expect(column?.querySelector('.research__modes')).not.toBeNull();
-    expect(column?.querySelector('.research__stage')).not.toBeNull();
-    expect(container.querySelector('.research__shell > .research__stage')).toBeNull();
-    expect(container.querySelector('.research__shell > .research__modes')).toBeNull();
+    const column = container.querySelector('.city-research__column');
+    expect(column?.querySelector('.city-research__modes')).not.toBeNull();
+    expect(column?.querySelector('.city-research__stage')).not.toBeNull();
+    expect(container.querySelector('.city-research__body > .city-research__stage')).toBeNull();
+    expect(container.querySelector('.city-research__body > .city-research__modes')).toBeNull();
   });
 });
 
@@ -71,17 +71,17 @@ describe('方向页跨窗口 Explorer（§38/§39/§59）', () => {
 describe('模式切换条在两种模式下都常驻（§29/§59-14/15）', () => {
   it('交互研究有切换条，且两条都在', () => {
     const { container } = renderAt('/cities/shenyang/research/A2.2');
-    const modes = container.querySelector('.research__modes');
+    const modes = container.querySelector('.city-research__modes');
     expect(modes).not.toBeNull();
-    expect(modes?.textContent).toContain('交互研究');
-    expect(modes?.textContent).toContain('原文');
+    expect(modes?.textContent).toContain('交互探索');
+    expect(modes?.textContent).toContain('完整文章');
   });
 
   it('原文模式用同一个切换条，仍在中栏里', () => {
     const { container } = renderAt('/cities/shenyang/research/A2.2?mode=article');
-    expect(container.querySelector('.research')?.getAttribute('data-mode')).toBe('article');
-    const column = container.querySelector('.research__column');
-    expect(column?.querySelector('.research__modes')).not.toBeNull();
+    expect(container.querySelector('.city-research')?.getAttribute('data-mode')).toBe('article');
+    const column = container.querySelector('.city-research__column');
+    expect(column?.querySelector('.city-research__modes')).not.toBeNull();
   });
 });
 

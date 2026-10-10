@@ -5,7 +5,6 @@ import { ROUTES } from './routes';
 import { NAV_ITEMS } from './navItems';
 import { AnimatedUnderline } from '../components/AnimatedUnderline';
 import { NavigationControls } from '../components/NavigationControls';
-import { ContextBar } from './context/ContextBar';
 import { MOTION_DURATION } from '../design/motion';
 import './app-header.css';
 
@@ -13,7 +12,7 @@ import './app-header.css';
  * 全局导航（V3 §4/§6）。
  *
  * 一级入口只有三件产品事：辽宁农业态势 / 决策中心 / 研究中心。
- * 右侧常驻 ContextBar，让三个入口共享同一座城市与周期。
+ * 城市由地图或显式城市路由选择，作物与周期放在对应工具中。
  * Active 语义见 navItems.ts。
  *
  * 窄屏（≤560px）折叠：三个中文入口在本宽度下无法单行容纳，过去被硬折成两行并
@@ -92,7 +91,6 @@ export function AppHeader() {
               );
             })}
           </nav>
-          <ContextBar />
         </div>
       </div>
     </motion.header>

@@ -92,10 +92,21 @@ export interface DecisionResult {
   model_status?:string;
   code_fingerprint?:string;
 }
+export const DECISION_FEATURE_IDS = ['short_term_price', 'long_horizon_scenario', 'production_structure', 'historical_climate', 'break_even', 'user_scenario'] as const;
+export type DecisionFeatureId = typeof DECISION_FEATURE_IDS[number];
+export type DecisionFeatureResultType = 'VERIFIED_MODEL' | 'OBSERVATIONAL_ANALYSIS' | 'DETERMINISTIC_CALCULATION' | 'USER_ASSUMPTION_SCENARIO' | 'EXPLORATORY_REFERENCE' | 'NOT_SUPPORTED';
+export interface DecisionFeature {
+  supported: boolean; result_type: DecisionFeatureResultType; data_sources: string[];
+  required_inputs: string[]; validated_model: boolean; limitations: string[];
+  horizons: number[]; crop_ids: string[];
+}
+export type DecisionFeatures = Record<DecisionFeatureId, DecisionFeature>;
 export interface DecisionCapability {
   city_id:string;tier:string;supported:boolean;
   crops:{id:string;label:string;horizons:{days:number;mode:'model'|'scenario_only'}[]}[];
   market_as_of:string|null;model_version:string;data_version:string;code_fingerprint:string;limitation:string|null;
+  /** 旧 Provider 的兼容边界；正式 V4 API 返回完整的六项功能。 */
+  features?: DecisionFeatures;
 }
 export interface DecisionProvider {
   readonly data_mode?: 'fixtures' | 'mock' | 'api';

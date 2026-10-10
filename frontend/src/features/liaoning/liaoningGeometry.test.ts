@@ -62,7 +62,7 @@ describe('真实省界数据上的模型', () => {
     expect(raw, '缺少 public/geo/liaoning.json').toBeTruthy();
     const model = buildLiaoningSolidModel(JSON.parse(raw));
     expect(model.cities).toHaveLength(14);
-    expect(model.cities.filter((city) => city.hasResearch).map((city) => city.id)).toEqual(['shenyang']);
+    expect(model.cities.filter((city) => city.hasResearch).map((city) => city.id)).toEqual(['shenyang', 'tieling', 'chaoyang', 'jinzhou', 'dandong', 'dalian']);
     expect(model.provinceRings.length).toBeGreaterThanOrEqual(14);
     expect(model.radius).toBeGreaterThan(0);
   });

@@ -7,6 +7,9 @@ import { useSearchParams } from 'react-router-dom';
 import { ScenarioSimulation } from './ScenarioSimulation';
 import { useAppContext } from '../../app/context/appContext';
 import { EvidenceDrawer } from '../evidence/EvidenceDrawer';
+import { TransitionLink } from '../../app/pageNavigation';
+import { cityContextUrl } from '../../app/context/provinceSelection';
+import { ROUTES } from '../../app/routes';
 import './scenario-page.css';
 
 const DecisionStressPage=lazy(()=>import('../decision/DecisionStressPage').then(m=>({default:m.DecisionStressPage})));
@@ -71,18 +74,20 @@ function EvidenceDevEntry() {
       <button type="button" className="ag-button" onClick={() => setParams((previous) => { const next = new URLSearchParams(previous); next.set('evidence', open ? 'closed' : 'open'); return next; })}>
         {open ? '关闭证据面板（开发自检）' : '打开证据面板（开发自检）'}
       </button>
-      <EvidenceDrawer open={open} onClose={() => setParams((previous) => { const next = new URLSearchParams(previous); next.delete('evidence'); return next; })} context={{ cityId, topic: 'forecast' }} />
+      <EvidenceDrawer open={open} onClose={() => setParams((previous) => { const next = new URLSearchParams(previous); next.delete('evidence'); return next; })} context={{ cityId: cityId ?? '', topic: 'forecast' }} />
     </p>
   );
 }
 
 export function ScenarioPage() {
   const [params] = useSearchParams();
+  const contextCity = useAppContext(state => state.cityId);
   const mode = params.get('mode');
   if (mode === 'decision') {
     return <Suspense fallback={<main className="scenario" role="status">情景加载中</main>}><DecisionStressPage /></Suspense>;
   }
   if (mode === 'research') return <RainstormResearch />;
+  if (!params.get('city') && !contextCity) return <main className="scenario"><header className="scenario__head"><h1 className="scenario__title">从经营条件开始推演</h1><p className="scenario__lead">先选择城市、填写自己的条件，比较价格、亩产和成本变化带来的经营结果。</p></header><TransitionLink className="ag-button" to={ROUTES.decisionRoot}>选择城市与经营计划 →</TransitionLink><p className="scenario__note"><TransitionLink to={cityContextUrl(ROUTES.scenario, 'shenyang')}>查看沈阳上市窗口研究情景 →</TransitionLink></p></main>;
   return (
     <>
       <ScenarioSimulation />

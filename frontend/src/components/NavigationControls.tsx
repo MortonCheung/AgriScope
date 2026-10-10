@@ -35,8 +35,9 @@ export function NavigationControls() {
   const history = useAppHistory();
   const navigate = usePageNavigate();
   const up = structuralParent(pathname);
-  /** 在城市空间里，"回退 / 上一级"都会离开城市 —— 必须走空间退出动画（本轮 §26）。 */
-  const inCity = parseCityPath(pathname) !== null;
+  const inCity = /^\/cities\/[^/]+(?:\/|$)/.test(pathname);
+  // 只有城市概览的退出需要空间动画；工作台深链接按真实访问历史返回。
+  const atCityRoot = parseCityPath(pathname) !== null;
 
   return (
     <div className="ag-nav-controls" role="group" aria-label="页面导航">
@@ -47,7 +48,7 @@ export function NavigationControls() {
         aria-label="后退"
         disabled={!history?.canGoBack}
         onClick={() => {
-          if (inCity) requestCityExit({ via: 'back' });
+          if (atCityRoot) requestCityExit({ via: 'back' });
           else history?.goBack({ to: up ?? ROUTES.root });
         }}
       >
@@ -63,7 +64,7 @@ export function NavigationControls() {
       >
         <Chevron dir="forward" />
       </button>
-      <button
+      {!inCity && <button
         type="button"
         className="ag-nav-control"
         data-dir="up"
@@ -76,7 +77,7 @@ export function NavigationControls() {
         }}
       >
         <Chevron dir="up" />
-      </button>
+      </button>}
     </div>
   );
 }

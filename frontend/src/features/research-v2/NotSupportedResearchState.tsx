@@ -28,8 +28,7 @@ export function NotSupportedResearchState({ article, moduleId }: {
       <p className="ag-label">研究侧判定</p>
       <h2 className="ag-section-title" id="not-supported-title">当前数据不足以支持本研究</h2>
       <p className="ag-body-secondary">
-        研究模块 <strong>{moduleId}</strong> 的正式状态为 <code>{article.status}</code>
-        。以下内容逐字来自研究侧导出，平台不补充判断。
+        研究模块 <strong>{moduleId}</strong> 尚缺足够的观测数据。以下原因与局限来自已发布研究。
       </p>
 
       {reason && (
@@ -72,7 +71,7 @@ export function NotSupportedResearchState({ article, moduleId }: {
       )}
 
       <p className="ag-caption">
-        因此本研究不生成市场响应结论。可查看本城市状态为可用（非 NOT_SUPPORTED）的其他模块，
+        因此本研究不生成市场响应结论。可查看本城市有足够观测的其他模块，
         或查看完整文章了解研究侧的数据核查过程。
       </p>
     </section>

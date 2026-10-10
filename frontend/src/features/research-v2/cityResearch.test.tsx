@@ -11,7 +11,7 @@ import { useCityExitStore } from '../spatial/cityExit';
  *
  * 守的是四件事：
  *   1. 结构是**三栏工作台**（研究树 / 中栏交互探索 / 证据栏）+ chrome + 关闭，三块各自滚动；
- *   2. 单击研究树只改选择，**URL 不变**；中栏默认「交互探索」，「完整文章」是次入口；
+ *   2. 单击研究树只改选择，**URL 保留研究选择**；中栏默认「交互探索」，「完整文章」是次入口；
  *   3. 右栏只呈现研究侧真实元数据 —— 载荷取不到时**整块不渲染**，不写占位；
  *   4. `×` 与 `Esc` 都进入同一个空间退出协调器（小屏抽屉打开时 `Esc` 先关抽屉）。
  */
@@ -22,7 +22,7 @@ const A2 = topics[1];
 
 function Probe() {
   const location = useLocation();
-  return <output data-testid="path">{location.pathname}</output>;
+  return <output data-testid="path">{location.pathname + location.search}</output>;
 }
 
 function renderCity() {
@@ -61,10 +61,10 @@ describe('城市研究三栏工作台', () => {
     expect(container.querySelector('.city-research__sidebar')).not.toBeNull();
     expect(container.querySelector('.city-research__column')).not.toBeNull();
     expect(container.querySelector('.city-research__evidence')).not.toBeNull();
-    expect(screen.getByRole('button', { name: '返回辽宁' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '返回城市概览' })).toBeTruthy();
   });
 
-  it('默认选中第一个方向；点击另一个方向只改选中与中栏，URL 不变（§59-8）', () => {
+  it('默认选中第一个方向；点击另一个方向只改选中与中栏，URL 保留研究选择（§59-8）', () => {
     const { container } = renderCity();
     expect(railTitle(container)).toBe(A1.title);
     expect(stageTitle(container)).toBe(A1.title);
@@ -73,11 +73,12 @@ describe('城市研究三栏工作台', () => {
     fireEvent.click(toggles[1]);
     expect(railTitle(container)).toBe(A2.title);
     expect(stageTitle(container)).toBe(A2.title);
-    expect(path()).toBe('/cities/shenyang');
+    expect(path()).toContain('/cities/shenyang');
+    expect(path()).toContain('research=A2');
     expect(container.querySelector('.tree__topic[data-selected] .tree__topic-id')?.textContent).toBe(A2.id);
   });
 
-  it('点击研究点只改选中，URL 不变（§59-9）', () => {
+  it('点击研究点只改选中，URL 保留研究选择（§59-9）', () => {
     const { container } = renderCity();
     // A1 默认展开，第一个点位行就是 A1.1。
     const firstPoint = container.querySelector('.tree__point-link');
@@ -85,7 +86,8 @@ describe('城市研究三栏工作台', () => {
     fireEvent.click(firstPoint as Element);
     expect(stageTitle(container)).toBe(A1.points[0].title);
     expect(container.querySelector('.evidence-rail__id')?.textContent).toBe(A1.points[0].id);
-    expect(path()).toBe('/cities/shenyang');
+    expect(path()).toContain('research=A1.1');
+    expect(path()).toContain('/cities/shenyang');
   });
 
   it('中栏默认「交互探索」，「完整文章」是次入口（§22）', () => {
@@ -99,8 +101,9 @@ describe('城市研究三栏工作台', () => {
       .find((element) => element.textContent === '完整文章') as Element;
     fireEvent.click(articleTab);
     expect(container.querySelector('.city-research__modes [aria-selected="true"]')?.textContent).toBe('完整文章');
+    expect(path()).toContain('mode=article');
     // 模式切换只改中栏，不导航（选择的 URL 语义不变）。
-    expect(path()).toBe('/cities/shenyang');
+    expect(path()).toContain('/cities/shenyang');
   });
 
   it('证据栏只渲染研究侧真实元数据；取不到就整块不渲染（§23/§38）', () => {
@@ -111,13 +114,14 @@ describe('城市研究三栏工作台', () => {
     expect(container.textContent ?? '').not.toContain('来源待补充');
   });
 
-  it('点击 × 进入空间退出协调器（§59-12）', () => {
+  it('点击概览 进入空间退出协调器（§59-12）', () => {
     renderCity();
-    fireEvent.click(screen.getByRole('button', { name: '返回辽宁' }));
+    fireEvent.click(screen.getByRole('button', { name: '返回城市概览' }));
     expect(useCityExitStore.getState().status).toBe('exiting');
+    expect(useCityExitStore.getState().target).toBe('/liaoning?city=shenyang');
   });
 
-  it('Esc 与 × 走同一条退出路径；抽屉打开时先关抽屉（§23/§59-12）', () => {
+  it('Esc 与概览 走同一条退出路径；抽屉打开时先关抽屉（§23/§59-12）', () => {
     renderCity();
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(useCityExitStore.getState().status).toBe('exiting');

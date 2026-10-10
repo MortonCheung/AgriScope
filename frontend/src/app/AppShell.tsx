@@ -2,7 +2,6 @@ import { AppHistoryProvider } from './appHistory';
 import { AppHeader } from './AppHeader';
 import { useContextUrlSync } from './context/useContextUrl';
 import { SpatialShell } from '../features/spatial/SpatialShell';
-import { GuidedPresentation } from '../features/presentation/GuidedPresentation';
 
 /** 四要素 ↔ URL 同步：必须在 Router 上下文内、且在任何页面读取上下文之前挂载。 */
 function ContextUrlBridge() {
@@ -17,7 +16,6 @@ export function AppShell() {
       <ContextUrlBridge />
       <AppHeader />
       <SpatialShell />
-      <GuidedPresentation />
     </AppHistoryProvider>
   );
 }

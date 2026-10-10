@@ -1,6 +1,9 @@
 import { useParams, useSearchParams } from 'react-router-dom';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { TransitionLink } from '../../app/pageNavigation';
+import { cityContextUrl, provinceUrl } from '../../app/context/provinceSelection';
+import { usePageNavigate } from '../../app/pageNavigation';
+import { PlanningWorkbench } from './PlanningWorkbench';
 import { ROUTES } from '../../app/routes';
 import { getCity } from '../../domain/geography/cities';
 import { getDecisionProvider } from '../../providers/decision';
@@ -13,7 +16,7 @@ import { formatNumber } from './DecisionVisuals';
 import { evaluationLabel } from './presentation';
 import { LongHorizonPlanning } from '../longHorizon/LongHorizonPlanning';
 import { DecisionCenter } from './DecisionCenter';
-import type { DecisionResult, Strategy } from '../../domain/decision/types';
+import type { DecisionCapability, DecisionResult, Strategy } from '../../domain/decision/types';
 import './decision.css';
 const strategyNames:Record<Strategy,string>={balanced:'综合',robust:'稳健',return:'收益优先',low_risk:'低风险',alternative:'替代'};
 
@@ -22,12 +25,28 @@ export function DecisionPage(){
   const [params,setParams]=useSearchParams();
   const testState=import.meta.env.DEV?params.get('test_state'):null;const provider=getDecisionProvider(testState);
   const rawView=params.get('view');
-  const session=useDecisionSession(cityId,provider,testState,rawView!=='input'&&rawView!=='long-horizon'&&rawView!=='center');
+  const view=rawView??'planning';
+  const navigate=usePageNavigate();
+  const [capState,setCapState]=useState<{cityId:string;data?:DecisionCapability;error?:string}>({cityId});
+  useEffect(()=>{
+    const controller=new AbortController(); let alive=true;
+    setCapState({cityId});
+    if(provider.capabilities) void provider.capabilities(cityId,{signal:controller.signal}).then(data=>{if(alive)setCapState({cityId,data});},error=>{if(alive&&!controller.signal.aborted)setCapState({cityId,error:error instanceof Error?error.message:'市场能力暂时无法读取'});});
+    return()=>{alive=false;controller.abort();};
+  },[cityId,provider]);
+  const cap=capState.cityId===cityId?capState.data:undefined;
+  const explicitDemo=provider.data_mode==='fixtures'||provider.data_mode==='mock';
+  const priceSupported=(cap?.features?.short_term_price.supported??cap?.supported)===true||explicitDemo;
+  const longSupported=cityId==='shenyang'&&(cap?.features?.long_horizon_scenario.supported??false);
+  const session=useDecisionSession(cityId,provider,testState,priceSupported&&['result','detail','compare','evidence'].includes(view));
   const {state}=session;
   const main=useRef<HTMLElement>(null);
-  const view=rawView??'center';
   const edit=()=>setParams(p=>{p.set('view','input');return p;});
   const switchView=(next:string)=>setParams(p=>{p.set('view',next);return p;});
+  useEffect(()=>{
+    const onKey=(event:KeyboardEvent)=>{if(event.key==='Escape'&&!event.defaultPrevented&&!document.querySelector('[role="dialog"][aria-modal="true"]'))navigate(provinceUrl(cityId));};
+    window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey);
+  },[cityId,navigate]);
   const result=state.result;
   const candidate=result?.candidates.find(c=>c.id===params.get('plan'))??result?.candidates.find(c=>c.id===result.recommendation.candidate_id)??result?.candidates[0];
   const choose=(id:string)=>setParams(p=>{p.set('plan',id);p.set('view','result');return p;});
@@ -38,9 +57,9 @@ export function DecisionPage(){
   },[state.status,view,candidate?.id]);
   if(!city)return <main className="decision"><h1 className="ag-section-title">城市入口不存在</h1><TransitionLink to={ROUTES.liaoning} className="ag-button">返回辽宁</TransitionLink></main>;
   return <main className="decision" ref={main}>
-    <TransitionLink className="decision__crumb" to={ROUTES.city(cityId)}>← {city.shortName}研究</TransitionLink>
-    <nav className="decision-modes" aria-label="决策周期"><button aria-pressed={view==='center'} onClick={()=>switchView('center')}>决策中心</button><button aria-pressed={view==='input'} onClick={()=>switchView('input')}>短期市场比较</button><button aria-pressed={view==='long-horizon'} onClick={()=>switchView('long-horizon')}>上市窗口决策</button></nav>
-    {view==='center'?<DecisionCenter cityId={cityId} savedRequest={session.savedRequest} onAdjustConditions={()=>switchView('input')}/>
+    <header className="decision-chrome"><p className="ag-label">{city.shortName} · 决策工作台</p><div><TransitionLink to={cityContextUrl(ROUTES.city(cityId),cityId)}>查看研究 →</TransitionLink><TransitionLink className="ag-button" aria-label="返回城市概览" to={provinceUrl(cityId)}>← 概览</TransitionLink></div></header>
+    <nav className="decision-modes" aria-label="决策工具"><button aria-pressed={view==='planning'} onClick={()=>switchView('planning')}>经营计划</button>{priceSupported&&<><button aria-pressed={view==='center'} onClick={()=>switchView('center')}>市场观察</button><button aria-pressed={view==='input'} onClick={()=>switchView('input')}>短期市场比较</button></>}{longSupported&&<button aria-pressed={view==='long-horizon'} onClick={()=>switchView('long-horizon')}>上市窗口情景</button>}</nav>
+    {view==='planning'?<PlanningWorkbench cityId={cityId}/>:!cap&&!explicitDemo?<section role="status" className="center-loading"><p>{capState.error??'读取当前城市的市场能力…'}</p><button className="ag-button" onClick={()=>switchView('planning')}>使用经营计划</button></section>:(!priceSupported||(view==='long-horizon'&&!longSupported))?<><p className="decision-note">该城市可通过自己的投入、产量和销售假设核算盈亏，历史研究可辅助判断条件。</p><PlanningWorkbench cityId={cityId}/></>:view==='center'?<DecisionCenter cityId={cityId} savedRequest={session.savedRequest} onAdjustConditions={()=>switchView('input')}/>
       :view==='long-horizon'?<LongHorizonPlanning cityId={cityId}/>:view==='input'?<DecisionInput key={cityId} cityId={cityId} provider={provider} expandInputs={result?.status==='user_input_required'||result?.issues.includes('user_input_required')} initial={session.savedRequest} onSubmit={request=>{setParams(p=>{p.set('view','result');p.delete('plan');return p;});void session.run(request);}}/>
       :state.status==='loading'?<section className="decision-loading" role="status" aria-label="方案比较中" aria-busy="true"><h1 className="ag-section-title">比较这季的选择</h1><div className="ag-state ag-state--loading" aria-hidden="true"><i className="ag-skeleton"/><i className="ag-skeleton"/><i className="ag-skeleton"/></div><button className="ag-button" onClick={()=>{session.cancel();edit();}}>返回修改条件</button></section>
       :state.status==='error'?<section className="ag-state" role="alert"><h1 className="ag-section-title">暂时没能完成比较</h1><p>{state.error}</p><div className="decision-actions"><button className="ag-button ag-button--primary" onClick={()=>{if(state.request)void session.run(state.request);}}>重试</button><button className="ag-button" onClick={edit}>修改条件</button></div></section>

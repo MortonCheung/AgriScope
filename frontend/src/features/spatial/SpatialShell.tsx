@@ -9,6 +9,7 @@ import { usePageNavigate } from '../../app/pageNavigation';
 import { RouteTransition } from '../../app/RouteTransition';
 import { useAppHistory } from '../../app/appHistory';
 import { ROUTES } from '../../app/routes';
+import { provinceUrl, selectedCityFromSearch } from '../../app/context/provinceSelection';
 import './spatial-shell.css';
 
 /** 「省域 → 城市」导航随行携带的转场标记（V5 §65）。 */
@@ -58,8 +59,8 @@ export function SpatialShell() {
   const location = useLocation();
   const navigate = usePageNavigate();
   const reducedMotion = Boolean(useReducedMotion());
-  const mode = useSpatialStageStore((state) => state.mode);
-  const focusCityId = useSpatialStageStore((state) => state.focusCityId);
+  const mode = stageModeForPath(location.pathname);
+  const focusCityId = mode === 'province' ? selectedCityFromSearch(location.search) : focusCityForPath(location.pathname);
   const hoveredCityId = useSpatialStageStore((state) => state.hoveredCityId);
   const cameraMoving = useSpatialStageStore((state) => state.cameraMoving);
   const setMode = useSpatialStageStore((state) => state.setMode);
@@ -98,8 +99,9 @@ export function SpatialShell() {
 
   useEffect(() => {
     setMode(pathStage);
-    focusCity(focusCityForPath(location.pathname));
-  }, [focusCity, location.pathname, pathStage, setMode]);
+    focusCity(focusCityId);
+    setHoveredCity(null);
+  }, [focusCity, focusCityId, pathStage, setMode, setHoveredCity]);
 
   /** 相机从移动中回到静止，且这轮退出确实看到过它移动 → 记一次"相机到位（§25）"。 */
   const sawCameraMove = useRef(false);
@@ -120,12 +122,12 @@ export function SpatialShell() {
   const exitNavigated = useRef(false);
   useEffect(() => {
     if (!exiting) return;
-    if (!reducedMotion && !(exitPaperDone && exitCameraDone)) return;
+    if (!reducedMotion && mode !== 'none' && !(exitPaperDone && exitCameraDone)) return;
     if (exitNavigated.current) return;
     exitNavigated.current = true;
     if (exitVia === 'back') history?.goBack({ to: exitTarget });
     else navigate(exitTarget);
-  }, [exiting, exitCameraDone, exitPaperDone, exitTarget, exitVia, history, navigate, reducedMotion]);
+  }, [exiting, exitCameraDone, exitPaperDone, exitTarget, exitVia, history, mode, navigate, reducedMotion]);
 
   /** 真正离开城市路由后收尾，回到 idle；退出期间一直保持 exiting，避免相机闪回城市。 */
   useEffect(() => {
@@ -142,11 +144,17 @@ export function SpatialShell() {
    */
   const handleSelectCity = useCallback((cityId: string) => {
     if (!getCity(cityId)) return;
+    if (mode === 'opening') return;
+    if (mode === 'province') {
+      const target = provinceUrl(cityId);
+      if (target !== `${location.pathname}${location.search}`) navigate(target);
+      return;
+    }
     const target = ROUTES.city(cityId);
     // 已经在这一页：再 push 一次只会多出一条无意义历史。
     if (location.pathname === target) return;
     navigate(target, { state: { transition: PROVINCE_TO_CITY } });
-  }, [location.pathname, navigate]);
+  }, [location.pathname, location.search, mode, navigate]);
 
   const canvasVisible = effectiveMode !== 'none';
   const domTransition = exiting ? CITY_TO_PROVINCE : paperUnfold ? PROVINCE_TO_CITY : undefined;
@@ -157,6 +165,7 @@ export function SpatialShell() {
         <div className="spatial-shell__canvas" aria-hidden={!canvasVisible} data-visible={canvasVisible || undefined}>
           <LiaoningCanvas
             mode={effectiveMode === 'city' ? 'city' : effectiveMode === 'opening' ? 'opening' : 'province'}
+            active={canvasVisible}
             focusCityId={effectiveFocusCityId}
             hoveredCityId={hoveredCityId}
             onHoverCity={setHoveredCity}

@@ -6,14 +6,22 @@ import { DecisionCenter } from './DecisionCenter';
 import { getDecisionProvider } from '../../providers/decision';
 import { getDailyProvider } from '../../providers/daily';
 import { getLongHorizonProvider, getLongHorizonDecisionProvider } from '../../providers/longHorizon';
+import { DECISION_FEATURE_IDS } from '../../domain/decision/types';
 
 vi.mock('../../providers/decision', () => ({ getDecisionProvider: vi.fn() }));
 vi.mock('../../providers/daily', () => ({ getDailyProvider: vi.fn() }));
 vi.mock('../../providers/longHorizon', () => ({ getLongHorizonProvider: vi.fn(), getLongHorizonDecisionProvider: vi.fn() }));
 
-const capability = (supported = true) => ({
-  city_id: 'shenyang', tier: 'FULL', supported, crops: supported ? [{ id: '黄瓜', label: '黄瓜', horizons: [{ days: 7, mode: 'model' }] }] : [],
+const capability = (supported = true, cityId = 'shenyang') => ({
+  city_id: cityId, tier: 'FULL', supported, crops: supported ? [{ id: '黄瓜', label: '黄瓜', horizons: [{ days: 7, mode: 'model' }] }] : [],
   market_as_of: supported ? '2026-10-06' : null, model_version: 'final_v1', data_version: 'final_v1', code_fingerprint: 'abc', limitation: null,
+  features: Object.fromEntries(DECISION_FEATURE_IDS.map(key => [key, {
+    supported: key === 'short_term_price' ? supported : key === 'long_horizon_scenario' ? supported && cityId === 'shenyang' : true,
+    result_type: key === 'long_horizon_scenario' ? cityId === 'shenyang' && supported ? 'EXPLORATORY_REFERENCE' : 'NOT_SUPPORTED' : 'OBSERVATIONAL_ANALYSIS',
+    data_sources: [], required_inputs: [], validated_model: key === 'short_term_price', limitations: [],
+    horizons: key === 'short_term_price' ? [7,14,30] : key === 'long_horizon_scenario' ? [30,60,90,120,150,180] : [],
+    crop_ids: ['黄瓜'],
+  }])),
 });
 const daily = () => ({
   cityId: 'shenyang', city: '沈阳', status: 'partial', runDate: '2026-10-08', latestDataDate: '2026-10-06', freshness: 'DELAYED', sourceFreshness: 'DELAYED', ageDays: 2,
@@ -30,14 +38,14 @@ const longCompare = () => ({ candidates: [{ crop: '黄瓜', production_status: '
 
 function primeProviders(supported = true) {
   const decide = vi.fn(async (request: { user_context: { market_context: { horizon_days: number } } }) => shortResult(request.user_context.market_context.horizon_days));
-  vi.mocked(getDecisionProvider).mockReturnValue({ data_mode: 'api', decide, capabilities: async () => capability(supported) } as never);
+  vi.mocked(getDecisionProvider).mockReturnValue({ data_mode: 'api', decide, capabilities: async (cityId: string) => capability(supported, cityId) } as never);
   vi.mocked(getDailyProvider).mockReturnValue({ latest: async () => daily() } as never);
   vi.mocked(getLongHorizonProvider).mockReturnValue({ forecast: async (input: { horizonDays: number }) => forecast(input.horizonDays) } as never);
   vi.mocked(getLongHorizonDecisionProvider).mockReturnValue({ decision: async () => longCompare() } as never);
   return decide;
 }
 
-beforeEach(() => vi.stubGlobal('matchMedia', () => ({ matches: false, addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn() })));
+beforeEach(() => { vi.clearAllMocks(); vi.stubGlobal('matchMedia', () => ({ matches: false, addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn() })); });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 const renderCenter = (cityId = 'shenyang') => render(<MemoryRouter initialEntries={[`/cities/${cityId}/decision`]}><DecisionCenter cityId={cityId} savedRequest={null} onAdjustConditions={() => {}}/></MemoryRouter>);
@@ -105,10 +113,35 @@ describe('decision center view', () => {
     expect(document.querySelector('.center-judgment')).toBeTruthy();
   });
 
-  it('honestly shows INSUFFICIENT_MARKET_DATA for unsupported cities', async () => {
+  it('limits unsupported messaging to price references and preserves access to user-condition tools', async () => {
     primeProviders(false);
     renderCenter('dalian');
-    expect(await screen.findByText('INSUFFICIENT_MARKET_DATA')).toBeTruthy();
-    expect(screen.getByText('大连的决策数据待接入')).toBeTruthy();
+    expect(await screen.findByText('大连暂未提供短期价格参考')).toBeTruthy();
+    expect(screen.getByText(/经营工具可按你填写的亩产/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: '填写经营条件' })).toBeTruthy();
+    expect(screen.queryByText(/决策数据待接入/)).toBeNull();
+  });
+
+  it('loads Chaoyang short prices without any long forecast, comparison or daily request', async () => {
+    const decide = primeProviders();
+    renderCenter('chaoyang');
+    await screen.findByText(hasText('朝阳 · 黄瓜'));
+    await waitFor(() => expect(decide).toHaveBeenCalledTimes(3));
+    expect(getLongHorizonProvider).not.toHaveBeenCalled();
+    expect(getLongHorizonDecisionProvider).not.toHaveBeenCalled();
+    expect(getDailyProvider).not.toHaveBeenCalled();
+    expect(screen.queryByText('长期上市窗口的行情场景')).toBeNull();
+    expect(screen.queryByLabelText('作物比较')).toBeNull();
+  });
+
+  it('hides an old-city result immediately while another city capability is pending', async () => {
+    primeProviders();
+    const rendered = renderCenter();
+    await screen.findByText(hasText('沈阳 · 黄瓜'));
+    vi.mocked(getDecisionProvider).mockReturnValue({ data_mode: 'api', decide: vi.fn(), capabilities: () => new Promise(() => {}) } as never);
+    rendered.rerender(<MemoryRouter><DecisionCenter cityId="chaoyang" savedRequest={null} onAdjustConditions={() => {}}/></MemoryRouter>);
+    expect(screen.queryByText(hasText('沈阳 · 黄瓜'))).toBeNull();
+    expect(screen.getByText('读取朝阳的决策数据')).toBeTruthy();
+    expect(screen.queryByText('长期上市窗口的行情场景')).toBeNull();
   });
 });

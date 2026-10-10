@@ -366,3 +366,8 @@
   .city-research__body[data-layout='workbench'] .city-research__sidebar,
   .city-research__body[data-layout='workbench'] .city-research__sidebar[data-drawer-open] { transition: none; }
 }
+
+/* One explicit return control shared by all six workspaces. */
+.city-research__close {width:auto;min-width:72px;font-size:13px;white-space:nowrap;padding:8px 10px;}
+.city-research__actions .city-research__decision {margin:0;white-space:nowrap;}
+@media(max-width:600px) {.city-research__chrome{flex-wrap:wrap;gap:12px;}.city-research__titles{flex:1;}.city-research__actions{order:3;flex-basis:100%;}.city-research__close{align-self:flex-start;}}

@@ -2,7 +2,9 @@ import type { ComponentType } from 'react';
 import { createBrowserRouter, createRoutesFromElements, Navigate, Route, RouterProvider, useLocation, useParams } from 'react-router-dom';
 import { AppShell } from './AppShell';
 import { ROUTES, parseResearchPath } from './routes';
-import { useAppContext } from './context/appContext';
+import { useAppContext, readContextFromSearch } from './context/appContext';
+import { cityContextUrl } from './context/provinceSelection';
+import { CityDecisionEntry } from '../features/decision/CityDecisionEntry';
 
 const load = (loader: () => Promise<Record<string, unknown>>, name: string) => async () => {
   const module = await loader();
@@ -24,11 +26,13 @@ const aboutPage = load(() => import('../features/about/AboutPage'), 'AboutPage')
  * 「决策中心」全局入口（V3 §7）。
  *
  * 决策必须落在某座城市上，所以这里不重造页面，而是按全局上下文
- * （ContextBar 选中的城市）落到 `/cities/<city>/decision`。
+ * （最近明确选择的城市）落到 `/cities/<city>/decision`。
  */
 function DecisionCenterRedirect() {
   const cityId = useAppContext((state) => state.cityId);
-  return <Navigate to={ROUTES.decision(cityId)} replace />;
+  const queryCity = readContextFromSearch(useLocation().search).cityId;
+  const selected = queryCity ?? cityId;
+  return selected ? <Navigate to={cityContextUrl(ROUTES.decision(selected), selected)} replace /> : <CityDecisionEntry />;
 }
 
 /** 旧 `/cities/:cityId/report` → `/reports/:cityId`（§22：不要 404）。 */

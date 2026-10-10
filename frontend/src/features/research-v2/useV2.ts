@@ -34,8 +34,8 @@ export function useArticle(cityId: string, articleId: string | null): AsyncState
     peek: () => (articleId ? V2Repository.peekArticle(cityId, articleId) : null),
     load: () => V2Repository.getArticle(cityId, articleId as string),
     missingMessage: '缺少文章编号',
-    /** 未命中时保留上一篇正文，等新正文到达再换（沿用 v4 的做法）。 */
-    keepPrevious: true,
+    /** 城市或文章改变时清空旧内容，防止跨城串数据。 */
+    keepPrevious: false,
   });
 }
 

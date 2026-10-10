@@ -17,7 +17,7 @@ const adapted=adaptLegacyFixture(fixture);
 let seq=0;
 function renderDecision(testState:string){
   const provider=getDecisionProvider();
-  vi.mocked(getDecisionProvider).mockReturnValue({...provider,decide:provider.decide.bind(provider),listSamples:()=>getDecisionSamples()});
+  vi.mocked(getDecisionProvider).mockReturnValue({...provider,data_mode:provider.data_mode??'fixtures',decide:provider.decide.bind(provider),listSamples:()=>getDecisionSamples()});
   return render(<MemoryRouter initialEntries={[`/cities/shenyang/decision?view=input&test_state=${testState}`]}><Routes><Route path="/cities/:cityId/decision" element={<DecisionPage/>}/><Route path="/scenario-lab" element={<DecisionStressPage/>}/></Routes></MemoryRouter>);
 }
 beforeEach(()=>{

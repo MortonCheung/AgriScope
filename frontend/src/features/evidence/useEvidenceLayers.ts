@@ -1,3 +1,6 @@
+import { useObservations } from '../../domain/observations/useObservations';
+import type { CityObservation } from '../../domain/observations/types';
+import { cityContextUrl } from '../../app/context/provinceSelection';
 import { useEffect, useMemo, useState } from 'react';
 import { useDaily } from '../daily/useDaily';
 import { getDecisionProvider } from '../../providers/decision';
@@ -96,6 +99,7 @@ export interface ResearchLayer {
 }
 
 export interface EvidenceLayers {
+  observation?: LayerState<CityObservation>;
   market: LayerState<MarketLayer>;
   seasonal: LayerState<SeasonalLayer>;
   model: LayerState<ModelLayer>;
@@ -114,6 +118,8 @@ const TOPIC_MODULE_SUFFIX: Record<string, string> = {
   risk: '04',
   compare: '05',
   weather: '02',
+  climate: '09',
+  production: '07',
 };
 
 /** 在总索引里选出与该城/来源对应的模块号；找不到返回 null（界面据此隐藏入口）。 */
@@ -121,7 +127,7 @@ export function resolveModuleId(entry: V2CatalogCity | null, topic?: string): st
   if (!entry || entry.modules.length === 0) return null;
   // 触发来源可能是 `risk:<id>` 这类复合值，取冒号前的类别。
   const key = topic?.split(':')[0];
-  const suffix = key ? TOPIC_MODULE_SUFFIX[key] : undefined;
+  const suffix = key === 'climate' && entry.city === 'shenyang' ? '02' : key ? TOPIC_MODULE_SUFFIX[key] : undefined;
   const byTopic = suffix ? entry.modules.find((module) => module.module_id.endsWith(suffix)) : undefined;
   return byTopic?.module_id ?? entry.modules[0]?.module_id ?? null;
 }
@@ -133,8 +139,9 @@ export function resolveModuleId(entry: V2CatalogCity | null, topic?: string): st
 export function resolveResearchEntry(cityId: string, entry: V2CatalogCity | null, topic?: string): { href: string; label: string } | null {
   const moduleId = resolveModuleId(entry, topic);
   if (!moduleId) return null;
-  if (researchIdKind(cityId, canonicalResearchId(moduleId)) === null) return null;
-  return { href: `/cities/${cityId}/research/${moduleId}`, label: moduleId };
+  if (entry?.city !== cityId) return null;
+  if (researchIdKind(cityId, canonicalResearchId(moduleId)) === null && !/^A0[1-9]$/.test(moduleId)) return null;
+  return { href: cityContextUrl(`/cities/${cityId}/research/${canonicalResearchId(moduleId)}`, cityId), label: entry?.modules.find((item) => item.module_id === moduleId)?.title ?? moduleId };
 }
 
 /** 季节结构表里取该品种的价格季节幅度；研究表没有这一列/这一行则返回 null。 */
@@ -328,6 +335,7 @@ function sufficiencyLayer(daily: LayerState<MarketLayer>, model: LayerState<Mode
 }
 
 export function useEvidenceLayers(context: { cityId: string; crop?: string; horizon?: number; topic?: string }): EvidenceLayers {
+  const observationState = useObservations();
   const dailyState = useDaily(context.cityId);
   const capability = useCapability(context.cityId);
   const model = useModel(context.cityId, capability, context.crop, context.horizon);
@@ -373,5 +381,9 @@ export function useEvidenceLayers(context: { cityId: string; crop?: string; hori
     };
   }, [catalogState, entry, context.cityId, context.topic]);
 
-  return { market, seasonal, model, weather, regional, sufficiency, research };
+  const observation: LayerState<CityObservation> = observationState.status === 'loading' ? {status:'loading'}
+    : observationState.status === 'error' ? {status:'error',note:observationState.error}
+    : observationState.data.cities.some(city=>city.city_id===context.cityId) ? {status:'ready',data:observationState.data.cities.find(city=>city.city_id===context.cityId)!}
+    : {status:'missing',note:'当前城市没有发布农业观测。'};
+  return { observation, market, seasonal, model, weather, regional, sufficiency, research };
 }

@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { usePageNavigate } from '../../app/pageNavigation';
+import { cityContextUrl } from '../../app/context/provinceSelection';
+import { ROUTES } from '../../app/routes';
+import { useMemo } from 'react';
 import type { V2Article } from '../../domain/research/v2/types';
 import { assetUrl } from '../../domain/research/v2/repository';
 import {
   cityEntry, explorerConfigs, explorerMetricNames, moduleEntry, readExplorer, useRuntimeCatalog,
 } from '../../domain/research/runtime/catalog';
-import { getCity } from '../../domain/geography/cities';
-import { requestCityExit } from '../spatial/cityExit';
 import { useArticle } from './useV2';
 import { TopicExplorer } from './TopicExplorer';
 import { V2Figure } from './Figure';
@@ -13,6 +15,7 @@ import { ResearchArticleView } from './ResearchArticleView';
 import { NotSupportedResearchState } from './NotSupportedResearchState';
 import { MarkdownBlocks } from './blocks';
 import { renderInline } from './markdown';
+import { columnMeta } from '../../domain/research/v2/metrics';
 import './module-workspace.css';
 
 /**
@@ -29,15 +32,16 @@ import './module-workspace.css';
  *   · NOT_SUPPORTED：走正式状态组件，不伪装成图表。
  * 绝不编造研究点、引句、结论或"推荐查看"以外的内容。
  */
-export function CityModulesWorkspace({ cityId }: { cityId: string }) {
-  const city = getCity(cityId);
+export function CityModulesWorkspace({ cityId, initialModuleId }: { cityId: string; initialModuleId?: string }) {
   const catalogState = useRuntimeCatalog();
   const entry = catalogState.status === 'ready' ? cityEntry(catalogState.catalog, cityId) : null;
   const modules = useMemo(() => entry?.modules ?? [], [entry]);
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [mode, setMode] = useState<'interactive' | 'article'>('interactive');
-  useEffect(() => { setSelectedId(null); setMode('interactive'); }, [cityId]);
+  const navigate = usePageNavigate();
+  const [params, setParams] = useSearchParams();
+  const selectedId = initialModuleId;
+  const mode = params.get('mode') === 'article' ? 'article' : 'interactive';
+  const setMode = (next: 'interactive' | 'article') => setParams((current) => { const updated = new URLSearchParams(current); if (next === 'article') updated.set('mode', next); else updated.delete('mode'); return updated; });
 
   const resolved = selectedId && modules.some((item) => item.module_id === selectedId)
     ? selectedId : (modules[0]?.module_id ?? null);
@@ -60,25 +64,7 @@ export function CityModulesWorkspace({ cityId }: { cityId: string }) {
   const activeMode = hasInteractive ? mode : 'article';
 
   return (
-    <main className="city-research">
-      <div className="city-research__paper">
-        <header className="city-research__chrome">
-          <div className="city-research__titles">
-            <h1 className="city-research__city">{city?.shortName ?? entry?.city_name ?? cityId}研究</h1>
-            {entry && (
-              <p className="city-research__meta">{entry.n_modules} 个研究模块 · 逐模块给出方法与局限</p>
-            )}
-          </div>
-          <button
-            type="button"
-            className="city-research__close"
-            aria-label="返回辽宁"
-            onClick={() => requestCityExit({ via: 'back' })}
-          >
-            ×
-          </button>
-        </header>
-
+    <>
         {catalogState.status === 'loading' && (
           <div className="module-workspace__state" aria-busy="true">
             <p className="ag-body-secondary">六城研究索引载入中</p>
@@ -88,7 +74,7 @@ export function CityModulesWorkspace({ cityId }: { cityId: string }) {
         {catalogState.status === 'error' && (
           <div className="module-workspace__state" role="alert">
             <p className="ag-body">研究索引读取失败：{catalogState.message}</p>
-            <p className="ag-caption">后端未启动或研究产物未发布时会出现该状态；不展示任何占位数据。</p>
+            <p className="ag-caption">请稍后重试，或返回城市概览继续观察。</p>
           </div>
         )}
 
@@ -99,7 +85,7 @@ export function CityModulesWorkspace({ cityId }: { cityId: string }) {
         )}
 
         {entry && (
-          <div className="city-research__body">
+          <div className="city-research__body" data-layout="modules">
             <aside className="city-research__sidebar" aria-label="研究模块">
               <ol className="module-workspace__list">
                 {modules.map((item) => (
@@ -109,11 +95,11 @@ export function CityModulesWorkspace({ cityId }: { cityId: string }) {
                       className="module-workspace__item"
                       data-selected={item.module_id === resolved || undefined}
                       data-status={item.status}
-                      onClick={() => setSelectedId(item.module_id)}
+                      onClick={() => navigate(cityContextUrl(ROUTES.research(cityId, item.module_id), cityId))}
                     >
                       <span className="module-workspace__item-id">{item.module_id}</span>
                       <span className="module-workspace__item-title">{item.title}</span>
-                      <span className="module-workspace__chip" data-status={item.status}>{item.status}</span>
+
                     </button>
                   </li>
                 ))}
@@ -123,12 +109,11 @@ export function CityModulesWorkspace({ cityId }: { cityId: string }) {
             <section className="city-research__preview" aria-live="polite">
               <div className="research__main">
                 <header className="research__head">
-                  <p className="research__id">{resolved}</p>
+
                   <h1 className="research__title">{selected?.title ?? ''}</h1>
                   {article && (
                     <p className="research__article-title">
-                      状态 {article.status}
-                      {article.keywords?.length ? ` · ${article.keywords.slice(0, 4).join(' / ')}` : ''}
+                                            {article.keywords?.length ? ` · ${article.keywords.slice(0, 4).join(' / ')}` : ''}
                     </p>
                   )}
                   {selected?.summary && <p className="research__lead">{renderInline(selected.summary, 'module-summary')}</p>}
@@ -174,7 +159,7 @@ export function CityModulesWorkspace({ cityId }: { cityId: string }) {
 
                         {metricNames.length > 0 && (
                           <p className="ag-caption">
-                            研究侧登记的指标列：{metricNames.join(' · ')}（仅登记名，平台不解释、不排序）。
+                            观测指标：{metricNames.map(name => columnMeta(name)?.label ?? '未命名指标').join(' · ')}。
                           </p>
                         )}
 
@@ -209,7 +194,6 @@ export function CityModulesWorkspace({ cityId }: { cityId: string }) {
             </section>
           </div>
         )}
-      </div>
-    </main>
+    </>
   );
 }

@@ -39,12 +39,12 @@ function notable(crops: DailyCrop[]): DailyCrop[] {
     .slice(0, 4);
 }
 
-export function MarketOverview() {
-  const state = useDaily('shenyang');
+export function MarketOverview({cityId = 'shenyang'}: {cityId?: string}) {
+  const state = useDaily(cityId);
 
   return (
     <section className="market-overview" aria-label="当前市场">
-      <p className="ag-label">当前市场 · 沈阳批发（全区唯一在产日度市场源）</p>
+      <p className="ag-label">{cityId === 'shenyang' ? '市场观察 · 沈阳批发' : '市场观察'}</p>
 
       {state.status === 'loading' && (
         <div className="ag-state ag-state--loading" aria-hidden="true">
@@ -58,7 +58,7 @@ export function MarketOverview() {
       )}
 
       {state.status === 'unsupported' && (
-        <p className="market-overview__note">该城市的日度市场数据暂未接入。</p>
+        <p className="market-overview__note">经营分析可使用你设定的销售价格；历史市场情况可在研究中查看。</p>
       )}
 
       {state.status === 'ready' && (

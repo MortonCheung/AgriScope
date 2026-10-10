@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { getCity } from '../../domain/geography/cities';
 import { getCatalog, listPoints, listTopics, researchIdKind } from '../../domain/research/catalog';
 import { V2Repository } from '../../domain/research/v2/repository';
@@ -13,6 +13,7 @@ import { ResearchArticleView } from './ResearchArticleView';
 import { CityModulesWorkspace } from './CityModulesWorkspace';
 import { TransitionLink } from '../../app/pageNavigation';
 import { ROUTES } from '../../app/routes';
+import { cityContextUrl, provinceUrl } from '../../app/context/provinceSelection';
 import { DailyContext } from '../daily/DailyContext';
 import './research.css';
 import './city-research.css';
@@ -26,24 +27,25 @@ import './city-research.css';
  *   │           │                        │ 样本/局限   │
  *   └───────────┴────────────────────────┴─────────────┘
  *
- * 关键语义（§21）：单击左侧条目只改 `selectedId`，**URL 不变**；
+ * 关键语义（§21）：单击左侧条目将研究选择写入 URL，支持历史恢复；
  * 中栏默认是「交互探索」，`完整文章` 是次入口（§22，不反过来）；
  * 右栏只呈现研究侧真实元数据，没有的字段整块不渲染（§23/§38）。
  *
- * 关闭（§23/§24/§26）：右上 `×` 与 `Esc` 都调用同一个空间退出协调器；
+ * 关闭（§23/§24/§26）：右上「概览」与 `Esc` 都调用同一个空间退出协调器；
  * 小屏下 `Esc` 先关抽屉 / 证据面板，再退出城市 —— 不吞掉退出的语义。
  */
-export function CityResearchPage() {
+export function CityResearchPage({initialModuleId, initialSelection}: {initialModuleId?: string; initialSelection?: string} = {}) {
   const { cityId = '' } = useParams();
   const city = getCity(cityId);
   const catalog = getCatalog(cityId);
   const topics = listTopics(cityId);
   const points = listPoints(cityId);
 
-  /** 选择只活在本地：不进 URL、不进历史（§21）。 */
-  const [selectedId, setSelectedId] = useState<string | null>(() => topics[0]?.id ?? null);
-  /** 中栏默认交互探索（§22）；完整文章是次入口。 */
-  const [mode, setMode] = useState<'interactive' | 'article'>('interactive');
+  const [params, setParams] = useSearchParams();
+  const selectedId = params.get('research') ?? initialSelection ?? topics[0]?.id ?? null;
+  const mode = params.get('mode') === 'article' ? 'article' : 'interactive';
+  const setSelectedId = (id: string) => setParams((current) => { const next = new URLSearchParams(current); next.set('research',id); next.delete('mode'); return next; });
+  const setMode = (nextMode: 'interactive' | 'article') => setParams((current) => { const next = new URLSearchParams(current); if (nextMode === 'article') next.set('mode',nextMode); else next.delete('mode'); return next; });
   /** 小屏抽屉 / 证据折叠面板（§37）：桌面由 CSS 忽略这两个状态。 */
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
@@ -52,8 +54,6 @@ export function CityResearchPage() {
 
   /** 切换城市（同一路由换参数）时回到初始状态。 */
   useEffect(() => {
-    setSelectedId(topics[0]?.id ?? null);
-    setMode('interactive');
     setDrawerOpen(false);
     setEvidenceOpen(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -90,11 +90,11 @@ export function CityResearchPage() {
       event.preventDefault();
       if (drawerOpen) { setDrawerOpen(false); drawerToggleRef.current?.focus(); return; }
       if (evidenceOpen) { setEvidenceOpen(false); return; }
-      requestCityExit({ via: 'back' });
+      requestCityExit({ target: provinceUrl(cityId), via: 'push' });
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [drawerOpen, evidenceOpen]);
+  }, [cityId, drawerOpen, evidenceOpen]);
 
   /** 抽屉打开后把焦点移进去（桌面下抽屉不开启，此分支不会走到）。 */
   useEffect(() => {
@@ -107,17 +107,18 @@ export function CityResearchPage() {
   };
 
   return (
-    <main className="city-research">
+    <main className="city-research" data-mode={mode}>
       <div className="city-research__paper">
         <header className="city-research__chrome">
           <div className="city-research__titles">
-            <h1 className="city-research__city">{city?.shortName ?? cityId}研究</h1>
+            <h1 className="city-research__city">{city?.shortName ?? cityId} · 研究工作台</h1>
             {catalog && (
               <p className="city-research__meta">{topics.length} 个方向 · {points.length} 个研究点</p>
             )}
           </div>
-          {catalog && (
-            <div className="city-research__actions">
+          <div className="city-research__actions">
+            <TransitionLink className="city-research__decision" to={cityContextUrl(ROUTES.decision(cityId),cityId)}>进入决策 →</TransitionLink>
+            {catalog && <>
               <button
                 type="button"
                 className="city-research__toggle city-research__drawer-toggle"
@@ -137,15 +138,15 @@ export function CityResearchPage() {
               >
                 研究证据
               </button>
+            </>}
             </div>
-          )}
           <button
             type="button"
             className="city-research__close"
-            aria-label="返回辽宁"
-            onClick={() => requestCityExit({ via: 'back' })}
+            aria-label="返回城市概览"
+            onClick={() => requestCityExit({ target: provinceUrl(cityId), via: 'push' })}
           >
-            ×
+            ← 概览
           </button>
         </header>
 
@@ -166,7 +167,6 @@ export function CityResearchPage() {
               tabIndex={-1}
               ref={drawerRef}
             >
-              <TransitionLink className="city-research__decision" to={`${ROUTES.decision(cityId)}?view=input`}>比较种植选择 →</TransitionLink>
               <DailyContext cityId={cityId} />
               <ResearchTree
                 cityId={cityId}
@@ -239,7 +239,7 @@ export function CityResearchPage() {
           /* 无策展树的城市（朝阳/锦州/大连/丹东/铁岭/跨城市）：走模块级工作台。
              它们的研究已正式产出，只是研究侧没有导出沈阳那样的「方向→研究点」结构，
              因此如实只呈现模块、交互探索与完整文章，绝不编造研究点。 */
-          <CityModulesWorkspace cityId={cityId} />
+          <CityModulesWorkspace cityId={cityId} initialModuleId={initialModuleId} />
         )}
       </div>
     </main>

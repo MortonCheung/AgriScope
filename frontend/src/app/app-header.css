@@ -25,16 +25,12 @@
 
 .ag-header__lead { display: flex; align-items: center; gap: var(--ag-space-5); min-width: 0; }
 
-/* 右侧：主导航 + 全局上下文条（V3 §4/§6）。 */
+/* 右侧主导航。 */
 .ag-header__tail {
   display: flex;
   align-items: center;
   gap: clamp(16px, 2.6vw, 40px);
   min-width: 0;
-}
-.ag-header__tail > .ag-context {
-  padding-left: clamp(12px, 2vw, 28px);
-  border-left: 1px solid var(--ag-rule-soft);
 }
 
 .ag-header__brand { display: inline-flex; align-items: baseline; gap: 10px; color: var(--ag-ink); }
@@ -65,14 +61,9 @@
 /* Hover 线与 Active 指示线统一由 components/AnimatedUnderline 提供（V2 §41）。 */
 
 @media (max-width: 1023px) {
-  /* 中屏：上下文条仍保留（三个入口都依赖它），只收窄间距。 */
+  /* 中屏收窄主导航间距。 */
   .ag-header__tail { gap: var(--ag-space-4); }
   .ag-header__nav { gap: clamp(12px, 2vw, 22px); }
-}
-
-@media (max-width: 860px) {
-  /* 小屏：城市选择仍然要有，周期收进 select 自身的文字里即可。 */
-  .ag-header__tail > .ag-context { padding-left: var(--ag-space-4); }
 }
 
 @media (max-width: 560px) {
@@ -82,7 +73,7 @@
   */
   .ag-header__lead { gap: var(--ag-space-4); }
   .ag-header__tail { gap: var(--ag-space-3); }
-  .ag-header__brand-en { display: none; }
+  .ag-header__brand-en { font-size: 0.625rem; letter-spacing: 0.12em; }
 
   .ag-header__menu-toggle {
     display: inline-flex;
@@ -119,8 +110,5 @@
   }
   .ag-header__nav .ag-header__link:last-child { border-bottom: 0; }
 
-  /* ContextBar 降级：城市 + 周期都保留，只隐藏「城市 / 周期」这类等宽小标签，
-     让它在窄屏是「紧凑但可用」的两个原生 select，而不是塌陷成一条。 */
-  .ag-header__tail > .ag-context { padding-left: 0; border-left: 0; }
 }
 

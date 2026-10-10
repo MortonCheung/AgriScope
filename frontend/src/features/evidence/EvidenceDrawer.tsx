@@ -14,7 +14,7 @@ import './evidence.css';
  * 这样决策中心与证据层可以各自演进，不需要互相耦合实现细节。
  */
 export interface EvidenceContext {
-  /** 当前全局上下文（与 ContextBar 一致）。 */
+  /** 当前工具的城市、作物与周期上下文。 */
   cityId: string;
   crop?: string;
   horizon?: number;
@@ -95,6 +95,12 @@ function EvidencePanel({ context, onClose }: { context: EvidenceContext; onClose
         </header>
 
         <div className="evidence-drawer__body">
+          {layers.observation && <Layer index={0} title="本城农业观测" state={layers.observation}>{(data) => <>
+            <p className="evidence-reading">{data.city_name} · 生产统计 {data.production.latest_year} 年</p>
+            <ul className="evidence-rows evidence-rows--stack">{data.production.items.slice(0,3).map(item=><li key={item.crop}>{item.crop}：{num(item.area_ha)} 公顷</li>)}</ul>
+            <p className="evidence-note">气候观测 {data.climate.period_start}–{data.climate.period_end} 年，最新完整年 {data.climate.complete_year}。再分析气候与未来产量、价格预测具有不同含义。</p>
+            <details><summary>来源与统计口径</summary><ul className="evidence-rows evidence-rows--stack">{[...data.production.source_paths,...data.climate.source_paths].map(path=><li key={path}>{path}</li>)}</ul>{[...data.production.limitations,...data.climate.limitations].map(note=><p className="evidence-note" key={note}>{note}</p>)}</details>
+          </>}</Layer>}
           <Layer index={1} title="当前市场状态" state={layers.market}>
             {(data) => (
               <>

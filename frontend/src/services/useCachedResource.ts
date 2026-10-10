@@ -25,28 +25,24 @@ export function useCachedResource<T>({
   missingMessage: string;
   keepPrevious?: boolean;
 }): AsyncState<T> {
-  const [state, setState] = useState<AsyncState<T>>(() => {
+  const readInitial = (): AsyncState<T> => {
     if (!key) return { status: 'error', error: missingMessage };
     const cached = peek();
     return cached === null ? { status: 'loading' } : { status: 'ready', data: cached };
-  });
-
+  };
+  const [stored, setStored] = useState<{ key: string | null; value: AsyncState<T> }>(() => ({key,value:readInitial()}));
   useEffect(() => {
-    if (!key) { setState({ status: 'error', error: missingMessage }); return; }
+    const setState = (value: AsyncState<T>) => setStored({key,value});
+    if (!key) { setState({status:'error',error:missingMessage}); return; }
     const cached = peek();
-    if (cached !== null) { setState({ status: 'ready', data: cached }); return; }
+    if (cached !== null) { setState({status:'ready',data:cached}); return; }
     let alive = true;
-    setState((previous) => (
-      keepPrevious && previous.status === 'ready' ? previous : { status: 'loading' }
-    ));
-    load()
-      .then((data) => { if (alive) setState({ status: 'ready', data }); })
-      .catch((error: unknown) => {
-        if (alive) setState({ status: 'error', error: error instanceof Error ? error.message : '加载失败' });
-      });
-    return () => { alive = false; };
+    setStored((previous) => ({key,value:keepPrevious && previous.value.status === 'ready' ? previous.value : {status:'loading'}}));
+    load().then((data) => { if (alive) setState({status:'ready',data}); })
+      .catch((error: unknown) => { if (alive) setState({status:'error',error:error instanceof Error ? error.message : '加载失败'}); });
+    return () => {alive=false;};
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, keepPrevious]);
-
-  return state;
+  // 新资源的第一帧也不展示上城/上一张表的数据；旧请求完成回调已由 cleanup 隔离。
+  return stored.key === key || keepPrevious ? stored.value : readInitial();
 }

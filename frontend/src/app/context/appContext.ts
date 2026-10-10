@@ -20,10 +20,10 @@ import { STUDY_CITY_IDS } from '../../domain/geography/cities';
 export const CONTEXT_HORIZONS = [7, 14, 30] as const;
 export type ContextHorizon = (typeof CONTEXT_HORIZONS)[number];
 
-export const DEFAULT_CITY_ID = 'shenyang';
+export const DEFAULT_CITY_ID: string | null = null;
 export const DEFAULT_HORIZON: ContextHorizon = 14;
 
-const STORAGE_KEY = 'agriscope.context.v1';
+const STORAGE_KEY = 'agriscope.context.v4';
 const CITY_IDS: readonly string[] = STUDY_CITY_IDS;
 
 const isHorizon = (value: unknown): value is ContextHorizon =>
@@ -60,7 +60,7 @@ export const CONTEXT_QUERY_KEYS = {
 } as const;
 
 interface Persisted {
-  cityId: string;
+  cityId: string | null;
   crop: string | null;
   horizon: ContextHorizon;
   asOf: string | null;
@@ -95,7 +95,7 @@ function persist(state: Persisted): void {
 }
 
 export interface AppContextState extends Persisted {
-  setCity: (cityId: string) => void;
+  setCity: (cityId: string | null) => void;
   setCrop: (crop: string | null) => void;
   setHorizon: (horizon: ContextHorizon) => void;
   setAsOf: (asOf: string | null) => void;
@@ -109,7 +109,7 @@ export const useAppContext = create<AppContextState>((set, get) => ({
   horizon: initial.horizon,
   asOf: initial.asOf,
   setCity: (cityId) => {
-    if (!isKnownCity(cityId)) return;
+    if (cityId !== null && !isKnownCity(cityId)) return;
     set({ cityId });
     persist(get());
   },
@@ -151,7 +151,8 @@ export function readContextFromSearch(search: string): Partial<Persisted> {
  */
 export function writeContextToSearch(search: string, context: Persisted): string {
   const params = new URLSearchParams(search);
-  params.set(CONTEXT_QUERY_KEYS.city, context.cityId);
+  if (context.cityId) params.set(CONTEXT_QUERY_KEYS.city, context.cityId);
+  else params.delete(CONTEXT_QUERY_KEYS.city);
   params.set(CONTEXT_QUERY_KEYS.horizon, String(context.horizon));
   if (context.crop) params.set(CONTEXT_QUERY_KEYS.crop, context.crop);
   else params.delete(CONTEXT_QUERY_KEYS.crop);
