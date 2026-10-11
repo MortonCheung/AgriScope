@@ -5,7 +5,7 @@ import json
 import math
 from datetime import date, timedelta
 from typing import Any, Dict, Optional
-from .. import config as C
+from .. import config as C, publication
 from ..dependencies import slug_to_short
 from ..errors import ApiError, ErrorCode
 
@@ -23,7 +23,7 @@ def _read(path) -> Optional[Dict[str, Any]]:
 
 
 def _load_latest():
-    return _read(C.LH_LATEST)
+    return _read(publication.path("long"))
 
 
 def _finite(v):
@@ -60,7 +60,7 @@ def _valid_entry(e):
 
 
 def _freshness(snap, crop=None):
-    daily = _read(C.DAILY_LATEST)
+    daily = _read(publication.path("daily"))
     latest = (daily or {}).get("latest_data_date")
     lh_date = snap.get("latest_data_date") or snap.get("as_of")
     entries = [e for e in snap.get("entries", []) if not crop or e.get("crop") == crop]
@@ -199,7 +199,7 @@ def decision(payload):
     for value in actual.values():
         if not isinstance(value, dict) or set(value) != {"cost_per_mu", "yield_kg_per_mu"} or not all(v is None or (_finite(v) and v > 0) for v in value.values()):
             invalid("实际成本、亩产必须为正的有限数值或 null。")
-    daily = _read(C.DAILY_LATEST) or {}
+    daily = _read(publication.path("daily")) or {}
     current = {r.get("crop"): r for r in daily.get("crops", []) if isinstance(r, dict)}
     rows = []
     for crop in prefs or crops_all:

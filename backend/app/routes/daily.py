@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Response
 
 from ..services import daily_service as DAILY
 
@@ -12,5 +12,6 @@ router = APIRouter(tags=["daily"])
 
 
 @router.get("/api/daily/latest", summary="Daily 市场脉搏最新快照（schema 1.1.0）")
-def latest(city: str = Query("shenyang", description="城市 slug，目前仅 shenyang")) -> Dict[str, Any]:
+def latest(response: Response, city: str = Query("shenyang", description="城市 slug，目前仅 shenyang")) -> Dict[str, Any]:
+    response.headers["Cache-Control"] = "no-store"
     return DAILY.latest(city)

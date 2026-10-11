@@ -2,7 +2,7 @@
 Description=Rebind frozen Final runtime after atomic Daily publication
 
 [Path]
-PathChanged=/opt/agriscope/data/processed/daily/snapshots/latest.json
+PathChanged=/opt/agriscope/runtime/manifest.json
 Unit=agriscope-api-refresh.service
 
 [Install]

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ChoiceButtons } from '../../components/controls/ChoiceButtons';
 interface ModelRow {cityId:string;crop:string;horizon:number;algorithm:string;status:string;wape:number;mae:number;baselineWape:number}
 interface Fold {name:string;trainStart:string;trainEnd:string;trainEndMax:string;validationStart:string;validationStartMax:string;validationEnd:string;validationEndMax:string}
-export interface ProjectEvidence {schemaVersion:string;modelVersion:string;dataVersion:string;fingerprint:string;reportGeneratedAt:string;trainingCompletedAt:null;seed:number;features:string;models:ModelRow[];folds:Fold[];baseline:string;metricSemantics:string}
+export interface ProjectEvidence {schemaVersion:string;modelVersion:string;dataVersion:string;fingerprint:string;reportGeneratedAt:string;trainingCompletedAt:null;seed:number;features:string;models:ModelRow[];folds:Fold[];baseline:string;metricSemantics:string;update?:{observation_date:string|null;snapshot_generated_at:string|null;runtime_published_at:string|null;collection_attempt_at:string|null;collection_status:string|null}}
 export function useProjectEvidence(){
  const [data,setData]=useState<ProjectEvidence|null>(null);const [error,setError]=useState('');const [attempt,setAttempt]=useState(0);
  useEffect(()=>{const controller=new AbortController();setError('');const timer=setTimeout(()=>{controller.abort();setError('验证证据读取超时');},10000);

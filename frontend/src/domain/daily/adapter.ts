@@ -81,6 +81,8 @@ export function adaptDailySnapshot(raw: unknown, now = new Date()): DailySnapsho
       modelStatus: (crop.model_status ?? null) as DailyModelStatus | null, finalStatus: (crop.final_status ?? null) as string | null,
     };
   });
+  const publication = raw.publication_meta as Record<string, unknown> | undefined;
+  if(publication && ['collection_attempt_at','collection_status','collected_at','runtime_published_at','model_report_generated_at'].some(key=>publication[key]!=null&&typeof publication[key]!=='string'))throw new Error('发布元数据格式不完整。');
   const ageDays = ageForDate(latestDataDate, asOf);
   return {
     cityId: 'shenyang', city: '沈阳', status: raw.status as DailySnapshot['status'], runDate: raw.date as string,
@@ -88,6 +90,7 @@ export function adaptDailySnapshot(raw: unknown, now = new Date()): DailySnapsho
     sourceMeta: {
       schemaVersion: '1.1.0', pipelineVersion: raw.daily_pipeline_version as string, dataVersion: raw.data_version as string,
       modelVersion: raw.model_version as string, modelStatus: overallModelStatus, generatedAt: raw.generated_at as string,
+      collectionAttemptAt:publication?.collection_attempt_at as string|null|undefined,collectionStatus:publication?.collection_status as string|null|undefined,collectedAt:publication?.collected_at as string|null|undefined,runtimePublishedAt:publication?.runtime_published_at as string|null|undefined,modelReportGeneratedAt:publication?.model_report_generated_at as string|null|undefined,
       snapshotHash: (raw.snapshot_hash ?? null) as string | null, finalCodeFingerprint: (model.final_code_fingerprint ?? null) as string | null,
     },
   };

@@ -78,7 +78,7 @@ def snapshot_hash(snap: dict) -> str:
 def load_monitor() -> dict:
     d = IO.read_json_safe(C.MONITOR_JSON, {}) or {}
     base = {"consecutive_failures": 0, "last_success_date": None, "last_success_at": None,
-            "last_attempt_at": None, "last_failure_reason": None, "latest_data_date": None,
+            "last_attempt_at": None, "last_failure_reason": None, "last_collection_completed_at": None, "latest_data_date": None,
             "crawl_status": None, "snapshot_status": None, "records_fetched": 0,
             "records_accepted": 0, "records_rejected": 0, "model_status": None,
             "daily_pipeline_version": C.DAILY_PIPELINE_VERSION, "timezone": IO.TZ_NAME}
@@ -279,6 +279,8 @@ def build(target_date: str, city: str = C.PRIMARY_CITY,
         if data_date and (monitor.get("latest_data_date") is None
                           or data_date >= monitor["latest_data_date"]):
             monitor["latest_data_date"] = data_date
+        if counts.get("collection_completed_at"):
+            monitor["last_collection_completed_at"] = counts["collection_completed_at"]
         monitor.update({
             "last_attempt_at": now,
             "crawl_status": crawl_status,

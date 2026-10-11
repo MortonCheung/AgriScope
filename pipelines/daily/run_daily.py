@@ -102,6 +102,11 @@ def _dates_to_collect(target_date: str, max_gap_days: int = 60) -> list[str]:
     return sorted(set(dates))
 
 
+def collection_completed_at(results, dry_run=False):
+    """Only a completed, non-empty, schema-valid network collection earns this timestamp."""
+    return IO.now_str() if not dry_run and any(r.status==SRC.ST_OK and r.count>0 and r.schema_ok for r in results) else None
+
+
 def _evaluate_crawl(results: list, target_date: str) -> tuple[str, list[str]]:
     """判定 crawl_status 与结构漂移。fail-loud：结构变化不得静默成功。"""
     fetched = [r for r in results if r.status != SRC.ST_SKIPPED]
@@ -164,6 +169,7 @@ def run(target_date: str, city: str = C.PRIMARY_CITY, dry_run: bool = False,
         summary.update({"collect_dates": dates, "records_fetched": sum(r.count for r in results),
                         "schema_changed": bool(schemes)})
     summary["crawl_status"] = crawl_status
+    summary["collection_completed_at"] = collection_completed_at(results,dry_run)
 
     # ---------------- 2+3. 标准化 + QC ----------------
     if dry_run:
@@ -214,7 +220,8 @@ def run(target_date: str, city: str = C.PRIMARY_CITY, dry_run: bool = False,
         log("job_end (snapshot skipped)")
         return summary, EXIT_OK
 
-    counts = {"records_fetched": summary.get("records_fetched", 0),
+    counts = {"collection_completed_at":summary.get("collection_completed_at"),
+               "records_fetched": summary.get("records_fetched", 0),
                "records_accepted": report.get("rows_accepted", 0),
                "records_rejected": int(report.get("by_status", {}).get("REJECTED", 0))}
     snap = SN.build(target_date=target_date, city=city, crawl_status=crawl_status,

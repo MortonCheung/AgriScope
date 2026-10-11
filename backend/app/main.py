@@ -29,6 +29,7 @@ load_env()
 
 from . import config as C
 from . import runtime_snapshot as RS
+from . import publication
 from .dependencies import get_engine, new_request_id
 from .errors import ApiError, ErrorCode, error_body
 from .responses import SafeJSONResponse
@@ -88,7 +89,14 @@ async def _request_id_middleware(request: Request, call_next):
         return SafeJSONResponse(status_code=413, content=error_body(
             ErrorCode.BAD_REQUEST, "请求内容过长。", rid, {"max_bytes": MAX_JSON_BYTES}),
             headers={"X-Request-ID": rid})
-    response = await call_next(request)
+    try:
+        if request.url.path == "/health/live":
+            response = await call_next(request)
+        else:
+            with publication.pin():
+                response = await call_next(request)
+    except ApiError as exc:
+        response = SafeJSONResponse(status_code=exc.status_code, content=error_body(exc.error_code, exc.message, rid, exc.details))
     response.headers["X-Request-ID"] = rid
     return response
 

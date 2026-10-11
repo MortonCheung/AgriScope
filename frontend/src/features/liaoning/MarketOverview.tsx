@@ -34,7 +34,7 @@ export function MarketOverview({ cityId, resource }: { cityId: string; resource:
         <p className="market-overview__note">首屏按已发布的 7 日变幅排列。</p>
         <ul className="market-overview__prices">{latestMarketRows(ready.crops, ready.crops.length).map(row => <PriceRow key={row.crop} row={row} period={period} latestDate={ready.latestDataDate}/>)}</ul>
         {ready.sources.map(source => <a className="market-overview__source" key={source.id} href={source.url} target="_blank" rel="noreferrer">{source.name} ↗</a>)}
-        <dl className="market-overview__publication"><div><dt>快照生成</dt><dd>{ready.sourceMeta.generatedAt}</dd></div><div><dt>运行日期</dt><dd>{ready.runDate}</dd></div></dl>
+        <dl className="market-overview__publication"><div><dt>快照生成</dt><dd>{ready.sourceMeta.generatedAt}</dd></div><div><dt>最近采集尝试</dt><dd>{ready.sourceMeta.collectionAttemptAt??'未独立登记'} · {ready.sourceMeta.collectionStatus==='SKIPPED'?'跳过采集':ready.sourceMeta.collectionStatus==='FAILED'?'采集失败':ready.sourceMeta.collectionStatus==='OK'?'采集成功':'状态未登记'}</dd></div><div><dt>采集完成</dt><dd>{ready.sourceMeta.collectedAt??'未独立登记'}</dd></div><div><dt>运行时发布</dt><dd>{ready.sourceMeta.runtimePublishedAt??'未登记'}</dd></div><div><dt>模型报告生成</dt><dd>{ready.sourceMeta.modelReportGeneratedAt??'未登记'}</dd></div></dl>
       </details>
     </>}
     {refreshError && <p role="status" className="market-overview__refresh-error">刷新失败，仍显示以上日期的观测。{refreshError}</p>}

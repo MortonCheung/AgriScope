@@ -47,6 +47,11 @@ export interface DailySnapshot {
     modelVersion: string;
     modelStatus: DailyModelStatus | null;
     generatedAt: string;
+    collectionAttemptAt?: string | null;
+    collectionStatus?: string | null;
+    collectedAt?: string | null;
+    runtimePublishedAt?: string | null;
+    modelReportGeneratedAt?: string | null;
     snapshotHash: string | null;
     finalCodeFingerprint: string | null;
   };

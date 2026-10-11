@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""外围编排：Daily 成功快照 → 独立长期推理；长期失败不改写 Daily。"""
+"""外围编排：Daily 成功快照 → 独立长期推理 → 原子增量运行时发布；失败保留上次有效版本。"""
 from __future__ import annotations
 
 import json
@@ -9,6 +9,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0,str(ROOT))
 
 
 def _monorepo_root() -> Path:
@@ -19,7 +21,7 @@ def _monorepo_root() -> Path:
     return ROOT
 
 
-PROJECT = _monorepo_root()
+PROJECT = Path(os.environ["PROJECT_ROOT"]).resolve() if os.environ.get("PROJECT_ROOT") else _monorepo_root()
 
 
 def eligible(summary: dict, code: int) -> bool:
@@ -42,13 +44,19 @@ def main(argv=None) -> int:
         job = subprocess.run([sys.executable, "pipelines/long_horizon/run_long_horizon_job.py"], cwd=ROOT, env=env)
         result.update({"long_horizon_exit": job.returncode,
                        "status": "CHAIN_SUCCESS" if job.returncode == 0 else "DAILY_SUCCESS_LONG_HORIZON_FAILED"})
+        from pipelines.publishing.publish_daily_runtime import publish
+        try:
+            result["runtime_publication"] = publish(PROJECT, ROOT / "runtime", include_long_horizon=job.returncode == 0)
+            result["runtime_publication_exit"] = 0
+        except Exception as exc:
+            result.update(runtime_publication_exit=6, runtime_publication_error=type(exc).__name__, runtime_publication_reason=str(exc)[:300], status="RUNTIME_PUBLICATION_FAILED")
     else:
         result.update({"long_horizon_exit": None, "status": "LONG_HORIZON_SKIPPED_DAILY_NOT_SUCCESSFUL"})
     sys.path.insert(0, str(ROOT))
     from pipelines.long_horizon.run_long_horizon_job import atomic_json
     atomic_json(PROJECT / "data/processed/long_horizon/chain_status.json", result)
     print("CHAIN " + json.dumps(result, ensure_ascii=False))
-    return daily.returncode if daily.returncode else (5 if result["long_horizon_exit"] else 0)
+    return daily.returncode or result.get("runtime_publication_exit", 0) or (5 if result["long_horizon_exit"] else 0)
 
 
 if __name__ == "__main__":

@@ -23,7 +23,7 @@ import json
 import sys
 from typing import Any, Dict, Optional
 
-from . import config as C
+from . import config as C, publication
 
 _STATE: Dict[str, Any] = {
     "bound": False,
@@ -57,7 +57,7 @@ def read_final_versions() -> Dict[str, Any]:
 
 def _extended_fingerprint() -> Optional[Dict[str, Any]]:
     try:
-        return json.loads(C.EXTENDED_FINGERPRINT.read_text(encoding="utf-8"))
+        return json.loads(publication.path("fingerprint").read_text(encoding="utf-8"))
     except Exception:  # noqa: BLE001
         return None
 
@@ -67,7 +67,7 @@ def _extended_compatible(cur: Dict[str, Any]) -> bool:
     fp = _extended_fingerprint()
     if not fp:
         return False
-    if not C.EXTENDED_SNAPSHOT_DIR.exists():
+    if not publication.path("extended").exists():
         return False
     return (fp.get("code_fingerprint") == cur.get("code_fingerprint")
             and fp.get("model_version") == cur.get("model_version"))
@@ -77,7 +77,7 @@ def _choose_snapshot(cur: Dict[str, Any]):
     if C.SNAPSHOT_POLICY == "frozen":
         return C.FINAL_SNAPSHOT_DIR, "FROZEN_FALLBACK", "policy=frozen"
     if _extended_compatible(cur):
-        return C.EXTENDED_SNAPSHOT_DIR, "LIVE", None
+        return publication.path("extended"), "LIVE", None
     reason = "extended_snapshot 缺失或指纹与当前 Final 不兼容"
     return C.FINAL_SNAPSHOT_DIR, "FROZEN_FALLBACK", reason
 
@@ -96,11 +96,11 @@ def _patch_snapshot_dir(snapshot_dir) -> int:
 def _runtime_data_version(snapshot_dir, status: str) -> str:
     if status == "LIVE":
         fp = _extended_fingerprint() or {}
-        return fp.get("data_version") or "LIVE_SNAPSHOT"
+        return publication.current().get("snapshot_hash") or fp.get("data_version") or "LIVE_SNAPSHOT"
     return "final_v1"
 
 
-def bind() -> Dict[str, Any]:
+def _bind() -> Dict[str, Any]:
     """启动时绑定一次运行时快照。幂等。"""
     if _STATE["bound"]:
         return dict(_STATE)
@@ -137,6 +137,11 @@ def bind() -> Dict[str, Any]:
         "modules_patched": patched,
     })
     return dict(_STATE)
+
+
+def bind() -> Dict[str, Any]:
+    with publication.pin():
+        return _bind()
 
 
 def state() -> Dict[str, Any]:

@@ -5,7 +5,7 @@ import hashlib
 import io
 import json
 import math
-from .. import config as C
+from .. import config as C, publication
 from ..errors import ApiError, ErrorCode
 
 
@@ -37,9 +37,14 @@ def evidence():
                 trainEnd=min(r["train_end"] for r in current), trainEndMax=max(r["train_end"] for r in current),
                 validationStart=min(r["validation_start"] for r in current), validationStartMax=max(r["validation_start"] for r in current),
                 validationEnd=min(r["validation_end"] for r in current), validationEndMax=max(r["validation_end"] for r in current)))
+        try:
+            snapshot=json.loads(publication.path('daily').read_text(encoding='utf-8'))
+            monitor=json.loads(publication.path('monitor').read_text(encoding='utf-8')) if publication.path('monitor').is_file() else None
+        except (OSError,ValueError):
+            snapshot,monitor={},None
         return dict(schemaVersion="1", modelVersion=meta["model_version"], dataVersion=meta["data_version"],
                     fingerprint=meta["code_fingerprint"], reportGeneratedAt=meta["generated_at"], trainingCompletedAt=None,
                     seed=meta["seed"], features=meta["features"], models=models, folds=folds,
-                    metricSemantics="WAPE_percent_MAE_CNY_per_kg", baseline="baseline_last_value")
+                    update=publication.metadata(snapshot, monitor), metricSemantics="WAPE_percent_MAE_CNY_per_kg", baseline="baseline_last_value")
     except (OSError, ValueError, KeyError, TypeError) as exc:
         raise ApiError(503, ErrorCode.MODEL_UNAVAILABLE, "冻结验证证据暂时无法核对。") from exc
