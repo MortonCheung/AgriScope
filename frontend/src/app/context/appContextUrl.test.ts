@@ -10,8 +10,9 @@ describe('四要素 URL 编解码（Frontend V3 §9）', () => {
     expect(readContextFromSearch('?city=Shenyang').cityId).toBeUndefined();
   });
 
-  it('horizon 只接受 7/14/30，其它值被忽略', () => {
+  it('horizon 只接受已登记的短期和长期节点，其它值被忽略', () => {
     expect(readContextFromSearch('?horizon=30').horizon).toBe(30);
+    expect(readContextFromSearch('?horizon=180').horizon).toBe(180);
     expect(readContextFromSearch('?horizon=99').horizon).toBeUndefined();
     expect(readContextFromSearch('?horizon=abc').horizon).toBeUndefined();
   });
@@ -50,6 +51,14 @@ describe('四要素 URL 编解码（Frontend V3 §9）', () => {
     expect(readContextFromSearch(search)).toEqual({
       cityId: 'chaoyang', crop: '黄瓜', horizon: 14, asOf: '2026-09-14',
     });
+  });
+
+  it('未选择期限时不凭空写入14天，长期期限可以完整往返', () => {
+    const context = { cityId: 'shenyang', crop: '土豆', horizon: null, asOf: null };
+    expect(new URLSearchParams(writeContextToSearch('?view=planning&horizon=14', context)).has('horizon')).toBe(false);
+    const long = writeContextToSearch('?view=long-horizon', { ...context, horizon: 120 });
+    expect(readContextFromSearch(long).horizon).toBe(120);
+    expect(new URLSearchParams(long).get('view')).toBe('long-horizon');
   });
 
   it('幂等：同一上下文重复写回结果稳定（不会造成 URL 抖动）', () => {

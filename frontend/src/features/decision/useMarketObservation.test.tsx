@@ -19,5 +19,5 @@ it('aborts an old city/crop request and never reveals its later response in the 
   expect(screen.getByText('loading:')).toBeTruthy();
   await act(async () => { pending[1].resolve(empty('chaoyang')); });
   await waitFor(() => expect(screen.getByText('ready:chaoyang')).toBeTruthy());
-  expect(observations.mock.calls.map(args => args.slice(0, 2))).toEqual([['shenyang', '黄瓜'], ['chaoyang', '土豆']]);
+  expect(observations.mock.calls.map(args => args.slice(0, 2))).toEqual([['shenyang', undefined], ['chaoyang', undefined]]);
 });

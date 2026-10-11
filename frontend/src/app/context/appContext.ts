@@ -16,12 +16,12 @@ import { STUDY_CITY_IDS } from '../../domain/geography/cities';
  * 不写 localStorage，避免"上次看的城市"在演示时突然改变开场。
  */
 
-/** 决策中心共享的短期周期，与后端 capability 的 horizons 对齐（7/14/30）。 */
-export const CONTEXT_HORIZONS = [7, 14, 30] as const;
+/** 只保存用户明确选择的正式期限；具体模块仍由能力接口限定节点。 */
+export const CONTEXT_HORIZONS = [7, 14, 30, 60, 90, 120, 150, 180] as const;
 export type ContextHorizon = (typeof CONTEXT_HORIZONS)[number];
 
 export const DEFAULT_CITY_ID: string | null = null;
-export const DEFAULT_HORIZON: ContextHorizon = 14;
+export const DEFAULT_HORIZON: ContextHorizon | null = null;
 
 const STORAGE_KEY = 'agriscope.context.v4';
 const CITY_IDS: readonly string[] = STUDY_CITY_IDS;
@@ -62,7 +62,7 @@ export const CONTEXT_QUERY_KEYS = {
 interface Persisted {
   cityId: string | null;
   crop: string | null;
-  horizon: ContextHorizon;
+  horizon: ContextHorizon | null;
   asOf: string | null;
 }
 
@@ -97,7 +97,7 @@ function persist(state: Persisted): void {
 export interface AppContextState extends Persisted {
   setCity: (cityId: string | null) => void;
   setCrop: (crop: string | null) => void;
-  setHorizon: (horizon: ContextHorizon) => void;
+  setHorizon: (horizon: ContextHorizon | null) => void;
   setAsOf: (asOf: string | null) => void;
 }
 
@@ -119,7 +119,7 @@ export const useAppContext = create<AppContextState>((set, get) => ({
     persist(get());
   },
   setHorizon: (horizon) => {
-    if (!isHorizon(horizon)) return;
+    if (horizon !== null && !isHorizon(horizon)) return;
     set({ horizon });
     persist(get());
   },
@@ -153,7 +153,8 @@ export function writeContextToSearch(search: string, context: Persisted): string
   const params = new URLSearchParams(search);
   if (context.cityId) params.set(CONTEXT_QUERY_KEYS.city, context.cityId);
   else params.delete(CONTEXT_QUERY_KEYS.city);
-  params.set(CONTEXT_QUERY_KEYS.horizon, String(context.horizon));
+  if (context.horizon !== null) params.set(CONTEXT_QUERY_KEYS.horizon, String(context.horizon));
+  else params.delete(CONTEXT_QUERY_KEYS.horizon);
   if (context.crop) params.set(CONTEXT_QUERY_KEYS.crop, context.crop);
   else params.delete(CONTEXT_QUERY_KEYS.crop);
   if (context.asOf) params.set(CONTEXT_QUERY_KEYS.asOf, context.asOf);

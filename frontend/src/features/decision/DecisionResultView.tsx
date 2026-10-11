@@ -72,6 +72,6 @@ export function DecisionResultRail({ result, candidate }: { result: DecisionResu
     {result.issues.includes('no_clear_winner') && <p className="decision-note">方案差异较小，不作强烈推荐。</p>}
     {warning && <p className="decision-note">{warning}</p>}
     <p className="decision-note">区间用于情景比较；风险评分不是事件发生概率。</p>
-    <details className="decision-disclosure"><summary>假设与限制</summary><ul className="decision-limitations">{[...new Set([...candidate.warnings, ...result.warnings, ...result.assumptions])].map(note => <li key={note}>{note}</li>)}</ul></details>
+    <details className="decision-disclosure"><summary>方法与数据</summary><p className="decision-note">研究背景用于理解市场，不证明方案收益。</p><ul className="decision-evidence__links">{candidate.evidence.map(e=><li key={`${e.city_id}:${e.research_id}`}><TransitionLink to={ROUTES.research(e.city_id,e.research_id)}>{e.label} →</TransitionLink></li>)}</ul><ul className="decision-limitations">{[...new Set([...candidate.warnings, ...result.warnings, ...result.assumptions])].map(note => <li key={note}>{note}</li>)}</ul></details>
   </>;
 }

@@ -42,7 +42,7 @@ describe('四模块固定与六城能力门禁', () => {
     expect(menu.getByRole('button', { name: '经营计划' }).hasAttribute('disabled')).toBe(false);
     expect(menu.getByRole('button', { name: '短期市场比较' }).hasAttribute('disabled')).toBe(!['shenyang', 'chaoyang'].includes(cityId));
     expect(menu.getByRole('button', { name: '上市窗口情景' }).hasAttribute('disabled')).toBe(cityId !== 'shenyang');
-    fireEvent.change(screen.getByLabelText('计划作物'), { target: { value: '__custom__' } });
+    fireEvent.click(screen.getByRole('button',{name:'自定义作物'}));
     fireEvent.change(screen.getByLabelText('作物名称'), { target: { value: '土豆' } });
     for (const [label, value] of [[/^种植面积/, '1'], [/^预计亩产/, '100'], [/^每亩总成本/, '50'], [/^假设销售价格/, '1'], [/^可销售比例/, '100']] as const) fireEvent.change(screen.getByLabelText(label), { target: { value } });
     fireEvent.click(screen.getByRole('button', { name: '核算我的计划' }));
@@ -56,7 +56,7 @@ describe('四模块固定与六城能力门禁', () => {
     const menu = within(screen.getByRole('list', { name: '决策工具' }));
     await waitFor(() => expect(menu.getByRole('button', { name: '市场观察' }).hasAttribute('disabled')).toBe(false));
     fireEvent.click(menu.getByRole('button', { name: '市场观察' }));
-    expect(screen.getByText('2 元/kg')).toBeTruthy();
+    expect(await screen.findByText('2 元/kg')).toBeTruthy();
     expect(container.querySelector('.workbench__paper')).toBe(paper); expect(container.querySelector('.workbench__sidebar')).toBe(sidebar);
     expect(decide).not.toHaveBeenCalled();
     fireEvent.click(menu.getByRole('button', { name: '经营计划' }));

@@ -1,3 +1,4 @@
+import { DiscreteHorizonSlider } from '../../components/controls/DiscreteHorizonSlider';
 import { useState } from 'react';
 import type { LongHorizonEntry, LongHorizonStatus, LongHorizonFreshness, TargetEstimate, TargetType } from '../../domain/longHorizon/types';
 import { useLongHorizon } from './useLongHorizon';
@@ -50,9 +51,7 @@ export function LongHorizonPanel({ cityId, crop }: { cityId: string; crop?: stri
   if (state.status === 'unsupported') return null;
   if (state.status === 'loading') return <section className="long-horizon" aria-busy="true"><p className="long-horizon__pending">读取长期情景</p></section>;
   if (state.status === 'error') return <section className="long-horizon"><p role="status">{state.error}</p></section>;
-  const selector = <label className="long-horizon__selector">预计上市跨度<select aria-label="长期情景上市跨度" value={horizon ?? ''} onChange={e => setHorizon(e.target.value ? Number(e.target.value) : undefined)}>
-    <option value="">请按自己的计划选择</option>{state.capability.horizons.map(h => <option key={h.days} value={h.days}>{h.days} 天 · {STATUS_LABELS[h.productionStatus]}</option>)}
-  </select></label>;
+  const selector=<DiscreteHorizonSlider label="长期情景上市跨度" value={horizon??null} nodes={state.capability.horizons.map(h=>h.days).filter(h=>[30,60,90,120,150,180].includes(h)).sort((a,b)=>a-b)} onChange={setHorizon}/>;
   if (state.status === 'awaiting_selection') return <section className="long-horizon">{selector}<p className="long-horizon__note">上市时间由你确认，系统不推断作物生育期。</p></section>;
   const data: LongHorizonEntry = state.data;
   return <section>{selector}{data.targets ? <DualTargetView targets={data.targets} asOf={data.asOf} freshness={data.freshness} llmStatus={data.llmStatus}/>

@@ -1,9 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useState } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
-import { TransitionLink } from '../../app/pageNavigation';
-import { ROUTES } from '../../app/routes';
 import { isKnownCrop, readContextFromSearch, useAppContext, writeContextToSearch } from '../../app/context/appContext';
-import { cityContextUrl } from '../../app/context/provinceSelection';
 import { STUDY_CITY_IDS, getCity } from '../../domain/geography/cities';
 import { useObservations } from '../../domain/observations/useObservations';
 import type { CityObservation, ClimateYear } from '../../domain/observations/types';
@@ -14,6 +11,7 @@ import {
 } from '../../domain/decision/planning';
 import { EvidenceDrawer, type EvidenceContext } from '../evidence/EvidenceDrawer';
 import { WorkbenchMain, WorkbenchRail } from '../../components/workbench/WorkbenchLayout';
+import { ChoiceButtons } from '../../components/controls/ChoiceButtons';
 import './planning.css';
 
 export interface PlanningWorkbenchProps { cityId: string }
@@ -52,6 +50,14 @@ function PlanningCity({ cityId, observation, observationStatus, observationError
   useEffect(() => writePlanningSession(cityId, session), [cityId, session]);
   const productionCrops = observation?.production.items.map(item => item.crop) ?? [];
   const listedCrop = productionCrops.includes(session.activeCrop);
+  useLayoutEffect(() => {
+    const context=readContextFromSearch(params.toString());
+    const pathCity=/^\/cities\/([^/]+)/.exec(location.pathname)?.[1];
+    const requested=(!context.cityId || context.cityId===cityId || pathCity===cityId) ? context.crop : undefined;
+    const metric=params.get('metric');
+    if(metric && ['precipitation_mm','mean_temp_c','growing_season_precipitation_mm','growing_season_mean_temp_c'].includes(metric))setSession(previous=>previous.climateMetric===metric?previous:{...previous,climateMetric:metric as PlanningClimateMetric});
+    if (requested) setSession(previous => previous.activeCrop === requested || (previous.activeCrop === CUSTOM && previous.customCrop.trim() === requested) ? previous : { ...previous, activeCrop: requested });
+  }, [params]);
   const crop = session.activeCrop === CUSTOM ? session.customCrop.trim() : session.activeCrop;
   // 恢复本城会话时只投影到内存上下文，不由 effect 反写 URL。
   useLayoutEffect(() => {
@@ -73,11 +79,11 @@ function PlanningCity({ cityId, observation, observationStatus, observationError
   const showResult = (submitted || restoredCalculation) && !errors.crop && result && lines;
   const baselineCheck = session.baseline ? validatePlanningDraft(session.baseline.draft, session.baseline.crop) : null;
   const baselineResult = baselineCheck?.inputs ? calculatePlanning(baselineCheck.inputs) : null;
-  const openEvidence = (topic: string) => setDrawer({ open: true, context: { cityId, crop: crop || undefined, topic } });
+  const openEvidence = (topic?: string) => setDrawer({ open: true, context: { cityId, crop: crop || undefined, topic } });
   const syncCropContext = (next: string) => {
     const state = useAppContext.getState();
     state.setCity(cityId); state.setCrop(isKnownCrop(next) ? next : null);
-    setParams(previous => new URLSearchParams(writeContextToSearch(previous.toString(), { ...useAppContext.getState(), cityId })), { replace: true });
+    setParams(previous => new URLSearchParams(writeContextToSearch(previous.toString(), { ...useAppContext.getState(), cityId })), );
   };
   const updateDraft = (key: keyof PlanningDraft, next: string) => {
     if (restoredCalculation) setSubmitted(true);
@@ -97,14 +103,11 @@ function PlanningCity({ cityId, observation, observationStatus, observationError
     <p className="decision-note">填写自己的条件，核算收入、成本与盈亏。</p>
       <form className="planning-form" noValidate onSubmit={event => { event.preventDefault(); calculate(); }} aria-label={`${city.shortName}经营条件`}>
         <h2 className="ag-title">我的条件</h2>
-        <label className="planning-field" htmlFor={`${id}-crop`}><span>计划作物</span>
-          <select id={`${id}-crop`} value={session.activeCrop} onChange={event => chooseCrop(event.target.value)} aria-invalid={submitted && Boolean(errors.crop)}>
-            <option value="">选择作物</option>
-            {productionCrops.map(name => <option key={name} value={name}>{name}</option>)}
-            {session.activeCrop && session.activeCrop !== CUSTOM && !listedCrop ? <option value={session.activeCrop}>{session.activeCrop}（当前条件）</option> : null}
-            <option value={CUSTOM}>自定义作物</option>
-          </select>
-        </label>
+        <ChoiceButtons label="计划作物" value={session.activeCrop} onChange={chooseCrop} options={[
+          ...productionCrops.map(name => ({ value: name, label: name })),
+          ...(session.activeCrop && session.activeCrop !== CUSTOM && !listedCrop ? [{ value: session.activeCrop, label: `${session.activeCrop}（当前条件）` }] : []),
+          { value: CUSTOM, label: '自定义作物' },
+        ]}/>
         {session.activeCrop === CUSTOM && <label className="planning-field" htmlFor={`${id}-custom`}><span>作物名称</span><input id={`${id}-custom`} maxLength={12} value={session.customCrop} onChange={event => { setSession(previous => ({ ...previous, customCrop: event.target.value })); setSubmitted(false); syncCropContext(event.target.value.trim()); }}/></label>}
         {submitted && errors.crop && <p className="planning-error" role="alert">{errors.crop}</p>}
         <div className="planning-inputs">
@@ -114,7 +117,6 @@ function PlanningCity({ cityId, observation, observationStatus, observationError
             {submitted && errors[key] && <em id={`${id}-${key}-error`} className="planning-error" role="alert">{errors[key]}</em>}
           </label>)}
         </div>
-        <p className="decision-note">每亩总成本请包含种苗、肥料、人工、租金等计划支出。可销售比例用于扣除自留、损耗或未售出部分。</p>
         {submitted && errors.calculation && <p className="planning-error" role="alert">{errors.calculation}</p>}
         <button type="submit" className="ag-button ag-button--primary">核算我的计划</button>
       </form>
@@ -125,7 +127,7 @@ function PlanningCity({ cityId, observation, observationStatus, observationError
     </section>}
     {session.baseline && baselineResult && <section className="planning-section" aria-labelledby={`${id}-comparison`}>
       <header className="decision-section-head"><p className="ag-label">两方案比较</p><h2 className="ag-title" id={`${id}-comparison`}>方案 A 与当前方案</h2><p className="decision-note">方案 A 保存的是当时的输入条件。比较允许不同作物或规模，请结合这些差异阅读。</p></header>
-      <Comparison baselineCrop={session.baseline.crop} baselineDraft={session.baseline.draft} baseline={baselineResult} crop={crop} draft={draft} current={showResult ? result : null}/>
+      <details className="decision-disclosure"><summary>查看方案 A 完整比较</summary><Comparison baselineCrop={session.baseline.crop} baselineDraft={session.baseline.draft} baseline={baselineResult} crop={crop} draft={draft} current={showResult ? result : null}/></details>
       <button type="button" className="ag-button" onClick={() => setSession(previous => ({ ...previous, baseline: null }))}>移除方案 A</button>
     </section>}
     <details className="planning-background"><summary>本城生产与历史气候</summary><section className="planning-section" aria-labelledby={`${id}-observations`}>
@@ -133,26 +135,27 @@ function PlanningCity({ cityId, observation, observationStatus, observationError
       {observationStatus === 'loading' ? <p role="status">农业观测载入中</p> : observationStatus === 'error' ? <p role="alert">{observationError} 仍可填写自定义作物完成核算。</p> : !observation ? <p>该城市暂无可用农业观测。</p> : <>
         <div className="planning-observations">
           <ProductionStructure observation={observation}/>
-          <ClimateHistory observation={observation} metricKey={session.climateMetric} onMetricChange={climateMetric => setSession(previous => ({ ...previous, climateMetric }))}/>
+          <ClimateHistory observation={observation} metricKey={session.climateMetric} onMetricChange={climateMetric => {setSession(previous => ({ ...previous, climateMetric }));setParams(previous=>{const next=new URLSearchParams(previous);next.set('metric',climateMetric);return next;});}}/>
         </div>
-        <div className="planning-evidence-actions">
-          <button type="button" className="ag-button" onClick={() => openEvidence('production')}>为什么？看生产结构依据</button>
-          <button type="button" className="ag-button" onClick={() => openEvidence('climate')}>为什么？看历史气候依据</button>
-          <TransitionLink className="ag-button" to={cityContextUrl(ROUTES.city(cityId), cityId)}>进入{city.shortName}正式研究 →</TransitionLink>
-        </div>
+
       </>}
     </section></details>
     </div></WorkbenchMain>
     <WorkbenchRail>
       <section className="planning-result" aria-label="经营核算结果" aria-live="polite">
-        <p className="ag-label">{city.shortName}</p><p className="ag-label">基于用户设定条件的情景结果</p>
+        <p className="ag-label">{city.shortName}</p><p className="ag-label">情景估算 · 用户假设</p>
         {showResult ? <>
           <h2 className="ag-title">{crop} · {number(validation.inputs!.areaMu)} 亩</h2>
           <ResultReadings result={result}/>
           <p className="decision-note">可销售数量 {number(result.soldKg)} kg。保本读数已计入销售比例；“无法计算”表示当前价格、亩产或销售比例为零。</p>
           <button type="button" className="ag-button" onClick={() => setSession(previous => ({ ...previous, baseline: { crop, draft: { ...draft } } }))}>保存为方案 A</button>
         </> : <div className="planning-empty"><h2 className="ag-title">从你的实际条件开始</h2><p className="decision-note">补全作物与五项条件后生成结果。观测面积不会自动成为你的亩产、成本或销售价格。</p></div>}
-        <p className="planning-boundary">这组结果来自公式核算，不保证未来价格、产量或收益。敏感性变化幅度由工具设定，不代表事件发生概率。</p>
+        <details className="decision-disclosure"><summary>方法与数据</summary>
+          <p className="decision-note">输入均为用户假设。收入 = 面积 × 亩产 × 销售比例 × 价格；总成本 = 面积 × 每亩总成本。</p>
+          <p className="decision-note">每亩总成本需包含全部计划支出；可销售比例扣除未出售部分。保本价格与亩产计入销售比例。</p>
+          <p className="planning-boundary">公式核算不保证未来价格、产量或收益。敏感性幅度不代表事件发生概率；生产与历史气候观测只作背景，不参与上述核算。</p>
+          <button type="button" className="ag-button" onClick={() => openEvidence()}>查看本城数据依据</button>
+        </details>
       </section>
     </WorkbenchRail>
     <EvidenceDrawer open={drawer.open} onClose={() => setDrawer(previous => ({ ...previous, open: false }))} context={drawer.context}/>
@@ -216,7 +219,8 @@ function ClimateHistory({ observation, metricKey, onMetricChange }: { observatio
   const latest = series.find(year => year.year === observation.climate.complete_year);
   return <section className="planning-observation" aria-label="历史气候变化"><h3 className="ag-title">历史气候变化</h3>
     {!observation.climate.available || !series.length ? <p>历史气候暂无可用来源。</p> : <>
-      <label className="planning-climate-select"><span>观察指标</span><select aria-label="历史气候指标" value={metricKey} onChange={event => onMetricChange(event.target.value as typeof metricKey)}>{CLIMATE_METRICS.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}</select></label>
+      <ChoiceButtons label="历史气候指标" value={metricKey} onChange={next => onMetricChange(next as typeof metricKey)} options={CLIMATE_METRICS.map(item => ({ value: item.key, label: item.label }))}/>
+
       <p className="decision-note">{observation.climate.period_start}–{observation.climate.period_end} 年 · 最新完整年 {observation.climate.complete_year}{latest ? ` · ${metric.label} ${number(latest[metricKey])} ${metric.unit}` : ''}</p>
       <ClimateChart series={series} metric={metric}/>
       <p className="decision-note">历史气候暴露背景，用于观察年际变化。再分析气候不代表气象站实测，不等于未来风险或灾害损失预测。</p>

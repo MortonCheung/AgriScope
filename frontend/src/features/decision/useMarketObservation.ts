@@ -12,7 +12,10 @@ export function useMarketObservation(cityId: string, crop?: string): MarketObser
   useEffect(() => {
     const controller = new AbortController();
     setState({ key, status: 'loading' });
-    getMarketProvider().observations(cityId, crop, { signal: controller.signal }).then(data => {
+    getMarketProvider().observations(cityId, undefined, { signal: controller.signal }).then(async base => {
+      if(controller.signal.aborted)return base;
+      return crop && base.crops.includes(crop) && crop !== base.selectedCrop ? getMarketProvider().observations(cityId,crop,{signal:controller.signal}) : base;
+    }).then(data => {
       if (!controller.signal.aborted) setState({ key, status: 'ready', data });
     }, error => {
       if (!controller.signal.aborted) setState({ key, status: 'error', error: error instanceof Error ? error.message : '本城市场观测暂时无法加载。' });

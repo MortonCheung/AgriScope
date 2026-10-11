@@ -28,11 +28,12 @@ beforeEach(() => {
 });
 afterEach(() => cleanup());
 const view = (cityId: string) => <MemoryRouter><PlanningWorkbench cityId={cityId}/></MemoryRouter>;
-function change(label: RegExp | string, value: string) { fireEvent.change(screen.getByLabelText(label), { target: { value } }); }
+function change(label: RegExp | string,value:string){if(label==='计划作物'||label==='历史气候指标'){const names:Record<string,string>={__custom__:'自定义作物',mean_temp_c:'全年平均气温',growing_season_mean_temp_c:'生长季平均气温'};fireEvent.click(within(screen.getByRole('group',{name:label})).getByRole('button',{name:names[value]??value}));}else fireEvent.change(screen.getByLabelText(label),{target:{value}});}
+function openDetails(){document.querySelectorAll('details').forEach(d=>d.open=true);}
 function fill(price = '4') {
   change('计划作物', '玉米');
   change(/^种植面积/, '10'); change(/^预计亩产/, '500'); change(/^每亩总成本/, '1000'); change(/^假设销售价格/, price); change(/^可销售比例/, '80');
-  fireEvent.click(screen.getByRole('button', { name: '核算我的计划' }));
+  fireEvent.click(screen.getByRole('button', { name: '核算我的计划' }));openDetails();
 }
 const results = () => within(screen.getByRole('region', { name: '经营核算结果' }));
 describe('six-city planning interactions', () => {
@@ -46,7 +47,7 @@ describe('six-city planning interactions', () => {
     expect(results().getByText('利润').nextElementSibling?.textContent).toBe(`${(6000 + index * 4000).toLocaleString('zh-CN')} 元`);
     expect(screen.getByRole('img', { name: /利润敏感性/ })).toBeTruthy();
     expect(screen.getByRole('img', { name: '2010至2025年全年降水历史序列，单位mm' })).toBeTruthy();
-    expect(screen.getByText('基于用户设定条件的情景结果')).toBeTruthy();
+    expect(screen.getByText('情景估算 · 用户假设')).toBeTruthy();
   });
   it('validates blank, negative, zero area and invalid sale proportion without stale results', () => {
     render(view('jinzhou'));
@@ -76,10 +77,10 @@ describe('six-city planning interactions', () => {
     change('计划作物', '玉米');
     expect((screen.getByLabelText(/^种植面积/) as HTMLInputElement).value).toBe('10');
     rendered.rerender(view('tieling'));
-    expect((screen.getByLabelText('计划作物') as HTMLSelectElement).value).toBe('');
+    expect(within(screen.getByRole('group',{name:'计划作物'})).queryByRole('button',{pressed:true})).toBeNull();
     change('计划作物', '__custom__'); change('作物名称', '草莓'); change(/^种植面积/, '8');
     rendered.rerender(view('dalian'));
-    expect((screen.getByLabelText('计划作物') as HTMLSelectElement).value).toBe('玉米');
+    expect(within(screen.getByRole('group',{name:'计划作物'})).getByRole('button',{name:'玉米',pressed:true})).toBeTruthy();
     expect((screen.getByLabelText(/^种植面积/) as HTMLInputElement).value).toBe('10');
     rendered.rerender(view('tieling'));
     expect((screen.getByLabelText('作物名称') as HTMLInputElement).value).toBe('草莓');
@@ -89,7 +90,7 @@ describe('six-city planning interactions', () => {
     const rendered = render(view('chaoyang')); fill();
     fireEvent.click(screen.getByRole('button', { name: '保存为方案 A' }));
     change(/^假设销售价格/, '5');
-    const table = screen.getByRole('table', { name: '两方案经营结果比较' });
+    openDetails();const table = screen.getByRole('table', { name: '两方案经营结果比较' });
     const profitRow = within(table).getByRole('row', { name: /利润/ });
     expect(profitRow.textContent).toContain('6,000 元');
     expect(profitRow.textContent).toContain('10,000 元');
@@ -99,10 +100,10 @@ describe('six-city planning interactions', () => {
     expect((screen.getByLabelText(/^假设销售价格/) as HTMLInputElement).value).toBe('5');
   });
   it('opens evidence in the same city and changes the historical chart metric', () => {
-    render(view('chaoyang'));
-    fireEvent.click(screen.getByRole('button', { name: '为什么？看历史气候依据' }));
-    expect(screen.getByLabelText('证据抽屉').textContent).toBe('chaoyang · climate');
-    expect(screen.getByRole('link', { name: '进入朝阳正式研究 →' }).getAttribute('href')).toBe('/cities/chaoyang?city=chaoyang&horizon=14');
+    render(view('chaoyang'));openDetails();
+    fireEvent.click(screen.getByRole('button', { name: '查看本城数据依据' }));
+    expect(screen.getByLabelText('证据抽屉').textContent).toContain('chaoyang');
+    expect(screen.queryByRole('button',{name:'为什么？看历史气候依据'})).toBeNull();
     change('历史气候指标', 'mean_temp_c');
     expect(screen.getByRole('img', { name: '2010至2025年全年平均气温历史序列，单位℃' })).toBeTruthy();
   });
@@ -121,10 +122,10 @@ describe('six-city planning interactions', () => {
   it('restores the current calculated result and historical metric after unmounting, without needing another submit', () => {
     const rendered = render(view('dandong')); fill();
     change('历史气候指标', 'growing_season_mean_temp_c');
-    rendered.unmount(); render(view('dandong'));
+    rendered.unmount(); render(view('dandong'));openDetails();
     expect(results().getByText('利润').nextElementSibling?.textContent).toBe('6,000 元');
     expect(screen.getByRole('img', { name: /利润敏感性/ })).toBeTruthy();
-    expect((screen.getByLabelText('历史气候指标') as HTMLSelectElement).value).toBe('growing_season_mean_temp_c');
+    expect(within(screen.getByRole('group',{name:'历史气候指标'})).getByRole('button',{name:'生长季平均气温',pressed:true})).toBeTruthy();
     expect(useAppContext.getState()).toMatchObject({ cityId: 'dandong', crop: '玉米' });
   });
 
@@ -159,7 +160,7 @@ describe('six-city planning interactions', () => {
     function RouteBridge() {
       useContextUrlSync();
       const location = useLocation();
-      return <output aria-label="当前路由">{location.pathname}{location.search}</output>;
+      const navigate=useNavigate();return <><output aria-label="当前路由">{location.pathname}{location.search}</output><button onClick={()=>navigate(cityContextUrl('/cities/chaoyang','chaoyang'))}>进入朝阳正式研究 →</button></>;
     }
     function ResearchReturn() {
       const navigate = useNavigate();
@@ -176,14 +177,14 @@ describe('six-city planning interactions', () => {
     fireEvent.click(screen.getByRole('button', { name: '保存为方案 A' }));
     change(/^假设销售价格/, '5');
     change('历史气候指标', 'mean_temp_c');
-    fireEvent.click(screen.getByRole('link', { name: '进入朝阳正式研究 →' }));
+    fireEvent.click(screen.getByRole('button', { name: '进入朝阳正式研究 →' }));
     expect(screen.queryByRole('region', { name: '经营核算结果' })).toBeNull();
     const researchQuery = new URLSearchParams(screen.getByLabelText('当前路由').textContent!.split('?')[1]);
     expect(researchQuery.get('crop')).toBe('玉米'); expect(researchQuery.get('horizon')).toBe('30'); expect(researchQuery.get('as_of')).toBe('2026-09-14');
-    fireEvent.click(screen.getByRole('button', { name: '返回经营计划' }));
+    fireEvent.click(screen.getByRole('button', { name: '返回经营计划' }));openDetails();
     expect(results().getByText('利润').nextElementSibling?.textContent).toBe('10,000 元');
     expect(screen.getByRole('table', { name: '两方案经营结果比较' })).toBeTruthy();
-    expect((screen.getByLabelText('历史气候指标') as HTMLSelectElement).value).toBe('mean_temp_c');
+    expect(within(screen.getByRole('group',{name:'历史气候指标'})).getByRole('button',{name:'全年平均气温',pressed:true})).toBeTruthy();
     const returnUrl = screen.getByLabelText('当前路由').textContent!;
     rendered.unmount();
     render(<MemoryRouter initialEntries={[returnUrl]}>{routeTree}</MemoryRouter>);

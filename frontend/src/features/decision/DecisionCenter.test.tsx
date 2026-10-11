@@ -46,7 +46,7 @@ describe('市场观察只使用本城正式观测', () => {
   it('hides old values while a new crop loads and offers a real retry on failure', () => {
     const onCrop = vi.fn();
     const rendered = render(view(ready(), onCrop));
-    fireEvent.change(screen.getByLabelText('观察作物'), { target: { value: '黄瓜' } });
+    fireEvent.click(within(screen.getByRole('group',{name:'观察作物'})).getByRole('button',{name:'黄瓜'}));
     expect(onCrop).toHaveBeenCalledWith('黄瓜');
     rendered.rerender(view({ status: 'loading', retry: vi.fn() }));
     expect(screen.queryByText('2.2 元/kg')).toBeNull();

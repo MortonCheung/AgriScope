@@ -48,8 +48,8 @@ describe('decision flow & truthfulness',()=>{
     await waitFor(()=>expect(screen.queryByRole('heading',{name:'芸豆 100 亩'})).not.toBeNull());
     expect(screen.getByText('37.4 / 100')).toBeTruthy();expect(screen.queryByText('82.6 / 100')).toBeNull();expect(screen.getByText('成本可能缺项，收益可能高估。')).toBeTruthy();
     fireEvent.click(screen.getByRole('button',{name:'收益与风险'}));expect(screen.getByText('历史同月价格范围，未校准为概率区间。')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button',{name:'比较'}));expect(screen.getByRole('combobox',{name:'替代比较方案'})).toBeTruthy();
-    fireEvent.click(screen.getByRole('button',{name:'依据'}));expect(screen.getByRole('link',{name:'月份与价格 →'}).getAttribute('href')).toBe('/cities/shenyang/research/A1.3');
+    fireEvent.click(screen.getByRole('button',{name:'比较'}));expect(screen.getByRole('group',{name:'替代比较方案'})).toBeTruthy();
+    expect(screen.queryByRole('button',{name:'依据'})).toBeNull();fireEvent.click(screen.getByText('方法与数据'));expect(screen.getByRole('link',{name:'月份与价格 →'}).getAttribute('href')).toBe('/cities/shenyang/research/A1.3');
     fireEvent.click(screen.getByRole('button',{name:'方案'}));fireEvent.click(screen.getByRole('link',{name:'如果条件变差 →'}));
     await waitFor(()=>expect(screen.queryByRole('heading',{name:'条件变差，还撑得住吗。'})).not.toBeNull());
     fireEvent.click(await screen.findByRole('button',{name:'市场转弱'}));expect(screen.getByText('旧模型参数压力情景，非发生概率或因果估计。 压力结果的上行情景待补充。')).toBeTruthy();
@@ -59,7 +59,7 @@ describe('decision flow & truthfulness',()=>{
   it.each(['model_error','user_input_required','empty','insufficient_market_data'] as const)('allows correction after %s',async(state)=>{
     // Terminal states are independent of fixture fetches.
     vi.mocked(getDecisionProvider).mockReturnValue(new MockDecisionProvider(state));renderDecision(`state-${state}-${++seq}`);await sample();
-    await waitFor(()=>expect(screen.queryByRole('button',{name:'修改条件'})).not.toBeNull());fireEvent.click(screen.getByRole('button',{name:'修改条件'}));expect(screen.getByRole('heading',{name:'这季，怎么种。'})).toBeTruthy();
+    await waitFor(()=>expect(screen.queryByRole('button',{name:'修改条件'})).not.toBeNull());fireEvent.click(screen.getByRole('button',{name:'修改条件'}));expect(screen.getByRole('heading',{name:'短期市场比较'})).toBeTruthy();
   });
   it('null reads remain missing in detail, comparison and stress',async()=>{
     const missing=structuredClone(adapted);missing.candidates[0].price.low=null;missing.candidates[0].price.base=null;missing.candidates[0].price.high=null;missing.candidates[0].profit={...missing.candidates[0].profit,low:null,base:null,high:null};missing.candidates[0].roi={...missing.candidates[0].roi,low:null,base:null,high:null};missing.candidates[0].stress_scenarios=[];

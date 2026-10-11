@@ -3,6 +3,7 @@ import { getCity } from '../../domain/geography/cities';
 import type { DecisionProvider, DecisionRequest, LegacyDecisionRequest, RiskPreference } from '../../domain/decision/types';
 import { WorkbenchMain, WorkbenchRail } from '../../components/workbench/WorkbenchLayout';
 import { FinalDecisionInput } from './FinalDecisionInput';
+import type { DecisionSelection } from '../../services/useDecisionSession';
 import { validateRequest } from '../../domain/decision/validation';
 type DecisionSample={id:string;label:string;request:LegacyDecisionRequest};
 
@@ -10,8 +11,8 @@ const preferenceLabels:Record<RiskPreference,string>={conservative:'稳健一些
 function blankRequest(cityId:string):LegacyDecisionRequest{
   return {contract_version:'0',user_context:{city_id:cityId,area_mu:0,budget_cny:0,risk_preference:'balanced',planting_window:{start:'',end:''},harvest_window:{start:'',end:''},crop_preferences:[],actual_inputs:{}},input_source:{kind:'structured'}};
 }
-export function DecisionInput({cityId,initial,onSubmit,provider,expandInputs=false}:{cityId:string;initial:DecisionRequest|null;onSubmit:(request:DecisionRequest)=>void;provider:DecisionProvider;expandInputs?:boolean}){
-  if(provider.data_mode==='api')return <FinalDecisionInput cityId={cityId} initial={initial?.contract_version==='1'?initial:null} onSubmit={onSubmit} provider={provider} expandInputs={expandInputs}/>;
+export function DecisionInput({cityId,initial,onSubmit,provider,expandInputs=false,selection,onSelection}:{cityId:string;initial:DecisionRequest|null;onSubmit:(request:DecisionRequest)=>void;provider:DecisionProvider;expandInputs?:boolean;selection?:DecisionSelection;onSelection?:(selection:DecisionSelection)=>void}){
+  if(provider.data_mode==='api')return <FinalDecisionInput cityId={cityId} initial={initial?.contract_version==='1'?initial:null} onSubmit={onSubmit} provider={provider} expandInputs={expandInputs} selection={selection} onSelection={onSelection}/>;
   return <LegacyDecisionInput cityId={cityId} initial={initial?.contract_version==='0'?initial:null} onSubmit={onSubmit} provider={provider} expandInputs={expandInputs}/>;
 }
 function LegacyDecisionInput({cityId,initial,onSubmit,provider,expandInputs=false}:{cityId:string;initial:LegacyDecisionRequest|null;onSubmit:(request:DecisionRequest)=>void;provider:DecisionProvider;expandInputs?:boolean}){

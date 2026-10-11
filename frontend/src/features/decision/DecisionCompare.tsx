@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ChoiceButtons } from '../../components/controls/ChoiceButtons';
 import type { DecisionCandidate, DecisionResult } from '../../domain/decision/types';
 import { ConfidenceMark, dateWindow, formatNumber, RangePlot, rangeText } from './DecisionVisuals';
 import { actualProfit, evaluationLabel, shownConfidence } from './presentation';
@@ -27,9 +28,9 @@ export function DecisionCompare({result,initialId,onChoose}:{result:DecisionResu
   ];
   return <section className="decision-compare">
     <header className="decision-section-head"><p className="ag-label">两个选择，同一把尺</p><h1 className="ag-section-title">多一些收益，还是少一些压力。</h1><ConfidenceMark confidence={shownConfidence(result,left)}/></header>
-    <div className="decision-compare__selectors">{[left,right].map((c,i)=><label key={i}>{i===0?'当前选择':'替代选择'}<select aria-label={i===0?'当前比较方案':'替代比较方案'} value={c.id} onChange={e=>choose(i===0?'left':'right',e.target.value)}>{result.candidates.map(option=><option key={option.id} value={option.id}>{option.crop} · {evaluationLabel(option)}</option>)}</select></label>)}</div>
+    <div className="decision-compare__selectors">{[left,right].map((c,i)=><ChoiceButtons key={i} label={i===0?'当前比较方案':'替代比较方案'} value={c.id} onChange={id=>choose(i===0?'left':'right',id)} options={result.candidates.map(option=>({value:option.id,label:`${option.crop} · ${evaluationLabel(option)}`}))}/>)}</div>
     <RangePlot title={actualProfit(left)&&actualProfit(right)?'两个方案净收益比较':'两个方案价格情景比较'} rows={[{label:left.crop,range:actualProfit(left)&&actualProfit(right)?left.profit:left.price,baseline:true},{label:right.crop,range:actualProfit(left)&&actualProfit(right)?right.profit:right.price}]}/>
-    <dl className="decision-compare__rows">{metrics.map(m=><div key={m.label}><dt>{m.label}</dt><dd><span className="ag-sr-only">{left.crop}：</span>{m.read(left)}</dd><dd><span className="ag-sr-only">{right.crop}：</span>{m.read(right)}</dd></div>)}</dl>
+    <details className="decision-disclosure"><summary>查看完整比较读数</summary><dl className="decision-compare__rows">{metrics.map(m=><div key={m.label}><dt>{m.label}</dt><dd><span className="ag-sr-only">{left.crop}：</span>{m.read(left)}</dd><dd><span className="ag-sr-only">{right.crop}：</span>{m.read(right)}</dd></div>)}</dl></details>
     <div className="decision-compare__foot"><p className="decision-note">— 表示数据待补充。风险评分不是概率；{calibrated?'高低区间由模型标记为已校准。':'部分高低情景没有校准为概率区间。'}部分候选只有基准收益，不能据此比较完整下行风险。</p></div>
     <div className="decision-actions"><button className="ag-button" onClick={()=>onChoose(left.id)}>查看{left.crop}</button><button className="ag-button" onClick={()=>onChoose(right.id)}>查看{right.crop}</button></div>
   </section>;

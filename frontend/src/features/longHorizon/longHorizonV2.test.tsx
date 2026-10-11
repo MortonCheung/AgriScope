@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router-dom';
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -7,7 +8,7 @@ import { LongHorizonPlanning } from './LongHorizonPlanning';
 import { HttpLongHorizonProvider } from '../../providers/longHorizon';
 import type { LongHorizonDecisionRequest } from '../../domain/longHorizon/types';
 
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+afterEach(() => { cleanup(); sessionStorage.clear(); vi.unstubAllGlobals(); });
 
 const freshness = () => ({ status: 'CURRENT', daily_latest_data_date: '2026-10-06', long_horizon_as_of: '2026-10-06', daily_delayed: true });
 const target = (type = 'harvest_market_price', point = 2) => ({ crop: '土豆', horizon: 120, target_type: type,
@@ -77,14 +78,14 @@ describe('v2 harvest boundary', () => {
 
 describe('structured harvest flow', () => {
   it('requires an explicit user horizon and never auto-selects the longest registry entry', async () => {
-    const p = provider(); render(<LongHorizonPlanning cityId="shenyang" provider={p}/>);
+    const p = provider(); render(<MemoryRouter><LongHorizonPlanning cityId="shenyang" provider={p}/></MemoryRouter>);
     await screen.findByRole('button', { name: '比较上市决策 →' });
-    expect(screen.getByRole('combobox', { name: '预计上市跨度' })).toHaveValue('');
+    expect(screen.getByRole('slider',{name:'预计上市跨度'})).toHaveAttribute('aria-valuetext','尚未选择期限');
     fireEvent.change(screen.getByLabelText(/种植面积/), { target: { value: '10' } });
     fireEvent.change(screen.getByLabelText(/可用预算/), { target: { value: '3' } });
     fireEvent.click(screen.getByRole('button', { name: '比较上市决策 →' }));
     expect(screen.getByRole('alert')).toHaveTextContent('明确选择'); expect(p.decision).not.toHaveBeenCalled();
-    fireEvent.change(screen.getByRole('combobox', { name: '预计上市跨度' }), { target: { value: '120' } });
+    fireEvent.change(screen.getByRole('slider',{name:'预计上市跨度'}),{target:{value:'3'}});
     fireEvent.click(screen.getByRole('button', { name: '比较上市决策 →' }));
     await screen.findByText('预计上市窗口价格');
     expect(p.decision.mock.calls[0][0].user_context.market_context.expected_harvest_horizon_days).toBe(120);
@@ -95,7 +96,7 @@ describe('structured harvest flow', () => {
   });
 
   it('rejects unmatched dates without snapping or issuing a request', async () => {
-    const p = provider(); render(<LongHorizonPlanning cityId="shenyang" provider={p}/>);
+    const p = provider(); render(<MemoryRouter><LongHorizonPlanning cityId="shenyang" provider={p}/></MemoryRouter>);
     await screen.findByRole('button', { name: '比较上市决策 →' });
     fireEvent.change(screen.getByLabelText(/种植面积/), { target: { value: '10' } });
     fireEvent.change(screen.getByLabelText(/可用预算/), { target: { value: '3' } });
@@ -105,7 +106,7 @@ describe('structured harvest flow', () => {
   });
 
   it('keeps unsupported cities isolated', async () => {
-    const p = provider(); render(<LongHorizonPlanning cityId="dalian" provider={p}/>);
+    const p = provider(); render(<MemoryRouter><LongHorizonPlanning cityId="dalian" provider={p}/></MemoryRouter>);
     expect(screen.getByText('这个城市的上市决策待接入')).toBeVisible();
     await waitFor(() => expect(p.capabilities).not.toHaveBeenCalled());
   });

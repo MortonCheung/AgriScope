@@ -1,3 +1,5 @@
+import { finalRequest,finalEnvelope } from '../test/finalDecisionFixture';
+import { adaptFinalDecision } from '../providers/decision/finalAdapter';
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
@@ -13,6 +15,16 @@ let seq=0;
 beforeEach(()=>sessionStorage.clear());
 afterEach(()=>{cleanup();vi.unstubAllGlobals();});
 describe('decision session request ownership',()=>{
+  it('changes the request with URL horizons and separates cached model versions',async()=>{
+    const source=finalRequest();const decide=vi.fn(async(request)=>adaptFinalDecision(finalEnvelope('OK',request)));
+    const provider:DecisionProvider={data_mode:'api',decide};const key=`nodes-${++seq}`;
+    const {result,rerender}=renderHook(({horizon,version})=>useDecisionSession('shenyang',provider,key,true,{horizon},version),{initialProps:{horizon:30,version:'v1'}});
+    await act(async()=>result.current.run(source));
+    rerender({horizon:7,version:'v1'});expect(result.current.state.result).toBeNull();
+    await waitFor(()=>expect(result.current.state.result?.request.contract_version==='1' && result.current.state.result.request.user_context.market_context.horizon_days).toBe(7));
+    rerender({horizon:30,version:'v1'});await waitFor(()=>expect(result.current.state.status).toBe('ready'));expect(decide).toHaveBeenCalledTimes(2);
+    rerender({horizon:30,version:'v2'});await waitFor(()=>expect(decide).toHaveBeenCalledTimes(3));
+  });
   it('ignores late responses, even when a provider ignores abort',async()=>{
     const first=deferred(),second=deferred();
     const provider:DecisionProvider={decide:vi.fn().mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise)};

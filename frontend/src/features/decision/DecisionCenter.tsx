@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ChoiceButtons } from '../../components/controls/ChoiceButtons';
 import type { MarketSeries } from '../../domain/market/types';
 import { getCity } from '../../domain/geography/cities';
 import { WorkbenchMain, WorkbenchRail } from '../../components/workbench/WorkbenchLayout';
@@ -24,7 +25,7 @@ export function DecisionCenter({ cityId, observation, onCrop, onPlanning }: {
       {observation.status === 'error' && <div role="alert"><p>{observation.error}</p><button type="button" className="ag-button" onClick={observation.retry}>重试市场观测</button></div>}
       {data && !data.available && <div role="status"><p>该城市尚未发布同口径市场价格序列。</p><button type="button" className="ag-button" onClick={onPlanning}>使用经营计划</button></div>}
       {data?.available && <>
-        <label className="market-observation__crop">观察作物<select aria-label="观察作物" value={data.selectedCrop ?? ''} onChange={event => { setSelection(''); onCrop(event.target.value); }}>{data.crops.map(crop => <option key={crop} value={crop}>{crop}</option>)}</select></label>
+        <ChoiceButtons label="观察作物" value={data.selectedCrop ?? ''} onChange={crop => { setSelection(''); onCrop(crop); }} options={data.crops.map(crop => ({ value: crop, label: crop }))}/>
         {data.series.length > 1 && <div className="market-observation__series" role="group" aria-label="市场观测序列">{data.series.map(row => <button type="button" key={row.id} aria-pressed={row.id === series?.id} onClick={() => setSelection(row.id)}>{row.productName} · {row.marketName}<small>{row.source.name} · {PRICE_LEVEL[row.priceLevel]}</small></button>)}</div>}
         {series && <>
           <h2 className="ag-title">{series.productName} · {series.marketName}</h2>
@@ -35,7 +36,7 @@ export function DecisionCenter({ cityId, observation, onCrop, onPlanning }: {
       </>}
     </WorkbenchMain>
     <WorkbenchRail>
-      <p className="ag-label">{getCity(cityId)?.shortName} · 已发布观测</p>
+      <p className="ag-label">{getCity(cityId)?.shortName} · 历史观测</p>
       {series && latest ? <>
         <h2 className="ag-title">{series.productName}</h2>
         <dl className="decision-detail__facts">
@@ -45,9 +46,9 @@ export function DecisionCenter({ cityId, observation, onCrop, onPlanning }: {
           <div><dt>价格口径</dt><dd>{PRICE_LEVEL[series.priceLevel]}</dd></div>
           {change !== null && <div><dt>较上次观测（{previous?.date}）</dt><dd>{change > 0 ? '+' : ''}{(change * 100).toFixed(1)}%</dd></div>}
         </dl>
-        <p className="decision-note">来源：{series.source.url ? <a href={series.source.url} target="_blank" rel="noreferrer noopener">{series.source.name} ↗</a> : series.source.name}</p>
+        <details className="decision-disclosure"><summary>方法与数据</summary><p className="decision-note">来源：{series.source.url ? <a href={series.source.url} target="_blank" rel="noreferrer noopener">{series.source.name} ↗</a> : series.source.name}</p>
         <p className="decision-note">不同市场与价格口径分别观察，曲线连接已有读数，不补造缺失日期。</p>
-        {series.notes.length > 0 && <details className="decision-disclosure"><summary>数据口径说明</summary>{series.notes.map(note => <p className="decision-note" key={note}>{note}</p>)}</details>}
+        <p className="decision-note">快照 {data?.snapshotVersion ?? '未提供版本'}；日期来自各序列的实际观测。</p>{series.notes.map(note => <p className="decision-note" key={note}>{note}</p>)}</details>
       </> : <p className="decision-note">{observation.status === 'loading' ? '等待本城观测。' : observation.status === 'error' ? '连接恢复后显示真实价格。' : '可在经营计划中使用自己的销售价格假设。'}</p>}
     </WorkbenchRail>
   </>;
