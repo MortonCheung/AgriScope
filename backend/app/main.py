@@ -32,7 +32,7 @@ from . import runtime_snapshot as RS
 from .dependencies import get_engine, new_request_id
 from .errors import ApiError, ErrorCode, error_body
 from .responses import SafeJSONResponse
-from .routes import capabilities, daily, decision, forecast, health, market, meta, observations, research
+from .routes import capabilities, daily, decision, forecast, health, market, meta, observations, project, research
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -151,6 +151,7 @@ app.include_router(decision.router)
 app.include_router(daily.router)
 app.include_router(forecast.router)
 app.include_router(research.router)
+app.include_router(project.router)
 app.include_router(observations.router)
 app.include_router(market.router)
 

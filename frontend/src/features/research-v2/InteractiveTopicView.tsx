@@ -27,12 +27,11 @@ export function InteractiveTopicView({ cityId, topic }: { cityId: string; topic:
   const tables = article.status === 'ready' ? article.data.tables : [];
 
   return (
-    <div className="research__main" data-animate="in">
+    <div className="research__main">
       <header className="research__head">
         <p className="research__id">{topic.id}</p>
         <h1 className="research__title">{topic.title}</h1>
         <p className="research__article-title">{topic.articleTitle}</p>
-        <p className="research__lead">{topic.points.length} 个研究点</p>
       </header>
 
       {/*

@@ -54,22 +54,14 @@ export function CityResearchPreview({ cityId, topics, selectedId }: {
   }
 
   if (!point) {
-    const counts = countStatuses(topic);
     const summary = article.status === 'ready' ? article.data.frontend_summary : '';
     return (
-      <article className="city-preview" data-kind="topic" data-animate="in" key={topic.id}>
+      <article className="city-preview" data-kind="topic">
         <p className="city-preview__id">{topic.id}</p>
         <h2 className="city-preview__title">{topic.title}</h2>
         <p className="city-preview__subtitle">{topic.articleTitle}</p>
 
         {summary && <p className="city-preview__summary">{renderInline(summary, 'summary')}</p>}
-
-        <dl className="city-preview__counts">
-          <div><dt>研究点</dt><dd>{topic.points.length}</dd></div>
-          <div><dt>已有内容</dt><dd>{counts.ready}</dd></div>
-          <div><dt>待接入</dt><dd>{counts.pending}</dd></div>
-          <div><dt>数据不足</dt><dd>{counts.unsupported}</dd></div>
-        </dl>
 
         <section className="city-preview__section">
           <h3 className="city-preview__label">研究点</h3>
@@ -93,7 +85,7 @@ export function CityResearchPreview({ cityId, topics, selectedId }: {
 
   const citation = point.citations?.[0];
   return (
-    <article className="city-preview" data-kind="point" data-animate="in" key={point.id}>
+    <article className="city-preview" data-kind="point">
       <p className="city-preview__id">{point.id}</p>
       <h2 className="city-preview__title">{point.title}</h2>
       <p className="city-preview__subtitle">{topic.id} · {topic.title}</p>

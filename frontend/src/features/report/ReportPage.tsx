@@ -3,7 +3,6 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import { getCity } from '../../domain/geography/cities';
 import { ROUTES } from '../../app/routes';
 import { assetUrl } from '../../domain/research/v2/repository';
-import { reportArticleId } from '../../domain/research/catalog';
 import { MarkdownBlocks, TableAsset } from '../research-v2/blocks';
 import { renderInline, stripListPrefix } from '../research-v2/markdown';
 import { V2Figure } from '../research-v2/Figure';
@@ -29,21 +28,17 @@ export function ReportPage() {
   const [activeSection, setActiveSection] = useState('abstract');
   const onEscape = () => navigate(structuralParent(location.pathname, location.search) ?? ROUTES.reports);
   /** 城市综合报告（A9）：它不属于研究树，因此单独由 catalog 声明（§29）。 */
-  const reportId = reportArticleId(cityId);
-  const articleState = useArticle(cityId, reportId);
-  if (!city) {
-    /**
-     * §29：报告入口包含「城市正式报告」与「辽宁六城综合报告」两级。
-     * `/reports/liaoning` 是省级综合报告的位置，研究侧尚未产出该报告的载荷——
-     * 那就如实说明「研究内容待接入」，而不是谎称"未知城市"（§13：不编造、不谎报）。
-     */
-    const isProvinceReport = cityId !== '' && ROUTES.cityReport(cityId) === ROUTES.provinceReport;
+  const scope=cityId==='liaoning'?'cross_city':cityId;
+  const reportId=city?'A9':scope==='cross_city'?'A11':null;
+  const name=city?.shortName??'辽宁六城';
+  const articleState = useArticle(scope, reportId);
+  if (!reportId) {
     return (
       <WorkbenchLayout className="report-workbench" resetKey={cityId} sidebarLabel="报告章节" railLabel="报告依据" sidebar={() => null} onEscape={onEscape}><WorkbenchMain>
         <div className="report__body">
-          <p className="report__meta">{isProvinceReport ? '综合 · 报告' : '报告'}</p>
-          <h1 className="report__title">{isProvinceReport ? '辽宁六城综合研究' : '报告目录里没有这个入口'}</h1>
-          <p className="report__empty">{isProvinceReport ? '研究内容待接入' : '请从报告目录进入。'}</p>
+          <p className="report__meta">报告</p>
+          <h1 className="report__title">报告目录里没有这个入口</h1>
+          <p className="report__empty">请从报告目录进入。</p>
           <Link className="ag-button" to={ROUTES.reports}>返回报告目录</Link>
         </div>
       </WorkbenchMain><WorkbenchRail>{null}</WorkbenchRail></WorkbenchLayout>
@@ -55,8 +50,8 @@ export function ReportPage() {
       <WorkbenchLayout className="report-workbench" resetKey={cityId} sidebarLabel="报告章节" railLabel="报告依据" sidebar={() => null} onEscape={onEscape}><WorkbenchMain>
         <div className="report__body">
           <header className="report__head">
-            <p className="report__meta">{city.shortName} · 报告</p>
-            <h1 className="report__title">{city.shortName}</h1>
+            <p className="report__meta">{name} · 报告</p>
+            <h1 className="report__title">{name}研究报告</h1>
           </header>
           <p className="report__empty" role={articleState.status === 'error' ? 'alert' : 'status'}>{articleState.status === 'loading' ? '研究正文载入中' : '研究正文读取失败；不展示占位内容。'}</p>
         </div>
@@ -111,7 +106,7 @@ export function ReportPage() {
     ><WorkbenchMain>
       <div className="report__body">
         <header className="report__head">
-          <p className="report__meta">{reportId} · {city.shortName} · 综合研究</p>
+          <p className="report__meta">{reportId} · {name} · {article.status==='DRAFT'?'研究稿':article.status==='ACCEPTED_PENDING_EXTERNAL_REVIEW'?'研究已验收 · 外审待复核':article.status==='ACCEPTED'?'已验收研究':'研究记录'}</p>
           <h1 className="report__title">{article.title}</h1>
           <p className="report__summary">{renderInline(article.frontend_summary, 'summary')}</p>
         </header>
@@ -127,12 +122,12 @@ export function ReportPage() {
             <MarkdownBlocks source={section.content} refs={assetRefs} />
             {tables.map((table) => (
               <div className="report__asset-wide" key={table.file}>
-                <TableAsset cityId={cityId} file={table.file} caption={`${assetRefs.get(table.file) ?? ''} · ${section.title}`} />
+                <TableAsset cityId={scope} file={table.file} caption={`${assetRefs.get(table.file) ?? ''} · ${section.title}`} />
               </div>
             ))}
             {figures.map((figure) => (
               <div className="report__asset-wide" key={figure.file}>
-                <V2Figure src={assetUrl.figure(cityId, figure.file)} alt={`${article.title} 配图`} index={refOrder(assetRefs.get(figure.file))} />
+                <V2Figure src={assetUrl.figure(scope, figure.file)} alt={`${article.title} 配图`} index={refOrder(assetRefs.get(figure.file))} />
               </div>
             ))}
           </section>
@@ -143,7 +138,7 @@ export function ReportPage() {
             <h2 className="report__section-title">图表</h2>
             {article.figures.filter((figure) => looseFigures.has(figure.file)).map((figure) => (
               <div className="report__asset-wide" key={figure.file}>
-                <V2Figure src={assetUrl.figure(cityId, figure.file)} alt={`${article.title} 配图`} index={refOrder(assetRefs.get(figure.file))} />
+                <V2Figure src={assetUrl.figure(scope, figure.file)} alt={`${article.title} 配图`} index={refOrder(assetRefs.get(figure.file))} />
               </div>
             ))}
           </section>
@@ -154,7 +149,7 @@ export function ReportPage() {
             <h2 className="report__section-title">数据表</h2>
             {article.tables.filter((table) => looseTables.has(table.file)).map((table) => (
               <div className="report__asset-wide" key={table.file}>
-                <TableAsset cityId={cityId} file={table.file} caption={`${assetRefs.get(table.file) ?? ''} · ${article.title}`} />
+                <TableAsset cityId={scope} file={table.file} caption={`${assetRefs.get(table.file) ?? ''} · ${article.title}`} />
               </div>
             ))}
           </section>
@@ -187,6 +182,6 @@ export function ReportPage() {
 
 
       </div>
-    </WorkbenchMain><WorkbenchRail><ModuleEvidenceRail cityId={cityId} moduleId={reportId} title={article.title} article={article} /></WorkbenchRail></WorkbenchLayout>
+    </WorkbenchMain><WorkbenchRail><ModuleEvidenceRail cityId={scope} moduleId={reportId} title={article.title} article={article} /></WorkbenchRail></WorkbenchLayout>
   );
 }

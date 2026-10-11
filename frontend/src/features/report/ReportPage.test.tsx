@@ -35,11 +35,11 @@ describe('正式报告共用三栏而完整保留研究资产', () => {
     expect(document.activeElement?.textContent).toBe(first.title);
     expect(screen.queryByRole('link', { name: /进入决策|城市概览/ })).toBeNull();
   });
-  it('preserves the real unpublished province report state', () => {
+  it('loads the existing cross-city A11 instead of declaring it unpublished', () => {
     vi.mocked(useArticle).mockReturnValue({ status: 'loading' });
     render(view('liaoning'));
-    expect(screen.getByRole('heading', { name: '辽宁六城综合研究' })).toBeTruthy();
-    expect(screen.getByText('研究内容待接入')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: '辽宁六城研究报告' })).toBeTruthy();
+    expect(useArticle).toHaveBeenCalledWith('cross_city','A11');expect(screen.getByText('研究正文载入中')).toBeTruthy();expect(screen.queryByText('研究内容待接入')).toBeNull();
     expect(screen.queryByRole('img')).toBeNull();
   });
 });

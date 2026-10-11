@@ -27,3 +27,5 @@ a.reports__name:hover { color: var(--ag-ink); border-bottom-color: var(--ag-ink)
 
 .report-workbench .report__asset-wide { width: 100%; margin-inline: 0; }
 .report-workbench .report__section { scroll-margin-top: var(--ag-space-5); }
+
+.reports__status { display:block;margin-top:8px;color:var(--ag-ink-muted);font-size:var(--ag-fs-micro);font-weight:400; }

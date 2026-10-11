@@ -6,7 +6,6 @@ import { filterRows } from '../../domain/research/v2/selectors';
 import type { V2Article, V2Source } from '../../domain/research/v2/types';
 import { useArticle, useSources, useTable } from './useV2';
 import './city-research.css';
-import { countStatuses } from './CityResearchPreview';
 import { MarkdownBlocks } from './blocks';
 import { renderInline, stripListPrefix } from './markdown';
 
@@ -111,7 +110,6 @@ export function EvidenceRail({ cityId, topic, point }: {
   if (!topic) return null;
 
   const article = articleState.status === 'ready' ? articleState.data : null;
-  const counts = point ? null : countStatuses(topic);
 
   return (
     <div className="evidence-rail">
@@ -121,11 +119,8 @@ export function EvidenceRail({ cityId, topic, point }: {
         <p className="evidence-rail__sub">{point ? `${topic.id} · ${topic.title}` : topic.articleTitle}</p>
         {point ? (
           <p className="evidence-rail__status">研究状态：{pointStatusLabel(point.status)}</p>
-        ) : counts && (
-          <p className="evidence-rail__status">
-            已有内容 {counts.ready} · 待接入 {counts.pending} · 数据不足 {counts.unsupported}
-          </p>
-        )}
+        ) : null}
+
       </header>
 
       {point && <PointStatistics cityId={cityId} point={point} />}
