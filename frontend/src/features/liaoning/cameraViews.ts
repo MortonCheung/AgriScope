@@ -1,5 +1,6 @@
 import { PerspectiveCamera, Vector3 } from 'three';
 import { OPENING_SETTLE_PROGRESS } from '../opening/assemblyMetrics';
+import { MOTION_DURATION } from '../../design/motion';
 import type { CityWorldBounds } from './liaoningGeometry';
 
 /** 相机位姿共用一份半径相对定义；模型根节点始终不绕 Y 轴旋转。 */
@@ -10,7 +11,7 @@ export interface CameraPose {
 
 export const PROVINCE_ROOT_ROTATION = 0;
 export const CAMERA_FOV_DEG = 38;
-export const OPENING_DURATION_MS = 2800;
+export const OPENING_DURATION_MS = MOTION_DURATION.opening * 1000;
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
 const lerp = (from: number, to: number, p: number) => from + (to - from) * p;
@@ -112,7 +113,7 @@ export function openingView(endPose: CameraPose, progress: number): CameraPose {
   if (p >= OPENING_SETTLE_PROGRESS) return endPose;
   const u = smootherstep(p / OPENING_SETTLE_PROGRESS);
   const offset = new Vector3(...endPose.position).sub(new Vector3(...endPose.target));
-  const distance = offset.length() * lerp(1.35, 1, u);
+  const distance = offset.length() * lerp(1.85, 1, u);
   const theta = Math.atan2(offset.z, offset.x);
   const elevation = lerp(76 * Math.PI / 180, Math.atan2(offset.y, Math.hypot(offset.x, offset.z)), u);
   const target: [number, number, number] = [endPose.target[0], endPose.target[1] * u, endPose.target[2]];

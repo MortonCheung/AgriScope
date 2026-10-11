@@ -1,68 +1,55 @@
-/* Only the two paper inspectors accept DOM input; the central stage belongs to the map. */
+/* Each publication paper owns its scroll; the gap remains the map's hit area. */
 .liaoning-page {position:relative;min-height:100dvh;padding-top:var(--ag-nav-height);pointer-events:none;}
-.liaoning-page__stage {display:grid;grid-template-columns:var(--ag-map-column-left) minmax(0,1fr) var(--ag-map-column-right);gap:var(--ag-map-column-gap);padding:var(--ag-map-gutter-y) var(--ag-map-gutter-x);min-height:calc(100dvh - var(--ag-nav-height));align-items:start;}
-.liaoning-paper {pointer-events:auto;min-width:0;position:relative;background:var(--ag-paper-raised);border:1px solid rgb(26 25 23 / .08);box-shadow:0 3px 10px rgb(26 25 23 / .045);padding:24px 20px 22px;}
+.liaoning-page__stage {display:grid;grid-template-columns:var(--ag-map-column-left) minmax(0,1fr) var(--ag-map-column-right);gap:var(--ag-map-column-gap);padding:var(--ag-map-gutter-y) var(--ag-map-gutter-x);align-items:start;}
+.liaoning-paper {pointer-events:auto;min-width:0;position:relative;background:var(--ag-paper-raised);border:1px solid var(--ag-rule-soft);box-shadow:0 1px 0 color-mix(in srgb,var(--ag-rule) 40%,transparent);padding:24px 20px;max-height:calc(100dvh - var(--ag-nav-height) - 2 * var(--ag-map-gutter-y));overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;}
 .liaoning-page__window {min-height:calc(100dvh - var(--ag-nav-height) - 2 * var(--ag-map-gutter-y));}
-.liaoning-page__title {font-family:var(--ag-font-display);font-size:clamp(27px,2.5vw,36px);font-weight:400;line-height:1.25;letter-spacing:-.025em;margin:12px 0 24px;}
-.liaoning-panel-content {opacity:1;transform:translateY(0);transition:opacity 110ms linear,transform 110ms var(--ag-ease);}
-.liaoning-panel-content[data-phase=out] {opacity:.28;transform:translateY(-3px);pointer-events:none;}
-.liaoning-panel-content[data-phase=in] {animation:ag-paper-selection-in 180ms var(--ag-ease);}
+.liaoning-page__title {font-family:var(--ag-font-display);font-size:clamp(27px,2.5vw,36px);font-weight:400;line-height:1.25;letter-spacing:-.025em;margin:0 0 24px;}
 .liaoning-page h2 {font-size:15px;font-weight:500;margin:0 0 12px;}
+.liaoning-page h2.liaoning-page__scope {font-family:var(--ag-font-display);font-size:30px;font-weight:400;margin:12px 0 20px;}
 .liaoning-page p {line-height:1.6;}
-.liaoning-city-picker {display:flex;align-items:center;gap:11px;margin:10px 0 26px;padding-bottom:20px;border-bottom:1px solid var(--ag-rule);}
-.liaoning-city-picker i {display:block;width:11px;height:11px;flex:0 0 auto;border:1px solid rgb(26 25 23 / .13);}
-.liaoning-city-picker select {min-width:0;flex:1;width:100%;border:0;background:transparent;color:var(--ag-ink);font-family:var(--ag-font-display);font-size:26px;cursor:pointer;padding:5px 0;line-height:1.3;}
+.liaoning-city-picker {margin:0 0 24px;padding-bottom:24px;border-bottom:1px solid var(--ag-rule);}
+.liaoning-city-picker .choice-buttons__items {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));}
+.liaoning-city-picker button:first-child {grid-column:1/-1;}
 .market-overview__head {display:flex;align-items:baseline;justify-content:space-between;gap:8px;}
-.market-overview__head h2 {font-size:14px;}
-.market-overview__refresh {border:0;background:none;font:inherit;font-size:11px;color:var(--ag-ink-muted);padding:8px 0 8px 8px;cursor:pointer;white-space:nowrap;}
-.market-overview__refresh:disabled {cursor:wait;color:var(--ag-ink-faint);}
+.market-overview__badge {font-size:10px;color:var(--ag-ink-muted);border:1px solid var(--ag-rule);padding:2px 5px;white-space:nowrap;}
 .market-overview__date,.city-summary__date {font-size:11px;color:var(--ag-ink-muted);font-variant-numeric:tabular-nums;margin:0 0 18px;}
-.market-overview__periods {display:flex;gap:14px;border-bottom:1px solid var(--ag-rule);margin-top:22px;}
-.market-overview__periods button {background:none;border:0;border-bottom:1px solid transparent;color:var(--ag-ink-muted);font-size:11px;padding:7px 0;cursor:pointer;white-space:nowrap;}
-.market-overview__periods button[aria-pressed=true] {color:var(--ag-ink);border-bottom-color:var(--ag-ink);}
+.market-overview .choice-buttons {padding-bottom:16px;border-bottom:1px solid var(--ag-rule);}
+.market-overview .choice-buttons__items {gap:4px;}
+.market-overview .choice-buttons button {padding-inline:8px;font-size:11px;flex:1;}
 .market-overview__prices {list-style:none;padding:0;margin:0;}
-.market-overview__price {display:grid;grid-template-columns:minmax(0,1fr) auto 57px;align-items:baseline;gap:8px;padding:17px 0;border-bottom:1px solid var(--ag-rule-soft);font-size:13px;}
-.market-overview__price strong {font-size:19px;font-weight:500;font-variant-numeric:tabular-nums;letter-spacing:-.03em;}
-.market-overview__crop small {display:block;font-size:10px;color:var(--ag-ink-muted);margin-top:4px;}
-.market-overview__change {text-align:right;font-size:11px;font-variant-numeric:tabular-nums;color:var(--ag-ink-muted);}
-.market-overview__change[data-direction=up] {color:#916553;}
-.market-overview__change[data-direction=down] {color:#546c60;}
-.market-overview__unit {font-size:10px;color:var(--ag-ink-muted);margin:12px 0 24px;}
-.market-overview__details {font-size:11px;color:var(--ag-ink-soft);}
-.market-overview__details summary {cursor:pointer;padding:7px 0;}
-.market-overview__source {display:block;font-size:11px;line-height:1.5;margin:16px 0;color:var(--ag-ink-muted);}
-.market-overview__publication {font-size:10px;color:var(--ag-ink-muted);line-height:1.5;}
-.market-overview__publication>div {margin-top:9px;}
-.market-overview__publication dd {margin:2px 0 0;font-variant-numeric:tabular-nums;}
-.market-overview__note {font-size:13px;color:var(--ag-ink-muted);}
-.market-overview__refresh-error {font-size:11px;color:var(--ag-danger);margin-top:16px;}
-.city-summary__market {font-size:14px;margin:0 0 7px;}
-.city-summary__movement {margin:22px 0 0;}
-.city-summary__movement>div {display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid var(--ag-rule-soft);padding:17px 0;}
-.city-summary__movement dt {font-size:13px;}
-.city-summary__movement dt small {display:block;font-size:10px;color:var(--ag-ink-muted);margin-top:6px;}
-.city-summary__movement dd {font-size:24px;font-weight:400;margin:0;font-variant-numeric:tabular-nums;letter-spacing:-.03em;}
-.city-summary__tools p {font-size:12px;color:var(--ag-ink-muted);line-height:1.8;}
-.city-summary__actions {display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--ag-rule);margin-top:26px;padding-top:18px;gap:16px;}
-.city-summary__action {display:flex;justify-content:space-between;align-items:center;padding:10px 0;color:var(--ag-ink);text-decoration:none;font-size:15px;border-bottom:1px solid var(--ag-rule-strong);}
-.city-summary__action:hover {border-bottom-color:var(--ag-ink);}
-.liaoning-page button:focus-visible,.liaoning-page a:focus-visible,.liaoning-page select:focus-visible {outline:2px solid var(--ag-olive);outline-offset:4px;}
-@keyframes ag-paper-selection-in {from {opacity:.35;transform:translateY(3px);}to {opacity:1;transform:translateY(0);}}
-@media(max-width:1100px) {.liaoning-paper {padding-inline:16px;}.market-overview__price {gap:5px;grid-template-columns:minmax(0,1fr) auto 51px;}}
+.market-overview__price {padding:18px 0;border-bottom:1px solid var(--ag-rule-soft);}
+.market-overview__price h3 {font-size:15px;font-weight:500;margin:0 0 12px;}
+.market-overview__price dl {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 16px;margin:0;}
+.market-overview__price dt {font-size:10px;color:var(--ag-ink-muted);margin-bottom:5px;}
+.market-overview__price dd {font-size:12px;margin:0;font-variant-numeric:tabular-nums;}
+.market-overview__value {grid-column:1/-1;}
+.market-overview__value dd {display:flex;align-items:baseline;gap:6px;}
+.market-overview__value strong {font-size:27px;font-weight:400;letter-spacing:-.03em;}
+.market-overview__value span {font-size:11px;color:var(--ag-ink-soft);}
+.market-overview [data-direction=up] {color:var(--ag-clay);}
+.market-overview [data-direction=down] {color:var(--ag-olive);}
+.market-overview__note {font-size:11px;color:var(--ag-ink-muted);margin:18px 0 0;}
+.city-summary__movement {margin:0;}
+.city-summary__movement>div {display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid var(--ag-rule-soft);padding:17px 0;gap:8px;}
+.city-summary__movement dt {font-size:12px;color:var(--ag-ink-soft);}
+.city-summary__movement dd {font-size:24px;font-weight:400;margin:0;font-variant-numeric:tabular-nums;}
+.city-summary__movement dd small {font-size:10px;color:var(--ag-ink-muted);}
+.city-summary__actions {display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--ag-rule);margin-top:20px;padding-top:18px;gap:8px;}
+.city-summary__actions .ag-button {display:flex;justify-content:space-between;padding-inline:10px;font-size:13px;}
+.city-summary__actions .ag-button:only-child {grid-column:1/-1;}
+@media(max-width:1100px) {.liaoning-paper {padding-inline:16px;}}
 @media(max-width:900px) {
- .spatial-shell[data-stage-mode=province] .spatial-shell__canvas {top:var(--ag-nav-height);bottom:auto;height:var(--ag-map-mobile-height);}
  .liaoning-page {padding-top:calc(var(--ag-nav-height) + var(--ag-map-mobile-height));}
- .liaoning-page__stage {grid-template-columns:1fr 1fr;gap:20px;padding:24px 28px 36px;min-height:0;}
+ .liaoning-page__stage {grid-template-columns:1fr 1fr;gap:20px;padding:24px 28px 36px;}
  .liaoning-page__window {display:none;}
- .liaoning-paper {padding:22px;}
+ .liaoning-paper {padding:22px;max-height:min(620px,70dvh);}
 }
 @media(max-width:600px) {
  .liaoning-page__stage {grid-template-columns:1fr;gap:22px;padding:20px 20px 32px;}
  .liaoning-page__city {order:-1;}
  .liaoning-page[data-scope=province] .liaoning-page__current {order:-2;}
- .liaoning-city-picker {margin-bottom:18px;}
+ .liaoning-city-picker .choice-buttons__items {grid-template-columns:repeat(3,minmax(0,1fr));}
+ .liaoning-city-picker {margin-bottom:18px;padding-bottom:18px;}
  .liaoning-page__title {font-size:30px;}
- .market-overview__price {grid-template-columns:minmax(0,1fr) auto 70px;gap:14px;}
- .city-summary__actions {margin-top:18px;}
+ .liaoning-paper {max-height:65dvh;}
 }
-@media(prefers-reduced-motion:reduce) {.liaoning-panel-content {transition:none;animation:none!important;}}

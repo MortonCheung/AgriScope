@@ -28,7 +28,7 @@ function initialPhase(): OpeningPhase {
 
 interface OpeningState {
   phase: OpeningPhase;
-  /** 用户点击「进入」才开始构建。 */
+  /** Opening 挂载后自动开始构建；重复调用不重启时间轴。 */
   begin: () => void;
   /** 时间轴走完（行政区落定 + 相机到位）→ 完成态。 */
   finish: () => void;

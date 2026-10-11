@@ -7,21 +7,20 @@ import { useSpatialStageStore, type SpatialStageMode } from './spatialStageStore
 import { usePageNavigate } from '../../app/pageNavigation';
 import { RouteTransition } from '../../app/RouteTransition';
 import { useAppHistory } from '../../app/appHistory';
-import { ROUTES } from '../../app/routes';
+import { ROUTES, structuralParent } from '../../app/routes';
 import { provinceUrl, selectedCityFromSearch } from '../../app/context/provinceSelection';
 import './spatial-shell.css';
 
 function stageModeForPath(pathname: string): SpatialStageMode {
   if (pathname === ROUTES.root) return 'opening';
   if (pathname === ROUTES.liaoning) return 'province';
-  const match = /^\/cities\/([^/]+)\/?$/.exec(pathname);
-  if (match) return 'city';
+  if (focusCityForPath(pathname)) return 'city';
   return 'none';
 }
 
 function focusCityForPath(pathname: string): string | null {
-  const match = /^\/cities\/([^/]+)/.exec(pathname);
-  return match ? match[1] : null;
+  const city = /^\/(?:cities|reports)\/([^/]+)(?:\/|$)/.exec(pathname)?.[1];
+  return city && isStudyCity(city) ? city : null;
 }
 
 /** 页面用同一套城市选择逻辑（3D 点击与 DOM 列表共用）。 */
@@ -59,13 +58,23 @@ export function SpatialShell() {
       if (target !== `${location.pathname}${location.search}`) navigate(target);
       return;
     }
-    const target = ROUTES.city(cityId);
+    const target = location.pathname.startsWith('/reports/') ? ROUTES.cityReport(cityId)
+      : location.pathname.endsWith('/decision') ? ROUTES.decision(cityId) : ROUTES.city(cityId);
     // 已经在这一页：再 push 一次只会多出一条无意义历史。
     if (location.pathname === target) return;
     navigate(target);
   }, [location.pathname, location.search, mode, navigate]);
 
   const canvasVisible = mode !== 'none';
+  const handleBackgroundClick = useCallback(() => {
+    setHoveredCity(null);
+    if (mode === 'province') {
+      if (focusCityId) navigate(provinceUrl(null));
+    } else if (mode === 'city') {
+      const parent = structuralParent(location.pathname, location.search);
+      if (parent) navigate(parent);
+    }
+  }, [focusCityId, location.pathname, location.search, mode, navigate, setHoveredCity]);
 
   return (
     <CitySelectionContext.Provider value={handleSelectCity}>
@@ -78,6 +87,7 @@ export function SpatialShell() {
             hoveredCityId={hoveredCityId}
             onHoverCity={setHoveredCity}
             onSelectCity={handleSelectCity}
+            onBackgroundClick={handleBackgroundClick}
             reducedMotion={reducedMotion}
           />
         </div>

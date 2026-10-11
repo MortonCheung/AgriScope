@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
+import { TransitionLink as Link } from '../../app/pageNavigation';
 import { getCity } from '../../domain/geography/cities';
 import { ROUTES } from '../../app/routes';
 import { assetUrl } from '../../domain/research/v2/repository';

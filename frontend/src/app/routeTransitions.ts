@@ -13,7 +13,7 @@ export function isSpatialEntry(from: string, to: string) {
   return isSpatialRoute(from) && isSpatialRoute(to);
 }
 
-/** A city workspace owns one paper; changing its point/module never animates the page. */
+/** Research points share a live paper. A different task receives a page transition. */
 export function isWorkspaceNavigation(from: string, to: string): boolean {
   const cityOf = (path: string) => {
     const city = /^\/cities\/([^/]+)(?:\/(?:decision|research\/[^/]+))?\/?$/.exec(path)?.[1]
@@ -21,7 +21,8 @@ export function isWorkspaceNavigation(from: string, to: string): boolean {
     return city && isStudyCity(city) ? city : null;
   };
   const city = cityOf(from);
-  return Boolean(city && city === cityOf(to));
+  const taskOf = (path: string) => path.startsWith('/reports/') ? 'report' : path.endsWith('/decision') ? 'decision' : 'research';
+  return Boolean(city && city === cityOf(to) && taskOf(from) === taskOf(to));
 }
 
 function routeLayer(path: string) {

@@ -1,7 +1,8 @@
 .choice-buttons { min-width: 0; margin: 0; padding: 0; border: 0; }
 .choice-buttons legend { margin-bottom: 8px; font-size: var(--ag-fs-small); color: var(--ag-ink-soft); }
 .choice-buttons__items { display: flex; flex-wrap: wrap; gap: 6px; }
-.choice-buttons button { min-height: 40px; padding: 7px 12px; border: 1px solid var(--ag-rule-soft); border-radius: 4px; background: transparent; color: var(--ag-ink-soft); font: inherit; font-size: var(--ag-fs-small); cursor: pointer; }
+.choice-buttons button { min-height: 44px; padding: 7px 12px; border: 1px solid var(--ag-rule); border-radius: var(--ag-radius-none); background: transparent; color: var(--ag-ink-soft); font: inherit; font-size: var(--ag-fs-small); cursor: pointer; transition: background var(--ag-dur-fast) var(--ag-ease), border-color var(--ag-dur-fast) var(--ag-ease), color var(--ag-dur-fast) var(--ag-ease); }
+.choice-buttons button:hover:not(:disabled) { background: var(--ag-hover); border-color: var(--ag-rule-strong); }
 .choice-buttons button[aria-pressed="true"] { color: var(--ag-ink); border-color: var(--ag-ink); background: var(--ag-paper-deep, #eee9de); }
 .choice-buttons button:focus-visible, .discrete-horizon input:focus-visible { outline: 2px solid var(--ag-ink); outline-offset: 3px; }
 .choice-buttons button:disabled { opacity: .45; cursor: default; }

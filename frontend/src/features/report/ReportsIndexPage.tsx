@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { TransitionLink as Link } from '../../app/pageNavigation';
 import { LIAONING_CITIES } from '../../domain/geography/cities';
 import { ROUTES } from '../../app/routes';
 import {cityEntry,useRuntimeCatalog} from '../../domain/research/runtime/catalog';

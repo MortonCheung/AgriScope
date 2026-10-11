@@ -57,14 +57,8 @@ export function primaryNavigationTarget(kind: PrimaryNavigation, location: Navig
   const current = navigationContext(location, context);
   if (kind === 'home') return provinceUrl(current.cityId);
   if (kind === 'about') return ROUTES.about;
+  if (kind === 'reports') return current.cityId ? `${ROUTES.researchCenter}?${writeContextToSearch('', current)}` : ROUTES.researchCenter;
   if (!current.cityId) return kind === 'decision' ? ROUTES.decisionCenter : ROUTES.researchCenter;
   if (kind === 'decision') return `${ROUTES.decision(current.cityId)}?${writeContextToSearch('', current)}`;
-  const remembered = reportLocations()[current.cityId] ?? ROUTES.city(current.cityId);
-  const [pathname, positioning = ''] = remembered.split('?');
-  const selected = new URLSearchParams(positioning);
-  const safePositioning = new URLSearchParams();
-  const researchId = selected.get('research');
-  if (!parseResearchPath(pathname) && researchId && /^A[1-9](?:\.\d{1,2})?$/.test(researchId)) safePositioning.set('research', researchId);
-  if (selected.get('mode') === 'article') safePositioning.set('mode', 'article');
-  return `${pathname}?${writeContextToSearch(safePositioning.toString(), current)}`;
+  return ROUTES.decisionCenter;
 }

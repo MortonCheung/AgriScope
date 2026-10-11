@@ -12,7 +12,9 @@
 .spatial-shell__canvas canvas { display: block; width: 100% !important; height: 100% !important; touch-action: none; }
 
 .spatial-shell__dom { position: relative; z-index: 1; pointer-events:none; }
-.spatial-shell__dom main:not(.liaoning-page):not(.opening) { pointer-events:auto; }
+.spatial-shell__dom main:not(.liaoning-page):not(.opening):not(.workbench) { pointer-events:auto; }
+.spatial-shell__dom .workbench { pointer-events:none; }
+.spatial-shell__dom .workbench__paper { pointer-events:auto; }
 
 /* 省域沙盘标签：克制、无发光，研究城市略深 */
 .liaoning-label {

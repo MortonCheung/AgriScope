@@ -39,7 +39,7 @@ export function DecisionPage() {
   const navigate = usePageNavigate();
   const [capAttempt, setCapAttempt] = useState(0);
   const [capState, setCapState] = useState<{ cityId: string; data?: DecisionCapability; error?: string }>({ cityId });
-  const market = useMarketObservation(cityId, module === 'center' ? params.get('crop') || undefined : undefined);
+  const market = useMarketObservation(cityId, params.get('crop') || undefined);
   useEffect(() => {
     const controller = new AbortController();
     setCapState({ cityId });
@@ -55,15 +55,15 @@ export function DecisionPage() {
   const explicitDemo = provider.data_mode === 'fixtures' || provider.data_mode === 'mock';
   const priceSupported = (cap?.features?.short_term_price.supported ?? cap?.supported) === true || explicitDemo;
   const longSupported = cityId === 'shenyang' && (cap?.features?.long_horizon_scenario.supported ?? false);
-  const marketAvailable = market.status === 'ready' ? market.data?.available : undefined;
+  const marketAvailable = market.available;
   const shortHorizon = Number(params.get('horizon'));
   const selection: DecisionSelection = { crop: params.get('crop') || undefined, horizon: [7,14,30].includes(shortHorizon) ? shortHorizon : undefined, asOf: params.get('as_of') || undefined };
   const session = useDecisionSession(cityId, provider, testState, priceSupported && ['result', 'detail', 'compare', 'evidence'].includes(view), selection, cap ? `${cap.model_version}:${cap.data_version}:${cap.code_fingerprint}` : '');
   const { state } = session;
   const main = useRef<HTMLElement>(null);
   const switchView = (next: string, replace = false) => { if (!SHORT_VIEWS.includes(next)) session.cancel(); setParams(previous => { const nextParams = new URLSearchParams(previous); nextParams.set('view', next); if (next === 'planning') nextParams.delete('plan'); if (next === 'input' && ![7,14,30].includes(Number(nextParams.get('horizon')))) {nextParams.delete('horizon');useAppContext.getState().setHorizon(null);} return nextParams; }, { replace }); };
-  const updateSelection = (value: DecisionSelection) => { const context = useAppContext.getState(); context.setCity(cityId); if(value.crop) context.setCrop(value.crop);if(value.horizon !== undefined)context.setHorizon(value.horizon as 7|14|30);if(value.asOf)context.setAsOf(value.asOf);setParams(previous => {const next=new URLSearchParams(previous);next.set('city',cityId);if(value.crop){next.set('crop',value.crop);next.delete('plan');}if(value.horizon !== undefined)next.set('horizon',String(value.horizon));if(value.asOf)next.set('as_of',value.asOf);return next;}); };
-  useEffect(() => { if(module==='center' && market.data?.available && market.data.selectedCrop && params.get('crop')!==market.data.selectedCrop)updateSelection({crop:market.data.selectedCrop}); }, [module,market.data,params]);
+  const updateSelection = (value: DecisionSelection, replace = false) => { const context = useAppContext.getState(); context.setCity(cityId); if(value.crop) context.setCrop(value.crop);if(value.horizon !== undefined)context.setHorizon(value.horizon as 7|14|30);if(value.asOf)context.setAsOf(value.asOf);setParams(previous => {const next=new URLSearchParams(previous);next.set('city',cityId);if(value.crop){next.set('crop',value.crop);next.delete('plan');}if(value.horizon !== undefined)next.set('horizon',String(value.horizon));if(value.asOf)next.set('as_of',value.asOf);return next;},{replace}); };
+  useEffect(() => { if(module==='center' && market.data?.available && market.data.selectedCrop && params.get('crop')!==market.data.selectedCrop)updateSelection({crop:market.data.selectedCrop}, true); }, [module,market.data,params]);
   useEffect(()=>{if(module==='input'&&cap?.supported&&params.get('crop')&&!cap.crops.some(c=>c.id===params.get('crop')))setParams(previous=>{const next=new URLSearchParams(previous);next.delete('crop');useAppContext.getState().setCrop(null);return next;},{replace:true});},[module,cap,params,setParams]);
   useEffect(() => { if(module==='input' && params.has('horizon') && ![7,14,30].includes(Number(params.get('horizon'))))setParams(previous=>{const next=new URLSearchParams(previous);next.delete('horizon');useAppContext.getState().setHorizon(null);return next;},{replace:true}); }, [module,params,setParams]);
   const edit = () => switchView('input');
@@ -106,9 +106,9 @@ export function DecisionPage() {
   else if (result) content = <><WorkbenchMain><DecisionUnavailable result={result} onEdit={edit} onRetry={() => { if (state.request) void session.run(state.request); }} /></WorkbenchMain><WorkbenchRail><p className="decision-note">没有可展示的有效模型方案。</p></WorkbenchRail></>;
   else content = <DecisionInput key={cityId} cityId={cityId} provider={provider} initial={session.savedRequest} selection={selection} onSelection={updateSelection} onSubmit={shortSubmit} />;
 
-  return <WorkbenchLayout className="decision-workbench" resetKey={cityId} sidebarLabel="决策模块" railLabel="当前结果" mainRef={main} onEscape={() => navigate(structuralParent(location.pathname, location.search) ?? provinceUrl(cityId))}
+  return <WorkbenchLayout className="decision-workbench" resetKey={cityId} contentKey={view} sidebarLabel="决策模块" railLabel="当前结果" mainRef={main} onEscape={() => navigate(structuralParent(location.pathname, location.search) ?? provinceUrl(cityId))}
     sidebar={close => <ol className="workbench__menu" aria-label="决策工具">{MODULES.map(item => {
-      const reason = item.id === 'center' ? marketAvailable === false ? '尚未发布本城同口径观测' : market.status === 'loading' ? '读取观测范围中' : undefined : item.id === 'input' ? !priceSupported ? cap ? '本城尚未发布短期模型' : capError ? '模型能力暂时无法确认' : '读取模型范围中' : undefined : item.id === 'long-horizon' ? !longSupported ? cap || cityId !== 'shenyang' ? '本城尚未发布长期情景' : capError ? '模型能力暂时无法确认' : '读取模型范围中' : undefined : undefined;
+      const reason = item.id === 'center' ? marketAvailable === false ? '尚未发布本城同口径观测' : marketAvailable === undefined && market.status === 'loading' ? '读取观测范围中' : undefined : item.id === 'input' ? !priceSupported ? cap ? '本城尚未发布短期模型' : capError ? '模型能力暂时无法确认' : '读取模型范围中' : undefined : item.id === 'long-horizon' ? !longSupported ? cap || cityId !== 'shenyang' ? '本城尚未发布长期情景' : capError ? '模型能力暂时无法确认' : '读取模型范围中' : undefined : undefined;
       return <li key={item.id}><button type="button" aria-pressed={activeModule === item.id} disabled={Boolean(reason)} aria-describedby={reason ? `decision-module-${item.id}-reason` : undefined} onClick={() => { switchView(item.id); close(); }}>{item.label}</button>{reason && <small id={`decision-module-${item.id}-reason`}>{reason}</small>}</li>;
     })}</ol>}
   >{content}</WorkbenchLayout>;

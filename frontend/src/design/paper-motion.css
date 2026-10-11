@@ -1,0 +1,8 @@
+/* Shared publication-paper motion. Fill ends with the animation, avoiding a
+   permanent transform/clip context around figure dialogs and sticky controls. */
+.ag-paper-enter { animation: ag-paper-reveal var(--ag-dur-slow) var(--ag-ease) backwards; }
+@keyframes ag-paper-reveal {
+  from { opacity: 0; clip-path: inset(0 0 100% 0); transform: translateY(-8px); }
+  to { opacity: 1; clip-path: inset(0); transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) { .ag-paper-enter { animation: none; } }

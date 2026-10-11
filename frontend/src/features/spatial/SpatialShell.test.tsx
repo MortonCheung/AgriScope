@@ -14,6 +14,7 @@ vi.mock('motion/react', () => ({ useReducedMotion: () => false }));
 vi.mock('../liaoning/LiaoningCanvas', () => ({
   LiaoningCanvas: (props: LiaoningCanvasProps) => <div data-testid="canvas-host" data-mode={props.mode} data-active={props.active} data-focus={props.focusCityId}>
     {[...STUDY_CITY_IDS, 'fushun'].map(city => <button key={city} onClick={() => props.onSelectCity(city)}>{city}</button>)}
+    <button onClick={props.onBackgroundClick}>背景空白</button>
   </div>,
 }));
 
@@ -31,6 +32,9 @@ function open(entry: string | { pathname: string; state?: unknown } = '/liaoning
       <Route path="/liaoning" element={<Page />} />
       <Route path="/cities/:cityId" element={<Page />} />
       <Route path="/cities/:cityId/research/:researchId" element={<Page />} />
+      <Route path="/cities/:cityId/decision" element={<Page />} />
+      <Route path="/reports/:cityId" element={<Page />} />
+      <Route path="/reports" element={<Page />} />
       <Route path="/about" element={<Page />} />
     </Route></Routes>
   </AppHistoryProvider></MemoryRouter>);
@@ -45,6 +49,22 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); useSpatialStageStore.getState().reset(); });
 
 describe('空间外壳直接导航，整纸动画已退役', () => {
+  it('决策和报告保持城市背景，背景空白与结构父级一致', () => {
+    open('/cities/dandong/decision');
+    const canvas = screen.getByTestId('canvas-host');
+    expect(canvas.dataset.active).toBe('true');
+    expect(canvas.dataset.focus).toBe('dandong');
+    fireEvent.click(screen.getByRole('button', { name: '背景空白' }));
+    expect(path()).toBe('/liaoning?city=dandong');
+    fireEvent.click(screen.getByRole('button', { name: '背景空白' }));
+    expect(path()).toBe('/liaoning');
+    expect(screen.getByTestId('canvas-host')).toBe(canvas);
+    cleanup();
+    open('/reports/shenyang');
+    expect(screen.getByTestId('canvas-host').dataset.active).toBe('true');
+    fireEvent.click(screen.getByRole('button', { name: '背景空白' }));
+    expect(path()).toBe('/reports');
+  });
   it.each(['province-to-city', 'city-to-province'])('旧历史标记 %s 不再改变纸面或注册退出等待', transition => {
     const { container } = open({ pathname: '/cities/shenyang', state: { transition } });
     expect(container.querySelector('.spatial-shell__dom')?.hasAttribute('data-transition')).toBe(false);

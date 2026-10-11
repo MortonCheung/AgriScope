@@ -34,9 +34,9 @@ function fakeClock() {
 
 describe('单条同步推近镜头', () => {
   const endPose = provinceView(RADIUS);
-  it('2–3 秒内推近，在最后地块落定时精确共用省域终点', () => {
-    expect(OPENING_DURATION_MS).toBeGreaterThanOrEqual(2000);
-    expect(OPENING_DURATION_MS).toBeLessThanOrEqual(3000);
+  it('2 秒内推近，在最后地块落定时精确共用省域终点', () => {
+    expect(OPENING_DURATION_MS).toBeGreaterThanOrEqual(1500);
+    expect(OPENING_DURATION_MS).toBeLessThanOrEqual(2000);
     expect(openingView(endPose, 1)).toBe(endPose);
     expect(openingView(endPose, OPENING_SETTLE_PROGRESS)).toBe(endPose);
     expect(openingView(endPose, 5)).toBe(endPose);
@@ -48,7 +48,7 @@ describe('单条同步推近镜头', () => {
     const first = openingView(endPose, 0);
     const elevation = (pose: typeof endPose) => Math.atan2(pose.position[1] - pose.target[1], Math.hypot(pose.position[0] - pose.target[0], pose.position[2] - pose.target[2]));
     expect(elevation(first) * 180 / Math.PI).toBeGreaterThan(75);
-    expect(distance(first.position, first.target)).toBeGreaterThan(distance(endPose.position, endPose.target) * 1.3);
+    expect(distance(first.position, first.target)).toBeGreaterThan(distance(endPose.position, endPose.target) * 1.8);
     let previousDistance = Infinity, previousElevation = Infinity;
     const theta = Math.atan2(first.position[2] - first.target[2], first.position[0] - first.target[0]);
     for (let step = 0; step <= 200; step++) {
@@ -67,9 +67,10 @@ describe('单条同步推近镜头', () => {
   it('60Hz 下连续，末帧无额外跳跃；camera target 不绑定模型原点', () => {
     const offsetPose = { position: [60, 310, 400] as const, target: [52, 3.5, 80] as const };
     let previous = openingView(offsetPose, 0);
-    for (let frame = 1; frame <= 168; frame++) {
-      const current = openingView(offsetPose, frame / 168);
-      expect(distance(previous.position, current.position)).toBeLessThan(8);
+    const frames = Math.ceil(OPENING_DURATION_MS / (1000 / 60));
+    for (let frame = 1; frame <= frames; frame++) {
+      const current = openingView(offsetPose, frame / frames);
+      expect(distance(previous.position, current.position)).toBeLessThan(distance(offsetPose.position, offsetPose.target) * .08);
       expect(distance(previous.target, current.target)).toBeLessThan(0.08);
       expect(current.target[0]).toBe(52);
       expect(current.target[2]).toBe(80);

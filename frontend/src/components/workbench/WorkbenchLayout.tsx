@@ -1,5 +1,8 @@
-import { createContext, useContext, useEffect, useId, useRef, useState, type ReactNode, type Ref } from 'react';
+import { createContext, useContext, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode, type Ref } from 'react';
+import { useReducedMotion } from 'motion/react';
+import { animateContentSurface } from '../../design/useContentTransition';
 import './workbench.css';
+import '../../design/paper-motion.css';
 
 const RailContext = createContext<{ id: string; label: string }>({ id: '', label: '当前信息' });
 
@@ -11,18 +14,29 @@ export interface WorkbenchLayoutProps {
   className?: string;
   mode?: string;
   resetKey: string;
+  contentKey?: string;
   onEscape?: () => void;
   mainRef?: Ref<HTMLElement>;
 }
 
 /** 稳定纸面只承载布局；业务组件在自己的状态作用域内输出 Main / Rail 两个 slot。 */
-export function WorkbenchLayout({ sidebar, sidebarLabel, railLabel, children, className = '', mode, resetKey, onEscape, mainRef }: WorkbenchLayoutProps) {
+export function WorkbenchLayout({ sidebar, sidebarLabel, railLabel, children, className = '', mode, resetKey, contentKey, onEscape, mainRef }: WorkbenchLayoutProps) {
   const id = useId();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [railOpen, setRailOpen] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
   const drawerToggle = useRef<HTMLButtonElement>(null);
   const railToggle = useRef<HTMLButtonElement>(null);
+  const paper = useRef<HTMLDivElement>(null);
+  const previousContent = useRef(contentKey);
+  const reducedMotion = useReducedMotion();
+  useLayoutEffect(() => {
+    const changed = previousContent.current !== contentKey;
+    previousContent.current = contentKey;
+    if (!changed || reducedMotion) return;
+    const animations = [...paper.current?.querySelectorAll<HTMLElement>('.workbench__column, .workbench__rail') ?? []].map(animateContentSurface);
+    return () => animations.forEach(animation => animation?.cancel());
+  }, [contentKey, reducedMotion]);
   const closeDrawer = () => { setDrawerOpen(false); if (drawerOpen) drawerToggle.current?.focus(); };
 
   useEffect(() => { setDrawerOpen(false); setRailOpen(false); }, [resetKey]);
@@ -39,7 +53,7 @@ export function WorkbenchLayout({ sidebar, sidebarLabel, railLabel, children, cl
   }, [drawerOpen, onEscape, railOpen]);
 
   return <main className={`workbench ${className}`} data-mode={mode} ref={mainRef}>
-    <div className="workbench__paper city-research__paper">
+    <div className="workbench__paper city-research__paper ag-paper-enter" ref={paper}>
       <header className="workbench__chrome city-research__chrome">
         <div className="workbench__actions">
           <button type="button" className="workbench__toggle workbench__drawer-toggle" aria-expanded={drawerOpen} aria-controls={`${id}-sidebar`} ref={drawerToggle} onClick={() => drawerOpen ? closeDrawer() : setDrawerOpen(true)}>{sidebarLabel}</button>

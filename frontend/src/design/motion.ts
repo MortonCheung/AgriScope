@@ -14,7 +14,7 @@ export const MOTION_DURATION = {
   /** 图表沿时间绘制、事件标注逐条出现 */
   chartReveal: 1.2,
   /** 开场 */
-  opening: 2.1,
+  opening: 1.8,
   /** 文字/导航下划线：hover 与 active 共用（§41/§43） */
   underline: 0.22,
   /** 列表/侧栏选中项共享指示器移动（§46/§99） */

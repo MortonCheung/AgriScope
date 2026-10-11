@@ -31,21 +31,22 @@ describe('route transition direction', () => {
     expect(isSpatialEntry('/cities/shenyang', '/cities/shenyang/report')).toBe(false);
   });
 
-  it('同城工作台切点或业务任务不重新演出整页转场', () => {
+  it('研究工作台切点不演出整页转场，业务任务切换有转场', () => {
     expect(isWorkspaceNavigation('/cities/shenyang/research/A2.2', '/cities/shenyang/research/A3')).toBe(true);
     expect(isWorkspaceNavigation('/cities/shenyang', '/cities/shenyang/research/A2')).toBe(true);
-    expect(isWorkspaceNavigation('/cities/shenyang/decision', '/cities/shenyang/research/A2')).toBe(true);
+    expect(isWorkspaceNavigation('/cities/shenyang/decision', '/cities/shenyang/research/A2')).toBe(false);
     expect(isWorkspaceNavigation('/cities/shenyang/research/A2', '/cities/dandong/research/A2')).toBe(false);
     expect(isWorkspaceNavigation('/liaoning', '/cities/shenyang/decision')).toBe(false);
   });
 
-  it.each(['shenyang','tieling','chaoyang','jinzhou','dandong','dalian'])('正式%s报告与本城工作区双向无整页转场', city => {
+  it.each(['shenyang','tieling','chaoyang','jinzhou','dandong','dalian'])('正式%s报告与其他任务有转场，报告同页不重放', city => {
     const report = `/reports/${city}`;
     for (const path of [`/cities/${city}`, `/cities/${city}/decision`, `/cities/${city}/research/A2`]) {
-      expect(isWorkspaceNavigation(report, path)).toBe(true);
-      expect(isWorkspaceNavigation(path, report)).toBe(true);
+      expect(isWorkspaceNavigation(report, path)).toBe(false);
+      expect(isWorkspaceNavigation(path, report)).toBe(false);
     }
     expect(isWorkspaceNavigation(report, '/reports')).toBe(false);
+    expect(isWorkspaceNavigation(report, report)).toBe(true);
     expect(isWorkspaceNavigation(report, '/reports/liaoning')).toBe(false);
     expect(isWorkspaceNavigation(report, '/cities/unknown/decision')).toBe(false);
   });

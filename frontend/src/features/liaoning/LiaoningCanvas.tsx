@@ -27,6 +27,7 @@ export interface LiaoningCanvasProps {
   hoveredCityId: string | null;
   onHoverCity: (cityId: string | null) => void;
   onSelectCity: (cityId: string) => void;
+  onBackgroundClick?: () => void;
   reducedMotion: boolean;
 }
 
@@ -369,6 +370,7 @@ class MapBoundary extends Component<{children:ReactNode},{failed:boolean}> {
 
 /** 省域 3D 沙盘画布。整站共享一个 Canvas，路由只切换相机与可见性。 */
 export function LiaoningCanvas(props: LiaoningCanvasProps) {
+  const pointerOrigin = useRef<{ x: number; y: number } | null>(null);
   const modelState=useLiaoningModel();
   const [contextLost,setContextLost]=useState(false);
   const contextCleanup=useRef<(() => void)|null>(null);
@@ -392,7 +394,13 @@ export function LiaoningCanvas(props: LiaoningCanvasProps) {
       dpr={dpr}
       frameloop="demand"
       gl={{ antialias: quality === 'quality', alpha: true, powerPreference: 'high-performance', stencil: false }}
-      onPointerMissed={() => props.onHoverCity(null)}
+      onPointerDownCapture={event => { pointerOrigin.current = event.button === 0 ? { x: event.clientX, y: event.clientY } : null; }}
+      onPointerMissed={event => {
+        props.onHoverCity(null);
+        const origin = pointerOrigin.current;
+        if (event.type === 'click' && event.button === 0 && origin && Math.hypot(event.clientX - origin.x, event.clientY - origin.y) <= 5) props.onBackgroundClick?.();
+        pointerOrigin.current = null;
+      }}
       onCreated={({ gl }) => {
         contextCleanup.current?.();
         const lost=()=>setContextLost(true);const restored=()=>setContextLost(false);

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { TransitionLink } from './pageNavigation';
 import { ROUTES } from './routes';
 import { NAV_ITEMS } from './navItems';
 import { AnimatedUnderline } from '../components/AnimatedUnderline';
@@ -45,9 +46,9 @@ export function AppHeader() {
             品牌：仓库与设计参考里都没有用户指定的正式 Logo，
             因此**不渲染空的占位方块**，只写 AGRISCOPE；有真实 Logo 再插进去。
           */}
-          <NavLink to={ROUTES.liaoning} className="ag-header__brand" aria-label="AgriScope">
+          <TransitionLink to={ROUTES.liaoning} className="ag-header__brand" aria-label="AgriScope">
             <span className="ag-header__brand-en">AGRISCOPE</span>
-          </NavLink>
+          </TransitionLink>
           {/* ‹ › ^：始终渲染，保证 Header 的 DOM 在路由切换时稳定 */}
           <NavigationControls />
         </div>
@@ -68,7 +69,7 @@ export function AppHeader() {
             {NAV_ITEMS.map((item) => {
               const active = item.match(pathname);
               return (
-                <NavLink
+                <TransitionLink
                   key={item.label}
                   to={primaryNavigationTarget(item.id, location, context)}
                   className="ag-header__link"
@@ -78,7 +79,7 @@ export function AppHeader() {
                   {item.label}
                   {/* 常驻渲染、仅切换 active；不使用 layoutId（V3 §37 修复飞入 Bug） */}
                   <AnimatedUnderline active={active} tone="ink" />
-                </NavLink>
+                </TransitionLink>
               );
             })}
           </nav>

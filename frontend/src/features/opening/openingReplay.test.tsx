@@ -50,33 +50,31 @@ describe('Opening 每次进入 / 都重放（§11/§59）', () => {
     useOpeningStore.setState({ phase: 'sketch' });
   });
 
-  it('上次已「完成」的情况下再次打开 /，仍被拉回草稿并给出「进入」', () => {
+  it('上次已完成，再次打开 / 自动重放且没有手动进入按钮', () => {
     useOpeningStore.setState({ phase: 'ready' });
     renderOpening();
-    expect(useOpeningStore.getState().phase).toBe('sketch');
-    expect(screen.getByRole('button', { name: /进入/ })).toBeTruthy();
+    expect(useOpeningStore.getState().phase).toBe('assembling');
+    expect(screen.queryByRole('button', { name: /进入/ })).toBeNull();
     expect(screen.queryByText('LIAONING_PROVINCE')).toBeNull();
   });
 
-  it('点击进入 → 组装 → 完成 → 自动切到 /liaoning', async () => {
+  it('挂载 → 自动组装 → 完成 → 自动进入主页', async () => {
     renderOpening();
-    fireEvent.click(screen.getByRole('button', { name: /进入/ }));
     expect(useOpeningStore.getState().phase).toBe('assembling');
     act(() => { useOpeningStore.getState().finish(); });
     await waitFor(() => expect(screen.getByText('LIAONING_PROVINCE')).toBeTruthy());
   });
 
-  it('减少动效时直接完成态：给出链接且不自动跳走', () => {
+  it('减少动效时直接进入主页，无需额外点击', () => {
     stubMotion(true);
     renderOpening();
     expect(useOpeningStore.getState().phase).toBe('ready');
-    expect(screen.getByRole('link', { name: /进入/ })).toBeTruthy();
-    expect(screen.queryByText('LIAONING_PROVINCE')).toBeNull();
+    expect(screen.queryByRole('link', { name: /进入/ })).toBeNull();
+    expect(screen.getByText('LIAONING_PROVINCE')).toBeTruthy();
   });
 
   it('立即跳过会自动进入全省，并把键盘焦点先交给跳过入口', async () => {
     renderOpening();
-    fireEvent.click(screen.getByRole('button', { name: /进入/ }));
     const skip = screen.getByRole('button', { name: '跳过动画' });
     expect(document.activeElement).toBe(skip);
     expect(screen.queryByRole('button', { name: /进入/ })).toBeNull();
@@ -85,12 +83,9 @@ describe('Opening 每次进入 / 都重放（§11/§59）', () => {
     expect(useOpeningStore.getState().phase).toBe('ready');
   });
 
-  it('StrictMode 和快速重复点击只启动一次，跳过后不重复导航', async () => {
+  it('StrictMode 自动开场只启动一次，跳过后不重复导航', async () => {
     const begin = vi.spyOn(useOpeningStore.getState(), 'begin');
     renderOpening(true);
-    const enter = screen.getByRole('button', { name: /进入/ });
-    fireEvent.click(enter);
-    fireEvent.click(enter);
     expect(begin).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole('button', { name: '跳过动画' }));
     await waitFor(() => expect(screen.getByText('LIAONING_PROVINCE')).toBeTruthy());
@@ -100,7 +95,6 @@ describe('Opening 每次进入 / 都重放（§11/§59）', () => {
 
   it('路由中断后，迟到的完成信号不能把用户拉回全省', () => {
     renderOpening();
-    fireEvent.click(screen.getByRole('button', { name: /进入/ }));
     fireEvent.click(screen.getByRole('link', { name: '离开页面' }));
     expect(screen.getByText('OTHER_PAGE')).toBeTruthy();
     act(() => { useOpeningStore.getState().finish(); });
