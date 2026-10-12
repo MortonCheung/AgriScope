@@ -3,6 +3,7 @@ import { CameraControls, CameraControlsImpl, ContactShadows, Html, PerspectiveCa
 import { Canvas, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { STUDY_CITY_IDS } from '../../domain/geography/cities';
+import { CityMapFallback } from './CityMapFallback';
 import type { CityWorldBounds } from './liaoningGeometry';
 import { CitySolidMesh, SOLID_DEPTH } from './CitySolidMesh';
 import { PaperGround } from './PaperGround';
@@ -335,8 +336,8 @@ function SceneContents({ mode, active = true, focusCityId, hoveredCityId, onHove
         </group>
       </group>
       {/* 草稿阶段不出现任何城市 Label / 按钮 / 研究状态（§25） */}
-      {mode !== 'opening' && model.cities.map((city) => {
-        const active = hoveredCityId === city.id || (mode === 'province' && selectedCityId === city.id);
+      {active && mode !== 'opening' && model.cities.map((city) => {
+        const highlighted = hoveredCityId === city.id || (mode === 'province' && selectedCityId === city.id);
         if (!studyIds.has(city.id)) return null;
         return (
           <Html
@@ -344,14 +345,16 @@ function SceneContents({ mode, active = true, focusCityId, hoveredCityId, onHove
             position={[city.centroid.x, SOLID_DEPTH + (hoveredCityId === city.id ? 1.4 : 0.9), -city.centroid.y]}
             center
             zIndexRange={[3, 0]}
-            style={{ pointerEvents: 'none' }}
+            style={{ pointerEvents: 'auto' }}
           >
-            <span
-              className={`liaoning-label${active ? ' is-active' : ''}${city.hasResearch ? ' is-research' : ''}`}
-            >
-              {city.shortName}
-
-            </span>
+            <button type="button"
+              className={`liaoning-label${highlighted ? ' is-active' : ''}${city.hasResearch ? ' is-research' : ''}`}
+              aria-pressed={focusCityId === city.id}
+              onPointerDown={event => event.stopPropagation()}
+              onClick={event => { event.stopPropagation(); onSelectCity(city.id); }}
+              onFocus={() => onHoverCity(city.id)} onBlur={() => onHoverCity(null)}
+              onMouseEnter={() => onHoverCity(city.id)} onMouseLeave={() => onHoverCity(null)}
+            >{city.shortName}</button>
           </Html>
         );
       })}
@@ -359,13 +362,10 @@ function SceneContents({ mode, active = true, focusCityId, hoveredCityId, onHove
   );
 }
 
-function MapFallback() {
-  return <div className="liaoning-map-fallback" role="alert"><p>地图暂时无法显示。</p><p>你仍可从六城列表选择城市，查看观测和经营计划。</p><button className="ag-button" onClick={() => window.location.reload()}>重新载入地图</button></div>;
-}
-class MapBoundary extends Component<{children:ReactNode},{failed:boolean}> {
+class MapBoundary extends Component<{children:ReactNode;fallback:ReactNode},{failed:boolean}> {
   state={failed:false};
   static getDerivedStateFromError(){return {failed:true};}
-  render(){return this.state.failed?<MapFallback/>:this.props.children;}
+  render(){return this.state.failed?this.props.fallback:this.props.children;}
 }
 
 /** 省域 3D 沙盘画布。整站共享一个 Canvas，路由只切换相机与可见性。 */
@@ -384,13 +384,14 @@ export function LiaoningCanvas(props: LiaoningCanvasProps) {
   const quality = props.reducedMotion ? 'performance' : resolveAutoQualityTier(readRuntimeQualitySignals());
   const dpr = resolveDpr(viewport.width, viewport.height, window.devicePixelRatio || 1, QUALITY_CONFIG[quality]);
 
-  if(modelState.status==='error') return <MapFallback/>;
+  const fallback = props.active !== false && props.mode !== 'opening' ? <CityMapFallback onSelectCity={props.onSelectCity} selectedCityId={props.focusCityId}/> : null;
+  if(modelState.status==='error') return fallback;
   return (
-    <MapBoundary>
+    <MapBoundary fallback={fallback}>
     <div className="liaoning-map-frame" aria-hidden="true" inert />
-    {contextLost&&<MapFallback/>}
+    {contextLost&&fallback}
     <Canvas
-      fallback={<MapFallback/>}
+      fallback={fallback}
       dpr={dpr}
       frameloop="demand"
       gl={{ antialias: quality === 'quality', alpha: true, powerPreference: 'high-performance', stencil: false }}
@@ -416,7 +417,7 @@ export function LiaoningCanvas(props: LiaoningCanvasProps) {
       <hemisphereLight args={[SCENE_TOKENS.lightKey, SCENE_TOKENS.lightFill, 1.05]} />
       <directionalLight position={[-40, 70, 40]} intensity={0.85} />
       <directionalLight position={[30, 40, -50]} intensity={0.25} />
-      <SceneContents {...props} />
+      <SceneContents {...props} active={props.active !== false && !contextLost} />
     </Canvas>
     </MapBoundary>
   );

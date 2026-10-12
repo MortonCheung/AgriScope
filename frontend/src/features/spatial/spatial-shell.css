@@ -21,7 +21,8 @@
   display: inline-flex;
   align-items: baseline;
   gap: 5px;
-  padding: 2px 4px;
+  padding: 8px;
+  min-width:44px;min-height:44px;justify-content:center;border:1px solid transparent;background:transparent;cursor:pointer;
   color: var(--ag-ink-muted);
   font-family: var(--ag-font-text);
   font-size: 13px;
@@ -49,3 +50,8 @@
 
 .liaoning-map-fallback { position:absolute; left:50%; top:40%; transform:translate(-50%,-50%); max-width:380px; padding:24px; background:var(--ag-paper); color:var(--ag-ink-soft); font-size:14px; pointer-events:auto; z-index:5; }
 .liaoning-map-fallback .ag-button { margin-top:16px; }
+
+.liaoning-label:hover, .liaoning-label[aria-pressed=true] {background:var(--ag-paper-raised);border-color:var(--ag-rule);}
+.liaoning-label:focus-visible {outline:2px solid var(--ag-focus);outline-offset:2px;background:var(--ag-paper-raised);}
+.liaoning-map-fallback {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:min(360px,90%);}
+.liaoning-map-fallback .ag-button {margin:0;min-height:44px;}
