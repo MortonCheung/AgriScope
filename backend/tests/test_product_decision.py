@@ -173,3 +173,15 @@ def test_overlapping_long_ranges_keep_discrete_windows_instead_of_one_best_date(
 def test_llm_cannot_turn_historical_climate_into_a_current_weather_claim():
     req=request();response=S._base(req);response["context_hash"]=S._hash(req.model_dump());response["origin"]["data_version"]="fixture"
     assert not S._apply_llm(req,response,choice_for(response,reasons=["气候条件正常，没有气象风险。"] ))
+
+
+def test_absence_from_annual_categories_does_not_prove_a_crop_is_unsuitable():
+    req=request();response=S._base(req);response["context_hash"]=S._hash(req.model_dump());response["origin"]["data_version"]="fixture"
+    assert not S._apply_llm(req,response,choice_for(response,reasons=["黄瓜在当地非主导作物，不适合扩大种植。"] ))
+
+
+def test_valid_selection_keeps_operating_reasons_and_omits_unsupported_background_claims():
+    req=request();response=S._base(req);response["context_hash"]=S._hash(req.model_dump());response["origin"]["data_version"]="fixture"
+    assert S._apply_llm(req,response,choice_for(response,reasons=["保留经营余量。","本地年度生产未列黄瓜，不宜扩大投入。"] ))
+    assert response["recommendation"]["candidate_id"] == "reserve"
+    assert response["recommendation"]["reasons"] == ["保留经营余量。"]

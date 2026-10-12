@@ -20,7 +20,7 @@ from .. import runtime_snapshot as RS
 from . import capability_service as CAPS, final_model_service as FINAL
 from . import observation_service as OBS, long_horizon_service as LONG, product_llm as LLM
 
-POLICY = "product-city-plan-v1"
+POLICY = "product-city-plan-v2"
 CACHE_TTL = 120.0
 MAX_CACHE = 64
 MAX_INFLIGHT = 16
@@ -146,7 +146,7 @@ def _local_facts(city, as_of):
         return {"city_id": city, "production_year": production.get("latest_year") if production_safe else None,
                 "production": [{"crop": row["crop"], "area_ha": row["area_ha"]} for row in production.get("items", [])[:12]] if production_safe else [],
                 "climate_complete_year": latest["year"] if latest else None,
-                "historical_climate": latest, "climate_kind": "historical_reanalysis", "production_kind": "annual_area_not_yield"}
+                "historical_climate": latest, "climate_kind": "historical_reanalysis", "production_kind": "annual_area_not_yield", "production_coverage": "published_categories_only_no_absence_inference"}
     except Exception:
         return {"city_id": city, "production": [], "historical_climate": None}
 
@@ -257,7 +257,12 @@ def _apply_llm(request, response, choice):
     if selected is None:
         return False
     reasons = choice["reasons"]
-    if not isinstance(reasons, list) or not 1 <= len(reasons) <= 3 or any(not isinstance(reason, str) or not 1 <= len(reason) <= 180 or re.search(r"\d|模拟|演示|Final|冻结|训练|快照|API|密钥|气候.*正常|气象.*正常|天气.*正常|条件正常|未显示.*不利|稳赚|保证收益", reason) for reason in reasons):
+    if not isinstance(reasons, list) or not 1 <= len(reasons) <= 3 or any(not isinstance(reason, str) or not 1 <= len(reason) <= 180 or re.search(r"\d|模拟|演示|Final|冻结|训练|快照|API|密钥|稳赚|保证收益", reason) for reason in reasons):
+        return False
+    # Local annual/climate records are contextual data, not evidence for an
+    # agronomic or weather assertion. Keep only operating reasons in the UI.
+    reasons = [reason for reason in reasons if not re.search(r"本地|当地|年度|气候|气象|天气|主导|主栽|适种|降水|温度|未列|(?:不适合|适合).*种植", reason)]
+    if not reasons:
         return False
     area = choice["area_mu"]
     if area is not None:
