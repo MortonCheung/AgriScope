@@ -52,7 +52,7 @@ def _finite(value):
 
 
 def _crop(value):
-    return {"马铃薯": "土豆", "番茄": "西红柿"}.get(value, value)
+    return {"马铃薯": "土豆"}.get(value, value)
 
 
 def _cap(city):

@@ -185,3 +185,9 @@ def test_valid_selection_keeps_operating_reasons_and_omits_unsupported_backgroun
     assert S._apply_llm(req,response,choice_for(response,reasons=["保留经营余量。","本地年度生产未列黄瓜，不宜扩大投入。"] ))
     assert response["recommendation"]["candidate_id"] == "reserve"
     assert response["recommendation"]["reasons"] == ["保留经营余量。"]
+
+
+def test_custom_crop_name_is_not_silently_renamed_by_the_product_contract():
+    response=S._base(request(crop="番茄"))
+    assert response["request"]["crop"] == "番茄"
+    assert all(row["crop"] == "番茄" for row in response["candidates"])
