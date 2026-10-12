@@ -245,3 +245,18 @@
 - 土豆归一只承认外部马铃薯 alias，保留旧双alias草稿和显式价格；不改模型/研究/后端。
 
 - 浏览器实测确认：独立“研究局限/研究限制”章节与目录从产品展示隐藏；研究结果内必要限定、原始研究资产不变。Canvas fallback 不以挂载effect判定故障，由真实 WebGL2 能力/渲染错误/context loss 驱动同一语义入口。
+
+## 最终交付：导航与动效（2026-10-12，修改前登记）
+
+- 普通向上返回开场 `/` 的父级规则由正常 `/liaoning` 首页与全省终点禁用接替；明确开场访问保留，历史后退/前进独立。
+- 相同 from/to 重启收纸由可复用的 pending 导航意图接替；不同目的地才取消，cancel 的 finished 拒绝不再当作完成，失败恢复裁切与操作。
+- 纸张 opacity + inset 动画由四顶点 polygon 纯几何裁切接替；共享节奏初始收起0.34秒、展开0.46秒，顶边固定，文字不缩放，减少动画立即完成。
+- WorkbenchLayout 对整块 column/rail 的 opacity .35 淡化退役；保留稳定纸面、侧栏、局部抽屉、真实内容身份和数据隔离。共享局部 content hook只保留小幅位移，数字与下划线动效保留。
+
+## Final delivery research and homepage (registered before replacement)
+
+- Existing explorer flags / modules[0] and per-view filters are replaced by one publication-validated presentation list; source articles, states and negative findings remain.
+- City reports reuse shell-free research content and default to verified interaction. Full articles remain secondary; exactly one stable Workbench shell.
+- Excluded entries explicitly replace deep links to a valid same-city selection while retaining business context.
+- Cold assets use prefetched identity-keyed caches and reserved loading regions, never mislabeled old-city data.
+- Homepage retains bounded viewport and two independent scroll containers, promotes its single action group and truthfully labels sample data without changing values/dates.
