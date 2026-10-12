@@ -27,13 +27,11 @@ function SynthesisTable({ file }: { file: string }) {
   return <DataTable table={table.data} caption="研究数据" filterColumn={table.data.columns.includes('crop') ? 'crop' : undefined} />;
 }
 
-export function SynthesisPage() {
-  const navigate = usePageNavigate();
+export function SynthesisContent() {
   const articleState = useArticle(CITY_ID, 'A11');
   const article = articleState.status === 'ready' ? articleState.data : null;
 
   return (
-    <WorkbenchLayout className="report-workbench report-index-workbench" resetKey="synthesis" sidebarLabel="报告目录" railLabel="报告信息" onEscape={() => navigate(ROUTES.reports)} sidebar={close => <ReportNavigation close={close} />}><WorkbenchMain>
       <div className="cross-city">
         <header className="ag-section__head">
           <p className="ag-label">综合研究</p>
@@ -99,6 +97,13 @@ export function SynthesisPage() {
           </>
         )}
       </div>
-    </WorkbenchMain><WorkbenchRail>{null}</WorkbenchRail></WorkbenchLayout>
+
   );
+}
+
+export function SynthesisPage() {
+  const navigate = usePageNavigate();
+  return <WorkbenchLayout className="report-workbench report-index-workbench" resetKey="synthesis" contentKey="synthesis" sidebarLabel="报告目录" railLabel="报告依据" onEscape={() => navigate(ROUTES.reports)} sidebar={close => <ReportNavigation close={close} />}>
+    <WorkbenchMain><SynthesisContent /></WorkbenchMain><WorkbenchRail>{null}</WorkbenchRail>
+  </WorkbenchLayout>;
 }

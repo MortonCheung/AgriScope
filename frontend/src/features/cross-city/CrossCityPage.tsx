@@ -194,8 +194,7 @@ function MetricDetail({ metric, activeCity, onSelectCity }: {
   );
 }
 
-export function CrossCityPage() {
-  const navigate = usePageNavigate();
+export function CrossCityContent() {
   const [metricId, setMetricId] = useState<string>(CROSS_CITY_METRICS[0].id);
   const [activeCity, setActiveCity] = useState<string | null>(null);
   const metric = findMetric(metricId);
@@ -215,7 +214,6 @@ export function CrossCityPage() {
   const activeResolved = activeCity && highlighted.includes(activeCity) ? activeCity : (highlighted[0] ?? null);
 
   return (
-    <WorkbenchLayout className="report-workbench report-index-workbench" resetKey="cross-city" sidebarLabel="报告目录" railLabel="报告信息" onEscape={() => navigate(ROUTES.reports)} sidebar={close => <ReportNavigation close={close} />}><WorkbenchMain>
       <div className="cross-city">
         <header className="ag-section__head">
           <p className="ag-label">六城比较</p>
@@ -265,6 +263,13 @@ export function CrossCityPage() {
           )}
         </section>
       </div>
-    </WorkbenchMain><WorkbenchRail>{null}</WorkbenchRail></WorkbenchLayout>
+
   );
+}
+
+export function CrossCityPage() {
+  const navigate = usePageNavigate();
+  return <WorkbenchLayout className="report-workbench report-index-workbench" resetKey="cross-city" contentKey="cross-city" sidebarLabel="报告目录" railLabel="报告依据" onEscape={() => navigate(ROUTES.reports)} sidebar={close => <ReportNavigation close={close} />}>
+    <WorkbenchMain><CrossCityContent /></WorkbenchMain><WorkbenchRail>{null}</WorkbenchRail>
+  </WorkbenchLayout>;
 }

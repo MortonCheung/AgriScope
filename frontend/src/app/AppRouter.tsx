@@ -14,9 +14,7 @@ const load = (loader: () => Promise<Record<string, unknown>>, name: string) => a
 const openingPage = load(() => import('../features/opening/OpeningPage'), 'OpeningPage');
 const researchHomePage = load(() => import('../features/liaoning/LiaoningPage'), 'LiaoningPage');
 const cityResearchPage = load(() => import('../features/research-v2/CityResearchPage'), 'CityResearchPage');
-const researchCenterPage = load(() => import('../features/research-center/ResearchCenterPage'), 'ResearchCenterPage');
-const reportsIndexPage = load(() => import('../features/report/ReportsIndexPage'), 'ReportsIndexPage');
-const cityReportPage = load(() => import('../features/report/ReportPage'), 'ReportPage');
+const reportWorkspacePage = load(() => import('../features/report/ReportWorkspacePage'), 'ReportWorkspacePage');
 const scenarioPage = load(() => import('../features/scenario/ScenarioPage'), 'ScenarioPage');
 const decisionPage = load(() => import('../features/decision/DecisionPage'), 'DecisionPage');
 const aboutPage = load(() => import('../features/about/AboutPage'), 'AboutPage');
@@ -68,13 +66,13 @@ const router = createBrowserRouter(createRoutesFromElements(
   <Route element={<AppShell />} hydrateFallbackElement={<div aria-hidden />}>
     <Route path={ROUTES.root} lazy={openingPage} />
     <Route path={ROUTES.researchHome} lazy={researchHomePage} />
-    <Route path={ROUTES.researchCenter} lazy={researchCenterPage} />
+    <Route path={ROUTES.researchCenter} lazy={reportWorkspacePage} />
     <Route path={ROUTES.decisionCenter} element={<DecisionCenterRedirect />} />
     <Route path="/cities/:cityId" lazy={cityResearchPage} />
     <Route path="/cities/:cityId/decision" lazy={decisionPage} />
     <Route path="/cities/:cityId/research/:researchId" lazy={cityResearchPage} />
-    <Route path={ROUTES.reports} lazy={reportsIndexPage} />
-    <Route path="/reports/:cityId" lazy={cityReportPage} />
+    <Route path={ROUTES.reports} lazy={reportWorkspacePage} />
+    <Route path="/reports/:cityId" lazy={reportWorkspacePage} />
     <Route path={ROUTES.scenario} lazy={scenarioPage} />
     <Route path={ROUTES.about} lazy={aboutPage} />
 

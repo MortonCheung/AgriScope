@@ -25,7 +25,8 @@ describe('正式报告共用三栏而完整保留研究资产', () => {
       if (isProductSection(section.title)) expect(center.getByRole('heading', { name: section.title, level: 2 })).toBeTruthy();
       else expect(center.queryByRole('heading', { name: section.title, level: 2 })).toBeNull();
     }
-    expect(container.textContent).not.toMatch(/研究限制|研究局限|外审待复核|A9 ·/);
+    expect(container.textContent).not.toMatch(/外审待复核|A9 ·|沈阳 · 报告/);
+    expect(container.querySelector('.workbench__rail .evidence-rail__title')).toBeNull();
     expect(center.queryAllByTestId('table-asset').map(node => node.getAttribute('data-file')).sort()).toEqual(currentArticle.tables.map(row => row.file).sort());
     expect(center.queryAllByRole('img').map(node => node.getAttribute('src')?.split('/').at(-1)).sort()).toEqual(currentArticle.figures.map(row => row.file).sort());
     const rail = within(screen.getByRole('complementary', { name: '报告依据' }));

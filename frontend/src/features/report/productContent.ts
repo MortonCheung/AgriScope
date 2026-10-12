@@ -1,12 +1,12 @@
 /** Product presentation only: published research assets remain unchanged. */
-const HIDDEN_SECTION = /(?:局限|限制|边界|技术架构|工程说明|开发说明|部署|发布流程|后续工作|未来工作)/;
-const DEVELOPMENT_PARAGRAPH = /(?:前端不(?:代写|改写|生成)|研究侧(?:未随附|仅导出)|载荷|运行包|runtime|manifest|请求不修改|缓存路径|本轮(?:准备|不宣称)|定时采集与部署启用)/i;
+const HIDDEN_SECTION = /(?:技术架构|工程说明|开发说明|部署说明|发布流程)/;
+const DEVELOPMENT_PARAGRAPH = /(?:前端不(?:代写|改写|生成)|研究侧(?:未随附|仅导出)|请求不修改|缓存路径|本轮(?:准备|不宣称)|定时采集与部署启用)/i;
 
 export function isProductSection(title: string): boolean {
   return !HIDDEN_SECTION.test(title);
 }
 
-/** Remove display-only development notes and nested limitations; keep scientific text verbatim. */
+/** Only hide explicit development notes. Scientific qualifications stay with their original result. */
 export function productText(source: string): string {
   let hiddenLevel: number | null = null;
   return source.split(/\n\s*\n/).filter(block => {

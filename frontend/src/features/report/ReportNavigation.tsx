@@ -13,6 +13,10 @@ export function ReportNavigation({ close, label = '报告范围', className = ''
   const catalog = state.status === 'ready' ? state.catalog : null;
   const available = (city: string, id: string) => Boolean(catalog && cityEntry(catalog, city)?.modules.some(module => module.module_id === id));
   const view = new URLSearchParams(location.search).get('view');
+  const reportCityId = /^\/reports\/([^/]+)\/?$/.exec(location.pathname)?.[1];
+  const reportCity = reportCityId ? getCity(reportCityId) : undefined;
+  const cityModules = reportCity && catalog ? cityEntry(catalog, reportCity.id)?.modules ?? [] : [];
+  const interactiveAvailable = cityModules.some(module => module.explorer_available);
   const supplements = [
     { name: '辽宁综合报告', to: ROUTES.provinceReport, available: available('cross_city', 'A11'), active: location.pathname === ROUTES.provinceReport },
     { name: '六城比较', to: `${ROUTES.reports}?view=cross_city`, available: available('cross_city', 'A10'), active: view === 'cross_city' },
@@ -28,5 +32,8 @@ export function ReportNavigation({ close, label = '报告范围', className = ''
       {entry.available ? <TransitionLink className="ag-button" to={entry.to} aria-current={entry.active ? 'page' : undefined} onClick={close}>{entry.name}</TransitionLink>
         : <button type="button" className="ag-button" disabled>{entry.name}</button>}
     </li>)}</ul>
+    {reportCity && interactiveAvailable && <ul className="report-navigation__research"><li>
+      <TransitionLink className="ag-button" to={cityContextUrl(ROUTES.city(reportCity.id), reportCity.id)} onClick={close}>交互研究</TransitionLink>
+    </li></ul>}
   </nav>;
 }
