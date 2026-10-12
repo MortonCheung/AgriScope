@@ -32,7 +32,13 @@ import hashlib
 import json
 import os
 import shutil
+import argparse
 from pathlib import Path
+
+try:
+    from .research_presentation import attach_presentation, load_policy, load_tree
+except ImportError:
+    from research_presentation import attach_presentation, load_policy, load_tree
 
 
 def project_root() -> Path:
@@ -361,6 +367,26 @@ def publish_city(cid: str, source_root: Path, out_root: Path) -> dict:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--check-presentation", action="store_true", help="Verify the derived presentation without writing assets")
+    args = parser.parse_args()
+    if args.check_presentation:
+        current = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+        verified = attach_presentation(current, OUT_ROOT, load_policy(), load_tree())
+        if current != verified:
+            raise SystemExit("Research presentation is stale; publish the reviewed assets")
+        for city in current["cities"]:
+            manifest = json.loads((OUT_ROOT / city["city"] / "manifest.json").read_text(encoding="utf-8"))
+            if manifest.get("presentation_version") != current["presentation_version"]:
+                raise SystemExit(f"Stale manifest presentation version: {city['city']}")
+            if manifest.get("presentation") != city["presentation"]:
+                raise SystemExit(f"Stale manifest presentation: {city['city']}")
+            for entry in manifest["articles"]:
+                module = next(module for module in city["modules"] if module["module_id"] == entry["id"])
+                if entry.get("presentation") != module["presentation"]:
+                    raise SystemExit(f"Stale module presentation: {city['city']}/{entry['id']}")
+        print("Research presentation verified against reviewed source hashes and real data")
+        return 0
     print(f"[publish_research] ROOT   = {ROOT}")
     print(f"[publish_research] SOURCE = {SOURCE_ROOT.relative_to(ROOT)}  (研究源，完整只读)")
     print(f"[publish_research] OUT    = {OUT_ROOT.relative_to(ROOT)}")
@@ -404,6 +430,16 @@ def main() -> int:
             for cm in catalog_cities
         ],
     }
+    catalog = attach_presentation(catalog, OUT_ROOT, load_policy(), load_tree())
+    for city in catalog["cities"]:
+        manifest_path = OUT_ROOT / city["city"] / "manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["presentation_version"] = catalog["presentation_version"]
+        manifest["presentation"] = city["presentation"]
+        for entry in manifest["articles"]:
+            module = next(module for module in city["modules"] if module["module_id"] == entry["id"])
+            entry["presentation"] = module["presentation"]
+        write_json(manifest_path, manifest)
     write_json(CATALOG_PATH, catalog)
     print(f"[publish_research] catalog written: {len(catalog_cities)} cities, "
           f"{total_modules} modules -> {CATALOG_PATH.relative_to(ROOT)}")

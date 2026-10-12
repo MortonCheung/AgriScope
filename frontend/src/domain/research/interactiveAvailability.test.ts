@@ -3,7 +3,8 @@ import runtimeCatalog from '../../../../runtime/research/research_catalog.json';
 import type { V2Catalog } from './v2/types';
 import { hasInteractiveResearch } from './interactiveAvailability';
 
-const catalog = runtimeCatalog as V2Catalog;
+// Publisher tests validate the imported payload; JSON's union inference invents optional hash keys.
+const catalog = runtimeCatalog as unknown as V2Catalog;
 describe('real interactive research availability', () => {
   it('recognizes published curated Shenyang bindings despite missing runtime explorer metadata', () => {
     expect(catalog.cities.find(city => city.city === 'shenyang')?.modules.some(module => module.explorer_available)).toBe(false);
@@ -19,7 +20,7 @@ describe('real interactive research availability', () => {
   });
   it('does not invent capabilities for unsupported or unknown cities', () => {
     expect(hasInteractiveResearch('unknown', catalog)).toBe(false);
-    const unsupported = { ...catalog, cities: catalog.cities.map(city => ({ ...city, modules: city.modules.map(module => ({ ...module, status: 'NOT_SUPPORTED' })) })) };
+    const unsupported = { ...catalog, cities: catalog.cities.map(city => ({ ...city, modules: city.modules.map(module => ({ ...module, presentation: module.presentation ? { ...module.presentation, kind: 'excluded' as const, visible: false } : undefined })) })) };
     expect(hasInteractiveResearch('shenyang', unsupported)).toBe(false);
     expect(hasInteractiveResearch('chaoyang', unsupported)).toBe(false);
   });

@@ -41,16 +41,47 @@ def test_catalog_lists_seven_published_directories(client):
 
 def test_cities_endpoint_is_lightweight(client):
     body = client.get("/api/research/cities").json()
+    assert body["presentation_version"] == "final-1"
     assert len(body["cities"]) == len(CITIES)
     first = body["cities"][0]
     assert {"city", "city_name", "n_modules", "modules"} <= set(first)
     module = first["modules"][0]
-    assert set(module) == {"module_id", "title", "status", "summary", "explorer_available"}
+    assert set(module) == {"module_id", "title", "status", "summary", "explorer_available", "presentation"}
+    assert first["presentation"]["visible_count"] > 0
+
+
+def test_catalog_presentation_is_the_published_audit_not_a_service_reclassification(client):
+    body = client.get("/api/research/catalog").json()
+    raw = json.loads(R.CATALOG_PATH.read_text(encoding="utf-8"))
+    assert body == raw
+    assert body["presentation_version"] == "final-1"
+    tieling = next(city for city in body["cities"] if city["city"] == "tieling")
+    assert tieling["presentation"]["visible_count"] == 2
+    assert tieling["modules"][0]["status"] == "NOT_SUPPORTED"
+    assert tieling["modules"][0]["presentation"]["kind"] == "excluded"
+
+
+def test_catalog_cache_observes_atomic_publication_without_resetting_the_server(tmp_path, monkeypatch):
+    path = tmp_path / "catalog.json"
+    first = {"cities": [{"city": "first", "modules": []}], "presentation_version": "final-1"}
+    path.write_text(json.dumps(first))
+    monkeypatch.setattr(R, "CATALOG_PATH", path)
+    R.reset_cache()
+    assert R.catalog() == first
+    assert R.city_ids() == ["first"]
+    second = {"cities": [{"city": "second", "modules": []}], "presentation_version": "final-1"}
+    temporary = tmp_path / "next.json"
+    temporary.write_text(json.dumps(second))
+    temporary.replace(path)
+    assert R.catalog() == second
+    assert R.city_ids() == ["second"]
+    R.reset_cache()
 
 
 def test_manifest_matches_actual_article_count(client):
     for city in CITIES:
         manifest = client.get(f"/api/research/{city}/manifest.json").json()
+        assert manifest["presentation_version"] == "final-1"
         assert manifest["n_articles"] == len(manifest["articles"]), city
         for entry in manifest["articles"]:
             assert entry["title"]

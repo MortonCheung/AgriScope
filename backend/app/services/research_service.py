@@ -78,6 +78,7 @@ MEDIA_TYPES = {
 
 _CATALOG_CACHE: Optional[Dict[str, Any]] = None
 _CITIES_CACHE: Optional[List[str]] = None
+_CATALOG_SIGNATURE: Optional[Tuple[int, int, int]] = None
 
 
 def _not_found(message: str, details: Optional[Dict[str, Any]] = None) -> ApiError:
@@ -95,7 +96,15 @@ def _inside(root: Path, candidate: Path) -> bool:
 
 def catalog() -> Dict[str, Any]:
     """轻量研究总索引。不存在时明确报错，不做任何回退或占位。"""
-    global _CATALOG_CACHE
+    global _CATALOG_CACHE, _CATALOG_SIGNATURE, _CITIES_CACHE
+    try:
+        stat = CATALOG_PATH.stat()
+        signature = (stat.st_mtime_ns, stat.st_size, stat.st_ino)
+    except OSError:
+        signature = None
+    if signature != _CATALOG_SIGNATURE:
+        _CATALOG_CACHE = None
+        _CITIES_CACHE = None
     if _CATALOG_CACHE is None:
         if not CATALOG_PATH.is_file():
             raise ApiError(503, ErrorCode.RESEARCH_UNAVAILABLE,
@@ -103,6 +112,7 @@ def catalog() -> Dict[str, Any]:
                            {"hint": "运行 pipelines/publishing/publish_research.py"})
         try:
             _CATALOG_CACHE = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+            _CATALOG_SIGNATURE = signature
         except (OSError, ValueError):
             _CATALOG_CACHE = None
             raise ApiError(503, ErrorCode.RESEARCH_UNAVAILABLE, "研究索引不可解析。")
@@ -111,17 +121,24 @@ def catalog() -> Dict[str, Any]:
 
 def reset_cache() -> None:
     """测试用：清空进程内缓存。"""
-    global _CATALOG_CACHE, _CITIES_CACHE
+    global _CATALOG_CACHE, _CITIES_CACHE, _CATALOG_SIGNATURE
     _CATALOG_CACHE = None
     _CITIES_CACHE = None
+    _CATALOG_SIGNATURE = None
 
 
 def city_ids() -> List[str]:
     """以**已发布索引**为准的城市清单；索引缺失时回退到目录扫描。"""
     global _CITIES_CACHE
+    # Publication atomically replaces the same catalog path; refresh its signature first.
+    try:
+        data = catalog()
+    except ApiError:
+        _CITIES_CACHE = sorted(path.name for path in PRODUCT_ROOT.iterdir() if path.is_dir()) if PRODUCT_ROOT.is_dir() else []
+        return _CITIES_CACHE
     if _CITIES_CACHE is None:
         try:
-            _CITIES_CACHE = [str(item["city"]) for item in catalog().get("cities", [])]
+            _CITIES_CACHE = [str(item["city"]) for item in data.get("cities", [])]
         except ApiError:
             _CITIES_CACHE = sorted(p.name for p in PRODUCT_ROOT.iterdir()
                                    if p.is_dir()) if PRODUCT_ROOT.is_dir() else []
@@ -132,6 +149,7 @@ def cities() -> Dict[str, Any]:
     """城市清单 + 每城模块概况（供研究中心首页使用，不含正文）。"""
     data = catalog()
     return {
+        "presentation_version": data.get("presentation_version"),
         "n_cities": data.get("n_cities", len(data.get("cities", []))),
         "n_modules": data.get("n_modules"),
         "cities": [
@@ -140,9 +158,10 @@ def cities() -> Dict[str, Any]:
                 "city_name": item.get("city_name"),
                 "n_modules": item.get("n_modules"),
                 "n_sources": item.get("n_sources"),
+                "presentation": item.get("presentation"),
                 "modules": [
                     {key: module.get(key) for key in
-                     ("module_id", "title", "status", "summary", "explorer_available")}
+                     ("module_id", "title", "status", "summary", "explorer_available", "presentation")}
                     for module in item.get("modules", [])
                 ],
             }

@@ -1,0 +1,74 @@
+{
+  "defaults": {
+    "dandong": {
+      "module_id": "A07",
+      "selection_id": "A7"
+    },
+    "shenyang": {
+      "module_id": "A01",
+      "selection_id": "A1.3"
+    },
+    "tieling": {
+      "module_id": "A07",
+      "selection_id": "A7"
+    }
+  },
+  "reviewed": {
+    "chaoyang/A01": "2d7c97f3879a6cb2b4dcacf69b91cdfbb93ac1770e2e4b743d77a6310449c410",
+    "chaoyang/A02": "2216a642994ed958ea93376b45431e8bc349f67b69a494ba0af998d4c08628ec",
+    "chaoyang/A03": "b043eabad3a13cd6e752f63d5063c2fd9ad2482361316453cf513de52c008267",
+    "chaoyang/A04": "0126051eab5bc2c9d36d3a34d2f2084ab52f564d492e80f30f96f6829e5621a6",
+    "chaoyang/A05": "59f2ccd4e55090d21097f7d6b082241927c3b201e6c2a791562844b4a16e1e31",
+    "chaoyang/A06": "7dad3b631caf137f6c2e6b7469bf068b57ced91bf197e333f45795f990d39961",
+    "chaoyang/A07": "d61d1fa1185de5c17151d4c5ea77b54e323a516d02e8ab5ac03d3bddd8d076b3",
+    "chaoyang/A08": "31a8ed398a645f17ed0f703855f793528e2fecaa3ea8d7e944991b5ac1798431",
+    "chaoyang/A09": "42cddf0b4fdec6d454af140c4f130460e35f6a7661dfa29223a5629c35a08578",
+    "cross_city/A10": "0660a2dffa6f13d881ed16816c60313076395048c00bdab615bb4c256c075f30",
+    "cross_city/A11": "609cd803968f21b630822c6c0745bfea391000e8ceb4d0943083eb9db488e62f",
+    "dalian/A01": "8a1ce7ca2e18ea5cf2afa7f9dab3f8e70f053520ef152dbc56fe97fe8e1ba132",
+    "dalian/A02": "3ffeb8f63678b401d64423950d52ab5fbb33a96bbd7d83406b713cff5a46daad",
+    "dalian/A03": "2b76313fa279890bf5ab680f6580872af00779ae4e3569ab2ed6b69d9ce1d181",
+    "dalian/A04": "5d0936cb9abcf62425a28f3b5be91a731f1d3148eba288f307edb16e41a92f27",
+    "dalian/A05": "8913329ad653a6b2aadcb70bbd31c8393ba5e50f3474dfded4342f7e979ba869",
+    "dalian/A06": "88e45b129c5a5a27a3256d60ed00f47fea149e32c5373b8cc4e27c10a006c13c",
+    "dalian/A07": "c33b68c4fc2b91c55ea706004fe677c06ffbcd11b09e6f9ddd02906d87a00a56",
+    "dalian/A08": "4c8834af57e43b5a2baebfa81d9904b3d7370be4dce5a22f66c225c11878c534",
+    "dalian/A09": "9388661be341172516f4fd76fd7638ee2836e328ee2d227308a2e9e38a6a6246",
+    "dandong/A07": "adf734640e0bf9f271c648f642b8ecc4f580e198e488bc3668ebabbefdd4c507",
+    "dandong/A09": "1d4ad39839d37479e89fd67a21dae439ea649f9ad681435a4546e5341a933bfc",
+    "jinzhou/A01": "3671c7ff675bde23f239fb5152310f5a309cb8c7a2c653278f213f02c2cc03d3",
+    "jinzhou/A02": "86f7befbc45bf4bb1bf72a3704feb218da7dd5a89787119607aacb70b83248be",
+    "jinzhou/A03": "ce35ab4f54c034c5fda4ee509d35255b71af5e25a4d96d24dd4a38028b29bf60",
+    "jinzhou/A04": "65fb51f6742f3e5bd98e1d58ccdfed8c73f93cf9e3c9cbdcf40460e9fd4fec6e",
+    "jinzhou/A05": "677f43e50b5d9d748d625f0e06c7df15269eb8bcb97ea1ea7105f56b1afe40a6",
+    "jinzhou/A06": "343588f1a6eaa17b380792d229ac7e608e68bc385e1b05b2f9b8373f0097b6b9",
+    "jinzhou/A07": "d8d004fbc691262a199ed5f27666830791b68e27461000e4c1f62705b9b54dea",
+    "jinzhou/A08": "a260e6adf406dc4ed4785e2549da8463bc93b99187761bd997d2d1ea7e547034",
+    "jinzhou/A09": "ce3b2dadbba5c3e7d369ae495930aea5e2a511f3fc6bdaec625ba424afb5414e",
+    "shenyang/A01": "4b5cbc63a50ecf87c8f06eb56597bbecda49ed4746044a8e7c24571b95f70cba",
+    "shenyang/A02": "3a715e71d499cce42b15705f5b21cdd6065d23a329bf3f9ec8a5fbf3b35709a7",
+    "shenyang/A03": "b1367fffc1a43085b0e7f14de750590d2b25321f5f02f4841f67ce10a4b4b7ed",
+    "shenyang/A04": "ad82ef86f03c8ec225cd19218c2f78b49c03fb9f4e7ea7fe1da795be72ba089f",
+    "shenyang/A05": "a5f03b5d6f47be3204f5495f6f37999bb7def25c4e64a9367b21ff6f80ad66be",
+    "shenyang/A06": "dc1c363b18b9e598aab46801a7a8ebd94d036f0d2247d7b0a7447a7b54502c26",
+    "shenyang/A07": "19358d32ce701a14356ed26448819e2a397de81f6a63200c164d39d447ce71bc",
+    "shenyang/A08": "224c8f5e19b3e9ec4c57baf74e76e2225a036af8e9fd7241b801f17115a36432",
+    "shenyang/A09": "ab3cdc73ceb88d95781e9b249d7e499291cd10a399e408343b2a0a897d8844ee",
+    "tieling/A07": "21cf76c23e349ba3eb72e8d051ce605bf53b8d98578fccb18a3e988cf47b9ac2",
+    "tieling/A09": "4c4d187998894a9337b6a5d1ae0d48b8986dcff0683eff5204bc632c8bc18052"
+  },
+  "source_dependencies": {
+    "cross_city": [
+      "chaoyang",
+      "jinzhou",
+      "dalian",
+      "dandong",
+      "tieling"
+    ]
+  },
+  "supplement_points": [
+    "A3.10",
+    "A6.6"
+  ],
+  "version": "final-1"
+}

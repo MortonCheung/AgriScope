@@ -8,9 +8,12 @@ export interface V2ManifestArticle {
   n_sections: number;
   n_sources: number;
   status: string;
+  presentation?: ResearchPresentation;
 }
 
 export interface V2Manifest {
+  presentation_version?: string;
+  presentation?: CityResearchPresentation;
   city: string;
   project: string;
   n_articles: number;
@@ -108,6 +111,38 @@ export interface V2CatalogModule {
   tables: string[];
   figures: string[];
   sources: string[];
+  presentation?: ResearchPresentation;
+}
+
+export interface VerifiedResearchSeries {
+  id: string;
+  table: string;
+  x: string;
+  y: string;
+  selectors: string[];
+  filter: Record<string, string[]>;
+  row_count: number;
+  numeric_row_count: number;
+  table_sha256: string;
+}
+
+export interface ResearchPresentation {
+  kind: 'interactive' | 'supplement' | 'excluded';
+  visible: boolean;
+  reason_codes: string[];
+  verified_series: VerifiedResearchSeries[];
+  interactive_point_ids: string[];
+  supplement_point_ids: string[];
+  excluded_point_ids: string[];
+  source_hashes: Record<string, string>;
+}
+
+export interface CityResearchPresentation {
+  default_module_id: string | null;
+  default_selection_id: string | null;
+  visible_count: number;
+  interactive_count: number;
+  supplement_count: number;
 }
 
 export interface V2CatalogCity {
@@ -116,9 +151,11 @@ export interface V2CatalogCity {
   n_modules: number;
   n_sources?: number;
   modules: V2CatalogModule[];
+  presentation?: CityResearchPresentation;
 }
 
 export interface V2Catalog {
+  presentation_version?: string;
   schema_version: string;
   generated_by: string;
   n_cities: number;

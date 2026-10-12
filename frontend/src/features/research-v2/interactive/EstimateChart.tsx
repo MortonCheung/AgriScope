@@ -20,6 +20,13 @@ const PAD = { top: 18, right: 26, bottom: 54, left: 74 } as const;
 const HEIGHT = 300;
 const MIN_SLOT = 34;
 
+/** Empty research cells are missing observations, never zero-valued results. */
+export function researchNumber(value: unknown): number | undefined {
+  if (typeof value !== 'string' && typeof value !== 'number' || typeof value === 'string' && value.trim() === '') return undefined;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : undefined;
+}
+
 function niceTick(value: number): string {
   if (value === 0) return '0';
   const abs = Math.abs(value);
@@ -93,11 +100,11 @@ export function EstimateChart({ rows, categoryKey, valueKey, ciLowKey, ciHighKey
     return rows
       .map((row) => ({
         category: row[categoryKey] ?? '',
-        value: Number(row[valueKey]),
-        low: ciLowKey ? Number(row[ciLowKey]) : undefined,
-        high: ciHighKey ? Number(row[ciHighKey]) : undefined,
+        value: researchNumber(row[valueKey]),
+        low: ciLowKey ? researchNumber(row[ciLowKey]) : undefined,
+        high: ciHighKey ? researchNumber(row[ciHighKey]) : undefined,
       }))
-      .filter((point) => point.category !== '' && Number.isFinite(point.value))
+      .filter((point): point is { category: string; value: number; low: number | undefined; high: number | undefined } => point.category !== '' && point.value !== undefined)
       .map((point) => {
         /* 分类取值**允许重复**：跨城序列的分类轴是 city_b，同一城市可在不同配对/作物里
            合法地出现多条（例：西红柿 朝阳→锦州 与 大连→锦州 都含锦州）。
@@ -164,7 +171,7 @@ export function EstimateChart({ rows, categoryKey, valueKey, ciLowKey, ciHighKey
       </div>
 
       <div className="estimate-chart__scroll" ref={scrollRef}>
-        <svg viewBox={`0 0 ${width} ${HEIGHT}`} width={width} height={HEIGHT} role="img"
+        <svg viewBox={`0 0 ${width} ${HEIGHT}`} width={width} height={HEIGHT} role="group"
           aria-label={`${valueLabel} 按${categoryLabel}的估计值与区间`}>
           {ticks.map((tick, index) => (
             <g key={index}>
@@ -189,6 +196,9 @@ export function EstimateChart({ rows, categoryKey, valueKey, ciLowKey, ciHighKey
                  单用它会让同一城市（如锦州）的两条真实记录撞 key；追加序号既唯一，
                  又让同分类同序号的节点在切换 selector 时身份不变，能 morph 而不是重放淡入（§46）。 */
               <g key={point.key}
+                role="button" tabIndex={0} aria-label={`${label} ${formatMetricValue(point.value, meta)}`} aria-pressed={isActive}
+                onFocus={() => setHover(index)} onBlur={() => setHover(null)} onClick={() => setHover(index)}
+                onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setHover(index); } }}
                 onPointerEnter={() => setHover(index)}
                 onPointerLeave={() => setHover(null)}
                 style={{ animationDelay: `${Math.min(index, 24) * 14}ms` }}
@@ -249,7 +259,7 @@ export function EstimateChart({ rows, categoryKey, valueKey, ciLowKey, ciHighKey
       <div className="estimate-chart__readout" data-empty={active ? undefined : true}>
         {widest && (
           <span className="estimate-chart__readout-ghost" aria-hidden>
-            <span className="estimate-chart__readout-cat">{widest.category}</span>
+            <span className="estimate-chart__readout-cat">{controlledValueLabel(categoryKey, widest.category)}</span>
             <span className="estimate-chart__readout-value">{formatMetricValue(widest.value, meta)}</span>
             {hasCi && widest.low !== undefined && widest.high !== undefined && (
               <span className="estimate-chart__readout-ci">
@@ -260,7 +270,7 @@ export function EstimateChart({ rows, categoryKey, valueKey, ciLowKey, ciHighKey
         )}
         {active && (
           <span className="estimate-chart__readout-live">
-            <span className="estimate-chart__readout-cat">{active.category}</span>
+            <span className="estimate-chart__readout-cat">{controlledValueLabel(categoryKey, active.category)}</span>
             <span className="estimate-chart__readout-value">{formatMetricValue(active.value, meta)}</span>
             {hasCi && active.low !== undefined && active.high !== undefined && (
               <span className="estimate-chart__readout-ci">
