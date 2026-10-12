@@ -1,40 +1,31 @@
 // @vitest-environment jsdom
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { useContentTransition } from './useContentTransition';
-const motion = vi.hoisted(() => ({ reduced: false }));
-vi.mock('motion/react', () => ({ useReducedMotion: () => motion.reduced }));
-function Surface({ city }: { city: string }) { const ref = useContentTransition<HTMLDivElement>(city); return <div ref={ref}>{city}</div>; }
-afterEach(() => { cleanup(); vi.restoreAllMocks(); motion.reduced = false; });
-describe('immediate content transition lifecycle', () => {
-  it('retains the surface and cancels obsolete animations on rapid selection and unmount', () => {
-    const cancel = vi.fn();
-    const animate = vi.fn(() => ({ cancel }) as unknown as Animation);
-    Object.defineProperty(HTMLElement.prototype,'animate',{configurable:true,value:animate});
-    const rendered = render(<Surface city="shenyang"/>);
-    const surface = rendered.container.firstChild;
-    expect(animate).not.toHaveBeenCalled();
-    rendered.rerender(<Surface city="tieling"/>);
-    expect(rendered.container.firstChild).toBe(surface);
-    expect(surface?.textContent).toBe('tieling');
-    expect(animate).toHaveBeenCalledWith([
-      { opacity: 0.35, transform: 'translateY(3px)' },
-      { opacity: 1, transform: 'translateY(0)' },
-    ], expect.objectContaining({ duration: 160 }));
-    rendered.rerender(<Surface city="dalian"/>);
-    expect(cancel).toHaveBeenCalledTimes(1);
-    expect(animate).toHaveBeenCalledTimes(2);
-    rendered.unmount();
-    expect(cancel).toHaveBeenCalledTimes(2);
-    delete (HTMLElement.prototype as Partial<HTMLElement>).animate;
+import { animateContentSurface, useContentTransition } from './useContentTransition';
+
+const preferences = vi.hoisted(() => ({ reduced: false }));
+vi.mock('motion/react', () => ({ useReducedMotion: () => preferences.reduced }));
+afterEach(() => { cleanup(); preferences.reduced = false; delete (HTMLElement.prototype as Partial<HTMLElement>).animate; });
+function LocalReading({ identity }: { identity: string }) {
+  const ref = useContentTransition<HTMLDivElement>(identity);
+  return <div ref={ref}>{identity}</div>;
+}
+describe('local content motion never fades a surface', () => {
+  it('contains no opacity, filter or scaling keyframes', () => {
+    const node = document.createElement('div'); const animate = vi.fn();
+    Object.defineProperty(node, 'animate', { value: animate });
+    animateContentSurface(node);
+    const frames = animate.mock.calls[0][0] as Keyframe[];
+    expect(frames.every(frame => !('opacity' in frame) && !('filter' in frame) && !String(frame.transform).includes('scale'))).toBe(true);
+    expect(String(frames[1].transform)).toBe('translateY(0)');
   });
-  it('updates immediately without scheduling animation under reduced motion', () => {
-    motion.reduced = true;
-    const animate=vi.fn(); Object.defineProperty(HTMLElement.prototype,'animate',{configurable:true,value:animate});
-    const rendered=render(<Surface city="shenyang"/>);
-    rendered.rerender(<Surface city="dandong"/>);
-    expect(rendered.container.textContent).toBe('dandong');
-    expect(animate).not.toHaveBeenCalled();
-    delete (HTMLElement.prototype as Partial<HTMLElement>).animate;
+  it('only a local identity change moves the same node, and reduced motion cancels it', () => {
+    const cancel = vi.fn(), animate = vi.fn(() => ({ cancel }));
+    Object.defineProperty(HTMLElement.prototype, 'animate', { configurable: true, value: animate });
+    const opened = render(<LocalReading identity="province" />); const node = opened.container.firstChild;
+    opened.rerender(<LocalReading identity="province" />); expect(animate).not.toHaveBeenCalled();
+    opened.rerender(<LocalReading identity="tieling" />); expect(opened.container.firstChild).toBe(node); expect(animate).toHaveBeenCalledOnce();
+    preferences.reduced = true;
+    opened.rerender(<LocalReading identity="chaoyang" />); expect(animate).toHaveBeenCalledOnce(); expect(cancel).toHaveBeenCalledOnce();
   });
 });

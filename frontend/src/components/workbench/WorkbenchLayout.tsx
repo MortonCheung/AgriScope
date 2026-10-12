@@ -1,6 +1,4 @@
-import { createContext, useContext, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode, type Ref } from 'react';
-import { useReducedMotion } from 'motion/react';
-import { animateContentSurface } from '../../design/useContentTransition';
+import { createContext, useContext, useEffect, useId, useRef, useState, type ReactNode, type Ref } from 'react';
 import './workbench.css';
 import '../../design/paper-motion.css';
 
@@ -29,15 +27,6 @@ export function WorkbenchLayout({ sidebar, sidebarLabel, railLabel, children, cl
   const drawerToggle = useRef<HTMLButtonElement>(null);
   const railToggle = useRef<HTMLButtonElement>(null);
   const paper = useRef<HTMLDivElement>(null);
-  const previousContent = useRef(contentKey);
-  const reducedMotion = useReducedMotion();
-  useLayoutEffect(() => {
-    const changed = previousContent.current !== contentKey;
-    previousContent.current = contentKey;
-    if (!changed || reducedMotion) return;
-    const animations = [...paper.current?.querySelectorAll<HTMLElement>('.workbench__column, .workbench__rail') ?? []].map(animateContentSurface);
-    return () => animations.forEach(animation => animation?.cancel());
-  }, [contentKey, reducedMotion]);
   const closeDrawer = () => { setDrawerOpen(false); if (drawerOpen) drawerToggle.current?.focus(); };
   const closeRail = () => { setRailOpen(false); if (railOpen) railToggle.current?.focus(); };
 
@@ -56,7 +45,7 @@ export function WorkbenchLayout({ sidebar, sidebarLabel, railLabel, children, cl
     return () => window.removeEventListener('keydown', onKey);
   }, [drawerOpen, onEscape, railOpen]);
 
-  return <main className={`workbench ${className}`} data-mode={mode} data-rail-mode={railMode} ref={mainRef}>
+  return <main className={`workbench ${className}`} data-mode={mode} data-content-key={contentKey} data-rail-mode={railMode} ref={mainRef}>
     <div className="workbench__paper city-research__paper" data-paper-surface ref={paper}>
       <header className="workbench__chrome city-research__chrome">
         <div className="workbench__actions">

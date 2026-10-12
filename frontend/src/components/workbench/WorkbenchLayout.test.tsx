@@ -49,4 +49,23 @@ describe('共享工作台的稳定边界与局部面板', () => {
     opened.rerender(workspace('persistent'));
     expect(opened.container.querySelector('main')?.getAttribute('data-rail-mode')).toBe('persistent');
   });
+  it('twenty content changes preserve the host and do not fade the reading or results columns', () => {
+    const descriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'animate');
+    const animate = vi.fn(() => ({ cancel: vi.fn() }));
+    Object.defineProperty(HTMLElement.prototype, 'animate', { configurable: true, value: animate });
+    try {
+      const workspace = (key: string) => <WorkbenchLayout resetKey={key} contentKey={key} sidebarLabel="章节" railLabel="依据" sidebar={() => <p>目录</p>}><WorkbenchMain>{key}正文</WorkbenchMain><WorkbenchRail>{key}来源</WorkbenchRail></WorkbenchLayout>;
+      const opened = render(workspace('first'));
+      const selectors = ['.workbench__paper', '.workbench__sidebar', '.workbench__column', '.workbench__rail'];
+      const nodes = selectors.map(selector => opened.container.querySelector(selector));
+      for (let index = 0; index < 20; index++) {
+        opened.rerender(workspace(`research-${index}`));
+        selectors.forEach((selector, position) => expect(opened.container.querySelector(selector)).toBe(nodes[position]));
+      }
+      expect(animate).not.toHaveBeenCalled();
+    } finally {
+      if (descriptor) Object.defineProperty(HTMLElement.prototype, 'animate', descriptor);
+      else delete (HTMLElement.prototype as Partial<HTMLElement>).animate;
+    }
+  });
 });
