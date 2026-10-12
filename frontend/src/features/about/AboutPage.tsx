@@ -22,7 +22,7 @@ export function AboutPage() {
     window.addEventListener('hashchange', show);
     return () => window.removeEventListener('hashchange', show);
   }, []);
-  return <main className="about about--publication ag-paper-enter">
+  return <main className="about about--publication" data-paper-surface>
     <nav className="about__outline" aria-label="关于页章节">{chapters.map(([id, title]) => <a key={id} href={`#${id}`}>{title}</a>)}</nav>
     <div className="about__article">
       <header className="about__head"><h1 className="about__title">关于</h1></header>

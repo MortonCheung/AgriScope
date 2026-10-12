@@ -3,13 +3,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { PlanningWorkbench } from './PlanningWorkbench';
+import { useProductDecision } from './useProductDecision';
+import type { ProductDecisionResponse } from '../../domain/decision/productApi';
+vi.mock('./useProductDecision', () => ({useProductDecision:vi.fn()}));
 import { STUDY_CITY_IDS } from '../../domain/geography/cities';
 import { resetAppContext, useAppContext } from '../../app/context/appContext';
 import { useMarketObservation } from './useMarketObservation';
 import { productCropOptions } from '../../domain/decision/productDecision';
 vi.mock('./useMarketObservation', () => ({ useMarketObservation: vi.fn() }));
 beforeEach(() => {
-  sessionStorage.clear(); resetAppContext();
+  sessionStorage.clear(); resetAppContext(); vi.mocked(useProductDecision).mockReturnValue(null);
   vi.mocked(useMarketObservation).mockReturnValue({ status: 'error', error: 'connection', retry: vi.fn() });
 });
 afterEach(cleanup);
@@ -94,4 +97,34 @@ describe('six-city live decision workbench', () => {
     choose('玉米'); expect(useAppContext.getState()).toMatchObject({ cityId: 'tieling', crop: '玉米', horizon: 7, asOf: '2026-09-14' });
     expect(new URLSearchParams(screen.getByLabelText('路由').textContent!).get('crop')).toBe('玉米');
   });
+});
+
+describe('model/API recommendations preserve user conditions',()=>{
+ it('uses the selected smaller plan and recomputes displayed amounts without rewriting fields',()=>{
+  const view=render(<MemoryRouter><PlanningWorkbench cityId="tieling"/></MemoryRouter>);fill();
+  expect(profit()).toBe('6,000 元');
+  vi.mocked(useProductDecision).mockReturnValue({contract_version:'product-1',request:vi.mocked(useProductDecision).mock.calls.at(-1)![0]!,context_hash:'f'.repeat(64),candidates:[{id:'reserve',crop:'玉米',area_mu:8,price_per_kg:4,horizon_days:null,sales_window:null,revenue_cny:12800,cost_cny:8000,profit_cny:4800,break_even_price:2.5,risk:'低',reasons:['保留经营余量。']}],recommendation:{candidate_id:'reserve',reasons:['保留经营余量。']},origin:{source_city:null,target_city:'tieling',route:'formula',model_id:null,transfer_policy:null,llm_used:true,forecasts:[]}} as ProductDecisionResponse);
+  view.rerender(<MemoryRouter><PlanningWorkbench cityId="tieling"/></MemoryRouter>);
+  expect(profit()).toBe('4,800 元');
+  expect(results().getByText('玉米 · 8 亩')).toBeTruthy();
+  expect((screen.getByLabelText(/^种植面积/) as HTMLInputElement).value).toBe('10');
+  expect((screen.getByLabelText(/^假设销售价格/) as HTMLInputElement).value).toBe('4');
+ });
+ it.each(['土豆','马铃薯'])('one potato choice remains on a %s deep link',alias=>{
+  render(<MemoryRouter initialEntries={[`/cities/shenyang/decision?city=shenyang&crop=${alias}`]}><PlanningWorkbench cityId="shenyang"/></MemoryRouter>);
+  const group=within(screen.getByRole('group',{name:'作物'}));
+  expect(group.getAllByRole('button',{name:'土豆'})).toHaveLength(1);
+  expect(group.queryByRole('button',{name:'马铃薯'})).toBeNull();
+  expect(group.getByRole('button',{name:'土豆',pressed:true})).toBeTruthy();
+ });
+});
+
+describe('explicit price focus',()=>{
+ it('freezes the displayed price even when the user retypes its existing value',()=>{
+  render(<MemoryRouter><PlanningWorkbench cityId="shenyang"/></MemoryRouter>);choose('黄瓜');
+  fireEvent.focus(screen.getByLabelText(/^假设销售价格/));
+  const saved=JSON.parse(sessionStorage.getItem('agriscope:v4:planning:shenyang')!);
+  expect(saved.priceOverrides).toContain('黄瓜');
+  expect(saved.drafts['黄瓜'].pricePerKg).toBe('3.8');
+ });
 });

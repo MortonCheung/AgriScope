@@ -19,11 +19,11 @@
 
 .module-workspace__item {
   width: 100%;
-  display: grid;
-  grid-template-columns: 2.6rem 1fr auto;
+  display: block;
   align-items: baseline;
   gap: 8px;
-  padding: 7px 10px 7px 0;
+  min-height: 44px;
+  padding: 10px 12px;
   background: transparent;
   border: 0;
   border-left: 2px solid transparent;
@@ -55,6 +55,8 @@
 }
 
 .module-workspace__item-title {
+  display: block;
+  overflow-wrap: anywhere;
   font-size: 0.86rem;
   line-height: 1.45;
   color: var(--ag-ink-soft);
@@ -149,6 +151,5 @@
 }
 
 @media (max-width: 1024px) {
-  .module-workspace__item { grid-template-columns: 2.2rem 1fr; }
   .module-workspace__chip { display: none; }
 }

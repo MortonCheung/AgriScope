@@ -2,8 +2,9 @@ import { isStudyCity, type StudyCityId } from '../geography/cities';
 import type { MarketObservation } from '../market/types';
 import { calculatePlanning, planningSensitivity, validPlanningSaleDate, type PlanningInputs, type PlanningResult } from './planning';
 import type { RiskPreference } from './types';
+import { cropIdentity, sameCrop } from './cropIdentity';
 
-export const PRODUCT_CROPS = ['黄瓜', '甘蓝', '青椒', '尖椒', '西红柿', '玉米', '水稻', '大豆', '小麦', '马铃薯'] as const;
+export const PRODUCT_CROPS = ['黄瓜', '甘蓝', '青椒', '尖椒', '西红柿', '玉米', '水稻', '大豆', '小麦', '土豆'] as const;
 export type OperatingRisk = '低' | '中等' | '高';
 export type PriceSource = 'user' | 'market_api' | 'product_fallback' | 'unavailable';
 
@@ -12,16 +13,17 @@ const FALLBACK_PRICES: Readonly<Record<string, number>> = { 黄瓜: 3.8, 甘蓝:
 export interface ProductPrice { price: number | null; origin: PriceSource }
 
 export function productCropOptions(observed: readonly string[] = []): string[] {
-  return [...new Set([...PRODUCT_CROPS, ...observed.filter(crop => /^[\u4e00-\u9fa5A-Za-z0-9·\-]{1,12}$/.test(crop))])];
+  return [...new Set([...PRODUCT_CROPS, ...observed.filter(crop => /^[\u4e00-\u9fa5A-Za-z0-9·\-]{1,12}$/.test(crop))].map(cropIdentity))];
 }
 
 export function productPriceFor(city: string, crop: string, observation?: MarketObservation): ProductPrice {
   if (!isStudyCity(city)) return { price: null, origin: 'unavailable' };
-  if (observation?.cityId === city && observation.available && observation.selectedCrop === crop) {
-    const latest = observation.series.find(series => series.crop === crop)?.observations.at(-1)?.pricePerKg;
+  if (observation?.cityId === city && observation.available && observation.selectedCrop && sameCrop(observation.selectedCrop, crop)) {
+    const latest = observation.series.find(series => sameCrop(series.crop, crop))?.observations.at(-1)?.pricePerKg;
     if (latest !== undefined && Number.isFinite(latest) && latest >= 0) return { price: latest, origin: 'market_api' };
   }
-  const price = Object.hasOwn(FALLBACK_PRICES, crop) ? FALLBACK_PRICES[crop] : null;
+  const fallbackCrop = cropIdentity(crop) === '土豆' ? '马铃薯' : crop;
+  const price = Object.hasOwn(FALLBACK_PRICES, fallbackCrop) ? FALLBACK_PRICES[fallbackCrop] : null;
   return { price, origin: price === null ? 'unavailable' : 'product_fallback' };
 }
 

@@ -33,7 +33,7 @@ from . import publication
 from .dependencies import get_engine, new_request_id
 from .errors import ApiError, ErrorCode, error_body
 from .responses import SafeJSONResponse
-from .routes import capabilities, daily, decision, forecast, health, market, meta, observations, project, research
+from .routes import capabilities, daily, decision, forecast, health, market, meta, observations, project, research, product_decision
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -66,6 +66,8 @@ async def lifespan(app: FastAPI):
     except Exception:  # noqa: BLE001
         log.exception("Final engine preload failed (推理将在首次请求时重试)")
     yield
+    from .services.product_decision_service import clear_cache
+    clear_cache()
     log.info("api shutdown")
 
 
@@ -162,6 +164,7 @@ app.include_router(research.router)
 app.include_router(project.router)
 app.include_router(observations.router)
 app.include_router(market.router)
+app.include_router(product_decision.router)
 
 
 @app.get("/", include_in_schema=False)

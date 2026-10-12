@@ -1,3 +1,4 @@
+import { cropIdentity, sameCrop } from './cropIdentity';
 /** 经营工具只核算用户条件；不从生产面积推导亩产或未来价格。 */
 export interface PlanningDraft {
   areaMu: string; yieldKgPerMu: string; costPerMu: string;
@@ -83,6 +84,8 @@ export interface PlanningSession {
   /** 只保存有效输入条件，恢复时重新核算，不保存可被篡改的结果数字。 */
   calculatedDrafts: Record<string, PlanningDraft>;
   baseline: PlanningSnapshot | null; climateMetric: PlanningClimateMetric;
+  /** Whole alias records survive migration; never combine unrelated draft fields. */
+  cropAliasBackup?: Record<string, { draft?: PlanningDraft; calculatedDraft?: PlanningDraft; priceOverride: boolean }>;
 }
 const blankSession = (): PlanningSession => ({ activeCrop: '', customCrop: '', drafts: {}, calculatedDrafts: {}, baseline: null, climateMetric: 'precipitation_mm', budgetCny: '', target: 'balanced', saleDate: '', priceOverrides: [] });
 const isDraft = (raw: unknown): raw is PlanningDraft => Boolean(raw && typeof raw === 'object' && PLANNING_FIELDS.every(({ key }) => typeof (raw as PlanningDraft)[key] === 'string'));
@@ -105,7 +108,25 @@ export function updatePlanningDraft(session: PlanningSession, crop: string, draf
   return { ...session, drafts: { ...session.drafts, [crop]: draft }, calculatedDrafts };
 }
 const sessionKey = (cityId: string) => `agriscope:v4:planning:${cityId}`;
-export function readPlanningSession(cityId: string): PlanningSession {
+export function migratePlanningCrops(session: PlanningSession, preferred?: string | null): PlanningSession {
+  const active = session.activeCrop === '__custom__' ? session.activeCrop : cropIdentity(session.activeCrop);
+  if (session.cropAliasBackup) return { ...session, activeCrop: active };
+  const aliases = ['土豆', '马铃薯'];
+  const backup = Object.fromEntries(aliases.filter(alias => session.drafts[alias]).map(alias => [alias, {
+    draft: session.drafts[alias], calculatedDraft: session.calculatedDrafts[alias], priceOverride: session.priceOverrides?.includes(alias) ?? false,
+  }]));
+  const requested = preferred && aliases.includes(preferred) ? preferred : session.activeCrop;
+  const winner = aliases.includes(requested) && session.drafts[requested] ? requested : session.drafts['土豆'] ? '土豆' : '马铃薯';
+  if (!session.drafts[winner]) return { ...session, activeCrop: active, baseline: session.baseline ? { ...session.baseline, crop: cropIdentity(session.baseline.crop) } : null };
+  const calculatedDrafts = { ...session.calculatedDrafts };
+  if (session.calculatedDrafts[winner]) calculatedDrafts['土豆'] = session.calculatedDrafts[winner]; else delete calculatedDrafts['土豆'];
+  const overrides = (session.priceOverrides ?? []).filter(crop => !sameCrop(crop, '土豆'));
+  if (session.priceOverrides?.includes(winner)) overrides.push('土豆');
+  return { ...session, activeCrop: active, drafts: { ...session.drafts, 土豆: session.drafts[winner] }, calculatedDrafts,
+    priceOverrides: overrides, cropAliasBackup: backup,
+    baseline: session.baseline ? { ...session.baseline, crop: cropIdentity(session.baseline.crop) } : null };
+}
+export function readPlanningSession(cityId: string, preferred?: string | null): PlanningSession {
   try {
     const raw: unknown = JSON.parse(sessionStorage.getItem(sessionKey(cityId)) ?? 'null');
     if (!raw || typeof raw !== 'object') return blankSession();
@@ -115,12 +136,13 @@ export function readPlanningSession(cityId: string): PlanningSession {
     const calculatedDrafts = value.calculatedDrafts && typeof value.calculatedDrafts === 'object' && !Array.isArray(value.calculatedDrafts)
       ? Object.fromEntries(Object.entries(value.calculatedDrafts).filter(([crop, draft]) => crop !== '__proto__' && isDraft(draft) && Object.prototype.hasOwnProperty.call(drafts, crop) && samePlanningDraft(draft, drafts[crop]) && validPlanningCalculation(draft, crop))) : {};
     const saleDate = validPlanningSaleDate(value.saleDate) ? value.saleDate : '';
-    return { activeCrop: value.activeCrop, customCrop: value.customCrop, drafts, calculatedDrafts,
+    return migratePlanningCrops({ activeCrop: value.activeCrop, customCrop: value.customCrop, drafts, calculatedDrafts,
       budgetCny: typeof value.budgetCny === 'string' ? value.budgetCny : '',
       target: ['conservative', 'balanced', 'aggressive'].includes(value.target ?? '') ? value.target : 'balanced', saleDate,
       priceOverrides: Array.isArray(value.priceOverrides) ? value.priceOverrides.filter((crop): crop is string => typeof crop === 'string' && crop !== '__proto__') : Object.keys(drafts),
       baseline: isSnapshot(value.baseline) && validPlanningCalculation(value.baseline.draft, value.baseline.crop) ? value.baseline : null,
-      climateMetric: PLANNING_CLIMATE_METRICS.includes(value.climateMetric) ? value.climateMetric : 'precipitation_mm' };
+      cropAliasBackup: value.cropAliasBackup && typeof value.cropAliasBackup === 'object' ? value.cropAliasBackup : undefined,
+      climateMetric: PLANNING_CLIMATE_METRICS.includes(value.climateMetric) ? value.climateMetric : 'precipitation_mm' }, preferred);
   } catch { return blankSession(); }
 }
 export function writePlanningSession(cityId: string, value: PlanningSession): void {

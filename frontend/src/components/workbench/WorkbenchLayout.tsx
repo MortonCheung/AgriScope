@@ -53,7 +53,7 @@ export function WorkbenchLayout({ sidebar, sidebarLabel, railLabel, children, cl
   }, [drawerOpen, onEscape, railOpen]);
 
   return <main className={`workbench ${className}`} data-mode={mode} ref={mainRef}>
-    <div className="workbench__paper city-research__paper ag-paper-enter" ref={paper}>
+    <div className="workbench__paper city-research__paper" data-paper-surface ref={paper}>
       <header className="workbench__chrome city-research__chrome">
         <div className="workbench__actions">
           <button type="button" className="workbench__toggle workbench__drawer-toggle" aria-expanded={drawerOpen} aria-controls={`${id}-sidebar`} ref={drawerToggle} onClick={() => drawerOpen ? closeDrawer() : setDrawerOpen(true)}>{sidebarLabel}</button>

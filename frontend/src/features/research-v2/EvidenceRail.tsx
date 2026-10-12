@@ -128,9 +128,7 @@ export function EvidenceRail({ cityId, topic, point }: {
 /** 无策展树城市同样有正式文章与来源，沿用相同证据栏。 */
 export function ModuleEvidenceRail({ cityId, title, article }: { cityId: string; moduleId: string | null; title?: string; article: V2Article | null }) {
   return <div className="evidence-rail">
-    <header className="evidence-rail__ident">
-      {title && <p className="evidence-rail__title">{title}</p>}
-    </header>
+    {title && <header className="evidence-rail__ident"><p className="evidence-rail__title">{title}</p></header>}
     <ArticleMetadata cityId={cityId} article={article} />
   </div>;
 }

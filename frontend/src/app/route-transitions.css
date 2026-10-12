@@ -26,3 +26,6 @@
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
 }
+/* Router can restore a native transition on POP even for a shared workspace. */
+:root[data-paper-motion="content"]::view-transition-old(route-page) { display: none; }
+:root[data-paper-motion="content"]::view-transition-new(route-page) { animation: none; }

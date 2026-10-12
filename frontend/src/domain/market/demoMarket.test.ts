@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { STUDY_CITY_IDS } from '../geography/cities';
 import { demoMarketFor, demoPriceChange } from './demoMarket';
 describe('homepage simulation data isolation and aggregation', () => {
-  it('six cities share a reproducible four-crop structure, with positive prices and explicit simulation provenance', () => {
+  it('six cities share a reproducible eight-crop structure, with positive prices and explicit simulation provenance', () => {
     const scopes = STUDY_CITY_IDS.map(id => demoMarketFor(id));
     expect(new Set(scopes.map(scope => scope.rows[0].pricePerKg)).size).toBe(6);
     for (const scope of scopes) {
       expect(scope.kind).toBe('simulation');
-      expect(scope.rows.map(row => row.crop)).toEqual(['黄瓜','甘蓝','青椒','尖椒']);
+      expect(scope.rows.map(row => row.crop)).toEqual(['黄瓜','甘蓝','青椒','尖椒','土豆','西红柿','茄子','大白菜']);
       for (const row of scope.rows) for (const period of ['pricePerKg','previous','week','month'] as const) expect(row[period]).toBeGreaterThan(0);
     }
   });

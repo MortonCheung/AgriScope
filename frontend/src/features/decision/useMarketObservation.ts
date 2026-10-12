@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { MarketObservation } from '../../domain/market/types';
 import { getMarketProvider } from '../../providers/market';
+import { resolveSourceCrop } from '../../domain/decision/cropIdentity';
 
 export type MarketObservationState = { status: 'loading' | 'ready' | 'error'; data?: MarketObservation; available?: boolean; error?: string; retry: () => void };
 type Reading = { key: string; status: 'loading' | 'ready' | 'error'; data?: MarketObservation; error?: string };
@@ -28,7 +29,7 @@ export function useMarketObservation(cityId: string, crop?: string): MarketObser
         if (refresh) for (const cached of readings.current.keys()) if (cached.startsWith(cityId + ':')) readings.current.delete(cached);
         // Publish capability now, even if the requested crop takes another request.
         setState({ key, status: 'loading' });
-        const selected = crop && base.crops.includes(crop) ? crop : base.selectedCrop;
+        const selected = crop ? resolveSourceCrop(crop, base.crops) ?? base.selectedCrop : base.selectedCrop;
         const readingKey = `${cityId}:${selected ?? ''}`;
         const data = selected && selected !== base.selectedCrop
           ? readings.current.get(readingKey) ?? await provider.observations(cityId, selected, { signal: controller.signal })
@@ -44,7 +45,7 @@ export function useMarketObservation(cityId: string, crop?: string): MarketObser
     return () => controller.abort();
   }, [attempt, cityId, crop, key]);
   const base = bases.current.get(cityId);
-  const selected = crop && base?.crops.includes(crop) ? crop : base?.selectedCrop;
+  const selected = crop && base ? resolveSourceCrop(crop, base.crops) ?? base.selectedCrop : base?.selectedCrop;
   const cached = selected === base?.selectedCrop ? base : readings.current.get(`${cityId}:${selected ?? ''}`);
   // URL normalization can change the key without changing the observed crop.
   // Reuse that exact reading immediately, avoiding a one-frame loading flash.

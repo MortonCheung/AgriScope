@@ -1,17 +1,16 @@
 import { isSpatialEntry, isWorkspaceNavigation } from './routeTransitions';
 
-/** Query changes to business inputs keep the paper open. Report views are pages. */
+/** Queries select content inside the live paper. */
 export function paperPageKey(pathname: string, search = ''): string {
-  const params = new URLSearchParams(search);
-  return pathname === '/reports' || pathname === '/research'
-    ? `${pathname}:${params.get('view') ?? ''}` : pathname;
+  void search;
+  return pathname;
 }
 export function changesPaper(from: string, to: string): boolean {
   const source = new URL(from, 'http://agriscope.local');
   const target = new URL(to, source);
   if (paperPageKey(source.pathname, source.search) === paperPageKey(target.pathname, target.search)) return false;
   return !isSpatialEntry(source.pathname, target.pathname)
-    && !(source.pathname !== target.pathname && isWorkspaceNavigation(source.pathname, target.pathname));
+    && !isWorkspaceNavigation(source.pathname, target.pathname);
 }
 
 let navigationId = 0;
@@ -25,7 +24,7 @@ export function withPaperExit(from: string, to: string, commit: () => void | Pro
   active.forEach(animation => animation.cancel());
   active = [];
   if (!changesPaper(from, to) || prefersInstantPaper() || typeof document.startViewTransition === 'function') return commit();
-  const papers = document.querySelectorAll<HTMLElement>('.route-page .ag-paper-enter');
+  const papers = document.querySelectorAll<HTMLElement>('.route-page [data-paper-surface]');
   active = [...papers].flatMap(paper => paper.animate ? [paper.animate([
     { opacity: 1, clipPath: 'inset(0 0 0% 0)' },
     { opacity: 0, clipPath: 'inset(0 0 100% 0)' },

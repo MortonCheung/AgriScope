@@ -10,6 +10,7 @@ import { SpatialShell } from './SpatialShell';
 import { useSpatialStageStore } from './spatialStageStore';
 import spatialStyles from './spatial-shell.css?raw';
 
+vi.mock('react-router-dom', async original => ({ ...await original<typeof import('react-router-dom')>(), useViewTransitionState: () => false }));
 vi.mock('motion/react', () => ({ useReducedMotion: () => false }));
 vi.mock('../liaoning/LiaoningCanvas', () => ({
   LiaoningCanvas: (props: LiaoningCanvasProps) => <div data-testid="canvas-host" data-mode={props.mode} data-active={props.active} data-focus={props.focusCityId}>

@@ -3,7 +3,7 @@ import { useLocation, useSearchParams } from 'react-router-dom';
 import { isKnownCrop, readContextFromSearch, useAppContext, writeContextToSearch } from '../../app/context/appContext';
 import { STUDY_CITY_IDS, getCity } from '../../domain/geography/cities';
 import {
-  PLANNING_FIELDS, SENSITIVITY_CHANGES, emptyPlanningDraft, planningSensitivity, readPlanningSession,
+  PLANNING_FIELDS, SENSITIVITY_CHANGES, calculatePlanning, emptyPlanningDraft, planningSensitivity, readPlanningSession,
   updatePlanningDraft, validatePlanningDraft, validPlanningSaleDate, writePlanningSession,
   type PlanningDraft, type PlanningResult, type PlanningSession, type SensitivityLine,
 } from '../../domain/decision/planning';
@@ -12,6 +12,9 @@ import { WorkbenchMain, WorkbenchRail } from '../../components/workbench/Workben
 import { ChoiceButtons } from '../../components/controls/ChoiceButtons';
 import { useMarketObservation } from './useMarketObservation';
 import './planning.css';
+import { cropIdentity } from '../../domain/decision/cropIdentity';
+import { useProductDecision } from './useProductDecision';
+import type { ProductDecisionRequest } from '../../domain/decision/productApi';
 
 export interface PlanningWorkbenchProps { cityId: string }
 const number = (n: number, digits = 2) => n.toLocaleString('zh-CN', { maximumFractionDigits: digits });
@@ -36,12 +39,12 @@ function PlanningCity({ cityId, crops }: { cityId: string; crops: string[] }) {
   const [params, setParams] = useSearchParams();
   const location = useLocation();
   const [session, setSession] = useState(() => {
-    const saved = readPlanningSession(cityId);
     const context = readContextFromSearch(params.toString());
     const pathCity = /^\/cities\/([^/]+)/.exec(location.pathname)?.[1];
     const requested = pathCity === cityId || !context.cityId || context.cityId === cityId ? context.crop : null;
+    const saved = readPlanningSession(cityId, requested);
     if (!requested) return saved;
-    return { ...saved, activeCrop: saved.activeCrop === CUSTOM && saved.customCrop.trim() === requested ? CUSTOM : requested };
+    return { ...saved, activeCrop: saved.activeCrop === CUSTOM && saved.customCrop.trim() === requested ? CUSTOM : cropIdentity(requested) };
   });
   const [touched, setTouched] = useState<Partial<Record<keyof PlanningDraft | 'crop' | 'budget' | 'saleDate', boolean>>>({});
   const crop = session.activeCrop === CUSTOM ? session.customCrop.trim() : session.activeCrop;
@@ -56,6 +59,20 @@ function PlanningCity({ cityId, crops }: { cityId: string; crops: string[] }) {
   const saleError = saleDate && !validPlanningSaleDate(saleDate) ? '请选择有效的销售时间。' : undefined;
   const cropError = crop && !isKnownCrop(crop) ? '作物名请使用 1–12 个汉字、字母、数字、中点或连字符。' : validation.errors.crop;
   const data = validation.inputs && !cropError && !budgetError && !saleError ? createCityDecisionData({ city: cityId, crop, conditions: validation.inputs, budgetCny: budget, target: session.target, saleDate, priceSource: session.priceOverrides?.includes(crop) ? 'user' : price.origin }) : null;
+  const productRequest: ProductDecisionRequest | null = data && validation.inputs ? {
+    contract_version: 'product-1', city_id: data.city, crop,
+    area_mu: validation.inputs.areaMu, yield_kg_per_mu: validation.inputs.yieldKgPerMu,
+    cost_per_mu: validation.inputs.costPerMu, sale_price_per_kg: validation.inputs.pricePerKg,
+    sale_fraction: validation.inputs.saleFraction, budget_cny: budget, target: session.target ?? 'balanced',
+    sale_date: saleDate || null, price_is_user: session.priceOverrides?.includes(crop) ?? false,
+    as_of: readContextFromSearch(params.toString()).asOf ?? (market.status === 'ready' ? market.data?.series[0]?.observations.at(-1)?.date : null) ?? null,
+  } : null;
+  const product = useProductDecision(productRequest);
+  const recommended = product?.candidates.find(candidate => candidate.id === product.recommendation.candidate_id);
+  const suggestedResult = recommended && validation.inputs ? calculatePlanning({ ...validation.inputs, areaMu: recommended.area_mu, pricePerKg: recommended.price_per_kg }) : null;
+  const result = suggestedResult ?? data?.result;
+  const window = recommended?.sales_window ?? data?.salesWindow;
+  const recommendationReasons = recommended ? product!.recommendation.reasons : data?.reasons;
   const lines = data && validation.inputs ? planningSensitivity(validation.inputs) : null;
   const calculationError = validation.inputs && !cropError && !budgetError && !saleError && !data ? '数值过大，请缩小输入范围。' : undefined;
   useEffect(() => writePlanningSession(cityId, session), [cityId, session]);
@@ -63,7 +80,7 @@ function PlanningCity({ cityId, crops }: { cityId: string; crops: string[] }) {
     const context = readContextFromSearch(params.toString());
     const pathCity = /^\/cities\/([^/]+)/.exec(location.pathname)?.[1];
     const requested = !context.cityId || context.cityId === cityId || pathCity === cityId ? context.crop : undefined;
-    if (requested) setSession(previous => previous.activeCrop === requested || previous.activeCrop === CUSTOM && previous.customCrop.trim() === requested ? previous : { ...previous, activeCrop: requested });
+    if (requested) setSession(previous => previous.activeCrop === requested || previous.activeCrop === CUSTOM && previous.customCrop.trim() === requested ? previous : { ...previous, activeCrop: cropIdentity(requested) });
   }, [cityId, location.pathname, params]);
   useLayoutEffect(() => {
     const state = useAppContext.getState();
@@ -116,18 +133,18 @@ function PlanningCity({ cityId, crops }: { cityId: string; crops: string[] }) {
     <WorkbenchRail><section className="planning-result" aria-label="农业决策结果" aria-live="polite">
       <h2 className="ag-title">实时结果</h2>
       {data ? <>
-        <div className="planning-recommendation"><p className="ag-label">推荐方案</p><h3>{data.suggestion}</h3><p>{crop} · {number(validation.inputs!.areaMu)} 亩</p></div>
-        <ResultReadings result={data.result}/>
-        <dl className="planning-result__facts"><div><dt>经营风险</dt><dd data-risk={data.risk}>{data.risk}</dd></div><div><dt>销售窗口</dt><dd>{data.salesWindow ? data.salesWindow.start === data.salesWindow.end ? data.salesWindow.start : `${data.salesWindow.start} — ${data.salesWindow.end}` : '选择销售时间'}</dd></div></dl>
-        {data.budget.shortfall > 0 && <p className="planning-budget-warning">预算缺口 {number(data.budget.shortfall)} 元</p>}
-        <h3 className="ag-label">建议原因</h3><ul className="planning-reasons">{data.reasons.map(reason => <li key={reason}>{reason}</li>)}</ul>
+        <div className="planning-recommendation"><p className="ag-label">推荐方案</p><h3>{recommended ? recommended.area_mu < validation.inputs!.areaMu ? '调整种植规模' : '按推荐条件安排生产' : data.suggestion}</h3><p>{crop} · {number(recommended?.area_mu ?? validation.inputs!.areaMu)} 亩</p>{recommended && <p>参考售价 {number(recommended.price_per_kg)} 元/kg</p>}{recommended?.horizon_days && !recommended.sales_window && <p>价格参考周期 {recommended.horizon_days} 天</p>}</div>
+        <ResultReadings result={result!}/>
+        <dl className="planning-result__facts"><div><dt>经营风险</dt><dd data-risk={recommended?.risk ?? data.risk}>{recommended?.risk ?? data.risk}</dd></div><div><dt>销售窗口</dt><dd>{recommended && (product?.origin.window_choices?.length ?? 0) > 1 ? <ul className="planning-window-options" aria-label="可比较销售时段">{product!.origin.window_choices!.map(period => <li key={period.start}>{period.start} — {period.end}</li>)}</ul> : window ? window.start === window.end ? window.start : `${window.start} — ${window.end}` : '选择销售时间'}</dd></div></dl>
+        {!recommended && data.budget.shortfall > 0 && <p className="planning-budget-warning">预算缺口 {number(data.budget.shortfall)} 元</p>}
+        <h3 className="ag-label">建议原因</h3><ul className="planning-reasons">{recommendationReasons?.map(reason => <li key={reason}>{reason}</li>)}</ul>
       </> : <p className="planning-empty">{budgetError || cropError && touched.crop || calculationError ? '请修正输入条件。' : '填写作物、面积、亩产和成本，即可查看结果。'}</p>}
     </section></WorkbenchRail>
   </>;
 }
 
 function PlanningField({ field, id, draft, error, onChange }: { field: typeof PLANNING_FIELDS[number]; id: string; draft: PlanningDraft; error?: string; onChange: (key: keyof PlanningDraft, next: string) => void }) {
-  return <label className="planning-field" htmlFor={`${id}-${field.key}`}><span>{field.label}<small>{field.unit}</small></span><input id={`${id}-${field.key}`} name={field.key} type="number" inputMode="decimal" min={field.key === 'areaMu' ? '0.01' : '0'} max={field.key === 'salePercent' ? '100' : undefined} step="any" value={draft[field.key]} onChange={event => onChange(field.key, event.target.value)} aria-invalid={Boolean(error)} aria-describedby={error ? `${id}-${field.key}-error` : undefined}/>{error && <em id={`${id}-${field.key}-error`} className="planning-error" role="alert">{error}</em>}</label>;
+  return <label className="planning-field" htmlFor={`${id}-${field.key}`}><span>{field.label}<small>{field.unit}</small></span><input id={`${id}-${field.key}`} name={field.key} type="number" inputMode="decimal" min={field.key === 'areaMu' ? '0.01' : '0'} max={field.key === 'salePercent' ? '100' : undefined} step="any" value={draft[field.key]} onFocus={field.key === 'pricePerKg' ? () => onChange(field.key, draft[field.key]) : undefined} onChange={event => onChange(field.key, event.target.value)} aria-invalid={Boolean(error)} aria-describedby={error ? `${id}-${field.key}-error` : undefined}/>{error && <em id={`${id}-${field.key}-error`} className="planning-error" role="alert">{error}</em>}</label>;
 }
 
 function ResultReadings({ result }: { result: PlanningResult }) {
