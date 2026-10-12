@@ -1,45 +1,59 @@
-import { forwardRef, useCallback } from 'react';
+import { forwardRef, useCallback, type MouseEvent } from 'react';
 import { Link, NavLink, useLocation, useNavigate, type LinkProps, type NavLinkProps, type NavigateFunction, type NavigateOptions, type To } from 'react-router-dom';
-import { isSpatialEntry, isWorkspaceNavigation } from './routeTransitions';
+import { changesPaper, prefersInstantPaper, withPaperExit } from './paperNavigation';
 
+const urlFor = (from: string, to: To) => typeof to === 'string' ? to : `${to.pathname ?? from.split('?')[0]}${to.search ?? ''}${to.hash ?? ''}`;
 function canAnimateNavigation(from: string, to: To) {
-  const pathname = typeof to === 'string' ? to.split(/[?#]/, 1)[0] : to.pathname;
-  return typeof document.startViewTransition === 'function'
-    && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    && Boolean(pathname && pathname !== from && !isSpatialEntry(from, pathname) && !isWorkspaceNavigation(from, pathname));
+  return typeof document.startViewTransition === 'function' && !prefersInstantPaper() && changesPaper(from, urlFor(from, to));
 }
-
 export const BEFORE_PAGE_NAVIGATION_EVENT = 'agriscope:before-page-navigation';
-
 function notifyBeforeNavigation(from: string, to: To) {
-  const pathname = typeof to === 'string' ? to.split(/[?#]/, 1)[0] : to.pathname;
-  if (!pathname || pathname === from) return;
-  window.dispatchEvent(new CustomEvent(BEFORE_PAGE_NAVIGATION_EVENT, { detail: { from, to: pathname } }));
+  if (!changesPaper(from, urlFor(from, to))) return;
+  window.dispatchEvent(new CustomEvent(BEFORE_PAGE_NAVIGATION_EVENT, { detail: { from, to: urlFor(from, to) } }));
 }
-
-/** Use the router's public transition option; it also records reverse POPs. */
+function plainClick(event: MouseEvent<HTMLAnchorElement>, target?: string) {
+  return !event.defaultPrevented && event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && (!target || target === '_self');
+}
+function needsFallback(from: string, to: To) {
+  return typeof document.startViewTransition !== 'function' && !prefersInstantPaper()
+    && changesPaper(from, urlFor(from, to)) && typeof Element.prototype.animate === 'function';
+}
+/** One live route. Native browsers fold snapshots; older browsers fold the DOM. */
 export const TransitionLink = forwardRef<HTMLAnchorElement, LinkProps>(function TransitionLink({ to, viewTransition, onClick, ...props }, ref) {
-  const { pathname } = useLocation();
-  return <Link {...props} ref={ref} to={to} viewTransition={viewTransition ?? canAnimateNavigation(pathname, to)} onClick={(event) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const from = `${location.pathname}${location.search}`;
+  return <Link {...props} ref={ref} to={to} viewTransition={viewTransition ?? canAnimateNavigation(from, to)} onClick={event => {
     onClick?.(event);
-    if (!event.defaultPrevented) notifyBeforeNavigation(pathname, to);
+    if (!plainClick(event, props.target) || props.reloadDocument) return;
+    notifyBeforeNavigation(from, to);
+    if (needsFallback(from, to)) {
+      event.preventDefault();
+      void withPaperExit(from, urlFor(from, to), () => navigate(to, { replace: props.replace, state: props.state, relative: props.relative, preventScrollReset: props.preventScrollReset }));
+    }
   }} />;
 });
-
 export const TransitionNavLink = forwardRef<HTMLAnchorElement, NavLinkProps>(function TransitionNavLink({ to, viewTransition, onClick, ...props }, ref) {
-  const { pathname } = useLocation();
-  return <NavLink {...props} ref={ref} to={to} viewTransition={viewTransition ?? canAnimateNavigation(pathname, to)} onClick={(event) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const from = `${location.pathname}${location.search}`;
+  return <NavLink {...props} ref={ref} to={to} viewTransition={viewTransition ?? canAnimateNavigation(from, to)} onClick={event => {
     onClick?.(event);
-    if (!event.defaultPrevented) notifyBeforeNavigation(pathname, to);
+    if (!plainClick(event, props.target) || props.reloadDocument) return;
+    notifyBeforeNavigation(from, to);
+    if (needsFallback(from, to)) {
+      event.preventDefault();
+      void withPaperExit(from, urlFor(from, to), () => navigate(to, { replace: props.replace, state: props.state, relative: props.relative, preventScrollReset: props.preventScrollReset }));
+    }
   }} />;
 });
-
 export function usePageNavigate(): NavigateFunction {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const from = `${location.pathname}${location.search}`;
   return useCallback((to: To | number, options?: NavigateOptions) => {
     if (typeof to === 'number') return navigate(to);
-    notifyBeforeNavigation(pathname, to);
-    return navigate(to, { viewTransition: canAnimateNavigation(pathname, to), ...options });
-  }, [navigate, pathname]) as NavigateFunction;
+    notifyBeforeNavigation(from, to);
+    return withPaperExit(from, urlFor(from, to), () => navigate(to, { viewTransition: canAnimateNavigation(from, to), ...options }));
+  }, [navigate, from]) as NavigateFunction;
 }

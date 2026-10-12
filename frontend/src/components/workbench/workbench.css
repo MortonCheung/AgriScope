@@ -44,3 +44,15 @@
   .workbench__stage { padding-inline: 18px; }
 }
 @media (prefers-reduced-motion: reduce) { .workbench__sidebar, .workbench__sidebar[data-drawer-open] { transition: none; } }
+
+/* Live decision inputs and results stay present at every viewport size. */
+@media (max-width: 768px) {
+  .decision-workbench--live .workbench__paper { height:auto;min-height:calc(100dvh - var(--ag-nav-height) - 32px);overflow:visible; }
+  .decision-workbench--live .workbench__body { display:flex;flex-direction:column;overflow:visible; }
+  .decision-workbench--live .workbench__column { overflow:visible; }
+  .decision-workbench--live .workbench__rail { display:block;overflow:visible; }
+  .decision-workbench--live .workbench__rail-toggle { display:none; }
+  .decision-workbench--live .workbench__sidebar { position:static;transform:none;visibility:visible;width:100%;box-shadow:none;border-right:0;border-bottom:1px solid var(--ag-rule-soft);padding:18px; }
+  .decision-workbench--live .workbench__chrome {display:none;}
+  .decision-workbench--live .workbench__backdrop {display:none;}
+}

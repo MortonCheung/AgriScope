@@ -5,13 +5,15 @@ import { getCity } from '../../domain/geography/cities';
 import { ROUTES } from '../../app/routes';
 import { assetUrl } from '../../domain/research/v2/repository';
 import { MarkdownBlocks, TableAsset } from '../research-v2/blocks';
-import { renderInline, stripListPrefix } from '../research-v2/markdown';
+import { renderInline } from '../research-v2/markdown';
 import { V2Figure } from '../research-v2/Figure';
 import { ModuleEvidenceRail } from '../research-v2/EvidenceRail';
 import { WorkbenchLayout, WorkbenchMain, WorkbenchRail } from '../../components/workbench/WorkbenchLayout';
 import { usePageNavigate } from '../../app/pageNavigation';
 import { structuralParent } from '../../app/routes';
 import { useArticle } from '../research-v2/useV2';
+import { ReportNavigation } from './ReportNavigation';
+import { productSections, productText } from './productContent';
 import '../research-v2/research.css';
 import './reports.css';
 
@@ -35,7 +37,7 @@ export function ReportPage() {
   const articleState = useArticle(scope, reportId);
   if (!reportId) {
     return (
-      <WorkbenchLayout className="report-workbench" resetKey={cityId} sidebarLabel="报告章节" railLabel="报告依据" sidebar={() => null} onEscape={onEscape}><WorkbenchMain>
+      <WorkbenchLayout className="report-workbench" resetKey={cityId} sidebarLabel="报告章节" railLabel="报告依据" sidebar={close => <ReportNavigation close={close} />} onEscape={onEscape}><WorkbenchMain>
         <div className="report__body">
           <p className="report__meta">报告</p>
           <h1 className="report__title">报告目录里没有这个入口</h1>
@@ -48,13 +50,13 @@ export function ReportPage() {
 
   if (articleState.status !== 'ready') {
     return (
-      <WorkbenchLayout className="report-workbench" resetKey={cityId} sidebarLabel="报告章节" railLabel="报告依据" sidebar={() => null} onEscape={onEscape}><WorkbenchMain>
+      <WorkbenchLayout className="report-workbench" resetKey={cityId} sidebarLabel="报告章节" railLabel="报告依据" sidebar={close => <ReportNavigation close={close} />} onEscape={onEscape}><WorkbenchMain>
         <div className="report__body">
           <header className="report__head">
             <p className="report__meta">{name} · 报告</p>
             <h1 className="report__title">{name}研究报告</h1>
           </header>
-          <p className="report__empty" role={articleState.status === 'error' ? 'alert' : 'status'}>{articleState.status === 'loading' ? '研究正文载入中' : '研究正文读取失败；不展示占位内容。'}</p>
+          <p className="report__empty" role={articleState.status === 'error' ? 'alert' : 'status'}>{articleState.status === 'loading' ? '报告载入中' : '报告读取失败，请稍后重试。'}</p>
         </div>
       </WorkbenchMain><WorkbenchRail>{null}</WorkbenchRail></WorkbenchLayout>
     );
@@ -74,16 +76,16 @@ export function ReportPage() {
    * 前端如果再把它们当独立区块追加一次，页面上就会出现两遍同名小节（§73/§74：
    * 不要另拼一套结构覆盖研究原文）。因此**只在原文章节没有覆盖时才补**。
    */
-  const sectionTitles = article.sections.map((section) => section.title);
+  const sections = productSections(article.sections);
+  const sectionTitles = sections.map((section) => section.title);
   const covered = (keywords: string[]) => sectionTitles.some((title) => keywords.some((word) => title.includes(word)));
   const showConclusion = !covered(['结论']);
   const showMethods = !covered(['方法']);
-  const showLimitations = !covered(['限制', '局限']);
 
   /** 正文点名过的图 / 表就近落位；谁也没点名的才在文末集中呈现（避免出现两遍）。 */
   const looseTables = new Set(article.tables.map((table) => table.file));
   const looseFigures = new Set(article.figures.map((figure) => figure.file));
-  const placements = article.sections.map((section) => {
+  const placements = sections.map((section) => {
     const tables = article.tables.filter((table) => looseTables.has(table.file) && section.content.includes(table.file));
     const figures = article.figures.filter((figure) => looseFigures.has(figure.file) && section.content.includes(figure.file));
     tables.forEach((table) => looseTables.delete(table.file));
@@ -96,25 +98,24 @@ export function ReportPage() {
 
   return (
     <WorkbenchLayout className="report-workbench" resetKey={cityId} sidebarLabel="报告章节" railLabel="报告依据" onEscape={onEscape}
-      sidebar={close => <ol className="workbench__menu">
-        {[{ id: 'abstract', title: '摘要' }, ...article.sections.map(section => ({ id: `section-${section.number}`, title: section.title })),
+      sidebar={close => <><ReportNavigation close={close} /><ol className="workbench__menu">
+        {[{ id: 'abstract', title: '摘要' }, ...sections.map(section => ({ id: `section-${section.number}`, title: section.title })),
           ...(looseFigures.size ? [{ id: 'report-figures', title: '图表' }] : []), ...(looseTables.size ? [{ id: 'report-tables', title: '数据表' }] : []),
-          ...(showConclusion ? [{ id: 'report-conclusion', title: '结论' }] : []), ...(showMethods ? [{ id: 'report-methods', title: '方法' }] : []),
-          ...(showLimitations && article.limitations.length ? [{ id: 'report-limitations', title: '研究限制' }] : [])].map(section => <li key={section.id}>
+          ...(showConclusion ? [{ id: 'report-conclusion', title: '结论' }] : []), ...(showMethods ? [{ id: 'report-methods', title: '方法' }] : [])].map(section => <li key={section.id}>
             <button type="button" aria-pressed={activeSection === section.id} onClick={() => { setActiveSection(section.id); const node = document.getElementById(section.id); node?.scrollIntoView?.({ block: 'start' }); const heading = node?.querySelector<HTMLElement>('h2'); heading?.setAttribute('tabindex', '-1'); heading?.focus({ preventScroll: true }); close(); }}>{section.title}</button>
           </li>)}
-      </ol>}
+      </ol></>}
     ><WorkbenchMain>
       <div className="report__body">
         <header className="report__head">
-          <p className="report__meta">{reportId} · {name} · {article.status==='DRAFT'?'研究稿':article.status==='ACCEPTED_PENDING_EXTERNAL_REVIEW'?'研究已验收 · 外审待复核':article.status==='ACCEPTED'?'已验收研究':'研究记录'}</p>
+          <p className="report__meta">{name} · 报告</p>
           <h1 className="report__title">{article.title}</h1>
-          <p className="report__summary">{renderInline(article.frontend_summary, 'summary')}</p>
+          <p className="report__summary">{renderInline(productText(article.frontend_summary), 'summary')}</p>
         </header>
 
         <section className="report__section" id="abstract">
           <h2 className="report__section-title">摘要</h2>
-          <MarkdownBlocks source={article.abstract} refs={assetRefs} />
+          <MarkdownBlocks source={productText(article.abstract)} refs={assetRefs} />
         </section>
 
         {placements.map(({ section, tables, figures }) => (
@@ -159,25 +160,14 @@ export function ReportPage() {
         {showConclusion && (
           <section className="report__section" id="report-conclusion">
             <h2 className="report__section-title">结论</h2>
-            <MarkdownBlocks source={article.conclusion} refs={assetRefs} />
+            <MarkdownBlocks source={productText(article.conclusion)} refs={assetRefs} />
           </section>
         )}
 
         {showMethods && (
           <section className="report__section" id="report-methods">
             <h2 className="report__section-title">方法</h2>
-            {article.methods.map((method, index) => <MarkdownBlocks key={index} source={method.summary} refs={assetRefs} />)}
-          </section>
-        )}
-
-        {showLimitations && article.limitations.length > 0 && (
-          <section className="report__section" id="report-limitations">
-            <h2 className="report__section-title">研究限制</h2>
-            <ul className="report__list">
-              {article.limitations.map((item, index) => (
-                <li key={index}>{renderInline(stripListPrefix(item), `lim-${index}`)}</li>
-              ))}
-            </ul>
+            {article.methods.map((method, index) => <MarkdownBlocks key={index} source={productText(method.summary)} refs={assetRefs} />)}
           </section>
         )}
 

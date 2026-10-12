@@ -95,6 +95,7 @@ export function SpatialShell() {
           <RouteTransition
             routeKey={location.key}
             pathname={location.pathname}
+            search={location.search}
             direction={history?.direction ?? 0}
             navigationType={history?.action ?? NavigationType.Pop}
           >

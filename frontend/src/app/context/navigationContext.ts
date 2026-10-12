@@ -57,7 +57,7 @@ export function primaryNavigationTarget(kind: PrimaryNavigation, location: Navig
   const current = navigationContext(location, context);
   if (kind === 'home') return provinceUrl(current.cityId);
   if (kind === 'about') return ROUTES.about;
-  if (kind === 'reports') return current.cityId ? `${ROUTES.researchCenter}?${writeContextToSearch('', current)}` : ROUTES.researchCenter;
+  if (kind === 'reports') return current.cityId ? `${ROUTES.reports}?${writeContextToSearch('', current)}` : ROUTES.reports;
   if (!current.cityId) return kind === 'decision' ? ROUTES.decisionCenter : ROUTES.researchCenter;
   if (kind === 'decision') return `${ROUTES.decision(current.cityId)}?${writeContextToSearch('', current)}`;
   return ROUTES.decisionCenter;

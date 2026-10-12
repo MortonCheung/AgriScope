@@ -28,7 +28,7 @@
   .about__source { grid-template-columns: minmax(0, 1fr); }
 }
 
-.about--publication { display:grid;grid-template-columns:180px minmax(0,800px) 200px;align-items:start;gap:40px;width:min(1440px,100%);padding:112px 40px 96px; }
+.about--publication { display:grid;grid-template-columns:180px minmax(0,800px);align-items:start;gap:40px;width:min(1120px,100%);padding:112px 40px 96px; }
 .about__article { display:flex;flex-direction:column;gap:56px;min-width:0; }
 .about__outline,.about__metadata { position:sticky;top:100px; }
 .about__outline { display:flex;flex-direction:column;gap:0; }

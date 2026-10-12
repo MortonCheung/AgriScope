@@ -31,7 +31,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   },
   {
     id: 'reports',
-    to: ROUTES.researchCenter,
+    to: ROUTES.reports,
     label: '报告',
     match: (path) =>
       path === ROUTES.researchCenter

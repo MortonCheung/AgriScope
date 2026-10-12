@@ -82,18 +82,20 @@ describe('跨城比较专用页', () => {
     vi.unstubAllGlobals();
   });
 
-  it('指标切换、可比性标注与价格口径红线都在位', async () => {
+  it('指标与真实数据保留在工作台中，删除开发和限制说明', async () => {
     const { container } = renderPage();
     const text2 = () => container.textContent ?? '';
 
     expect(text2()).toContain('辽宁六城农业市场与风险比较研究');
-    expect(text2()).toContain('不提供六城菜价排行');
+    expect(text2()).not.toMatch(/价格口径红线|不提供六城菜价排行|研究局限|前端不改写/);
+    expect(container.querySelector('.workbench__paper')).toBeTruthy();
+    expect(container.querySelectorAll('.report-navigation')).toHaveLength(1);
     expect(screen.getByRole('button', { name: '生产集中度 HHI' })).toBeTruthy();
     expect(screen.getByRole('button', { name: '区域领先/滞后（最佳滞后相关系数）' })).toBeTruthy();
 
     // 默认 HHI：可直接比较 + 探索性图例都出现。
     expect(text2()).toContain('可直接比较');
-    expect(text2()).toContain('探索性比较');
+    expect(text2()).not.toContain('可比性图例');
 
     // 城市高亮来自当前指标表里真实出现过的城市（朝阳 / 大连 / 丹东）。
     await waitFor(() => expect(container.querySelectorAll('.cx-map__city[data-highlighted]').length).toBeGreaterThan(0));

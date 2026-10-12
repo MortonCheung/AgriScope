@@ -39,15 +39,14 @@ export function LiaoningPage() {
         </div>
       </aside>
       <div className="liaoning-page__window" aria-hidden />
-      <aside className="liaoning-paper ag-paper-enter liaoning-page__city" aria-label="总览">
-        <p className="ag-label">总览</p>
-        <h2 className="liaoning-page__scope">{selectedCityId ? market.scope : '辽宁'}</h2>
+      <aside className="liaoning-paper ag-paper-enter liaoning-page__city" aria-label="城市与决策">
         <div className="liaoning-city-picker">
           <CityChoices value={selectedCityId} onChange={cityId => {
             setHover(null);
             if (cityId) select(cityId);
             else navigate(provinceUrl(null));
           }}/>
+          {selectedCityId && <button type="button" className="liaoning-clear-city" onClick={() => navigate(provinceUrl(null))}>返回地图</button>}
         </div>
         <div className="liaoning-panel-content" ref={summaryRef}>
           <CitySummary market={market}/>

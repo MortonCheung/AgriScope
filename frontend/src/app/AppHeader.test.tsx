@@ -25,7 +25,7 @@ describe('Header和历史控件生命周期', () => {
     open('/reports/dandong');
     const report = screen.getByRole('link', { name: '报告' });
     expect(report.getAttribute('aria-current')).toBe('page');
-    expect(report.getAttribute('href')).toContain('/research?city=dandong');
+    expect(report.getAttribute('href')).toContain('/reports?city=dandong');
     expect(screen.getByRole('link', { name: '主页' }).getAttribute('aria-current')).toBeNull();
   });
   it('开场即显示品牌、四入口和三个禁用/可用图标，没有入场隐藏', () => {

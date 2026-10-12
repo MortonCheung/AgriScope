@@ -17,7 +17,7 @@ describe('全局任务入口保留实际观察上下文', () => {
 
   it('无选城主页不继承上次沈阳；选城主页和其他任务保留明确选择', () => {
     expect(primaryNavigationTarget('decision', { pathname: '/liaoning', search: '' }, context)).toBe('/decision');
-    expect(primaryNavigationTarget('reports', { pathname: '/', search: '' }, context)).toBe('/research');
+    expect(primaryNavigationTarget('reports', { pathname: '/', search: '' }, context)).toBe('/reports');
     expect(primaryNavigationTarget('home', { pathname: '/cities/dandong/decision', search: '' }, context)).toBe('/liaoning?city=dandong');
     expect(primaryNavigationTarget('decision', { pathname: '/liaoning', search: '?city=tieling' }, context)).toContain('/cities/tieling/decision?');
   });
@@ -26,16 +26,16 @@ describe('全局任务入口保留实际观察上下文', () => {
     rememberReportLocation({ pathname: '/cities/shenyang/research/A2.2', search: '?mode=article&city=dandong&plan=old' });
     rememberReportLocation({ pathname: '/cities/dandong/research/A7', search: '?mode=article&research=A2.2&view=result' });
     const sy = primaryNavigationTarget('reports', { pathname: '/cities/shenyang/decision', search: '?crop=西红柿&horizon=30' }, context);
-    expect(sy.split('?')[0]).toBe('/research');
+    expect(sy.split('?')[0]).toBe('/reports');
     const query = new URLSearchParams(sy.split('?')[1]);
     expect(query.has('mode')).toBe(false);
     expect(query.get('crop')).toBe('西红柿');
     expect(query.has('plan')).toBe(false);
     const dd = primaryNavigationTarget('reports', { pathname: '/cities/dandong/decision', search: '' }, context);
-    expect(dd.split('?')[0]).toBe('/research');
+    expect(dd.split('?')[0]).toBe('/reports');
     expect(new URLSearchParams(dd.split('?')[1]).get('city')).toBe('dandong');
     expect(new URLSearchParams(dd.split('?')[1]).has('research')).toBe(false);
-    expect(primaryNavigationTarget('reports', { pathname: '/cities/tieling/decision', search: '' }, context).split('?')[0]).toBe('/research');
+    expect(primaryNavigationTarget('reports', { pathname: '/cities/tieling/decision', search: '' }, context).split('?')[0]).toBe('/reports');
   });
 
   it('旧研究定位仍登记，但不会改变新报告任务入口', () => {
@@ -53,6 +53,6 @@ describe('全局任务入口保留实际观察上下文', () => {
     useAppContext.setState(context);
     expect(primaryNavigationTarget('decision', { pathname: '/cities/unknown', search: '' })).toBe('/decision');
     window.sessionStorage.setItem('agriscope.report-locations.v4-final', JSON.stringify({ shenyang: 'https://example.org', dandong: '/cities/shenyang/research/A2' }));
-    expect(primaryNavigationTarget('reports', { pathname: '/cities/shenyang/decision', search: '' }).split('?')[0]).toBe('/research');
+    expect(primaryNavigationTarget('reports', { pathname: '/cities/shenyang/decision', search: '' }).split('?')[0]).toBe('/reports');
   });
 });

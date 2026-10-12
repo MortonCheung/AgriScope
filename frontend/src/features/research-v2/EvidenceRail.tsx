@@ -1,5 +1,4 @@
 import type { ResearchPoint, ResearchTopic } from '../../domain/research/catalog';
-import { pointStatusLabel } from '../../domain/research/catalog/labels';
 import { readExplorer } from '../../domain/research/runtime/catalog';
 import { columnLabel, columnMeta, formatMetricValue } from '../../domain/research/v2/metrics';
 import { filterRows } from '../../domain/research/v2/selectors';
@@ -7,7 +6,7 @@ import type { V2Article, V2Source } from '../../domain/research/v2/types';
 import { useArticle, useSources, useTable } from './useV2';
 import './city-research.css';
 import { MarkdownBlocks } from './blocks';
-import { renderInline, stripListPrefix } from './markdown';
+import { productText } from '../report/productContent';
 
 /**
  * 城市研究工作台的**证据栏**（本轮 §22/§23）。
@@ -117,10 +116,6 @@ export function EvidenceRail({ cityId, topic, point }: {
         <p className="evidence-rail__id">{point ? point.id : topic.id}</p>
         <p className="evidence-rail__title">{point ? point.title : topic.title}</p>
         <p className="evidence-rail__sub">{point ? `${topic.id} · ${topic.title}` : topic.articleTitle}</p>
-        {point ? (
-          <p className="evidence-rail__status">研究状态：{pointStatusLabel(point.status)}</p>
-        ) : null}
-
       </header>
 
       {point && <PointStatistics cityId={cityId} point={point} />}
@@ -131,10 +126,9 @@ export function EvidenceRail({ cityId, topic, point }: {
 }
 
 /** 无策展树城市同样有正式文章与来源，沿用相同证据栏。 */
-export function ModuleEvidenceRail({ cityId, moduleId, title, article }: { cityId: string; moduleId: string | null; title?: string; article: V2Article | null }) {
+export function ModuleEvidenceRail({ cityId, title, article }: { cityId: string; moduleId: string | null; title?: string; article: V2Article | null }) {
   return <div className="evidence-rail">
     <header className="evidence-rail__ident">
-      {moduleId && <p className="evidence-rail__id">{moduleId}</p>}
       {title && <p className="evidence-rail__title">{title}</p>}
     </header>
     <ArticleMetadata cityId={cityId} article={article} />
@@ -147,7 +141,6 @@ function ArticleMetadata({ cityId, article }: { cityId: string; article: V2Artic
   const sources = article ? article.source_ids.map(id => allSources.find(source => source.source_id === id)).filter((source): source is V2Source => Boolean(source)) : [];
   const methods = article?.methods ?? [];
   const explorer = article ? readExplorer(article) : null;
-  const limitations = [...new Set([...(article?.limitations ?? []), ...(explorer?.limitations ?? [])])];
   const methodology = explorer?.methodology ?? '';
   return <>
       {sources.length > 0 && (
@@ -180,27 +173,17 @@ function ArticleMetadata({ cityId, article }: { cityId: string; article: V2Artic
           {methods.map((method, index) => (
             <details className="evidence-rail__method" key={index}>
               <summary>方法 {index + 1}</summary>
-              <MarkdownBlocks source={method.summary} />
+              <MarkdownBlocks source={productText(method.summary)} />
             </details>
           ))}
           {methodology && (
             <details className="evidence-rail__method">
-              <summary>研究侧方法说明</summary>
-              <MarkdownBlocks source={methodology} />
+              <summary>方法说明</summary>
+              <MarkdownBlocks source={productText(methodology)} />
             </details>
           )}
         </section>
       )}
 
-      {limitations.length > 0 && (
-        <section className="evidence-rail__block">
-          <h2 className="evidence-rail__label">研究限制</h2>
-          <ul className="evidence-rail__list">
-            {limitations.map((item, index) => (
-              <li key={index}>{renderInline(stripListPrefix(item), `lim-${index}`)}</li>
-            ))}
-          </ul>
-        </section>
-      )}
   </>;
 }

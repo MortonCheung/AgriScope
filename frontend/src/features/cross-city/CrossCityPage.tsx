@@ -3,12 +3,14 @@ import type { V2Table } from '../../domain/research/v2/repository';
 import { assetUrl } from '../../domain/research/v2/repository';
 import { columnMeta } from '../../domain/research/v2/metrics';
 import { ROUTES } from '../../app/routes';
-import { TransitionLink } from '../../app/pageNavigation';
+import { usePageNavigate } from '../../app/pageNavigation';
+import { WorkbenchLayout, WorkbenchMain, WorkbenchRail } from '../../components/workbench/WorkbenchLayout';
+import { ReportNavigation } from '../report/ReportNavigation';
+import { productText } from '../report/productContent';
 import { MetricValueView } from '../../components/MetricValueView';
 import { DataTable } from '../research-v2/DataTable';
 import { V2Figure } from '../research-v2/Figure';
 import { MarkdownBlocks } from '../research-v2/blocks';
-import { renderInline, stripListPrefix } from '../research-v2/markdown';
 import { useArticle, useTable } from '../research-v2/useV2';
 import { LIAONING_CITIES } from '../../domain/geography/cities';
 import { LiaoningMiniMap } from './LiaoningMiniMap';
@@ -18,7 +20,6 @@ import {
   CROSS_CITY_METRICS,
   FREQ_LABEL,
   FREQ_PAIR_LABEL,
-  PRICE_SCALE_REGISTRY,
   findMetric,
   pairComparability,
   type CrossCityMetric,
@@ -99,9 +100,7 @@ function ComparisonBars({ table, column, activeCity, onSelectCity }: {
           );
         })}
       </ul>
-      <figcaption className="ag-caption">
-        {meta?.label} 按研究表内的城市顺序排列，未按数值排序，不构成排名。点选城市与左侧地图联动。
-      </figcaption>
+      <figcaption className="ag-caption">{meta?.label}</figcaption>
     </figure>
   );
 }
@@ -128,7 +127,7 @@ function PairSyncTable({ table }: { table: V2Table }) {
   return (
     <figure className="data-table cx-pairs">
       <figcaption className="data-table__head">
-        <span className="data-table__caption">市场季节同步（城际配对，研究侧原始表）</span>
+        <span className="data-table__caption">市场季节同步</span>
       </figcaption>
       <div className="data-table__scroll">
         <table>
@@ -154,7 +153,6 @@ function PairSyncTable({ table }: { table: V2Table }) {
       </div>
       <div className="data-table__foot">
         <span>共 {table.rows.length} 行</span>
-        <span className="data-table__note">同频率对（如朝阳—锦州，均为日度）口径一致，可直接比较；频率不同（日度 × 周度）粒度不一，不可直接比较。</span>
       </div>
     </figure>
   );
@@ -173,10 +171,10 @@ function MetricDetail({ metric, activeCity, onSelectCity }: {
         <h3 className="ag-section-title">{metric.label}</h3>
         <ComparabilityBadge value={metric.comparability} />
       </div>
-      <p className="ag-body-secondary">{metric.basis}</p>
+      <p className="ag-body-secondary">{productText(metric.basis)}</p>
 
       {table.status === 'loading' && <div className="cx-detail__skeleton" aria-hidden role="status" aria-label="数据表加载中" />}
-      {table.status === 'error' && <p className="ag-body" role="alert">该指标的数据表读取失败；不展示占位内容。</p>}
+      {table.status === 'error' && <p className="ag-body" role="alert">该指标读取失败，请稍后重试。</p>}
 
       {table.status === 'ready' && (
         <>
@@ -187,7 +185,7 @@ function MetricDetail({ metric, activeCity, onSelectCity }: {
               {metric.kind === 'city' && (
                 <ComparisonBars table={table.data} column={metric.valueColumn} activeCity={activeCity} onSelectCity={onSelectCity} />
               )}
-              <DataTable table={table.data} caption="研究侧原始表（跨城，列名取自研究导出）" filterColumn={metric.kind === 'crop' ? 'crop' : undefined} />
+              <DataTable table={table.data} caption={metric.label} filterColumn={metric.kind === 'crop' ? 'crop' : undefined} />
             </>
           )}
         </>
@@ -197,6 +195,7 @@ function MetricDetail({ metric, activeCity, onSelectCity }: {
 }
 
 export function CrossCityPage() {
+  const navigate = usePageNavigate();
   const [metricId, setMetricId] = useState<string>(CROSS_CITY_METRICS[0].id);
   const [activeCity, setActiveCity] = useState<string | null>(null);
   const metric = findMetric(metricId);
@@ -216,40 +215,17 @@ export function CrossCityPage() {
   const activeResolved = activeCity && highlighted.includes(activeCity) ? activeCity : (highlighted[0] ?? null);
 
   return (
-    <main className="ag-page">
-      <div className="ag-container cross-city">
+    <WorkbenchLayout className="report-workbench report-index-workbench" resetKey="cross-city" sidebarLabel="报告目录" railLabel="报告信息" onEscape={() => navigate(ROUTES.reports)} sidebar={close => <ReportNavigation close={close} />}><WorkbenchMain>
+      <div className="cross-city">
         <header className="ag-section__head">
-          <p className="ag-label">跨城市研究 · A10</p>
+          <p className="ag-label">六城比较</p>
           <h1 className="ag-hero">{article?.title ?? '辽宁六城农业市场与风险比较研究'}</h1>
-          <p className="ag-lead">
-            在统一方法下比较六城的生产结构与市场同步性。六城价格口径不同，本页只做结构化与相对化比较，
-            不做价格水平比较。
-          </p>
-          <p className="cx-back">
-            <TransitionLink className="research-center__city-link" to={ROUTES.researchCenter}>← 返回研究中心</TransitionLink>
-          </p>
         </header>
-
-        {/* §25.1 硬红线：价格口径与"禁止排行" */}
-        <section className="cx-redline" aria-label="价格口径红线">
-          <p className="cx-redline__title">价格口径红线</p>
-          <p className="ag-body">
-            六城价格层级不同（批发 / 市场均价 / 超市 / 产地），研究侧明确「<strong>不做价格水平比较</strong>」。
-            因此本页<strong>不提供六城菜价排行</strong>，价格水平的跨城对比一律标为「不可直接比较」。
-          </p>
-          <ul className="cx-scales">
-            {PRICE_SCALE_REGISTRY.map((item) => (
-              <li key={item.city}><span className="cx-scales__city">{item.city}</span><span className="cx-scales__scale">{item.scale}</span></li>
-            ))}
-          </ul>
-          <p className="ag-caption">口径登记用于说明"为什么不可比"，不作为任何数值来源，也不参与比较计算。</p>
-        </section>
 
         {/* 指标切换 + 地图联动 + 指标详情 */}
         <section className="ag-section" aria-labelledby="cx-compare">
           <div className="ag-section__head">
             <h2 className="ag-section-title" id="cx-compare">辽宁六城比较</h2>
-            <p className="ag-body-secondary">切换指标查看对应研究表；每个对比都标注可比较性。切换项全部来自 A10 真实导出的表与列。</p>
           </div>
 
           <div className="cx-switch" role="group" aria-label="指标切换">
@@ -270,9 +246,6 @@ export function CrossCityPage() {
           <div className="cx-grid">
             <div className="cx-mapcol">
               <LiaoningMiniMap highlighted={highlighted} active={activeResolved} onSelect={setActiveCity} />
-              <p className="ag-caption">
-                可比性图例：可直接比较 · 探索性比较 · 不可直接比较。领先/滞后类结论仅作探索性，不写成明确市场传导。
-              </p>
             </div>
             <MetricDetail metric={metric} activeCity={activeResolved} onSelectCity={setActiveCity} />
           </div>
@@ -281,29 +254,17 @@ export function CrossCityPage() {
         {/* 研究侧配图 + 研究结论原文 */}
         <section className="ag-section" aria-labelledby="cx-source">
           <div className="ag-section__head">
-            <h2 className="ag-section-title" id="cx-source">研究侧呈现</h2>
-            <p className="ag-body-secondary">以下为 A10 的真实图与结论原文，前端不改写。</p>
+            <h2 className="ag-section-title" id="cx-source">研究结果</h2>
           </div>
           <V2Figure src={assetUrl.figure(CITY_ID, 'cross_city_overview.png')} alt="A10 跨城研究总览图" index={1} />
           {article && (
             <div className="cx-conclusion">
-              <h3 className="ag-section-title">结论（A10 原文）</h3>
-              <MarkdownBlocks source={article.conclusion} />
+              <h3 className="ag-section-title">结论</h3>
+              <MarkdownBlocks source={productText(article.conclusion)} />
             </div>
           )}
-          {article && article.limitations.length > 0 && (
-            <div className="cx-conclusion">
-              <h3 className="ag-section-title">研究局限（A10 原文）</h3>
-              <ul className="cx-limits">
-                {article.limitations.map((item, index) => <li key={index}>{renderInline(stripListPrefix(item), `cx-lim-${index}`)}</li>)}
-              </ul>
-            </div>
-          )}
-          <p className="cx-back">
-            另见 <TransitionLink className="research-center__city-link" to={`${ROUTES.researchCenter}?view=synthesis`}>六城综合研究专题 →</TransitionLink>
-          </p>
         </section>
       </div>
-    </main>
+    </WorkbenchMain><WorkbenchRail>{null}</WorkbenchRail></WorkbenchLayout>
   );
 }

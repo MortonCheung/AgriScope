@@ -4,9 +4,9 @@ import { MOTION_DURATION } from './motion';
 
 export function animateContentSurface(node: HTMLElement) {
   return node.animate?.([
-    { opacity: .35, transform: 'translateY(4px)' },
-    { opacity: 1, transform: 'translateY(0)' },
-  ], { duration: MOTION_DURATION.normal * 1000, easing: 'cubic-bezier(.16,1,.3,1)' });
+    { opacity: 0, clipPath: 'inset(0 0 100% 0)' },
+    { opacity: 1, clipPath: 'inset(0 0 0% 0)' },
+  ], { duration: MOTION_DURATION.normal * 1000, easing: 'cubic-bezier(.22,.68,.18,1)' });
 }
 
 /** Update content immediately; animate only its surface, with no state delay. */

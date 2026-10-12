@@ -4,7 +4,8 @@ import { assetUrl } from '../../domain/research/v2/repository';
 import { V2Figure } from './Figure';
 import { ResearchSources } from './ResearchSources';
 import { MarkdownBlocks, TableAsset } from './blocks';
-import { renderInline, stripListPrefix } from './markdown';
+import { renderInline } from './markdown';
+import { productSections, productText } from '../report/productContent';
 import { useSources } from './useV2';
 import './research-article.css';
 
@@ -18,7 +19,7 @@ import './research-article.css';
  * 从某个研究点切到原文时，`focusSection` 会把对应章节高亮并滚过去
  * （前提是 catalog 声明了 sectionId；没有声明就不假装能定位）。
  */
-export function ResearchArticleView({ cityId, canonicalId, article, focusPointId, focusSection }: {
+export function ResearchArticleView({ cityId, article, focusPointId, focusSection }: {
   cityId: string;
   canonicalId: string;
   article: V2Article;
@@ -40,7 +41,7 @@ export function ResearchArticleView({ cityId, canonicalId, article, focusPointId
   const placements = useMemo(() => {
     const looseTables = new Set(article.tables.map((table) => table.file));
     const looseFigures = new Set(article.figures.map((figure) => figure.file));
-    const result = article.sections.map((section) => {
+    const result = productSections(article.sections).map((section) => {
       const tables = article.tables.filter((table) => looseTables.has(table.file) && section.content.includes(table.file));
       const figures = article.figures.filter((figure) => looseFigures.has(figure.file) && section.content.includes(figure.file));
       tables.forEach((table) => looseTables.delete(table.file));
@@ -63,7 +64,7 @@ export function ResearchArticleView({ cityId, canonicalId, article, focusPointId
     <article className="article">
       <nav className="article__toc" aria-label="目录">
         <ol>
-          {article.sections.map((section) => (
+          {placements.result.map(({ section }) => (
             <li key={section.number}>
               <a href={`#section-${section.number}`} data-focus={String(section.number) === String(focusSection) || undefined}>
                 {section.title}
@@ -75,19 +76,19 @@ export function ResearchArticleView({ cityId, canonicalId, article, focusPointId
 
       <div className="article__body">
         <header className="article__head">
-          <p className="article__meta">{canonicalId} · 原文</p>
+          <p className="article__meta">研究报告</p>
           <h1 className="article__title">{article.title}</h1>
           {article.frontend_summary && (
-            <p className="article__lead">{renderInline(article.frontend_summary, 'lead')}</p>
+            <p className="article__lead">{renderInline(productText(article.frontend_summary), 'lead')}</p>
           )}
           {focusPointId && focusSection && (
-            <p className="article__focus-note">正在对照研究点 {focusPointId}</p>
+            <p className="article__focus-note">相关章节</p>
           )}
         </header>
 
         <section className="article__section">
           <h2 className="article__section-title">摘要</h2>
-          <MarkdownBlocks source={article.abstract} refs={assetRefs} />
+          <MarkdownBlocks source={productText(article.abstract)} refs={assetRefs} />
         </section>
 
         {placements.result.map(({ section, tables, figures }) => (
@@ -136,24 +137,13 @@ export function ResearchArticleView({ cityId, canonicalId, article, focusPointId
 
         <section className="article__section">
           <h2 className="article__section-title">方法</h2>
-          {article.methods.map((method, index) => <MarkdownBlocks key={index} source={method.summary} refs={assetRefs} />)}
+          {article.methods.map((method, index) => <MarkdownBlocks key={index} source={productText(method.summary)} refs={assetRefs} />)}
         </section>
 
         <section className="article__section">
           <h2 className="article__section-title">结论</h2>
-          <MarkdownBlocks source={article.conclusion} refs={assetRefs} />
+          <MarkdownBlocks source={productText(article.conclusion)} refs={assetRefs} />
         </section>
-
-        {article.limitations.length > 0 && (
-          <section className="article__section">
-            <h2 className="article__section-title">研究限制</h2>
-            <ul className="research-note__list">
-              {article.limitations.map((item, index) => (
-                <li key={index}>{renderInline(stripListPrefix(item), `lim-${index}`)}</li>
-              ))}
-            </ul>
-          </section>
-        )}
 
         <ResearchSources sources={sources} />
       </div>

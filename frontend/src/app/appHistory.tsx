@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useRef, type ReactNode } from 'react';
 import { NavigationType, useLocation, useNavigate, useNavigationType, type Location } from 'react-router-dom';
+import { prefersInstantPaper, withPaperExit } from './paperNavigation';
 import { getRouteDirection, type RouteDirection } from './routeTransitions';
 
 export interface AppBackTarget {
@@ -145,8 +146,9 @@ export function AppHistoryProvider({ children }: { children: ReactNode }) {
       action: canGoBack ? NavigationType.Pop : NavigationType.Replace,
       direction: -1,
     };
-    if (canGoBack) navigate(-1);
-    else navigate(fallback.to, { replace: true, state: fallback.state });
+    const from = current.entries[current.index];
+    const to = canGoBack ? current.entries[current.index - 1] : { pathname: fallback.to, search: '' };
+    void withPaperExit(`${from.pathname}${from.search ?? ''}`, `${to.pathname}${to.search ?? ''}`, () => canGoBack ? navigate(-1) : navigate(fallback.to, { replace: true, state: fallback.state, viewTransition: typeof document.startViewTransition === 'function' && !prefersInstantPaper() }));
   }, [navigate]);
 
   /**
@@ -162,7 +164,9 @@ export function AppHistoryProvider({ children }: { children: ReactNode }) {
       action: NavigationType.Pop,
       direction: 1,
     };
-    navigate(1);
+    const from = current.entries[current.index];
+    const to = current.entries[current.index + 1];
+    void withPaperExit(`${from.pathname}${from.search ?? ''}`, `${to.pathname}${to.search ?? ''}`, () => navigate(1));
   }, [navigate]);
 
   const value = useMemo<AppHistoryValue>(() => ({

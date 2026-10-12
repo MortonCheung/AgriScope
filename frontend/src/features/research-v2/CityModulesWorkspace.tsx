@@ -17,6 +17,7 @@ import { WorkbenchLayout, WorkbenchMain, WorkbenchRail } from '../../components/
 import { ModuleEvidenceRail } from './EvidenceRail';
 import { renderInline } from './markdown';
 import { columnMeta } from '../../domain/research/v2/metrics';
+import { productText } from '../report/productContent';
 import './module-workspace.css';
 
 /**
@@ -68,7 +69,6 @@ export function CityModulesWorkspace({ cityId, initialModuleId }: { cityId: stri
       {modules.map(item => <li key={item.module_id}>
         <button type="button" className="module-workspace__item" data-selected={item.module_id === resolved || undefined} data-status={item.status}
           onClick={() => { navigate(cityContextUrl(ROUTES.research(cityId, item.module_id), cityId)); close(); }}>
-          <span className="module-workspace__item-id">{item.module_id}</span>
           <span className="module-workspace__item-title">{item.title}</span>
         </button>
       </li>)}
@@ -83,10 +83,10 @@ export function CityModulesWorkspace({ cityId, initialModuleId }: { cityId: stri
         <header className="research__head">
           <h1 className="research__title">{selected?.title ?? ''}</h1>
           {article?.keywords?.length ? <p className="research__article-title">{article.keywords.slice(0, 4).join(' / ')}</p> : null}
-          {selected?.summary && <p className="research__lead">{renderInline(selected.summary, 'module-summary')}</p>}
+            {selected?.summary && <p className="research__lead">{renderInline(productText(selected.summary), 'module-summary')}</p>}
         </header>
         {articleState.status === 'loading' && <p className="ag-body-secondary" aria-busy="true">研究正文载入中</p>}
-        {articleState.status === 'error' && <p className="ag-body" role="alert">研究正文读取失败；不展示占位内容。</p>}
+        {articleState.status === 'error' && <p className="ag-body" role="alert">报告读取失败，请稍后重试。</p>}
         {article && notSupported && <NotSupportedResearchState article={article} moduleId={resolved ?? ''} />}
         {article && !notSupported && <>
           <div className="city-research__modes" role="tablist" aria-label="研究呈现方式">

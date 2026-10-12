@@ -100,7 +100,7 @@ export function CityResearchPage({initialModuleId, initialSelection}: {initialMo
       <div id="city-research-stage" role="tabpanel">
         {mode === 'article' ? (
           article.status === 'ready' ? <ResearchArticleView cityId={cityId} canonicalId={topic?.articleId ?? ''} article={article.data} focusPointId={point?.id} focusSection={point?.sectionId ? Number(point.sectionId) : undefined} />
-            : <p className="city-research__pending">{article.status === 'loading' ? '研究正文载入中' : '研究正文读取失败；不展示占位内容。'}</p>
+            : <p className="city-research__pending">{article.status === 'loading' ? '报告载入中' : '报告读取失败，请稍后重试。'}</p>
         ) : point ? <InteractivePointView cityId={cityId} point={point} topic={topic!} />
           : topic ? <InteractiveTopicView cityId={cityId} topic={topic} />
             : <p className="city-research__pending">从左侧选择一个方向或研究点</p>}

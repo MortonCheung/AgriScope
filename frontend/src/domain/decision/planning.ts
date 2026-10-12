@@ -77,13 +77,21 @@ export const PLANNING_CLIMATE_METRICS = ['precipitation_mm', 'growing_season_pre
 export type PlanningClimateMetric = typeof PLANNING_CLIMATE_METRICS[number];
 export interface PlanningSession {
   activeCrop: string; customCrop: string; drafts: Record<string, PlanningDraft>;
+  budgetCny?: string; target?: 'conservative' | 'balanced' | 'aggressive'; saleDate?: string;
+  /** The product may refresh an untouched market price; explicit user prices stay fixed. */
+  priceOverrides?: string[];
   /** 只保存有效输入条件，恢复时重新核算，不保存可被篡改的结果数字。 */
   calculatedDrafts: Record<string, PlanningDraft>;
   baseline: PlanningSnapshot | null; climateMetric: PlanningClimateMetric;
 }
-const blankSession = (): PlanningSession => ({ activeCrop: '', customCrop: '', drafts: {}, calculatedDrafts: {}, baseline: null, climateMetric: 'precipitation_mm' });
+const blankSession = (): PlanningSession => ({ activeCrop: '', customCrop: '', drafts: {}, calculatedDrafts: {}, baseline: null, climateMetric: 'precipitation_mm', budgetCny: '', target: 'balanced', saleDate: '', priceOverrides: [] });
 const isDraft = (raw: unknown): raw is PlanningDraft => Boolean(raw && typeof raw === 'object' && PLANNING_FIELDS.every(({ key }) => typeof (raw as PlanningDraft)[key] === 'string'));
 const isSnapshot = (raw: unknown): raw is PlanningSnapshot => Boolean(raw && typeof raw === 'object' && typeof (raw as PlanningSnapshot).crop === 'string' && isDraft((raw as PlanningSnapshot).draft));
+export function validPlanningSaleDate(value: unknown): value is string {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
 export const samePlanningDraft = (a: PlanningDraft, b: PlanningDraft) => PLANNING_FIELDS.every(({ key }) => a[key] === b[key]);
 export function validPlanningCalculation(draft: PlanningDraft, crop: string): boolean {
   const { inputs } = validatePlanningDraft(draft, crop);
@@ -106,7 +114,11 @@ export function readPlanningSession(cityId: string): PlanningSession {
     const drafts = Object.fromEntries(Object.entries(value.drafts).filter(([key, draft]) => key !== '__proto__' && isDraft(draft)));
     const calculatedDrafts = value.calculatedDrafts && typeof value.calculatedDrafts === 'object' && !Array.isArray(value.calculatedDrafts)
       ? Object.fromEntries(Object.entries(value.calculatedDrafts).filter(([crop, draft]) => crop !== '__proto__' && isDraft(draft) && Object.prototype.hasOwnProperty.call(drafts, crop) && samePlanningDraft(draft, drafts[crop]) && validPlanningCalculation(draft, crop))) : {};
+    const saleDate = validPlanningSaleDate(value.saleDate) ? value.saleDate : '';
     return { activeCrop: value.activeCrop, customCrop: value.customCrop, drafts, calculatedDrafts,
+      budgetCny: typeof value.budgetCny === 'string' ? value.budgetCny : '',
+      target: ['conservative', 'balanced', 'aggressive'].includes(value.target ?? '') ? value.target : 'balanced', saleDate,
+      priceOverrides: Array.isArray(value.priceOverrides) ? value.priceOverrides.filter((crop): crop is string => typeof crop === 'string' && crop !== '__proto__') : Object.keys(drafts),
       baseline: isSnapshot(value.baseline) && validPlanningCalculation(value.baseline.draft, value.baseline.crop) ? value.baseline : null,
       climateMetric: PLANNING_CLIMATE_METRICS.includes(value.climateMetric) ? value.climateMetric : 'precipitation_mm' };
   } catch { return blankSession(); }

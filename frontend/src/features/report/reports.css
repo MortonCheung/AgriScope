@@ -29,3 +29,19 @@ a.reports__name:hover { color: var(--ag-ink); border-bottom-color: var(--ag-ink)
 .report-workbench .report__section { scroll-margin-top: var(--ag-space-5); }
 
 .reports__status { display:block;margin-top:8px;color:var(--ag-ink-muted);font-size:var(--ag-fs-micro);font-weight:400; }
+
+.report-navigation ul { list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px; }
+.report-navigation .ag-button { width:100%;justify-content:space-between;padding:10px 14px; }
+.report-navigation .ag-button[aria-current='page'] { border-color:var(--ag-ink);background:var(--ag-paper-deep); }
+.report-navigation__supplement { margin-top:24px !important;padding-top:24px !important;border-top:1px solid var(--ag-rule-soft); }
+.report-navigation--overview .report-navigation__cities { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px; }
+.report-navigation--overview .report-navigation__cities .ag-button { min-height:96px;justify-content:center;font-family:var(--ag-font-display);font-size:var(--ag-fs-lead); }
+.report-navigation--overview .report-navigation__supplement { display:flex;flex-direction:row;flex-wrap:wrap;gap:12px; }
+.report-navigation--overview .report-navigation__supplement .ag-button { width:auto; }
+.report-index-workbench .workbench__body { grid-template-columns:minmax(216px,248px) minmax(0,1fr); }
+.report-index-workbench .workbench__rail,.report-index-workbench .workbench__rail-toggle { display:none; }
+.report-workbench .report-navigation { margin-bottom:32px; }
+.report-entry-workbench .workbench__body { grid-template-columns:minmax(0,1fr); }
+.report-entry-workbench .workbench__sidebar,.report-entry-workbench .workbench__chrome { display:none; }
+@media(max-width:1024px){.report-index-workbench .workbench__body{grid-template-columns:minmax(0,1fr);}}
+@media(max-width:600px){.report-navigation--overview .report-navigation__cities{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}.report-navigation--overview .report-navigation__cities .ag-button{min-height:76px;}}

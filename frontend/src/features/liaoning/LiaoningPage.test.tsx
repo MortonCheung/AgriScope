@@ -16,18 +16,17 @@ afterEach(cleanup);
 function Location() { const url = useLocation(); return <output data-testid="url">{url.pathname}{url.search}</output>; }
 const page = (url = '/liaoning') => <MemoryRouter initialEntries={[url]}><LiaoningPage/><Location/></MemoryRouter>;
 
-describe('Report 风格的模拟行情主页', () => {
-  it('默认为全省六城等权模拟均价，四个品种只展示一次，单位与价格相邻', () => {
+describe('产品行情主页', () => {
+  it('只显示行情和功能入口，四个品种只展示一次，单位与价格相邻', () => {
     const { container } = render(page());
-    expect(screen.getByRole('button', { name: '全省' }).getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByRole('heading', { name: '辽宁全省' })).toBeTruthy();
-    expect(screen.getAllByText('模拟数据').length).toBe(1);
-    expect(screen.getByText('六城等权模拟均价 · 仅供演示')).toBeTruthy();
+    expect(container.textContent).not.toMatch(/模拟|演示|全省|总览|来源说明/);
+    expect(screen.getByRole('heading', { name: '最新行情' })).toBeTruthy();
     expect(container.querySelectorAll('.market-overview__price')).toHaveLength(4);
     expect(container.querySelector('.market-overview__value dd')?.textContent).toBe('3.9元/kg');
     expect(container.querySelector('select')).toBeNull();
     expect(container.textContent).not.toMatch(/最新农业市场|全部品种与来源|已接入市场|尚未接入/);
-    expect(screen.queryByRole('link', { name: '决策' })).toBeNull();
+    expect(screen.getByRole('link', { name: '决策' }).getAttribute('href')).toBe('/decision');
+    expect(screen.getByRole('link', { name: '报告' }).getAttribute('href')).toBe('/reports');
   });
   it('六城立即切换、双纸面不卸载、使用本城样例且报告直达正式报告', () => {
     const { container } = render(page());
@@ -44,25 +43,23 @@ describe('Report 风格的模拟行情主页', () => {
       expect(report.getAttribute('href')).toContain(`/reports/${city}?city=${city}`);
       expect(container.querySelectorAll('.market-overview__price')).toHaveLength(4);
     }
-    fireEvent.click(screen.getByRole('button', { name: '全省' }));
+    fireEvent.click(screen.getByRole('button', { name: '返回地图' }));
     expect(screen.getByTestId('url').textContent).toBe('/liaoning');
     expect([...container.querySelectorAll('.liaoning-paper')]).toEqual(papers);
   });
-  it('比较期实际重新计算相同样例的涨跌，切城不重置比较期', () => {
+  it('行情随城市同步更新，清除选择立即恢复默认价格', () => {
     const { container } = render(page('/liaoning?city=shenyang'));
     const change = () => container.querySelector('.market-overview__price dd[data-direction]')?.textContent;
     expect(change()).toBe('+1.6%');
-    fireEvent.click(screen.getByRole('button', { name: '7 日前' }));
-    expect(change()).toBe('+5.0%');
-    fireEvent.click(screen.getByRole('button', { name: '30 日前' }));
-    expect(change()).toBe('+11.8%');
     fireEvent.click(screen.getByRole('button', { name: '铁岭' }));
-    expect(screen.getByRole('button', { name: '30 日前' }).getAttribute('aria-pressed')).toBe('true');
-    expect(change()).toBe('+6.1%');
+    expect(change()).toBe('+1.4%');
+    fireEvent.click(screen.getByRole('button', { name: '返回地图' }));
+    expect(container.querySelector('.market-overview__price strong')?.textContent).toBe('3.9');
   });
   it('未知城市不建立选择，Escape 立即回全省且不创建别城入口', () => {
     render(page('/liaoning?city=anshan'));
-    expect(screen.getByRole('button', { name: '全省' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.queryByRole('button', { name: '返回地图' })).toBeNull();
+    expect(screen.getAllByRole('button').filter(b => b.getAttribute('aria-pressed') === 'true')).toHaveLength(0);
     fireEvent.click(screen.getByRole('button', { name: '丹东' }));
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(screen.getByTestId('url').textContent).toBe('/liaoning');

@@ -32,14 +32,14 @@ export function InteractivePointView({ cityId, point, topic }: {
 
       {point.status === 'pending' && (
         <section className="research__block">
-          <h2 className="research__block-title">研究内容待接入</h2>
+          <h2 className="research__block-title">研究概览</h2>
           {point.reason && <p className="research__paragraph">{renderInline(point.reason, 'reason')}</p>}
         </section>
       )}
 
       {point.status === 'unsupported' && (
         <section className="research__block">
-          <h2 className="research__block-title">研究侧判定</h2>
+          <h2 className="research__block-title">研究概览</h2>
           {point.reason && <p className="research__paragraph">{renderInline(point.reason, 'verdict')}</p>}
           {citations.map((citation, index) => (
             <ResearchQuote

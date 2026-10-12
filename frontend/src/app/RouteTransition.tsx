@@ -1,36 +1,25 @@
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { NavigationType } from 'react-router-dom';
-import { MOTION_DURATION } from '../design/motion';
-import { isSpatialEntry, isWorkspaceNavigation } from './routeTransitions';
+import { changesPaper, paperPageKey, prefersInstantPaper } from './paperNavigation';
 
-/**
- * One live Outlet. Native transitions animate inert images of the old/new page.
- *
- * V5 §70：省域 ↔ 城市共享同一个 Canvas，这次转场只允许由 Camera + Paper 负责，
- * 因此空间入口必须**完全跳过**整页淡入/滑入 —— 否则两套动作互相打架。
- *
- * 判断"从哪个路径来"需要上一路径。父组件的 effect 一定晚于本组件的 layout effect，
- * 所以上一路径记在这里，而不是由外面传进来（否则首帧会用到还没更新的值）。
- */
-export function RouteTransition({ routeKey, pathname, direction, navigationType, children }: { routeKey: string; pathname: string; direction: number; navigationType: NavigationType; children: ReactNode }) {
+/** Keep one live Outlet. Query-driven report views share the same motion language. */
+export function RouteTransition({ routeKey, pathname, search = '', navigationType, children }: { routeKey: string; pathname: string; search?: string; direction: number; navigationType: NavigationType; children: ReactNode }) {
   const page = useRef<HTMLDivElement>(null);
-  const previousPath = useRef(pathname);
-
+  const previous = useRef(`${pathname}${search}`);
   useLayoutEffect(() => {
-    const from = previousPath.current;
-    previousPath.current = pathname;
-    // 同路径（replace / 只换 state）不是一次页面转场。
-    if (from === pathname) return;
-    if (isSpatialEntry(from, pathname)) return;
-    if (isWorkspaceNavigation(from, pathname)) return;
-    if ((typeof document.startViewTransition === 'function' && navigationType !== NavigationType.Pop) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    // Older browsers keep the same component tree and receive a light entry.
-    const animation = page.current?.animate?.([
-      { opacity: 0.82, transform: `translate3d(${direction * 8}px, 0, 0)` },
-      { opacity: 1, transform: 'translate3d(0, 0, 0)' },
-    ], { duration: MOTION_DURATION.normal * 1000, easing: 'cubic-bezier(.16,1,.3,1)' });
-    return () => animation?.cancel();
-  }, [direction, navigationType, pathname, routeKey]);
-
-  return <div ref={page} className="route-page">{children}</div>;
+    const to = `${pathname}${search}`;
+    const from = previous.current;
+    previous.current = to;
+    if (!changesPaper(from, to) || prefersInstantPaper()) return;
+    if (typeof document.startViewTransition === 'function' && navigationType !== NavigationType.Pop) return;
+    const papers = page.current?.querySelectorAll<HTMLElement>('.ag-paper-enter') ?? [];
+    // Freshly mounted papers already have the shared CSS entry. Reused papers
+    // (query-driven report pages or POPs) receive the same top-down mask.
+    const animations = [...papers].filter(paper => !paper.getAnimations?.().some(animation => 'animationName' in animation && animation.animationName === 'ag-paper-reveal')).map(paper => paper.animate?.([
+      { opacity: 0, clipPath: 'inset(0 0 100% 0)' },
+      { opacity: 1, clipPath: 'inset(0 0 0% 0)' },
+    ], { duration: 260, easing: 'cubic-bezier(.22,.68,.18,1)' }));
+    return () => animations.forEach(animation => animation?.cancel());
+  }, [navigationType, pathname, search, routeKey]);
+  return <div ref={page} className="route-page" data-paper-page={paperPageKey(pathname, search)}>{children}</div>;
 }
