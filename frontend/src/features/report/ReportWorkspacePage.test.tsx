@@ -3,20 +3,22 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import articleJson from '../../../public/research/shenyang/articles/A09.json';
-import { STUDY_CITY_IDS, getCity } from '../../domain/geography/cities';
+import runtimeCatalog from '../../../../runtime/research/research_catalog.json';
 import type { V2Catalog, V2Article } from '../../domain/research/v2/types';
 import { useRuntimeCatalog } from '../../domain/research/runtime/catalog';
 import { useArticle } from '../research-v2/useV2';
 import { ReportWorkspacePage } from './ReportWorkspacePage';
 
 vi.mock('../../domain/research/runtime/catalog', async importOriginal => ({ ...await importOriginal<typeof import('../../domain/research/runtime/catalog')>(), useRuntimeCatalog: vi.fn() }));
-vi.mock('../research-v2/useV2', () => ({ useArticle: vi.fn(), useSources: () => ({ status: 'ready', data: [] }) }));
+vi.mock('../research-v2/useV2', () => ({ useArticle: vi.fn(), useTable: () => ({ status: 'ready', data: { columns: [], rows: [] } }), useSources: () => ({ status: 'ready', data: [] }) }));
 vi.mock('../research-v2/blocks', async importOriginal => ({ ...await importOriginal<Record<string, unknown>>(), TableAsset: () => <div /> }));
+vi.mock('../research-v2/InteractivePointView', () => ({ InteractivePointView: ({ point }: {point: {id:string;title:string}}) => <section data-point={point.id}><h1>{point.title}</h1><svg role="img" aria-label="已校验研究数据"/></section> }));
+vi.mock('../research-v2/TopicExplorer', () => ({ TopicExplorer: ({cityId,explorer}: {cityId:string;explorer:{id:string}}) => <svg role="img" aria-label={`${cityId}:${explorer.id}`}/> }));
 vi.mock('../research-v2/Figure', () => ({ V2Figure: () => <div /> }));
 vi.mock('../cross-city/CrossCityPage', () => ({ CrossCityContent: () => <h1>比较内容</h1> }));
 vi.mock('../cross-city/SynthesisPage', () => ({ SynthesisContent: () => <h1>综合内容</h1> }));
 const article = articleJson as V2Article;
-const catalog: V2Catalog = { schema_version: '2', generated_by: 'test', n_cities: 6, n_modules: 12, cities: STUDY_CITY_IDS.map(city => ({ city, city_name: getCity(city)!.shortName, n_modules: 2, modules: ['A09', 'A01'].map(module_id => ({ module_id, title: 'published', status: 'ACCEPTED', summary: null, article_path: 'article.json', explorer_available: module_id === 'A01', tables: [], figures: [], sources: [] })) })) };
+const catalog = runtimeCatalog as unknown as V2Catalog;
 const paths = ['/reports', '/reports/shenyang', '/reports/chaoyang', '/reports?view=cross_city', '/reports?view=synthesis', '/reports/liaoning'];
 function Controls() {
   const navigate = useNavigate();
@@ -50,24 +52,26 @@ describe('one report paper across all workspace selections', () => {
     assertStable();
     expect(screen.getByRole('heading', { name: '城市报告' })).toBeTruthy();
   });
-  it('restores only the actual current-city interactive research link', () => {
-    render(<MemoryRouter initialEntries={['/reports/chaoyang']}><Routes><Route path="/reports/:cityId" element={<ReportWorkspacePage />} /></Routes></MemoryRouter>);
-    expect(document.querySelector('.report__head .report__interactive-link')?.getAttribute('href')).toBe('/cities/chaoyang?city=chaoyang');
-    expect(screen.queryByText('朝阳 · 报告')).toBeNull();
+  it('opens a verified interactive module first and keeps full text as a secondary action', () => {
+    render(<MemoryRouter initialEntries={['/reports/tieling']}><Routes><Route path="/reports/:cityId" element={<ReportWorkspacePage/>}/></Routes></MemoryRouter>);
+    expect(screen.getAllByRole('img').length).toBeGreaterThan(0);
+    expect(screen.getByRole('tab', {name:'交互研究'}).getAttribute('aria-selected')).toBe('true');
+    fireEvent.click(screen.getByRole('tab', {name:'完整文章'}));
+    expect(screen.getByRole('tab', {name:'完整文章'}).getAttribute('aria-selected')).toBe('true');
+    expect(screen.queryByRole('img')).toBeNull();
   });
-  it('shows the curated Shenyang action in the report title even with false runtime explorer flags', () => {
-    vi.mocked(useRuntimeCatalog).mockReturnValue({ status: 'ready', catalog: { ...catalog, cities: catalog.cities.map(city => ({ ...city, modules: city.modules.map(module => ({ ...module, explorer_available: false })) })) } });
-    const { container } = render(<MemoryRouter initialEntries={['/reports/shenyang']}><Routes><Route path="/reports/:cityId" element={<ReportWorkspacePage />} /></Routes></MemoryRouter>);
-    expect(container.querySelector('.report__head .report__interactive-link')?.getAttribute('href')).toBe('/cities/shenyang?city=shenyang');
+  it('uses the published Shenyang default point and filters unqualified research points', () => {
+    const {container}=render(<MemoryRouter initialEntries={['/reports/shenyang']}><Routes><Route path="/reports/:cityId" element={<ReportWorkspacePage/>}/></Routes></MemoryRouter>);
+    expect(container.querySelector('[data-point]')?.getAttribute('data-point')).toBe('A1.3');
     expect(container.querySelector('main')?.getAttribute('data-rail-mode')).toBe('responsive');
+    expect(screen.queryByText('A4.4')).toBeNull();
+    expect(container.querySelectorAll('.workbench__paper')).toHaveLength(1);
   });
-  it('omits an unavailable title action and hides evidence controls at the city entry', () => {
-    vi.mocked(useRuntimeCatalog).mockReturnValue({ status: 'loading' });
-    const opened = render(<MemoryRouter initialEntries={['/reports/chaoyang']}><Routes><Route path="/reports/:cityId" element={<ReportWorkspacePage />} /></Routes></MemoryRouter>);
-    expect(opened.container.querySelector('.report__interactive-link')).toBeNull();
-    cleanup();
-    const entry = render(<MemoryRouter initialEntries={['/reports']}><ReportWorkspacePage /></MemoryRouter>);
-    expect(entry.container.querySelector('main')?.getAttribute('data-rail-mode')).toBe('hidden');
-    expect(screen.queryByRole('button', { name: '报告依据' })).toBeNull();
+  it('replaces the excluded Tieling deep selection with a valid URL and content', async () => {
+    const {container}=render(<MemoryRouter initialEntries={['/reports/tieling?research=A6&crop=玉米&as_of=2026-10-06']}><Routes><Route path="/reports/:cityId" element={<ReportWorkspacePage/>}/></Routes></MemoryRouter>);
+    await screen.findByRole('tab', {name:'交互研究'});
+    expect(container.querySelectorAll('.workbench__paper')).toHaveLength(1);
+    expect(screen.getAllByRole('img').length).toBeGreaterThan(0);
+    expect(screen.queryByText('市场可预测性与天气信息预测增量')).toBeNull();
   });
 });

@@ -1,5 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import runtimeCatalog from '../../../../runtime/research/research_catalog.json';
+import type { V2Catalog } from '../../domain/research/v2/types';
+vi.mock('../../domain/research/runtime/catalog', async importOriginal => ({ ...await importOriginal<typeof import('../../domain/research/runtime/catalog')>(), useRuntimeCatalog: () => ({ status: 'ready', catalog: runtimeCatalog as unknown as V2Catalog }) }));
 import { cleanup, render } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ResearchRoutePage } from './ResearchRoutePage';
@@ -73,7 +76,7 @@ describe('模式切换条在两种模式下都常驻（§29/§59-14/15）', () =
     const { container } = renderAt('/cities/shenyang/research/A2.2');
     const modes = container.querySelector('.city-research__modes');
     expect(modes).not.toBeNull();
-    expect(modes?.textContent).toContain('交互探索');
+    expect(modes?.textContent).toContain('交互研究');
     expect(modes?.textContent).toContain('完整文章');
   });
 

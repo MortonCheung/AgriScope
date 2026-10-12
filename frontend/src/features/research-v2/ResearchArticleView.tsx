@@ -135,15 +135,15 @@ export function ResearchArticleView({ cityId, article, focusPointId, focusSectio
           </section>
         )}
 
-        <section className="article__section">
+        {!placements.result.some(({ section }) => section.title.includes('方法')) && <section className="article__section">
           <h2 className="article__section-title">方法</h2>
           {article.methods.map((method, index) => <MarkdownBlocks key={index} source={productText(method.summary)} refs={assetRefs} />)}
-        </section>
+        </section>}
 
-        <section className="article__section">
+        {!placements.result.some(({ section }) => section.title.includes('结论')) && <section className="article__section">
           <h2 className="article__section-title">结论</h2>
           <MarkdownBlocks source={productText(article.conclusion)} refs={assetRefs} />
-        </section>
+        </section>}
 
         <ResearchSources sources={sources} />
       </div>

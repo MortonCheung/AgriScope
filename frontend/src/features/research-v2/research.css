@@ -197,3 +197,9 @@
   .research__main[data-animate='in'],
   .tree__points { animation: none; }
 }
+
+/* A cold request retains the measured reading region without showing old values. */
+.research-loading { min-height:clamp(320px,50dvh,560px); }
+.research-loading .module__skeleton { min-height:240px;margin-top:24px; }
+.report-workbench .research__main { width:min(100%,var(--ag-figure-width));margin-inline:auto; }
+.report-workbench .research__paragraph,.report-workbench .research__head { max-width:var(--ag-readable-width); }

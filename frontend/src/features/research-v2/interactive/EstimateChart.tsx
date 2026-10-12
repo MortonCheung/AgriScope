@@ -14,6 +14,8 @@ export interface EstimateChartProps {
   ciHighKey?: string;
   /** 单位沿用指标契约；取不到就不写单位（见 §11：不写「无量纲」）。 */
   ciCaption?: string;
+  /** The host can provide the same heading without repeating it inside the chart. */
+  showTitle?: boolean;
 }
 
 const PAD = { top: 18, right: 26, bottom: 54, left: 74 } as const;
@@ -53,7 +55,7 @@ function buildTicks(min: number, max: number, count = 5): number[] {
  *
  * 布局约束（§87）：读数行永远存在且高度固定，hover 不会改变任何盒子尺寸。
  */
-export function EstimateChart({ rows, categoryKey, valueKey, ciLowKey, ciHighKey, ciCaption }: EstimateChartProps) {
+export function EstimateChart({ rows, categoryKey, valueKey, ciLowKey, ciHighKey, ciCaption, showTitle = true }: EstimateChartProps) {
   const [hover, setHover] = useState<number | null>(null);
   const reducedMotion = Boolean(useReducedMotion());
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -163,7 +165,7 @@ export function EstimateChart({ rows, categoryKey, valueKey, ciLowKey, ciHighKey
   return (
     <div className="estimate-chart">
       <div className="estimate-chart__head">
-        <p className="estimate-chart__title">{valueLabel} · 按{categoryLabel}</p>
+        {showTitle && <p className="estimate-chart__title">{valueLabel} · 按{categoryLabel}</p>}
         <p className="estimate-chart__unit">
           {meta?.unit ? `${valueLabel} / ${meta.unit}` : valueLabel}
           {hasCi ? ciCaption ?? '（含置信区间）' : ''}

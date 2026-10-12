@@ -2,6 +2,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
+import runtimeCatalog from '../../../../runtime/research/research_catalog.json';
 import { STUDY_CITY_IDS, getCity } from '../../domain/geography/cities';
 import type { V2Catalog } from '../../domain/research/v2/types';
 import { useRuntimeCatalog } from '../../domain/research/runtime/catalog';
@@ -9,7 +10,7 @@ import { resetAppContext } from '../../app/context/appContext';
 import { ResearchCenterPage } from './ResearchCenterPage';
 vi.mock('../../domain/research/runtime/catalog', async importOriginal => ({...await importOriginal<typeof import('../../domain/research/runtime/catalog')>(), useRuntimeCatalog: vi.fn()}));
 
-const catalog: V2Catalog = {schema_version:'2',generated_by:'test',n_cities:6,n_modules:6,cities:STUDY_CITY_IDS.map(city=>({city,city_name:getCity(city)!.shortName,n_modules:1,modules:[{module_id:'A09',title:'report',status:'ACCEPTED',summary:null,article_path:'article.json',explorer_available:false,tables:[],figures:[],sources:[]}]}))};
+const catalog = runtimeCatalog as unknown as V2Catalog;
 beforeEach(()=>{resetAppContext(); vi.stubGlobal('matchMedia',()=>({matches:false,addEventListener:vi.fn(),removeEventListener:vi.fn()}));});
 afterEach(()=>{cleanup();vi.unstubAllGlobals();});
 const renderedCityLinks=()=>document.querySelectorAll('.report-navigation__cities a');

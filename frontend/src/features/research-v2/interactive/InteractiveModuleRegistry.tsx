@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useResearchSelectors } from '../useResearchSelectors';
 import type { InteractiveModuleKind, ResearchCitation, ResearchDataBinding, ResearchPoint } from '../../../domain/research/catalog';
 import { quoteLabel } from '../../../domain/research/catalog/labels';
 import {
   buildDisplayFilter,
-  defaultSelectorValues,
   filterRows,
 } from '../../../domain/research/v2/selectors';
 import { useTable } from '../useV2';
@@ -85,27 +85,19 @@ export function ResearchDataModule({ cityId, point, binding, citations }: {
 }) {
   const table = useTable(cityId, binding.table);
   const selectors = useMemo(() => binding.selectors ?? [], [binding.selectors]);
-  const [picked, setPicked] = useState<Record<string, string>>({});
 
   /** 静态 filter 后的行：selector 的默认取值以此为准（§34）。 */
   const staticRows = useMemo(
     () => (table.status === 'ready' ? filterRows(table.data.rows, binding.filter) : []),
     [binding.filter, table],
   );
-  const defaults = useMemo(() => defaultSelectorValues(staticRows, selectors), [selectors, staticRows]);
-
-  /** 当前选择：用户点过的优先，否则回落到确定性默认值。 */
-  const selected = useMemo(() => {
-    const merged: Record<string, string> = {};
-    for (const column of selectors) merged[column] = picked[column] ?? defaults[column];
-    return merged;
-  }, [defaults, picked, selectors]);
+  const { selected, change } = useResearchSelectors(`${cityId}:${point.id}:${binding.table}`, staticRows, selectors);
 
   if (table.status === 'loading') return <div className="module__skeleton" aria-hidden />;
-  if (table.status === 'error') return <p className="module__gap">研究内容待接入</p>;
+  if (table.status === 'error') return <p role="alert">研究数据读取失败，请稍后重试。</p>;
 
   const rows = filterRows(table.data.rows, buildDisplayFilter(binding, selected));
-  if (rows.length === 0) return <p className="module__gap">研究内容待接入</p>;
+  if (rows.length === 0) return <p role="status">当前条件没有可用数据，请调整研究条件。</p>;
 
   const hasCi = table.data.columns.includes('ci_low') && table.data.columns.includes('ci_high');
   const category = binding.category;
@@ -127,7 +119,7 @@ export function ResearchDataModule({ cityId, point, binding, citations }: {
         selectors={selectors}
         rows={staticRows}
         selected={selected}
-        onChange={(column, value) => setPicked((current) => ({ ...current, [column]: value }))}
+        onChange={change}
       />
 
       {canChart ? (

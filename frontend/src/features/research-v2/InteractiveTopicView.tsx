@@ -1,10 +1,11 @@
-import { Link } from 'react-router-dom';
+import { TransitionLink } from '../../app/pageNavigation';
 import type { ResearchTopic } from '../../domain/research/catalog';
 import { pointStatusLabel } from '../../domain/research/catalog/labels';
 import { ROUTES } from '../../app/routes';
 import { useArticle, useTable } from './useV2';
 import { DataTable } from './DataTable';
 import { TopicExplorer } from './TopicExplorer';
+import { ResearchDataModule } from './interactive/InteractiveModuleRegistry';
 
 /** 一张声明表：单独组件，保证 `useTable` 的调用位置稳定。 */
 function TopicTable({ cityId, file, caption }: { cityId: string; file: string; caption: string }) {
@@ -22,9 +23,10 @@ function TopicTable({ cityId, file, caption }: { cityId: string; file: string; c
  *
  * 这里刻意不是"文章的另一种排版"：交互研究给数据，原文给连续正文（§15）。
  */
-export function InteractiveTopicView({ cityId, topic }: { cityId: string; topic: ResearchTopic }) {
+export function InteractiveTopicView({ cityId, topic, pointHref = id => ROUTES.research(cityId, id) }: { cityId: string; topic: ResearchTopic; pointHref?: (id: string) => string }) {
   const article = useArticle(cityId, topic.articleId);
   const tables = article.status === 'ready' ? article.data.tables : [];
+  const firstChart = topic.points.find(point => point.status === 'ready' && point.binding?.view === 'chart' && point.module);
 
   return (
     <div className="research__main">
@@ -33,6 +35,11 @@ export function InteractiveTopicView({ cityId, topic }: { cityId: string; topic:
         <h1 className="research__title">{topic.title}</h1>
         <p className="research__article-title">{topic.articleTitle}</p>
       </header>
+
+      {!topic.explorers?.length && firstChart?.binding && <section className="research__block">
+        <h2 className="research__block-title">{firstChart.title}</h2>
+        <ResearchDataModule cityId={cityId} point={firstChart} binding={firstChart.binding} citations={firstChart.citations ?? []}/>
+      </section>}
 
       {/*
         §38/§39：方向页额外提供跨窗口 Explorer（滞后窗口 / 累积暴露）。
@@ -52,13 +59,13 @@ export function InteractiveTopicView({ cityId, topic }: { cityId: string; topic:
         <ol className="research__points">
           {topic.points.map((point) => (
             <li className="research__point" key={point.id}>
-              <Link className="research__point-link" to={ROUTES.research(cityId, point.id)}>
+              <TransitionLink className="research__point-link" to={pointHref(point.id)}>
                 <span className="research__point-id">{point.id}</span>
                 <span>{point.title}</span>
                 {point.status !== 'ready' && (
                   <span className="research__point-state">{pointStatusLabel(point.status)}</span>
                 )}
-              </Link>
+              </TransitionLink>
             </li>
           ))}
         </ol>

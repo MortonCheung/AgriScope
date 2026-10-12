@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import type { TopicExplorer as TopicExplorerConfig } from '../../domain/research/catalog';
-import { buildDisplayFilter, defaultSelectorValues, filterRows } from '../../domain/research/v2/selectors';
+import { buildDisplayFilter, filterRows } from '../../domain/research/v2/selectors';
+import { useResearchSelectors } from './useResearchSelectors';
 import { useTable } from './useV2';
 import { EstimateChart } from './interactive/EstimateChart';
 import { SelectorRow } from './interactive/Selectors';
@@ -20,20 +21,14 @@ import { SelectorRow } from './interactive/Selectors';
 export function TopicExplorer({ cityId, explorer }: { cityId: string; explorer: TopicExplorerConfig }) {
   const table = useTable(cityId, explorer.table);
   const selectors = useMemo(() => explorer.selectors ?? [], [explorer.selectors]);
-  const [picked, setPicked] = useState<Record<string, string>>({});
 
   const staticRows = useMemo(
     () => (table.status === 'ready' ? filterRows(table.data.rows, explorer.filter) : []),
     [explorer.filter, table],
   );
-  const defaults = useMemo(() => defaultSelectorValues(staticRows, selectors), [selectors, staticRows]);
-  const selected = useMemo(() => {
-    const merged: Record<string, string> = {};
-    for (const column of selectors) merged[column] = picked[column] ?? defaults[column];
-    return merged;
-  }, [defaults, picked, selectors]);
+  const { selected, change } = useResearchSelectors(`${cityId}:${explorer.id}:${explorer.table}`, staticRows, selectors);
 
-  if (table.status === 'error') return null;
+  if (table.status === 'error') return <p role="alert">研究数据读取失败，请稍后重试。</p>;
   if (table.status === 'loading') {
     return (
       <section className="module module--explorer" data-explorer={explorer.id}>
@@ -44,7 +39,7 @@ export function TopicExplorer({ cityId, explorer }: { cityId: string; explorer: 
   }
 
   const rows = filterRows(table.data.rows, buildDisplayFilter(explorer, selected));
-  if (rows.length === 0) return null;
+  if (rows.length === 0) return <p role="status">当前条件没有可用数据，请调整研究条件。</p>;
 
   const hasCi = table.data.columns.includes('ci_low') && table.data.columns.includes('ci_high');
 
@@ -59,10 +54,11 @@ export function TopicExplorer({ cityId, explorer }: { cityId: string; explorer: 
         selectors={selectors}
         rows={staticRows}
         selected={selected}
-        onChange={(column, value) => setPicked((current) => ({ ...current, [column]: value }))}
+        onChange={change}
       />
 
       <EstimateChart
+        showTitle={false}
         rows={rows}
         categoryKey={explorer.category}
         valueKey={explorer.focus}

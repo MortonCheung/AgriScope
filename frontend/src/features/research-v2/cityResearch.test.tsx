@@ -1,5 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import runtimeCatalog from '../../../../runtime/research/research_catalog.json';
+import type { V2Catalog } from '../../domain/research/v2/types';
+vi.mock('../../domain/research/runtime/catalog', async importOriginal => ({ ...await importOriginal<typeof import('../../domain/research/runtime/catalog')>(), useRuntimeCatalog: () => ({ status: 'ready', catalog: runtimeCatalog as unknown as V2Catalog }) }));
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { listTopics } from '../../domain/research/catalog';
@@ -9,8 +12,8 @@ import { CityResearchPage } from './CityResearchPage';
  * 城市研究空间（本轮 §21–§23 / §37 / §59 的 7–12 条）。
  *
  * 守的是四件事：
- *   1. 结构是**三栏工作台**（研究树 / 中栏交互探索 / 证据栏）+ chrome + 关闭，三块各自滚动；
- *   2. 单击研究树只改选择，**URL 保留研究选择**；中栏默认「交互探索」，「完整文章」是次入口；
+ *   1. 结构是**三栏工作台**（研究树 / 中栏交互研究 / 证据栏）+ chrome + 关闭，三块各自滚动；
+ *   2. 单击研究树只改选择，**URL 保留研究选择**；中栏默认「交互研究」，「完整文章」是次入口；
  *   3. 右栏只呈现研究侧真实元数据 —— 载荷取不到时**整块不渲染**，不写占位；
  *   4. `Esc` 先关闭局部抽屉，随后直接进入父级；全局 Header 负责页面导航。
  */
@@ -64,17 +67,17 @@ describe('城市研究三栏工作台', () => {
     expect(container.querySelector('.city-research__chrome')?.textContent).not.toContain('个研究点');
   });
 
-  it('默认选中第一个方向；点击另一个方向只改选中与中栏，URL 保留研究选择（§59-8）', () => {
+  it('默认选中发布清单中的 A1.3；点击另一个方向只改选中与中栏，URL 保留研究选择（§59-8）', () => {
     const { container } = renderCity();
-    expect(railTitle(container)).toBe(A1.title);
-    expect(stageTitle(container)).toBe(A1.title);
+    expect(railTitle(container)).toBe(A1.points.find(point => point.id === 'A1.3')!.title);
+    expect(stageTitle(container)).toBe(A1.points.find(point => point.id === 'A1.3')!.title);
 
     const toggles = container.querySelectorAll('.tree__toggle');
     fireEvent.click(toggles[1]);
     expect(railTitle(container)).toBe(A2.title);
     expect(stageTitle(container)).toBe(A2.title);
     expect(path()).toContain('/cities/shenyang');
-    expect(path()).toContain('research=A2');
+    expect(path()).toContain('/research/A2');
     expect(container.querySelector('.tree__topic[data-selected] .tree__topic-id')?.textContent).toBe(A2.id);
   });
 
@@ -86,16 +89,16 @@ describe('城市研究三栏工作台', () => {
     fireEvent.click(firstPoint as Element);
     expect(stageTitle(container)).toBe(A1.points[0].title);
     expect(container.querySelector('.evidence-rail__id')?.textContent).toBe(A1.points[0].id);
-    expect(path()).toContain('research=A1.1');
+    expect(path()).toContain('/research/A1.1');
     expect(path()).toContain('/cities/shenyang');
   });
 
-  it('中栏默认「交互探索」，「完整文章」是次入口（§22）', () => {
+  it('中栏默认「交互研究」，「完整文章」是次入口（§22）', () => {
     const { container } = renderCity();
     const modes = container.querySelector('.city-research__modes');
-    expect(modes?.textContent).toContain('交互探索');
+    expect(modes?.textContent).toContain('交互研究');
     expect(modes?.textContent).toContain('完整文章');
-    expect(modes?.querySelector('[aria-selected="true"]')?.textContent).toBe('交互探索');
+    expect(modes?.querySelector('[aria-selected="true"]')?.textContent).toBe('交互研究');
 
     const articleTab = [...(modes?.querySelectorAll('.city-research__mode') ?? [])]
       .find((element) => element.textContent === '完整文章') as Element;
@@ -121,8 +124,8 @@ describe('城市研究三栏工作台', () => {
 
     cleanup();
     renderCity();
-    const toggle = screen.getByRole('button', { name: '研究方向' });
-    expect(document.getElementById(toggle.getAttribute('aria-controls')!)?.getAttribute('aria-label')).toBe('研究方向');
+    const toggle = screen.getByRole('button', { name: '研究目录' });
+    expect(document.getElementById(toggle.getAttribute('aria-controls')!)?.getAttribute('aria-label')).toBe('研究目录');
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(toggle);
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
@@ -132,8 +135,8 @@ describe('城市研究三栏工作台', () => {
 
   it('证据折叠面板开关带 aria 关联（§37/§38）', () => {
     renderCity();
-    const toggle = screen.getByRole('button', { name: '研究证据' });
-    expect(document.getElementById(toggle.getAttribute('aria-controls')!)?.getAttribute('aria-label')).toBe('研究证据');
+    const toggle = screen.getByRole('button', { name: '研究依据' });
+    expect(document.getElementById(toggle.getAttribute('aria-controls')!)?.getAttribute('aria-label')).toBe('研究依据');
     fireEvent.click(toggle);
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
   });
@@ -169,12 +172,14 @@ describe('城市研究三栏工作台', () => {
     expect(container.querySelector('.workbench__paper')).toBe(paper); expect(container.querySelector('.workbench__sidebar')).toBe(sidebar);
   });
 
-  it('不存在条目显示真实状态，旧载荷编号仍重定向到 canonical 路径', () => {
+  it('不存在条目明确替换到有效研究，旧载荷编号仍重定向到 canonical 路径', () => {
     renderCity('/cities/shenyang/research/A8.999');
-    expect(screen.getByRole('heading', { name: '研究条目不存在' })).toBeTruthy();
+    expect(path()).toContain('/cities/shenyang/research/A1.3');
+    expect(screen.queryByRole('heading', { name: '研究条目不存在' })).toBeNull();
     cleanup();
     renderCity('/cities/shenyang/research/A02.2?mode=article');
-    expect(path()).toBe('/cities/shenyang/research/A2.2?mode=article');
+    expect(path()).toContain('/cities/shenyang/research/A2.2?');
+    expect(path()).toContain('mode=article');
   });
 
 });

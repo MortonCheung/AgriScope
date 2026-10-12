@@ -1,10 +1,9 @@
 import { useLocation } from 'react-router-dom';
-import { getCity } from '../../domain/geography/cities';
-import { cityEntry, useRuntimeCatalog } from '../../domain/research/runtime/catalog';
+import { useRuntimeCatalog } from '../../domain/research/runtime/catalog';
 import { ROUTES } from '../../app/routes';
 import { cityContextUrl } from '../../app/context/provinceSelection';
 import { CityWorkspaceSelector, WorkspaceLink } from '../../components/workbench/WorkspaceLanding';
-import { hasInteractiveResearch } from '../../domain/research/interactiveAvailability';
+import { presentedModules } from '../../domain/research/presentation';
 import './reports.css';
 
 /** Both the report workspace and its directory use the same published entrances. */
@@ -12,11 +11,9 @@ export function ReportNavigation({ close, label = '报告范围', className = ''
   const state = useRuntimeCatalog();
   const location = useLocation();
   const catalog = state.status === 'ready' ? state.catalog : null;
-  const available = (city: string, id: string) => Boolean(catalog && cityEntry(catalog, city)?.modules.some(module => module.module_id === id));
+  const available = (city: string, id: string) => presentedModules(catalog, city).some(module => module.module_id === id);
   const view = new URLSearchParams(location.search).get('view');
   const reportCityId = /^\/reports\/([^/]+)\/?$/.exec(location.pathname)?.[1];
-  const reportCity = reportCityId ? getCity(reportCityId) : undefined;
-  const interactiveAvailable = reportCity ? hasInteractiveResearch(reportCity.id, catalog) : false;
   const supplements = [
     { name: '综合报告', to: ROUTES.provinceReport, available: available('cross_city', 'A11'), active: location.pathname === ROUTES.provinceReport },
     { name: '六城比较', to: `${ROUTES.reports}?view=cross_city`, available: available('cross_city', 'A10'), active: view === 'cross_city' },
@@ -30,8 +27,6 @@ export function ReportNavigation({ close, label = '报告范围', className = ''
       {entry.available ? <WorkspaceLink to={entry.to} aria-current={entry.active ? 'page' : undefined} onClick={close}>{entry.name}</WorkspaceLink>
         : <button type="button" className="workspace-choice" disabled>{entry.name}</button>}
     </li>)}</ul>
-    {reportCity && interactiveAvailable && <ul className="report-navigation__research"><li>
-      <WorkspaceLink to={cityContextUrl(ROUTES.city(reportCity.id), reportCity.id)} onClick={close}>交互研究</WorkspaceLink>
-    </li></ul>}
+
   </nav>;
 }
