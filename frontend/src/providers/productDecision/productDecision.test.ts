@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { sha256 } from './sha256';
 import { HttpProductDecisionProvider } from './index';
 import { canonicalProductRequest, productContextHash, validateProductResponse } from './validation';
 import type { ProductDecisionRequest, ProductDecisionResponse } from '../../domain/decision/productApi';
@@ -9,6 +10,10 @@ async function response(): Promise<ProductDecisionResponse> {
 }
 afterEach(()=>vi.unstubAllGlobals());
 describe('product contract validation and validated cache',()=>{
+ it('validates SHA-256 on HTTP previews without weakening response identity',async()=>{
+  expect(sha256(new TextEncoder().encode('abc'))).toBe('ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
+  const expected=await productContextHash(request);vi.stubGlobal('crypto',{});expect(await productContextHash(request)).toBe(expected);
+ });
  it('uses the exact server binary64 identity including negative zero',()=>{
   expect(canonicalProductRequest({a:10,b:.9,c:-0})).toBe('{"a":{"$number":"4024000000000000"},"b":{"$number":"3feccccccccccccd"},"c":{"$number":"0000000000000000"}}');
  });

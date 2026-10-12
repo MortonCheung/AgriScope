@@ -55,3 +55,6 @@
 .liaoning-label:focus-visible {outline:2px solid var(--ag-focus);outline-offset:2px;background:var(--ag-paper-raised);}
 .liaoning-map-fallback {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:min(360px,90%);}
 .liaoning-map-fallback .ag-button {margin:0;min-height:44px;}
+
+/* Separate neighbouring 44px touch targets on the compact province map. */
+@media(max-width:600px) { .liaoning-label[data-city=tieling] { transform:translate(16px,-20px); } }

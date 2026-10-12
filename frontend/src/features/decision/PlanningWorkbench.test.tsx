@@ -118,3 +118,13 @@ describe('model/API recommendations preserve user conditions',()=>{
   expect(group.getByRole('button',{name:'土豆',pressed:true})).toBeTruthy();
  });
 });
+
+describe('explicit price focus',()=>{
+ it('freezes the displayed price even when the user retypes its existing value',()=>{
+  render(<MemoryRouter><PlanningWorkbench cityId="shenyang"/></MemoryRouter>);choose('黄瓜');
+  fireEvent.focus(screen.getByLabelText(/^假设销售价格/));
+  const saved=JSON.parse(sessionStorage.getItem('agriscope:v4:planning:shenyang')!);
+  expect(saved.priceOverrides).toContain('黄瓜');
+  expect(saved.drafts['黄瓜'].pricePerKg).toBe('3.8');
+ });
+});

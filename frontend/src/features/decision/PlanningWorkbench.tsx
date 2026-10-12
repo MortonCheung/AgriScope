@@ -144,7 +144,7 @@ function PlanningCity({ cityId, crops }: { cityId: string; crops: string[] }) {
 }
 
 function PlanningField({ field, id, draft, error, onChange }: { field: typeof PLANNING_FIELDS[number]; id: string; draft: PlanningDraft; error?: string; onChange: (key: keyof PlanningDraft, next: string) => void }) {
-  return <label className="planning-field" htmlFor={`${id}-${field.key}`}><span>{field.label}<small>{field.unit}</small></span><input id={`${id}-${field.key}`} name={field.key} type="number" inputMode="decimal" min={field.key === 'areaMu' ? '0.01' : '0'} max={field.key === 'salePercent' ? '100' : undefined} step="any" value={draft[field.key]} onChange={event => onChange(field.key, event.target.value)} aria-invalid={Boolean(error)} aria-describedby={error ? `${id}-${field.key}-error` : undefined}/>{error && <em id={`${id}-${field.key}-error`} className="planning-error" role="alert">{error}</em>}</label>;
+  return <label className="planning-field" htmlFor={`${id}-${field.key}`}><span>{field.label}<small>{field.unit}</small></span><input id={`${id}-${field.key}`} name={field.key} type="number" inputMode="decimal" min={field.key === 'areaMu' ? '0.01' : '0'} max={field.key === 'salePercent' ? '100' : undefined} step="any" value={draft[field.key]} onFocus={field.key === 'pricePerKg' ? () => onChange(field.key, draft[field.key]) : undefined} onChange={event => onChange(field.key, event.target.value)} aria-invalid={Boolean(error)} aria-describedby={error ? `${id}-${field.key}-error` : undefined}/>{error && <em id={`${id}-${field.key}-error`} className="planning-error" role="alert">{error}</em>}</label>;
 }
 
 function ResultReadings({ result }: { result: PlanningResult }) {

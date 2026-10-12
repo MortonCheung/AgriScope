@@ -348,6 +348,7 @@ function SceneContents({ mode, active = true, focusCityId, hoveredCityId, onHove
             style={{ pointerEvents: 'auto' }}
           >
             <button type="button"
+              data-city={city.id}
               className={`liaoning-label${highlighted ? ' is-active' : ''}${city.hasResearch ? ' is-research' : ''}`}
               aria-pressed={focusCityId === city.id}
               onPointerDown={event => event.stopPropagation()}
@@ -404,7 +405,7 @@ export function LiaoningCanvas(props: LiaoningCanvasProps) {
       }}
       onCreated={({ gl }) => {
         contextCleanup.current?.();
-        const lost=()=>setContextLost(true);const restored=()=>setContextLost(false);
+        const lost=(event:Event)=>{event.preventDefault();setContextLost(true);};const restored=()=>setContextLost(false);
         gl.domElement.addEventListener('webglcontextlost',lost);
         gl.domElement.addEventListener('webglcontextrestored',restored);
         contextCleanup.current=()=>{gl.domElement.removeEventListener('webglcontextlost',lost);gl.domElement.removeEventListener('webglcontextrestored',restored);};

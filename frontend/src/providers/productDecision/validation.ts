@@ -1,3 +1,4 @@
+import { sha256 } from './sha256';
 import { isStudyCity } from '../../domain/geography/cities';
 import { calculatePlanning, validPlanningSaleDate } from '../../domain/decision/planning';
 import { cropIdentity } from '../../domain/decision/cropIdentity';
@@ -42,6 +43,7 @@ export function validateProductRequest(value: unknown): asserts value is Product
 export async function productContextHash(request: ProductDecisionRequest): Promise<string> {
   validateProductRequest(request);
   const bytes = new TextEncoder().encode(canonicalProductRequest(request));
+  if (!globalThis.crypto?.subtle) return sha256(bytes);
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
