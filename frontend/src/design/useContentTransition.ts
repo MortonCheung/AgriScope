@@ -1,11 +1,12 @@
 import { useLayoutEffect, useRef } from 'react';
 import { useReducedMotion } from 'motion/react';
+import { MOTION_DURATION } from './motion';
 
 export function animateContentSurface(node: HTMLElement) {
   return node.animate?.([
     { opacity: 0.35, transform: 'translateY(3px)' },
     { opacity: 1, transform: 'translateY(0)' },
-  ], { duration: 160, easing: 'cubic-bezier(.22,.68,.18,1)' });
+  ], { duration: MOTION_DURATION.content * 1000, easing: 'cubic-bezier(.22,.68,.18,1)' });
 }
 
 /** Update content immediately; animate only its surface, with no state delay. */

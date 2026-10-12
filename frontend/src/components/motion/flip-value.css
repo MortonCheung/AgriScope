@@ -1,0 +1,2 @@
+.flip-value { position:relative; display:inline-grid; overflow:hidden; vertical-align:baseline; font-variant-numeric:tabular-nums; }
+.flip-value__item { grid-area:1 / 1; white-space:nowrap; }

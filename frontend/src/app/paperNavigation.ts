@@ -1,3 +1,4 @@
+import { MOTION_DURATION, MOTION_EASE } from '../design/motion';
 import { isSpatialEntry, isWorkspaceNavigation } from './routeTransitions';
 
 /** Queries select content inside the live paper. */
@@ -18,17 +19,30 @@ let active: Animation[] = [];
 export function prefersInstantPaper(): boolean {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 }
-/** Older browsers fold the existing surfaces before committing. No second Outlet. */
-export function withPaperExit(from: string, to: string, commit: () => void | Promise<void>): void | Promise<void> {
-  const id = ++navigationId;
-  active.forEach(animation => animation.cancel());
+
+/** Invalidates the destination before canceling promises that may settle immediately. */
+export function cancelPendingPaperNavigation(): void {
+  ++navigationId;
+  const exiting = active;
   active = [];
-  if (!changesPaper(from, to) || prefersInstantPaper() || typeof document.startViewTransition === 'function') return commit();
+  exiting.forEach(animation => animation.cancel());
+}
+
+/** A single DOM owner folds old surfaces before committing; Canvas and Outlet stay live. */
+export function withPaperExit(from: string, to: string, commit: () => void | Promise<void>): void | Promise<void> {
+  cancelPendingPaperNavigation();
+  const id = navigationId;
+  if (!changesPaper(from, to) || prefersInstantPaper()) return commit();
   const papers = document.querySelectorAll<HTMLElement>('.route-page [data-paper-surface]');
-  active = [...papers].flatMap(paper => paper.animate ? [paper.animate([
-    { opacity: 1, clipPath: 'inset(0 0 0% 0)' },
-    { opacity: 0, clipPath: 'inset(0 0 100% 0)' },
-  ], { duration: 180, easing: 'cubic-bezier(.22,.68,.18,1)', fill: 'forwards' })] : []);
+  active = [...papers].flatMap(paper => {
+    // A rapid click can arrive before the current reveal finishes. The same
+    // surface cannot carry an entering and exiting paper effect together.
+    for (const animation of paper.getAnimations?.() ?? []) if (animation.id === 'ag-paper-enter') animation.cancel();
+    return paper.animate ? [paper.animate([
+      { opacity: 1, clipPath: 'inset(0 0 0% 0)' },
+      { opacity: 0, clipPath: 'inset(0 0 100% 0)' },
+    ], { id: 'ag-paper-exit', duration: MOTION_DURATION.paperExit * 1000, easing: `cubic-bezier(${MOTION_EASE.standard.join(',')})`, fill: 'forwards' })] : [];
+  });
   if (!active.length) return commit();
   const exiting = active;
   return Promise.allSettled(exiting.map(animation => animation.finished)).then(async () => {

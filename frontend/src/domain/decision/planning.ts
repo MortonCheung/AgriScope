@@ -110,21 +110,24 @@ export function updatePlanningDraft(session: PlanningSession, crop: string, draf
 const sessionKey = (cityId: string) => `agriscope:v4:planning:${cityId}`;
 export function migratePlanningCrops(session: PlanningSession, preferred?: string | null): PlanningSession {
   const active = session.activeCrop === '__custom__' ? session.activeCrop : cropIdentity(session.activeCrop);
-  if (session.cropAliasBackup) return { ...session, activeCrop: active };
+  const customCrop = sameCrop(session.customCrop.trim(), '土豆') ? '土豆' : session.customCrop;
+  const normalized = { ...session, activeCrop: active, customCrop,
+    baseline: session.baseline ? { ...session.baseline, crop: cropIdentity(session.baseline.crop) } : null };
+  // Once migrated, canonical edits win; the original aliases remain recovery records.
+  if (session.cropAliasBackup) return normalized;
   const aliases = ['土豆', '马铃薯'];
   const backup = Object.fromEntries(aliases.filter(alias => session.drafts[alias]).map(alias => [alias, {
     draft: session.drafts[alias], calculatedDraft: session.calculatedDrafts[alias], priceOverride: session.priceOverrides?.includes(alias) ?? false,
   }]));
-  const requested = preferred && aliases.includes(preferred) ? preferred : session.activeCrop;
+  const requested = preferred && aliases.includes(preferred) ? preferred : session.activeCrop === '__custom__' ? session.customCrop.trim() : session.activeCrop;
   const winner = aliases.includes(requested) && session.drafts[requested] ? requested : session.drafts['土豆'] ? '土豆' : '马铃薯';
-  if (!session.drafts[winner]) return { ...session, activeCrop: active, baseline: session.baseline ? { ...session.baseline, crop: cropIdentity(session.baseline.crop) } : null };
+  if (!session.drafts[winner]) return normalized;
   const calculatedDrafts = { ...session.calculatedDrafts };
   if (session.calculatedDrafts[winner]) calculatedDrafts['土豆'] = session.calculatedDrafts[winner]; else delete calculatedDrafts['土豆'];
   const overrides = (session.priceOverrides ?? []).filter(crop => !sameCrop(crop, '土豆'));
   if (session.priceOverrides?.includes(winner)) overrides.push('土豆');
-  return { ...session, activeCrop: active, drafts: { ...session.drafts, 土豆: session.drafts[winner] }, calculatedDrafts,
-    priceOverrides: overrides, cropAliasBackup: backup,
-    baseline: session.baseline ? { ...session.baseline, crop: cropIdentity(session.baseline.crop) } : null };
+  return { ...normalized, drafts: { ...session.drafts, 土豆: session.drafts[winner] }, calculatedDrafts,
+    priceOverrides: overrides, cropAliasBackup: backup };
 }
 export function readPlanningSession(cityId: string, preferred?: string | null): PlanningSession {
   try {

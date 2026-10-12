@@ -9,7 +9,7 @@ export type OperatingRisk = '低' | '中等' | '高';
 export type PriceSource = 'user' | 'market_api' | 'product_fallback' | 'unavailable';
 
 /** Product fallback prices only. They never enter the formal model/provider contracts. */
-const FALLBACK_PRICES: Readonly<Record<string, number>> = { 黄瓜: 3.8, 甘蓝: 1.6, 青椒: 4.2, 尖椒: 4.6, 西红柿: 4.1, 玉米: 2.4, 水稻: 3, 大豆: 4.8, 小麦: 2.6, 马铃薯: 2.2 };
+const FALLBACK_PRICES: Readonly<Record<string, number>> = { 黄瓜: 3.8, 甘蓝: 1.6, 青椒: 4.2, 尖椒: 4.6, 西红柿: 4.1, 玉米: 2.4, 水稻: 3, 大豆: 4.8, 小麦: 2.6, 土豆: 2.2 };
 export interface ProductPrice { price: number | null; origin: PriceSource }
 
 export function productCropOptions(observed: readonly string[] = []): string[] {
@@ -22,7 +22,7 @@ export function productPriceFor(city: string, crop: string, observation?: Market
     const latest = observation.series.find(series => sameCrop(series.crop, crop))?.observations.at(-1)?.pricePerKg;
     if (latest !== undefined && Number.isFinite(latest) && latest >= 0) return { price: latest, origin: 'market_api' };
   }
-  const fallbackCrop = cropIdentity(crop) === '土豆' ? '马铃薯' : crop;
+  const fallbackCrop = cropIdentity(crop);
   const price = Object.hasOwn(FALLBACK_PRICES, fallbackCrop) ? FALLBACK_PRICES[fallbackCrop] : null;
   return { price, origin: price === null ? 'unavailable' : 'product_fallback' };
 }

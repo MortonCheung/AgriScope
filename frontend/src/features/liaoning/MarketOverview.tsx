@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { demoPriceChange, type DemoMarket, type DemoPrice } from '../../domain/market/demoMarket';
+import { FlipValue } from '../../components/motion/FlipValue';
+import { marketDirection, signedChange } from './marketPresentation';
 const price = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 2 });
-const percent = (value: number) => `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
 export function marketTrendPoints(row: DemoPrice, date: string) {
   return ([-30, -7, -1, 0] as const).map((offset, index) => {
     const day = new Date(`${date}T00:00:00Z`); day.setUTCDate(day.getUTCDate() + offset);
@@ -11,14 +12,14 @@ export function marketTrendPoints(row: DemoPrice, date: string) {
 export function MarketOverview({ market }: { market: DemoMarket }) {
   const [view, setView] = useState<'today' | 'trend'>('today');
   return <section className="market-overview" aria-label="行情价格">
-    <div className="market-overview__head"><span>{market.scope}</span><time dateTime={market.date}>更新 {market.date}</time></div>
+    <div className="market-overview__head"><FlipValue value={market.scope}/><time dateTime={market.date}>更新 {market.date}</time></div>
     <div className="market-overview__controls" role="group" aria-label="行情视图">{(['today','trend'] as const).map(mode => <button key={mode} type="button" className="ag-button" aria-pressed={view === mode} onClick={() => setView(mode)}>{mode === 'today' ? '今日行情' : '长期趋势'}</button>)}</div>
     <p className="market-overview__caption">批发价 <span>较昨日</span></p>
     <ul className="market-overview__prices">{market.rows.map(row => {
       const change = demoPriceChange(row, 'previous');
-      const direction = Math.abs(change) < .05 ? 'flat' : change > 0 ? 'up' : 'down';
+      const direction = marketDirection(change);
       return <li className="market-overview__price" key={row.crop}>
-        <h3>{row.crop}</h3><div className="market-overview__row"><p className="market-overview__value"><strong>{price.format(row.pricePerKg)}</strong><span>元/kg</span></p><span className="market-overview__change" data-direction={direction} aria-label={`较昨日 ${percent(change)}`}>{percent(change)}</span></div>
+        <h3>{row.crop}</h3><div className="market-overview__row"><p className="market-overview__value"><strong><FlipValue value={price.format(row.pricePerKg)}/></strong><small>元/kg</small></p><span className="market-overview__change" data-direction={direction} aria-label={`较昨日 ${signedChange(change)}%`}><FlipValue value={signedChange(change)}/>%</span></div>
         {view === 'trend' && <MarketTrend row={row} date={market.date}/>}
       </li>;
     })}</ul>

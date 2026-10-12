@@ -5,6 +5,7 @@ import { ROUTES, parseResearchPath } from './routes';
 import { useAppContext, readContextFromSearch } from './context/appContext';
 import { cityContextUrl } from './context/provinceSelection';
 import { CityDecisionEntry } from '../features/decision/CityDecisionEntry';
+import { clearLegacyNativePaperTransitions } from './nativePaperMigration';
 
 const load = (loader: () => Promise<Record<string, unknown>>, name: string) => async () => {
   const module = await loader();
@@ -62,6 +63,7 @@ function LegacyResearchRedirect() {
  * :researchId 既可以是方向（A2）也可以是研究点（A2.2）。
  * 旧路径一律 Redirect，不保留独立产品入口。
  */
+clearLegacyNativePaperTransitions();
 const router = createBrowserRouter(createRoutesFromElements(
   <Route element={<AppShell />} hydrateFallbackElement={<div aria-hidden />}>
     <Route path={ROUTES.root} lazy={openingPage} />

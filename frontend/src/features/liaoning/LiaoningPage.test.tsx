@@ -32,6 +32,9 @@ describe('产品行情主页', () => {
     expect(container.textContent?.match(/批发价/g)).toHaveLength(1);
     expect(screen.getByText('全省信息')).toBeTruthy();
     expect(screen.getByText('更新 2026-10-10')).toBeTruthy();
+    expect(screen.getByText('涨幅最大')).toBeTruthy();
+    expect(screen.getByText('跌幅最大')).toBeTruthy();
+    expect(screen.getByText('平均变动')).toBeTruthy();
     expect(container.textContent).not.toMatch(/最新农业市场|全部品种与来源|已接入市场|尚未接入/);
     expect(screen.getByRole('link', { name: '决策' }).getAttribute('href')).toBe('/decision');
     expect(screen.getByRole('link', { name: '报告' }).getAttribute('href')).toBe('/reports');

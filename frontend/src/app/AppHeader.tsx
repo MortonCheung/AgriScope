@@ -38,7 +38,6 @@ export function AppHeader() {
     <header
       className="ag-header"
       aria-label="全域导航"
-      style={{ viewTransitionName: 'ag-header' }}
     >
       <div className="ag-header__inner">
         <div className="ag-header__lead">

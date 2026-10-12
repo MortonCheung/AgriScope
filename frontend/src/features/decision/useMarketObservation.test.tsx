@@ -76,4 +76,15 @@ describe('same-city capability and crop reading lifecycles', () => {
     fireEvent.click(screen.getByRole('button', { name: '重试' }));
     await waitFor(() => expect(screen.getByText('ready:tieling')).toBeTruthy());
   });
+  it('resolves the potato UI name to the registered legacy crop without changing source IDs', async () => {
+    const potatoBase = { ...empty('dalian'), available: true, selectedCrop: '黄瓜', crops: ['黄瓜', '马铃薯'] };
+    const observations = vi.fn((_city: string, crop?: string) => Promise.resolve(crop ? { ...potatoBase, selectedCrop: crop } : potatoBase));
+    vi.mocked(getMarketProvider).mockReturnValue({ observations });
+    const { result, rerender } = renderHook(({ crop }) => useMarketObservation('dalian', crop), { initialProps: { crop: '土豆' } });
+    await waitFor(() => expect(result.current.data?.selectedCrop).toBe('马铃薯'));
+    expect(observations.mock.calls.map(args => args.slice(0, 2))).toEqual([['dalian', undefined], ['dalian', '马铃薯']]);
+    rerender({ crop: '马铃薯' });
+    await waitFor(() => expect(result.current.data?.selectedCrop).toBe('马铃薯'));
+    expect(observations).toHaveBeenCalledTimes(2);
+  });
 });

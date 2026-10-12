@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useRef, type ReactNode } from 'react';
 import { NavigationType, useLocation, useNavigate, useNavigationType, type Location } from 'react-router-dom';
-import { prefersInstantPaper, withPaperExit } from './paperNavigation';
+import { withPaperExit } from './paperNavigation';
 import { getRouteDirection, type RouteDirection } from './routeTransitions';
 
 export interface AppBackTarget {
@@ -148,7 +148,7 @@ export function AppHistoryProvider({ children }: { children: ReactNode }) {
     };
     const from = current.entries[current.index];
     const to = canGoBack ? current.entries[current.index - 1] : { pathname: fallback.to, search: '' };
-    void withPaperExit(`${from.pathname}${from.search ?? ''}`, `${to.pathname}${to.search ?? ''}`, () => canGoBack ? navigate(-1) : navigate(fallback.to, { replace: true, state: fallback.state, viewTransition: typeof document.startViewTransition === 'function' && !prefersInstantPaper() }));
+    void withPaperExit(`${from.pathname}${from.search ?? ''}`, `${to.pathname}${to.search ?? ''}`, () => canGoBack ? navigate(-1) : navigate(fallback.to, { replace: true, state: fallback.state, viewTransition: false }));
   }, [navigate]);
 
   /**

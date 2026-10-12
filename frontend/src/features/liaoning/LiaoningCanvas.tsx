@@ -1,9 +1,11 @@
-import { Component, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { Component, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { CameraControls, CameraControlsImpl, ContactShadows, Html, PerspectiveCamera } from '@react-three/drei';
 import { Canvas, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import WebGL from 'three/addons/capabilities/WebGL.js';
 import { STUDY_CITY_IDS } from '../../domain/geography/cities';
-import { CityMapFallback } from './CityMapFallback';
+import { CityMapLabel } from './CityMapLabel';
+import { CityMapNavigation } from './CityMapNavigation';
 import type { CityWorldBounds } from './liaoningGeometry';
 import { CitySolidMesh, SOLID_DEPTH } from './CitySolidMesh';
 import { PaperGround } from './PaperGround';
@@ -345,17 +347,9 @@ function SceneContents({ mode, active = true, focusCityId, hoveredCityId, onHove
             position={[city.centroid.x, SOLID_DEPTH + (hoveredCityId === city.id ? 1.4 : 0.9), -city.centroid.y]}
             center
             zIndexRange={[3, 0]}
-            style={{ pointerEvents: 'auto' }}
+            style={{ pointerEvents: 'none' }}
           >
-            <button type="button"
-              data-city={city.id}
-              className={`liaoning-label${highlighted ? ' is-active' : ''}${city.hasResearch ? ' is-research' : ''}`}
-              aria-pressed={focusCityId === city.id}
-              onPointerDown={event => event.stopPropagation()}
-              onClick={event => { event.stopPropagation(); onSelectCity(city.id); }}
-              onFocus={() => onHoverCity(city.id)} onBlur={() => onHoverCity(null)}
-              onMouseEnter={() => onHoverCity(city.id)} onMouseLeave={() => onHoverCity(null)}
-            >{city.shortName}</button>
+            <CityMapLabel cityId={city.id} name={city.shortName} highlighted={highlighted} hasResearch={city.hasResearch}/>
           </Html>
         );
       })}
@@ -363,17 +357,21 @@ function SceneContents({ mode, active = true, focusCityId, hoveredCityId, onHove
   );
 }
 
-class MapBoundary extends Component<{children:ReactNode;fallback:ReactNode},{failed:boolean}> {
+class MapBoundary extends Component<{children:ReactNode;onUnavailable:()=>void},{failed:boolean}> {
   state={failed:false};
   static getDerivedStateFromError(){return {failed:true};}
-  render(){return this.state.failed?this.props.fallback:this.props.children;}
+  componentDidCatch(){this.props.onUnavailable();}
+  render(){return this.state.failed?null:this.props.children;}
 }
 
 /** 省域 3D 沙盘画布。整站共享一个 Canvas，路由只切换相机与可见性。 */
 export function LiaoningCanvas(props: LiaoningCanvasProps) {
   const pointerOrigin = useRef<{ x: number; y: number } | null>(null);
   const modelState=useLiaoningModel();
+  const [webglAvailable] = useState(() => WebGL.isWebGL2Available());
   const [contextLost,setContextLost]=useState(false);
+  const [rendererUnavailable, setRendererUnavailable] = useState(false);
+  const markUnavailable = useCallback(() => setRendererUnavailable(true), []);
   const contextCleanup=useRef<(() => void)|null>(null);
   useEffect(()=>()=>contextCleanup.current?.(),[]);
   const [viewport, setViewport] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
@@ -385,14 +383,15 @@ export function LiaoningCanvas(props: LiaoningCanvasProps) {
   const quality = props.reducedMotion ? 'performance' : resolveAutoQualityTier(readRuntimeQualitySignals());
   const dpr = resolveDpr(viewport.width, viewport.height, window.devicePixelRatio || 1, QUALITY_CONFIG[quality]);
 
-  const fallback = props.active !== false && props.mode !== 'opening' ? <CityMapFallback onSelectCity={props.onSelectCity} selectedCityId={props.focusCityId}/> : null;
-  if(modelState.status==='error') return fallback;
   return (
-    <MapBoundary fallback={fallback}>
+    <>
+    {props.active !== false && props.mode !== 'opening' && <CityMapNavigation onSelectCity={props.onSelectCity} onHoverCity={props.onHoverCity}
+      selectedCityId={props.focusCityId} fallback={!webglAvailable || modelState.status === 'error' || contextLost || rendererUnavailable}/>}
+    {webglAvailable && modelState.status !== 'error' &&
+    <MapBoundary onUnavailable={markUnavailable}>
     <div className="liaoning-map-frame" aria-hidden="true" inert />
-    {contextLost&&fallback}
     <Canvas
-      fallback={fallback}
+      fallback={null}
       dpr={dpr}
       frameloop="demand"
       gl={{ antialias: quality === 'quality', alpha: true, powerPreference: 'high-performance', stencil: false }}
@@ -420,6 +419,7 @@ export function LiaoningCanvas(props: LiaoningCanvasProps) {
       <directionalLight position={[30, 40, -50]} intensity={0.25} />
       <SceneContents {...props} active={props.active !== false && !contextLost} />
     </Canvas>
-    </MapBoundary>
+    </MapBoundary>}
+    </>
   );
 }

@@ -79,15 +79,18 @@
 .planning-result__facts [data-risk='高'], .planning-budget-warning { color: var(--ag-clay); }
 .planning-reasons { padding-left: 1.1rem; margin-block: .75rem; color: var(--ag-ink-soft); font-size: var(--ag-fs-small); line-height: 1.8; }
 .planning-reasons li + li { margin-top: .6rem; }
-.decision-workbench--live .workbench__menu a { display: block; width: 100%; min-height: 44px; padding: 10px 0; text-align: left; border-bottom: 1px solid var(--ag-rule-soft); color: var(--ag-ink-muted); font-size: var(--ag-fs-small); text-decoration: none; }
-.decision-workbench--live .workbench__menu a[aria-current='page'] { color: var(--ag-ink); border-bottom-color: var(--ag-ink); }
-.decision-workbench--live .workbench__menu a:hover { color: var(--ag-ink); background: var(--ag-paper-raised); }
-.decision-workbench--live .workbench__menu a:focus-visible { outline: 2px solid var(--ag-focus); outline-offset: 3px; }
-.decision-city-workspace { padding: clamp(1.5rem, 5vw, 4rem); background: var(--ag-paper); border: 1px solid var(--ag-rule); }
-@media (max-width: 768px) {
-  .decision-workbench--live .workbench__menu { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-  .decision-workbench--live .workbench__menu a { text-align: center; border: 1px solid var(--ag-rule-soft); }
-  .decision-workbench--live .workbench__menu a[aria-current='page'] { border-color: var(--ag-ink); background: var(--ag-paper-sunken); }
+/* City navigation shares the header's local underline; paper stays still. */
+.decision-workbench--live .workbench__menu a.workspace-choice { font-size:var(--ag-fs-small); background:transparent; }
+@media (max-width:768px) {
+  .decision-workbench--live .workbench__menu { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px 20px; }
+  .decision-workbench--live .workbench__menu a.workspace-choice { justify-content:center; }
 }
+/* Keep direct input choices compact without drawing a wall of boxes. */
+.planning-form .choice-buttons__items { gap:6px 16px; }
+.planning-form .choice-buttons button { position:relative; padding:8px 2px; border:0; background:transparent; }
+.planning-form .choice-buttons button::after { content:''; position:absolute; left:0; right:0; bottom:0; height:1px; background:var(--ag-ink); transform:scaleX(0); transform-origin:left; transition:transform var(--ag-dur-underline) var(--ag-ease-standard); }
+.planning-form .choice-buttons button:hover:not(:disabled), .planning-form .choice-buttons button[aria-pressed=true] { background:transparent; color:var(--ag-ink); }
+.planning-form .choice-buttons button:hover:not(:disabled)::after, .planning-form .choice-buttons button[aria-pressed=true]::after { transform:scaleX(1); }
+@media(prefers-reduced-motion:reduce) { .planning-form .choice-buttons button::after { transition:none; } }
 
 .planning-window-options {list-style:none;padding:0;margin:0;display:grid;gap:8px;font-size:12px;font-variant-numeric:tabular-nums;}

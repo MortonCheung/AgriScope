@@ -6,6 +6,11 @@
  */
 export const MOTION_DURATION = {
   fast: 0.18,
+  paperExit: 0.18,
+  paperEnter: 0.26,
+  content: 0.16,
+  valueExit: 0.16,
+  valueEnter: 0.2,
   normal: 0.28,
   slow: 0.44,
   route: 0.42,

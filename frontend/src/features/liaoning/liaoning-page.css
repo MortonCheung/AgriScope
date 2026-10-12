@@ -18,7 +18,7 @@
 .market-overview__row {display:flex;align-items:baseline;justify-content:space-between;gap:12px;font-variant-numeric:tabular-nums;}
 .market-overview__value {display:flex;align-items:baseline;gap:6px;margin:0;}
 .market-overview__value strong {font-size:27px;font-weight:400;letter-spacing:-.03em;}
-.market-overview__value span {font-size:11px;color:var(--ag-ink-soft);}
+.market-overview__value small {font-size:11px;color:var(--ag-ink-soft);}
 .market-overview__change {font-size:12px;}
 .market-overview [data-direction=up] {color:var(--ag-clay);}
 .market-overview [data-direction=down] {color:var(--ag-olive);}
@@ -49,3 +49,14 @@
  .liaoning-page__title {font-size:30px;}
  .liaoning-paper {max-height:65dvh;}
 }
+
+.city-summary__highlights { margin:20px 0 0; }
+.city-summary__highlights > div { padding:20px 0; border-top:1px solid var(--ag-rule-soft); }
+.city-summary__highlights dt { color:var(--ag-ink-soft); font-size:12px; margin-bottom:10px; }
+.city-summary__highlights dd { display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin:0; font-size:18px; font-variant-numeric:tabular-nums; }
+.city-summary__highlights dd > span[data-direction] { font-size:16px; }
+.city-summary [data-direction=up] { color:var(--ag-clay); }
+.city-summary [data-direction=down] { color:var(--ag-olive); }
+.city-summary__actions { grid-template-columns:1fr; }
+.city-summary__actions .ag-button { border:0; border-bottom:1px solid var(--ag-rule-soft); background:transparent; min-height:44px; padding-inline:0; }
+.city-summary__actions .ag-button:hover { background:transparent; border-color:var(--ag-ink); }

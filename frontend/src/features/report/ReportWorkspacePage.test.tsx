@@ -52,7 +52,22 @@ describe('one report paper across all workspace selections', () => {
   });
   it('restores only the actual current-city interactive research link', () => {
     render(<MemoryRouter initialEntries={['/reports/chaoyang']}><Routes><Route path="/reports/:cityId" element={<ReportWorkspacePage />} /></Routes></MemoryRouter>);
-    expect(screen.getByRole('link', { name: '交互研究' }).getAttribute('href')).toBe('/cities/chaoyang?city=chaoyang');
+    expect(document.querySelector('.report__head .report__interactive-link')?.getAttribute('href')).toBe('/cities/chaoyang?city=chaoyang');
     expect(screen.queryByText('朝阳 · 报告')).toBeNull();
+  });
+  it('shows the curated Shenyang action in the report title even with false runtime explorer flags', () => {
+    vi.mocked(useRuntimeCatalog).mockReturnValue({ status: 'ready', catalog: { ...catalog, cities: catalog.cities.map(city => ({ ...city, modules: city.modules.map(module => ({ ...module, explorer_available: false })) })) } });
+    const { container } = render(<MemoryRouter initialEntries={['/reports/shenyang']}><Routes><Route path="/reports/:cityId" element={<ReportWorkspacePage />} /></Routes></MemoryRouter>);
+    expect(container.querySelector('.report__head .report__interactive-link')?.getAttribute('href')).toBe('/cities/shenyang?city=shenyang');
+    expect(container.querySelector('main')?.getAttribute('data-rail-mode')).toBe('responsive');
+  });
+  it('omits an unavailable title action and hides evidence controls at the city entry', () => {
+    vi.mocked(useRuntimeCatalog).mockReturnValue({ status: 'loading' });
+    const opened = render(<MemoryRouter initialEntries={['/reports/chaoyang']}><Routes><Route path="/reports/:cityId" element={<ReportWorkspacePage />} /></Routes></MemoryRouter>);
+    expect(opened.container.querySelector('.report__interactive-link')).toBeNull();
+    cleanup();
+    const entry = render(<MemoryRouter initialEntries={['/reports']}><ReportWorkspacePage /></MemoryRouter>);
+    expect(entry.container.querySelector('main')?.getAttribute('data-rail-mode')).toBe('hidden');
+    expect(screen.queryByRole('button', { name: '报告依据' })).toBeNull();
   });
 });

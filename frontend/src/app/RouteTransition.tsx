@@ -1,43 +1,72 @@
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
-import { useViewTransitionState, type NavigationType } from 'react-router-dom';
-import { changesPaper, paperPageKey, prefersInstantPaper } from './paperNavigation';
+import type { NavigationType } from 'react-router-dom';
+import { MOTION_DURATION, MOTION_EASE } from '../design/motion';
+import { cancelPendingPaperNavigation, changesPaper, paperPageKey, prefersInstantPaper } from './paperNavigation';
 
-/** One route owner. Native snapshots and DOM fallback never reveal the same paper. */
+interface PaperAction {
+  key: string;
+  enter: boolean;
+  foundSurface: boolean;
+  seen: WeakSet<Element>;
+  animations: Set<Animation>;
+  generation: number;
+}
+const cancelReveals = (action: PaperAction | null) => {
+  action?.animations.forEach(animation => animation.cancel());
+  action?.animations.clear();
+};
+
+/** RouteTransition reveals; paperNavigation retracts. Native snapshots are never used. */
 export function RouteTransition({ routeKey, pathname, search = '', children }: { routeKey: string; pathname: string; search?: string; direction: number; navigationType: NavigationType; children: ReactNode }) {
   const page = useRef<HTMLDivElement>(null);
   const previous = useRef<string | null>(null);
-  const action = useRef<{ key: string; enter: boolean; native: boolean; seen: WeakSet<Element> } | null>(null);
-  const native = useViewTransitionState(`${pathname}${search}`);
+  const action = useRef<PaperAction | null>(null);
+  useLayoutEffect(() => {
+    const onPop = () => cancelPendingPaperNavigation();
+    window.addEventListener('popstate', onPop);
+    return () => { window.removeEventListener('popstate', onPop); cancelPendingPaperNavigation(); };
+  }, []);
   useLayoutEffect(() => {
     const to = `${pathname}${search}`;
     if (action.current?.key !== routeKey) {
       const from = previous.current;
+      const previousAction = action.current;
       const crossPage = from !== null && changesPaper(from, to);
-      document.documentElement.dataset.paperMotion = crossPage || from === null ? 'page' : 'content';
-      action.current = { key: routeKey, enter: from === null || crossPage || from.split('?')[0] === '/', native, seen: new WeakSet() };
+      // A canonical redirect may replace an entrance before lazy content has
+      // supplied any surface. Carry that unused intent, not an already shown paper.
+      const pendingEntrance = previousAction?.enter && !previousAction.foundSurface;
+      cancelPendingPaperNavigation();
+      cancelReveals(previousAction);
+      action.current = { key: routeKey, enter: from === null || crossPage || from.split('?')[0] === '/' || Boolean(pendingEntrance), foundSurface: false, seen: new WeakSet(), animations: new Set(), generation: 0 };
       previous.current = to;
     }
     const current = action.current!;
-    // Router may use native transitions on POP. The action stays consumed
-    // after its native context returns to false.
-    if (native) current.native = true;
-    const animations: Animation[] = [];
+    const generation = ++current.generation;
     const reveal = () => {
       for (const paper of page.current?.querySelectorAll<HTMLElement>('[data-paper-surface]') ?? []) {
+        current.foundSurface = true;
         if (current.seen.has(paper)) continue;
         current.seen.add(paper);
-        if (!current.enter || current.native || prefersInstantPaper()) continue;
+        if (!current.enter || prefersInstantPaper()) continue;
         const animation = paper.animate?.([
           { opacity: 0, clipPath: 'inset(0 0 100% 0)' },
           { opacity: 1, clipPath: 'inset(0 0 0% 0)' },
-        ], { duration: 260, easing: 'cubic-bezier(.22,.68,.18,1)' });
-        if (animation) animations.push(animation);
+        ], { id: 'ag-paper-enter', duration: MOTION_DURATION.paperEnter * 1000, easing: `cubic-bezier(${MOTION_EASE.standard.join(',')})` });
+        if (animation) {
+          current.animations.add(animation);
+          void animation.finished?.then(() => current.animations.delete(animation), () => current.animations.delete(animation));
+        }
       }
     };
     reveal();
     const observer = new MutationObserver(reveal);
     if (page.current) observer.observe(page.current, { childList: true, subtree: true });
-    return () => { observer.disconnect(); animations.forEach(animation => animation.cancel()); };
-  }, [native, pathname, search, routeKey]);
+    return () => {
+      observer.disconnect();
+      // StrictMode immediately rehearses setup again. Keep its one live reveal;
+      // a genuine unmount cancels at the microtask boundary, a new route cancels above.
+      queueMicrotask(() => { if (current.generation === generation) cancelReveals(current); });
+    };
+  }, [pathname, search, routeKey]);
   return <div ref={page} className="route-page" data-paper-page={paperPageKey(pathname, search)}>{children}</div>;
 }

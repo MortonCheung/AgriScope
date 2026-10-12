@@ -1,4 +1,5 @@
 import type { V2Article } from '../../domain/research/v2/types';
+import type { ReactNode } from 'react';
 import { assetUrl } from '../../domain/research/v2/repository';
 import { MarkdownBlocks, TableAsset } from '../research-v2/blocks';
 import { renderInline } from '../research-v2/markdown';
@@ -33,12 +34,12 @@ export function reportArticleModel(article: V2Article) {
   return { assetRefs, placements, looseTables, looseFigures, showConclusion, showMethods, navigation };
 }
 
-export function ReportArticle({ article, scope, model }: { article: V2Article; scope: string; model: ReturnType<typeof reportArticleModel> }) {
+export function ReportArticle({ article, scope, model, actions }: { article: V2Article; scope: string; model: ReturnType<typeof reportArticleModel>; actions?: ReactNode }) {
   const { assetRefs, placements, looseTables, looseFigures, showConclusion, showMethods } = model;
   const refOrder = (ref: string | undefined) => Number((ref ?? '').replace(/\D/g, '')) || 1;
   return <article className="report__body">
     <header className="report__head">
-      <h1 className="report__title">{article.title}</h1>
+      <div className="report__heading-row"><h1 className="report__title">{article.title}</h1>{actions}</div>
       <p className="report__summary">{renderInline(productText(article.frontend_summary), 'summary')}</p>
     </header>
     <section className="report__section" id="abstract">

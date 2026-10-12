@@ -24,6 +24,9 @@
 .workbench__menu button:disabled { cursor: default; color: var(--ag-ink-faint); }
 .workbench__menu small { display: block; margin-top: 3px; color: var(--ag-ink-muted); font-size: var(--ag-fs-micro); line-height: 1.5; }
 .workbench__menu button:focus-visible { outline: 2px solid var(--ag-ink); outline-offset: 3px; }
+.workbench[data-rail-mode='hidden'] .workbench__rail,
+.workbench__rail-toggle[hidden] { display: none; }
+.workbench[data-rail-mode='persistent'] .workbench__rail { display:block; }
 @media (max-width: 1024px) {
   .workbench__chrome { display: flex; }
   .workbench__drawer-toggle { display: inline-flex; align-items: center; }

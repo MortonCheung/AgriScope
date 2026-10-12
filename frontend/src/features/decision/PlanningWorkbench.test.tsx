@@ -10,6 +10,7 @@ import { STUDY_CITY_IDS } from '../../domain/geography/cities';
 import { resetAppContext, useAppContext } from '../../app/context/appContext';
 import { useMarketObservation } from './useMarketObservation';
 import { productCropOptions } from '../../domain/decision/productDecision';
+import { writePlanningSession } from '../../domain/decision/planning';
 vi.mock('./useMarketObservation', () => ({ useMarketObservation: vi.fn() }));
 beforeEach(() => {
   sessionStorage.clear(); resetAppContext(); vi.mocked(useProductDecision).mockReturnValue(null);
@@ -126,5 +127,34 @@ describe('explicit price focus',()=>{
   const saved=JSON.parse(sessionStorage.getItem('agriscope:v4:planning:shenyang')!);
   expect(saved.priceOverrides).toContain('黄瓜');
   expect(saved.drafts['黄瓜'].pricePerKg).toBe('3.8');
+ });
+});
+
+describe('potato custom and saved aliases', () => {
+ it('canonicalizes custom input immediately and keeps its price on market refresh and re-entry', () => {
+  const view = render(<MemoryRouter><PlanningWorkbench cityId="shenyang"/></MemoryRouter>);
+  choose('自定义作物'); change('作物名称', '马铃薯');
+  expect((screen.getByLabelText('作物名称') as HTMLInputElement).value).toBe('土豆');
+  expect(useAppContext.getState().crop).toBe('土豆');
+  change(/^种植面积/, '3'); change(/^预计亩产/, '900'); change(/^每亩总成本/, '500'); change(/^假设销售价格/, '7');
+  expect(profit()).toBe('17,400 元');
+  vi.mocked(useMarketObservation).mockReturnValue({ status: 'ready', available: true, retry: vi.fn(), data: { cityId: 'shenyang', cityName: '沈阳', available: true, selectedCrop: '马铃薯', crops: ['马铃薯'], snapshotVersion: 's', unit: '元/kg', series: [{ id: 'potato', crop: '马铃薯', productName: '马铃薯', marketName: '本城市场', priceLevel: 'market_average', source: { name: '记录', url: null }, observations: [{ date: '2026-10-10', pricePerKg: 2.7 }], notes: [] }] } });
+  view.rerender(<MemoryRouter><PlanningWorkbench cityId="shenyang"/></MemoryRouter>);
+  expect((screen.getByLabelText(/^假设销售价格/) as HTMLInputElement).value).toBe('7');
+  expect(view.container.textContent).not.toContain('马铃薯');
+  choose('土豆'); expect(profit()).toBe('17,400 元');
+  view.unmount(); render(<MemoryRouter><PlanningWorkbench cityId="shenyang"/></MemoryRouter>);
+  expect(profit()).toBe('17,400 元');
+  expect(screen.getByRole('button', { name: '土豆', pressed: true })).toBeTruthy();
+ });
+ it.each(['土豆', '马铃薯'])('a %s URL retains a matching custom session without showing the legacy name', alias => {
+  const draft = { areaMu: '3', yieldKgPerMu: '900', costPerMu: '500', pricePerKg: '7', salePercent: '100' };
+  writePlanningSession('shenyang', { activeCrop: '__custom__', customCrop: '马铃薯', drafts: { 马铃薯: draft }, calculatedDrafts: { 马铃薯: draft }, baseline: null, climateMetric: 'precipitation_mm', priceOverrides: ['马铃薯'] });
+  const view = render(<MemoryRouter initialEntries={[`/cities/shenyang/decision?city=shenyang&crop=${alias}`]}><PlanningWorkbench cityId="shenyang"/></MemoryRouter>);
+  expect((screen.getByLabelText('作物名称') as HTMLInputElement).value).toBe('土豆');
+  expect(profit()).toBe('17,400 元');
+  expect(view.container.textContent).not.toContain('马铃薯');
+  expect(screen.getByRole('button', { name: '自定义作物', pressed: true })).toBeTruthy();
+  expect(within(screen.getByRole('group', { name: '作物' })).getAllByRole('button', { name: '土豆' })).toHaveLength(1);
  });
 });

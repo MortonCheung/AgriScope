@@ -12,7 +12,7 @@ import { WorkbenchMain, WorkbenchRail } from '../../components/workbench/Workben
 import { ChoiceButtons } from '../../components/controls/ChoiceButtons';
 import { useMarketObservation } from './useMarketObservation';
 import './planning.css';
-import { cropIdentity } from '../../domain/decision/cropIdentity';
+import { cropIdentity, sameCrop } from '../../domain/decision/cropIdentity';
 import { useProductDecision } from './useProductDecision';
 import type { ProductDecisionRequest } from '../../domain/decision/productApi';
 
@@ -44,10 +44,10 @@ function PlanningCity({ cityId, crops }: { cityId: string; crops: string[] }) {
     const requested = pathCity === cityId || !context.cityId || context.cityId === cityId ? context.crop : null;
     const saved = readPlanningSession(cityId, requested);
     if (!requested) return saved;
-    return { ...saved, activeCrop: saved.activeCrop === CUSTOM && saved.customCrop.trim() === requested ? CUSTOM : cropIdentity(requested) };
+    return { ...saved, activeCrop: saved.activeCrop === CUSTOM && sameCrop(saved.customCrop.trim(), requested) ? CUSTOM : cropIdentity(requested) };
   });
   const [touched, setTouched] = useState<Partial<Record<keyof PlanningDraft | 'crop' | 'budget' | 'saleDate', boolean>>>({});
-  const crop = session.activeCrop === CUSTOM ? session.customCrop.trim() : session.activeCrop;
+  const crop = cropIdentity(session.activeCrop === CUSTOM ? session.customCrop.trim() : session.activeCrop);
   const market = useMarketObservation(cityId, crop || undefined);
   const price = productPriceFor(cityId, crop, market.status === 'ready' ? market.data : undefined);
   const draft = draftFor(session, crop, price);
@@ -80,7 +80,7 @@ function PlanningCity({ cityId, crops }: { cityId: string; crops: string[] }) {
     const context = readContextFromSearch(params.toString());
     const pathCity = /^\/cities\/([^/]+)/.exec(location.pathname)?.[1];
     const requested = !context.cityId || context.cityId === cityId || pathCity === cityId ? context.crop : undefined;
-    if (requested) setSession(previous => previous.activeCrop === requested || previous.activeCrop === CUSTOM && previous.customCrop.trim() === requested ? previous : { ...previous, activeCrop: cropIdentity(requested) });
+    if (requested) setSession(previous => sameCrop(previous.activeCrop, requested) || previous.activeCrop === CUSTOM && sameCrop(previous.customCrop.trim(), requested) ? previous : { ...previous, activeCrop: cropIdentity(requested) });
   }, [cityId, location.pathname, params]);
   useLayoutEffect(() => {
     const state = useAppContext.getState();
@@ -92,8 +92,9 @@ function PlanningCity({ cityId, crops }: { cityId: string; crops: string[] }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cityId]);
   const syncCrop = (next: string) => {
+    const canonical = cropIdentity(next);
     const state = useAppContext.getState();
-    state.setCity(cityId); state.setCrop(isKnownCrop(next) ? next : null);
+    state.setCity(cityId); state.setCrop(isKnownCrop(canonical) ? canonical : null);
     setParams(previous => new URLSearchParams(writeContextToSearch(previous.toString(), { ...useAppContext.getState(), cityId })), { replace: true });
   };
   const updateDraft = (key: keyof PlanningDraft, next: string) => {
@@ -115,7 +116,7 @@ function PlanningCity({ cityId, crops }: { cityId: string; crops: string[] }) {
       <section className="planning-form" aria-label={`${city.shortName}经营条件`}>
         <h2 className="ag-title">输入条件</h2>
         <ChoiceButtons label="作物" value={session.activeCrop} onChange={chooseCrop} options={[...options.map(name => ({ value: name, label: name })), { value: CUSTOM, label: '自定义作物' }]}/>
-        {session.activeCrop === CUSTOM && <label className="planning-field planning-custom" htmlFor={`${id}-custom`}><span>作物名称</span><input id={`${id}-custom`} maxLength={12} value={session.customCrop} onChange={event => { const customCrop = event.target.value; setSession(previous => ({ ...previous, customCrop })); setTouched(previous => ({ ...previous, crop: true })); syncCrop(customCrop.trim()); }}/></label>}
+        {session.activeCrop === CUSTOM && <label className="planning-field planning-custom" htmlFor={`${id}-custom`}><span>作物名称</span><input id={`${id}-custom`} maxLength={12} value={session.customCrop} onChange={event => { const text = event.target.value; const customCrop = sameCrop(text.trim(), '土豆') ? '土豆' : text; setSession(previous => ({ ...previous, customCrop })); setTouched(previous => ({ ...previous, crop: true })); syncCrop(customCrop.trim()); }}/></label>}
         {touched.crop && cropError && <p className="planning-error" role="alert">{cropError}</p>}
         <div className="planning-inputs">
           {PLANNING_FIELDS.filter(({ key }) => key === 'areaMu').map(field => <PlanningField key={field.key} field={field} id={id} draft={draft} error={touched[field.key] ? validation.errors[field.key] : undefined} onChange={updateDraft}/>)}

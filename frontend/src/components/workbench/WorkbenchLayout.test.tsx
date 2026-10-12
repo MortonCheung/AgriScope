@@ -25,4 +25,28 @@ describe('共享工作台的稳定边界与局部面板', () => {
     const onEscape = vi.fn(); render(<>{view('经营计划', onEscape)}<div role="dialog" aria-modal="true" /></>);
     fireEvent.keyDown(window, { key: 'Escape' }); expect(onEscape).not.toHaveBeenCalled();
   });
+  it('opens responsive evidence, closes on its backdrop and restores keyboard focus without replacing the paper', () => {
+    const { container } = render(<WorkbenchLayout resetKey="report" sidebarLabel="章节" railLabel="报告依据" railMode="responsive" sidebar={() => null}><WorkbenchMain><h1>报告</h1></WorkbenchMain><WorkbenchRail>真实来源</WorkbenchRail></WorkbenchLayout>);
+    const paper = container.querySelector('.workbench__paper');
+    const toggle = screen.getByRole('button', { name: '报告依据' });
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(document.activeElement).toBe(screen.getByRole('complementary', { name: '报告依据' }));
+    fireEvent.click(container.querySelector('.workbench__backdrop')!);
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(toggle);
+    expect(container.querySelector('.workbench__paper')).toBe(paper);
+  });
+  it('keeps the same rail DOM when its visibility mode changes and hides irrelevant controls', () => {
+    const workspace = (railMode: 'hidden' | 'responsive' | 'persistent') => <WorkbenchLayout resetKey="same" railMode={railMode} sidebarLabel="章节" railLabel="依据" sidebar={() => null}><WorkbenchMain>内容</WorkbenchMain><WorkbenchRail>来源</WorkbenchRail></WorkbenchLayout>;
+    const opened = render(workspace('hidden'));
+    const rail = opened.container.querySelector('.workbench__rail');
+    expect(screen.queryByRole('button', { name: '依据' })).toBeNull();
+    expect(rail?.getAttribute('aria-hidden')).toBe('true');
+    opened.rerender(workspace('responsive'));
+    expect(opened.container.querySelector('.workbench__rail')).toBe(rail);
+    expect(screen.getByRole('button', { name: '依据' })).toBeTruthy();
+    opened.rerender(workspace('persistent'));
+    expect(opened.container.querySelector('main')?.getAttribute('data-rail-mode')).toBe('persistent');
+  });
 });

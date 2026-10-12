@@ -20,9 +20,6 @@ a.reports__name:hover { color: var(--ag-ink); border-bottom-color: var(--ag-ink)
 .report__summary { margin: 0; max-width: 68ch; color: var(--ag-ink-soft); font-size: var(--ag-fs-body); line-height: 1.85; }
 .report__section { display: flex; flex-direction: column; gap: var(--ag-space-4); }
 .report__section-title { margin: 0; font-family: var(--ag-font-display); font-size: clamp(1.3rem, 2.2vw, 1.7rem); font-weight: 400; }
-.report__paragraph { margin: 0; max-width: 72ch; color: var(--ag-ink-soft); font-size: var(--ag-fs-body); line-height: 1.85; }
-.report__subheading { margin: var(--ag-space-3) 0 0; color: var(--ag-ink); font-size: var(--ag-fs-body); font-weight: 500; }
-.report__list { display: flex; flex-direction: column; gap: 6px; margin: 0; padding-left: 1.1em; max-width: 72ch; color: var(--ag-ink-soft); font-size: var(--ag-fs-body); line-height: 1.8; }
 .report__empty { margin: 0; color: var(--ag-ink-muted); font-size: var(--ag-fs-body); }
 
 .report-workbench .report__section { scroll-margin-top: var(--ag-space-5); }
@@ -33,23 +30,47 @@ a.reports__name:hover { color: var(--ag-ink); border-bottom-color: var(--ag-ink)
 .report__body .report__section > .research__list,
 .report__body .report__section > .research__subheading { width: min(100%, var(--ag-readable-width, 700px)); max-width: none; margin-inline: auto; }
 .report__body .report__section > .research__inline-table { width: 100%; max-width: none; }
-.report__entry .report__head { width: 100%; }
 
 .reports__status { display:block;margin-top:8px;color:var(--ag-ink-muted);font-size:var(--ag-fs-micro);font-weight:400; }
 
-.report-navigation ul { list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px; }
-.report-navigation .ag-button { width:100%;justify-content:space-between;padding:10px 14px; }
-.report-navigation .ag-button[aria-current='page'] { border-color:var(--ag-ink);background:var(--ag-paper-deep); }
-.report-navigation__supplement { margin-top:24px !important;padding-top:24px !important;border-top:1px solid var(--ag-rule-soft); }
-.report-navigation__research { margin-top:16px !important; }
-.report-navigation--overview .report-navigation__cities { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px; }
-.report-navigation--overview .report-navigation__cities .ag-button { min-height:96px;justify-content:center;font-family:var(--ag-font-display);font-size:var(--ag-fs-lead); }
-.report-navigation--overview .report-navigation__supplement { display:flex;flex-direction:row;flex-wrap:wrap;gap:12px; }
-.report-navigation--overview .report-navigation__supplement .ag-button { width:auto; }
 .report-index-workbench .workbench__body { grid-template-columns:var(--ag-sidebar-width,216px) minmax(0,1fr); }
 .report-index-workbench .workbench__rail,.report-index-workbench .workbench__rail-toggle { display:none; }
 .report-workbench .report-navigation { margin-bottom:32px; }
 .report-entry-workbench .workbench__body { grid-template-columns:minmax(0,1fr); }
 .report-entry-workbench .workbench__sidebar,.report-entry-workbench .workbench__chrome { display:none; }
 @media(max-width:1024px){.report-index-workbench .workbench__body{grid-template-columns:minmax(0,1fr);}}
-@media(max-width:600px){.report-navigation--overview .report-navigation__cities{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}.report-navigation--overview .report-navigation__cities .ag-button{min-height:76px;}}
+
+/* Report reading owns more space than the decision result column. */
+.report-workbench {
+  --ag-sidebar-width: clamp(172px, 12vw, 204px);
+  --ag-rail-width: clamp(200px, 14vw, 238px);
+  --ag-paper-max-width: 1720px;
+  --ag-readable-width: 760px;
+  --ag-figure-width: 1180px;
+}
+.report__heading-row { display:flex;align-items:flex-start;justify-content:space-between;gap:var(--ag-space-5);min-width:0; }
+.report__heading-row .report__title { min-width:0;flex:1; }
+.report__interactive-link { display:inline-flex;align-items:center;gap:8px;flex-shrink:0;min-height:44px;padding-block:8px;position:relative;color:var(--ag-ink-muted);font-size:var(--ag-fs-small);transition:color var(--ag-dur-fast) var(--ag-ease); }
+.report__interactive-link::after { content:'';position:absolute;left:0;right:0;bottom:6px;height:1px;background:var(--ag-ink);transform:scaleX(0);transform-origin:left;transition:transform var(--ag-dur-underline) var(--ag-ease); }
+.report__interactive-link:hover,.report__interactive-link:focus-visible { color:var(--ag-ink); }
+.report__interactive-link:hover::after,.report__interactive-link:focus-visible::after { transform:scaleX(1); }
+.report__asset-wide .research-figure:not([data-expanded]) .research-figure__media { padding:clamp(8px,1vw,16px); }
+
+@media(max-width:1380px) {
+  .report-workbench[data-rail-mode='responsive'] .workbench__chrome { display:flex; }
+  .report-workbench[data-rail-mode='responsive'] .workbench__rail-toggle { display:inline-flex;align-items:center;min-height:44px; }
+  .report-workbench[data-rail-mode='responsive'] .workbench__body { grid-template-columns:var(--ag-sidebar-width) minmax(0,1fr);grid-template-rows:minmax(0,1fr); }
+  .report-workbench[data-rail-mode='responsive'] .workbench__rail { display:none;position:absolute;inset:0 0 0 auto;z-index:var(--ag-z-drawer);width:min(340px,86%);height:100%;border-left:1px solid var(--ag-rule-soft);border-top:0;background:var(--ag-paper-raised);box-shadow:var(--ag-shadow-raised); }
+  .report-workbench[data-rail-mode='responsive'] .workbench__body[data-rail-open] .workbench__rail { display:block; }
+  .report-workbench[data-rail-mode='responsive'] .workbench__backdrop[data-rail-open] { display:block;position:absolute;inset:0;z-index:calc(var(--ag-z-drawer) - 1);background:rgb(26 25 23 / .26); }
+}
+@media(max-width:1024px) {
+  .report-workbench[data-rail-mode='responsive'] .workbench__body { grid-template-columns:minmax(0,1fr); }
+}
+@media(max-width:600px) {
+  .report__heading-row { flex-direction:column;gap:8px; }
+  .report__interactive-link { align-self:flex-start; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .report__interactive-link,.report__interactive-link::after { transition:none; }
+}

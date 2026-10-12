@@ -4,7 +4,10 @@ import { TransitionLink, usePageNavigate } from '../../app/pageNavigation';
 import { ROUTES } from '../../app/routes';
 import { getCity } from '../../domain/geography/cities';
 import { useRuntimeCatalog } from '../../domain/research/runtime/catalog';
+import { hasInteractiveResearch } from '../../domain/research/interactiveAvailability';
+import { cityContextUrl } from '../../app/context/provinceSelection';
 import { WorkbenchLayout, WorkbenchMain, WorkbenchRail } from '../../components/workbench/WorkbenchLayout';
+import { WorkspaceLanding } from '../../components/workbench/WorkspaceLanding';
 import { useArticle } from '../research-v2/useV2';
 import { ModuleEvidenceRail } from '../research-v2/EvidenceRail';
 import { CrossCityContent } from '../cross-city/CrossCityPage';
@@ -29,6 +32,7 @@ export function ReportWorkspacePage() {
   const article = !entry && !composite && articleState.status === 'ready' ? articleState.data : null;
   const model = useMemo(() => article ? reportArticleModel(article) : null, [article]);
   const catalogState = useRuntimeCatalog();
+  const interactiveAvailable = Boolean(city && hasInteractiveResearch(city.id, catalogState.status === 'ready' ? catalogState.catalog : null));
   const [activeSection, setActiveSection] = useState('abstract');
   const contentKey = `${cityId}:${view ?? ''}`;
   useEffect(() => { setActiveSection('abstract'); }, [contentKey]);
@@ -45,6 +49,7 @@ export function ReportWorkspacePage() {
   return <WorkbenchLayout
     className={`report-workbench${entry ? ' report-index-workbench report-entry-workbench' : composite ? ' report-index-workbench' : ''}`}
     resetKey={contentKey} contentKey={contentKey}
+    railMode={entry || composite ? 'hidden' : 'responsive'}
     sidebarLabel={entry || composite ? '报告目录' : '报告章节'} railLabel="报告依据"
     onEscape={() => navigate(entry ? ROUTES.liaoning : ROUTES.reports)}
     sidebar={close => entry ? null : <>
@@ -55,16 +60,15 @@ export function ReportWorkspacePage() {
     </>}
   >
     <WorkbenchMain>
-      {entry ? <div className="report__body report__entry">
-        <header className="report__head"><h1 className="report__title">城市报告</h1></header>
+      {entry ? <WorkspaceLanding title="城市报告" className="report__entry">
         {catalogState.status === 'loading' && <p className="report__empty" role="status">读取报告目录…</p>}
         {catalogState.status === 'error' && <p className="report__empty" role="alert">报告目录读取失败，请稍后重试。</p>}
         <ReportNavigation label="城市报告" className="report-navigation--overview" />
-      </div> : view === 'cross_city' ? <CrossCityContent /> : view === 'synthesis' ? <SynthesisContent /> : !reportId ? <div className="report__body">
+      </WorkspaceLanding> : view === 'cross_city' ? <CrossCityContent /> : view === 'synthesis' ? <SynthesisContent /> : !reportId ? <div className="report__body">
         <h1 className="report__title">报告目录里没有这个入口</h1>
         <p className="report__empty">请从报告目录进入。</p>
         <TransitionLink className="ag-button" to={ROUTES.reports}>返回报告目录</TransitionLink>
-      </div> : article && model ? <ReportArticle article={article} scope={scope} model={model} /> : <div className="report__body">
+      </div> : article && model ? <ReportArticle article={article} scope={scope} model={model} actions={city && interactiveAvailable ? <TransitionLink className="report__interactive-link" to={cityContextUrl(ROUTES.city(city.id), city.id)}>交互研究 <span aria-hidden>→</span></TransitionLink> : undefined} /> : <div className="report__body">
         <header className="report__head"><h1 className="report__title">{name}研究报告</h1></header>
         <p className="report__empty" role={articleState.status === 'error' ? 'alert' : 'status'}>{articleState.status === 'loading' ? '报告载入中' : '报告读取失败，请稍后重试。'}</p>
       </div>}

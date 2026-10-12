@@ -210,9 +210,7 @@
   .center-section--long { padding: var(--ag-space-5) var(--ag-space-4); }
 }
 
-.decision-city-entry { max-width:760px; display:grid; grid-template-columns:repeat(3,1fr); gap:24px; margin-top:36px; }
-.decision-city-entry__cities { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; margin-top:36px; }
-@media(max-width:600px) { .decision-city-entry { grid-template-columns:repeat(2,1fr); } .decision-modes { flex-wrap:wrap; } }
+@media(max-width:600px) { .decision-modes { flex-wrap:wrap; } }
 
 /* 共享工作台接替大标题与内部嵌套双栏；业务图表继续使用原读数样式。 */
 .decision-workbench .decision-input { display: block; padding-top: 0; }
@@ -238,3 +236,5 @@
 .market-observation__line { stroke: var(--ag-ink); stroke-width: 1.5; }
 .market-observation__point { fill: var(--ag-ink); }
 .market-observation__point:hover { r: 4; }
+
+.decision-city-workspace { width:min(calc(100% - 2 * var(--ag-gutter)), 1600px); margin:calc(var(--ag-nav-height) + var(--ag-space-6)) auto var(--ag-space-6); padding:clamp(24px,4vw,56px); background:var(--ag-paper-raised); border:1px solid var(--ag-rule-soft); }

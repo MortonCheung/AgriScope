@@ -1,59 +1,63 @@
 import { forwardRef, useCallback, type MouseEvent } from 'react';
-import { Link, NavLink, useLocation, useNavigate, type LinkProps, type NavLinkProps, type NavigateFunction, type NavigateOptions, type To } from 'react-router-dom';
-import { changesPaper, prefersInstantPaper, withPaperExit } from './paperNavigation';
+import { Link, NavLink, createPath, useLocation, useNavigate, useResolvedPath, type LinkProps, type NavLinkProps, type NavigateFunction, type NavigateOptions, type To } from 'react-router-dom';
+import { cancelPendingPaperNavigation, changesPaper, withPaperExit } from './paperNavigation';
 
-const urlFor = (from: string, to: To) => typeof to === 'string' ? to : `${to.pathname ?? from.split('?')[0]}${to.search ?? ''}${to.hash ?? ''}`;
-function canAnimateNavigation(from: string, to: To) {
-  return typeof document.startViewTransition === 'function' && !prefersInstantPaper() && changesPaper(from, urlFor(from, to));
-}
+const urlFor = (from: string, to: To) => typeof to === 'string' ? to : `${to.pathname ?? from.split(/[?#]/)[0]}${to.search ?? ''}${to.hash ?? ''}`;
 export const BEFORE_PAGE_NAVIGATION_EVENT = 'agriscope:before-page-navigation';
-function notifyBeforeNavigation(from: string, to: To) {
-  if (!changesPaper(from, urlFor(from, to))) return;
-  window.dispatchEvent(new CustomEvent(BEFORE_PAGE_NAVIGATION_EVENT, { detail: { from, to: urlFor(from, to) } }));
+function notifyBeforeNavigation(from: string, to: string) {
+  if (!changesPaper(from, to)) return;
+  window.dispatchEvent(new CustomEvent(BEFORE_PAGE_NAVIGATION_EVENT, { detail: { from, to } }));
 }
 function plainClick(event: MouseEvent<HTMLAnchorElement>, target?: string) {
   return !event.defaultPrevented && event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && (!target || target === '_self');
 }
-function needsFallback(from: string, to: To) {
-  return typeof document.startViewTransition !== 'function' && !prefersInstantPaper()
-    && changesPaper(from, urlFor(from, to)) && typeof Element.prototype.animate === 'function';
+function internalTarget(to: To): To | null {
+  if (typeof to !== 'string' || !/^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(to)) return to;
+  try {
+    const url = new URL(to, window.location.href);
+    return url.origin === window.location.origin ? `${url.pathname}${url.search}${url.hash}` : null;
+  } catch { return null; }
 }
-/** One live route. Native browsers fold snapshots; older browsers fold the DOM. */
-export const TransitionLink = forwardRef<HTMLAnchorElement, LinkProps>(function TransitionLink({ to, viewTransition, onClick, ...props }, ref) {
+
+/** All internal intents share cancellation, including a same-workspace click. */
+export const TransitionLink = forwardRef<HTMLAnchorElement, LinkProps>(function TransitionLink({ to, viewTransition: _viewTransition, onClick, ...props }, ref) {
   const location = useLocation();
   const navigate = useNavigate();
-  const from = `${location.pathname}${location.search}`;
-  return <Link {...props} ref={ref} to={to} viewTransition={viewTransition ?? canAnimateNavigation(from, to)} onClick={event => {
+  const internal = internalTarget(to);
+  const resolved = useResolvedPath(internal ?? to, { relative: props.relative });
+  const from = createPath(location);
+  const target = createPath(resolved);
+  return <Link {...props} ref={ref} to={to} viewTransition={false} onClick={event => {
     onClick?.(event);
-    if (!plainClick(event, props.target) || props.reloadDocument) return;
-    notifyBeforeNavigation(from, to);
-    if (needsFallback(from, to)) {
-      event.preventDefault();
-      void withPaperExit(from, urlFor(from, to), () => navigate(to, { replace: props.replace, state: props.state, relative: props.relative, preventScrollReset: props.preventScrollReset }));
-    }
+    if (!plainClick(event, props.target) || props.reloadDocument || props.download !== undefined || internal === null) return;
+    event.preventDefault();
+    notifyBeforeNavigation(from, target);
+    void withPaperExit(from, target, () => navigate(resolved, { replace: props.replace ?? from === target, state: props.state, preventScrollReset: props.preventScrollReset, viewTransition: false }));
   }} />;
 });
-export const TransitionNavLink = forwardRef<HTMLAnchorElement, NavLinkProps>(function TransitionNavLink({ to, viewTransition, onClick, ...props }, ref) {
+export const TransitionNavLink = forwardRef<HTMLAnchorElement, NavLinkProps>(function TransitionNavLink({ to, viewTransition: _viewTransition, onClick, ...props }, ref) {
   const location = useLocation();
   const navigate = useNavigate();
-  const from = `${location.pathname}${location.search}`;
-  return <NavLink {...props} ref={ref} to={to} viewTransition={viewTransition ?? canAnimateNavigation(from, to)} onClick={event => {
+  const internal = internalTarget(to);
+  const resolved = useResolvedPath(internal ?? to, { relative: props.relative });
+  const from = createPath(location);
+  const target = createPath(resolved);
+  return <NavLink {...props} ref={ref} to={to} viewTransition={false} onClick={event => {
     onClick?.(event);
-    if (!plainClick(event, props.target) || props.reloadDocument) return;
-    notifyBeforeNavigation(from, to);
-    if (needsFallback(from, to)) {
-      event.preventDefault();
-      void withPaperExit(from, urlFor(from, to), () => navigate(to, { replace: props.replace, state: props.state, relative: props.relative, preventScrollReset: props.preventScrollReset }));
-    }
+    if (!plainClick(event, props.target) || props.reloadDocument || props.download !== undefined || internal === null) return;
+    event.preventDefault();
+    notifyBeforeNavigation(from, target);
+    void withPaperExit(from, target, () => navigate(resolved, { replace: props.replace ?? from === target, state: props.state, preventScrollReset: props.preventScrollReset, viewTransition: false }));
   }} />;
 });
 export function usePageNavigate(): NavigateFunction {
   const navigate = useNavigate();
   const location = useLocation();
-  const from = `${location.pathname}${location.search}`;
+  const from = createPath(location);
   return useCallback((to: To | number, options?: NavigateOptions) => {
-    if (typeof to === 'number') return navigate(to);
-    notifyBeforeNavigation(from, to);
-    return withPaperExit(from, urlFor(from, to), () => navigate(to, { viewTransition: canAnimateNavigation(from, to), ...options }));
+    if (typeof to === 'number') { cancelPendingPaperNavigation(); return navigate(to); }
+    const target = urlFor(from, to);
+    notifyBeforeNavigation(from, target);
+    return withPaperExit(from, target, () => navigate(to, { ...options, viewTransition: false }));
   }, [navigate, from]) as NavigateFunction;
 }

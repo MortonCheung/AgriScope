@@ -18,18 +18,17 @@
 
 /* 省域沙盘标签：克制、无发光，研究城市略深 */
 .liaoning-label {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 5px;
-  padding: 8px;
-  min-width:44px;min-height:44px;justify-content:center;border:1px solid transparent;background:transparent;cursor:pointer;
+  display: inline-block;
+  position: relative;
+  padding: 4px 2px;
+  pointer-events: none;
   color: var(--ag-ink-muted);
   font-family: var(--ag-font-text);
   font-size: 13px;
   letter-spacing: 0.02em;
   white-space: nowrap;
   user-select: none;
-  transition: color var(--ag-dur-fast) var(--ag-ease), opacity var(--ag-dur-fast) var(--ag-ease), box-shadow var(--ag-dur-fast) var(--ag-ease);
+  transition: color var(--ag-dur-fast) var(--ag-ease);
 }
 .liaoning-label.is-research { color: var(--ag-ink); font-weight: 600; }
 .liaoning-label.is-research em {
@@ -39,8 +38,18 @@
   letter-spacing: 0.14em;
   color: var(--ag-ink-muted);
 }
-/* 地图侧 hover：与六城选择共用同一个状态，只加深文字，不再画下划线（V3 §8/§46） */
+.liaoning-label::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 1px;
+  background: var(--ag-ink);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--ag-dur-underline) var(--ag-ease-standard);
+}
 .liaoning-label.is-active { color: var(--ag-ink); }
+.liaoning-label.is-active::after { transform: scaleX(1); }
 
 /* 手机共用地图舞台，开场末帧与省域保持位置和投影尺寸一致。 */
 @media (max-width: 900px) {
@@ -48,13 +57,18 @@
   .spatial-shell[data-stage-mode='province'] .spatial-shell__canvas { top: var(--ag-nav-height); bottom: auto; height: var(--ag-map-mobile-height); }
 }
 
-.liaoning-map-fallback { position:absolute; left:50%; top:40%; transform:translate(-50%,-50%); max-width:380px; padding:24px; background:var(--ag-paper); color:var(--ag-ink-soft); font-size:14px; pointer-events:auto; z-index:5; }
-.liaoning-map-fallback .ag-button { margin-top:16px; }
+.liaoning-map-navigation:focus-within,
+.liaoning-map-navigation[data-fallback],
+.liaoning-map-fallback {
+  position: absolute;
+  left: 50%; top: 40%; transform: translate(-50%, -50%);
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;
+  width: min(360px, 90%); height: auto; margin: 0; padding: 20px;
+  overflow: visible; clip: auto; clip-path: none; white-space: normal;
+  background: var(--ag-paper); color: var(--ag-ink-soft);
+  font-size: 14px; pointer-events: auto; z-index: 5;
+}
+.liaoning-map-navigation .ag-button,
+.liaoning-map-fallback .ag-button { margin: 0; min-height: 44px; }
 
-.liaoning-label:hover, .liaoning-label[aria-pressed=true] {background:var(--ag-paper-raised);border-color:var(--ag-rule);}
-.liaoning-label:focus-visible {outline:2px solid var(--ag-focus);outline-offset:2px;background:var(--ag-paper-raised);}
-.liaoning-map-fallback {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:min(360px,90%);}
-.liaoning-map-fallback .ag-button {margin:0;min-height:44px;}
-
-/* Separate neighbouring 44px touch targets on the compact province map. */
-@media(max-width:600px) { .liaoning-label[data-city=tieling] { transform:translate(16px,-20px); } }
+@media(prefers-reduced-motion:reduce) { .liaoning-label, .liaoning-label::after { transition:none; } }

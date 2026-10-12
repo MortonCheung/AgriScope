@@ -12,6 +12,8 @@ describe('crop identity across UI, data and saved conditions', () => {
     expect(cropIdentity('马铃薯')).toBe('土豆');
     expect(productCropOptions(['马铃薯','土豆']).filter(crop => crop === '土豆')).toHaveLength(1);
     expect(productCropOptions()).not.toContain('马铃薯');
+    expect(productCropOptions(['马铃薯'])).toContain('土豆');
+    expect(productCropOptions(['马铃薯'])).not.toContain('马铃薯');
     expect(resolveSourceCrop('马铃薯',['黄瓜','土豆'])).toBe('土豆');
     expect(resolveSourceCrop('土豆',['黄瓜','马铃薯'])).toBe('马铃薯');
     expect(productPriceFor('shenyang','马铃薯')).toEqual(productPriceFor('shenyang','土豆'));
@@ -34,5 +36,24 @@ describe('crop identity across UI, data and saved conditions', () => {
     expect(migrated.priceOverrides).toContain('土豆');
     expect(migrated.calculatedDrafts['土豆']).toBeUndefined();
     expect(migrated.cropAliasBackup?.['马铃薯'].draft).toEqual(legacy);
+  });
+  it('restores a custom legacy alias as potato using its whole active draft and price override', () => {
+    const migrated = migratePlanningCrops({ ...session, activeCrop: '__custom__', customCrop: '马铃薯' });
+    expect(migrated.activeCrop).toBe('__custom__');
+    expect(migrated.customCrop).toBe('土豆');
+    expect(migrated.drafts['土豆']).toEqual(legacy);
+    expect(migrated.priceOverrides).toContain('土豆');
+    expect(migrated.cropAliasBackup?.['土豆'].draft).toEqual(potato);
+    expect(migrated.cropAliasBackup?.['马铃薯'].draft).toEqual(legacy);
+  });
+  it('normalizes an already migrated custom name without overwriting newer canonical edits', () => {
+    const migrated = migratePlanningCrops(session);
+    const edited = { ...migrated, activeCrop: '__custom__', customCrop: '马铃薯', drafts: { ...migrated.drafts, 土豆: potato }, calculatedDrafts: {}, priceOverrides: ['土豆'] };
+    writePlanningSession('shenyang', edited);
+    const restored = readPlanningSession('shenyang', '马铃薯');
+    expect(restored.customCrop).toBe('土豆');
+    expect(restored.drafts['土豆']).toEqual(potato);
+    expect(restored.priceOverrides).toEqual(['土豆']);
+    expect(restored.cropAliasBackup).toEqual(migrated.cropAliasBackup);
   });
 });
