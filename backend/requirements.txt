@@ -27,6 +27,7 @@ fastapi==0.128.8
 uvicorn==0.39.0
 pydantic==2.13.4
 
+httpx==0.28.1
+
 # --- 测试（可选，生产可不装）---
 pytest==8.4.2
-httpx==0.28.1
