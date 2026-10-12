@@ -37,8 +37,9 @@ beforeEach(() => {
   vi.stubGlobal('matchMedia', () => ({ matches: false }));
   Object.defineProperty(document, 'startViewTransition', { configurable: true, value: vi.fn() });
   animate = vi.fn((_frames, options) => {
-    let finish!: () => void; const finished = new Promise<void>(resolve => { finish = resolve; });
-    const effect = { id: options.id, finish, finished, cancel: vi.fn(finish) }; effects.push(effect); return effect;
+    let finish!: () => void, reject!: (reason: unknown) => void;
+    const finished = new Promise<void>((resolve, fail) => { finish = resolve; reject = fail; });
+    const effect = { id: options.id, finish, finished, cancel: vi.fn(() => reject(new DOMException('Canceled', 'AbortError'))) }; effects.push(effect); return effect;
   });
   Object.defineProperty(HTMLElement.prototype, 'animate', { configurable: true, value: animate });
 });
@@ -62,6 +63,16 @@ describe('all internal navigation uses one DOM paper owner', () => {
     expect(path()).toBe('/reports'); await finishExit();
     expect(path()).toBe('/about'); expect(phase('ag-paper-enter')).toHaveLength(1);
     expect(document.startViewTransition).not.toHaveBeenCalled();
+  });
+  it('repeated Link clicks reuse the pending exit and create one history destination', async () => {
+    open('/reports'); effects = [];
+    for (let count = 0; count < 20; count++) fireEvent.click(screen.getByRole('link', { name: '关于' }));
+    expect(path()).toBe('/reports'); expect(phase('ag-paper-exit')).toHaveLength(1);
+    expect(phase('ag-paper-exit')[0].cancel).not.toHaveBeenCalled();
+    await finishExit(); expect(path()).toBe('/about');
+    effects = [];
+    fireEvent.click(screen.getByRole('button', { name: '应用后退' })); await finishExit();
+    expect(path()).toBe('/reports');
   });
   it('the real BrowserRouter never starts a native snapshot for Link, NavLink or navigate', async () => {
     window.history.replaceState(null, '', '/liaoning');
@@ -111,6 +122,16 @@ describe('all internal navigation uses one DOM paper owner', () => {
     fireEvent.click(screen.getByRole('button', { name: '应用前进' })); await finishExit();
     expect(path()).toBe('/about'); expect(phase('ag-paper-enter')).toHaveLength(1);
     expect(document.startViewTransition).not.toHaveBeenCalled();
+  });
+  it('repeated Back clicks share one pending POP without skipping an observed level', async () => {
+    open('/liaoning');
+    fireEvent.click(screen.getByRole('link', { name: '报告' })); await finishExit();
+    fireEvent.click(screen.getByRole('link', { name: '关于' })); await finishExit();
+    effects = [];
+    for (let count = 0; count < 20; count++) fireEvent.click(screen.getByRole('button', { name: '应用后退' }));
+    expect(path()).toBe('/about'); expect(phase('ag-paper-exit')).toHaveLength(1);
+    expect(phase('ag-paper-exit')[0].cancel).not.toHaveBeenCalled();
+    await finishExit(); expect(path()).toBe('/reports');
   });
   it('modified, target and prevented clicks do not start a paper effect', async () => {
     open('/reports'); effects = []; animate.mockClear();

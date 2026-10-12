@@ -32,7 +32,7 @@ export const TransitionLink = forwardRef<HTMLAnchorElement, LinkProps>(function 
     if (!plainClick(event, props.target) || props.reloadDocument || props.download !== undefined || internal === null) return;
     event.preventDefault();
     notifyBeforeNavigation(from, target);
-    void withPaperExit(from, target, () => navigate(resolved, { replace: props.replace ?? from === target, state: props.state, preventScrollReset: props.preventScrollReset, viewTransition: false }));
+    void withPaperExit(from, target, () => navigate(resolved, { replace: props.replace ?? from === target, state: props.state, preventScrollReset: props.preventScrollReset, viewTransition: false }), (props.replace ?? from === target) ? 'replace' : 'push');
   }} />;
 });
 export const TransitionNavLink = forwardRef<HTMLAnchorElement, NavLinkProps>(function TransitionNavLink({ to, viewTransition: _viewTransition, onClick, ...props }, ref) {
@@ -47,7 +47,7 @@ export const TransitionNavLink = forwardRef<HTMLAnchorElement, NavLinkProps>(fun
     if (!plainClick(event, props.target) || props.reloadDocument || props.download !== undefined || internal === null) return;
     event.preventDefault();
     notifyBeforeNavigation(from, target);
-    void withPaperExit(from, target, () => navigate(resolved, { replace: props.replace ?? from === target, state: props.state, preventScrollReset: props.preventScrollReset, viewTransition: false }));
+    void withPaperExit(from, target, () => navigate(resolved, { replace: props.replace ?? from === target, state: props.state, preventScrollReset: props.preventScrollReset, viewTransition: false }), (props.replace ?? from === target) ? 'replace' : 'push');
   }} />;
 });
 export function usePageNavigate(): NavigateFunction {
@@ -58,6 +58,6 @@ export function usePageNavigate(): NavigateFunction {
     if (typeof to === 'number') { cancelPendingPaperNavigation(); return navigate(to); }
     const target = urlFor(from, to);
     notifyBeforeNavigation(from, target);
-    return withPaperExit(from, target, () => navigate(to, { ...options, viewTransition: false }));
+    return withPaperExit(from, target, () => navigate(to, { ...options, viewTransition: false }), options?.replace ? 'replace' : 'push');
   }, [navigate, from]) as NavigateFunction;
 }

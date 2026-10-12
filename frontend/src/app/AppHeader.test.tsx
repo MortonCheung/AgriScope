@@ -57,6 +57,7 @@ describe('Header和历史控件生命周期', () => {
     expect(button('前进').disabled).toBe(true);
     fireEvent.click(button('上一级'));
     expect(screen.getByTestId('location').textContent).toBe('/liaoning');
+    expect(button('上一级').disabled).toBe(true);
   });
 
   it('刷新当前已观察key恢复应用内历史，陌生key重新禁用后退', () => {
@@ -91,5 +92,15 @@ describe('Header和历史控件生命周期', () => {
     fireEvent.keyDown(toggle, { key: 'Escape', cancelable: true });
     expect(pageEscapes).toBe(1);
     window.removeEventListener('keydown', onKey);
+  });
+});
+
+
+describe('ordinary Up does not restart Opening', () => {
+  it.each(['/reports', '/about', '/scenario-lab', '/decision', '/research'])('%s goes to normal province home', path => {
+    open(path);
+    fireEvent.click(button('上一级'));
+    expect(screen.getByTestId('location').textContent).toBe('/liaoning');
+    expect(button('上一级').disabled).toBe(true);
   });
 });

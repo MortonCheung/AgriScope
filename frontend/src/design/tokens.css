@@ -57,8 +57,8 @@
 
   /* 时长令牌与 src/design/motion.ts 一一对应：CSS 动画不要再写零散毫秒数。 */
   --ag-dur-fast: 180ms;
-  --ag-dur-paper-exit: 180ms;
-  --ag-dur-paper-enter: 260ms;
+  --ag-dur-paper-exit: 340ms;
+  --ag-dur-paper-enter: 460ms;
   --ag-dur-content: 160ms;
   --ag-dur-value-exit: 160ms;
   --ag-dur-value-enter: 200ms;

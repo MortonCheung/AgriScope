@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import type { NavigationType } from 'react-router-dom';
 import { MOTION_DURATION, MOTION_EASE } from '../design/motion';
-import { cancelPendingPaperNavigation, changesPaper, paperPageKey, prefersInstantPaper } from './paperNavigation';
+import { cancelPendingPaperNavigation, changesPaper, paperPageKey, prefersInstantPaper, PAPER_OPEN, PAPER_CLOSED } from './paperNavigation';
 
 interface PaperAction {
   key: string;
@@ -48,10 +48,16 @@ export function RouteTransition({ routeKey, pathname, search = '', children }: {
         if (current.seen.has(paper)) continue;
         current.seen.add(paper);
         if (!current.enter || prefersInstantPaper()) continue;
-        const animation = paper.animate?.([
-          { opacity: 0, clipPath: 'inset(0 0 100% 0)' },
-          { opacity: 1, clipPath: 'inset(0 0 0% 0)' },
-        ], { id: 'ag-paper-enter', duration: MOTION_DURATION.paperEnter * 1000, easing: `cubic-bezier(${MOTION_EASE.standard.join(',')})` });
+        let animation: Animation | undefined;
+        try {
+          animation = paper.animate?.([
+            { clipPath: PAPER_CLOSED },
+            { clipPath: PAPER_OPEN },
+          ], { id: 'ag-paper-enter', duration: MOTION_DURATION.paperEnter * 1000, easing: `cubic-bezier(${MOTION_EASE.standard.join(',')})` });
+        } catch {
+          // Unsupported geometry must leave the live surface visible and usable.
+          continue;
+        }
         if (animation) {
           current.animations.add(animation);
           void animation.finished?.then(() => current.animations.delete(animation), () => current.animations.delete(animation));

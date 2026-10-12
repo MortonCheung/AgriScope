@@ -97,14 +97,15 @@ export function isLegacyPayloadResearchId(raw: string): boolean {
  * 现在按 catalog 的两级结构走。
  */
 export function structuralParent(pathname: string, search = ''): string | null {
+  pathname = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
   if (pathname === ROUTES.root) return null;
 
-  if (pathname === ROUTES.researchHome) return readContextFromSearch(search).cityId ? ROUTES.liaoning : ROUTES.root;
-  if (pathname === ROUTES.about) return ROUTES.root;
-  if (pathname === ROUTES.scenario) return ROUTES.root;
-  if (pathname === ROUTES.decisionCenter) return ROUTES.root;
-  if (pathname === ROUTES.researchCenter) return ROUTES.root;
-  if (pathname === ROUTES.reports) return ROUTES.root;
+  if (pathname === ROUTES.researchHome) return readContextFromSearch(search).cityId ? ROUTES.liaoning : null;
+  if (pathname === ROUTES.about) return ROUTES.liaoning;
+  if (pathname === ROUTES.scenario) return ROUTES.liaoning;
+  if (pathname === ROUTES.decisionCenter) return ROUTES.liaoning;
+  if (pathname === ROUTES.researchCenter) return ROUTES.liaoning;
+  if (pathname === ROUTES.reports) return ROUTES.liaoning;
   if (pathname === ROUTES.provinceReport) return ROUTES.reports;
 
   const report = new RegExp(`^${REPORTS_ROUTE_PREFIX}([^/]+)/?$`).exec(pathname);
@@ -138,7 +139,7 @@ export function structuralParent(pathname: string, search = ''): string | null {
     return selectedProvince(city);
   }
 
-  return ROUTES.root;
+  return ROUTES.liaoning;
 }
 
 function selectedProvince(cityId: string): string {

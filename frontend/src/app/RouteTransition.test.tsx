@@ -5,15 +5,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NavigationType } from 'react-router-dom';
 import { RouteTransition } from './RouteTransition';
 import { withPaperExit } from './paperNavigation';
+import { PAPER_OPEN, PAPER_CLOSED } from './paperNavigation';
+import { MOTION_DURATION } from '../design/motion';
 let animate: ReturnType<typeof vi.fn>;
 let effects: { id: string; cancel: ReturnType<typeof vi.fn>; finish: () => void; finished: Promise<void> }[];
 beforeEach(() => {
   vi.stubGlobal('matchMedia', () => ({ matches: false }));
   effects = [];
   animate = vi.fn((_frames, options) => {
-    let finish!: () => void;
-    const finished = new Promise<void>(resolve => { finish = resolve; });
-    const effect = { id: options.id, cancel: vi.fn(finish), finish, finished };
+    let finish!: () => void, reject!: (reason: unknown) => void;
+    const finished = new Promise<void>((resolve, fail) => { finish = resolve; reject = fail; });
+    const effect = { id: options.id, cancel: vi.fn(() => reject(new DOMException('Canceled', 'AbortError'))), finish, finished };
     effects.push(effect); return effect;
   });
   Object.defineProperty(HTMLElement.prototype, 'animate', { configurable: true, value: animate });
@@ -100,5 +102,23 @@ describe('single WAAPI paper owner', () => {
     const rendered = render(view('/reports', 'one'));
     rendered.rerender(view('/about', 'two'));
     expect(animate).not.toHaveBeenCalled();
+  });
+  it('absent or unsupported geometry leaves the paper visible and later navigation available', () => {
+    delete (HTMLElement.prototype as Partial<HTMLElement>).animate;
+    const rendered = render(view('/reports', 'one'));
+    expect(rendered.container.querySelector('main')).not.toBeNull();
+    Object.defineProperty(HTMLElement.prototype, 'animate', { configurable: true, value: vi.fn(() => { throw new DOMException('Unsupported'); }) });
+    expect(() => rendered.rerender(view('/about', 'two'))).not.toThrow();
+    Object.defineProperty(HTMLElement.prototype, 'animate', { configurable: true, value: animate });
+    rendered.rerender(view('/liaoning', 'three'));
+    expect(animate).toHaveBeenCalledOnce();
+  });
+  it('reveals with pure four-vertex geometry while keeping opacity and text size untouched', () => {
+    render(view('/reports', 'one'));
+    const [frames, options] = animate.mock.calls[0];
+    expect(frames).toEqual([{ clipPath: PAPER_CLOSED }, { clipPath: PAPER_OPEN }]);
+    expect(frames.every((frame: Keyframe) => !('opacity' in frame) && !('transform' in frame))).toBe(true);
+    expect(options.duration).toBe(MOTION_DURATION.paperEnter * 1000);
+    expect(options.fill).toBeUndefined();
   });
 });

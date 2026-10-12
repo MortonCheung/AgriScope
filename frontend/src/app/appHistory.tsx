@@ -148,7 +148,7 @@ export function AppHistoryProvider({ children }: { children: ReactNode }) {
     };
     const from = current.entries[current.index];
     const to = canGoBack ? current.entries[current.index - 1] : { pathname: fallback.to, search: '' };
-    void withPaperExit(`${from.pathname}${from.search ?? ''}`, `${to.pathname}${to.search ?? ''}`, () => canGoBack ? navigate(-1) : navigate(fallback.to, { replace: true, state: fallback.state, viewTransition: false }));
+    void withPaperExit(`${from.pathname}${from.search ?? ''}`, `${to.pathname}${to.search ?? ''}`, () => canGoBack ? navigate(-1) : navigate(fallback.to, { replace: true, state: fallback.state, viewTransition: false }), 'back');
   }, [navigate]);
 
   /**
@@ -166,7 +166,7 @@ export function AppHistoryProvider({ children }: { children: ReactNode }) {
     };
     const from = current.entries[current.index];
     const to = current.entries[current.index + 1];
-    void withPaperExit(`${from.pathname}${from.search ?? ''}`, `${to.pathname}${to.search ?? ''}`, () => navigate(1));
+    void withPaperExit(`${from.pathname}${from.search ?? ''}`, `${to.pathname}${to.search ?? ''}`, () => navigate(1), 'forward');
   }, [navigate]);
 
   const value = useMemo<AppHistoryValue>(() => ({

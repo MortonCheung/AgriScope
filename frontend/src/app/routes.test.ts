@@ -63,11 +63,11 @@ describe('canonicalResearchId：载荷编号归一（本轮 §4）', () => {
 });
 
 describe('structuralParent：两级层级（本轮 §10）', () => {
-  it('研究点 → 方向 → 城市 → 辽宁 → 首页', () => {
+  it('研究点 → 方向 → 城市 → 选城地图 → 全省终点', () => {
     expect(structuralParent('/cities/shenyang/research/A2.2')).toBe('/cities/shenyang/research/A2');
     expect(structuralParent('/cities/shenyang/research/A2')).toBe('/cities/shenyang');
     expect(structuralParent('/cities/shenyang')).toBe('/liaoning?city=shenyang');
-    expect(structuralParent('/liaoning')).toBe('/');
+    expect(structuralParent('/liaoning')).toBeNull();
   });
 
   it('不再把所有 /research/* 直接跳城市', () => {
@@ -83,20 +83,22 @@ describe('structuralParent：两级层级（本轮 §10）', () => {
   it('报告 → 报告目录；综合报告也回到报告目录', () => {
     expect(structuralParent('/reports/shenyang')).toBe('/reports');
     expect(structuralParent('/reports/liaoning')).toBe('/reports');
-    expect(structuralParent('/reports')).toBe('/');
+    expect(structuralParent('/reports')).toBe('/liaoning');
   });
 
   it('推演与关于回到首页', () => {
-    expect(structuralParent('/scenario-lab')).toBe('/');
-    expect(structuralParent('/about')).toBe('/');
+    expect(structuralParent('/scenario-lab')).toBe('/liaoning');
+    expect(structuralParent('/about')).toBe('/liaoning');
   });
 
   it('决策中心与研究中心回到首页', () => {
-    expect(structuralParent('/decision')).toBe('/');
-    expect(structuralParent('/research')).toBe('/');
+    expect(structuralParent('/decision')).toBe('/liaoning');
+    expect(structuralParent('/research')).toBe('/liaoning');
   });
 
-  it('首页没有上一级', () => {
+  it('全省主页没有上一级，明确开场路径仍保留', () => {
+    expect(structuralParent('/liaoning')).toBeNull();
+    expect(structuralParent('/liaoning/')).toBeNull();
     expect(structuralParent('/')).toBeNull();
   });
 
@@ -114,5 +116,23 @@ describe('structuralParent：两级层级（本轮 §10）', () => {
     expect(Object.fromEntries(new URLSearchParams(query))).toEqual({ city: 'shenyang', crop: '黄瓜', horizon: '30', as_of: '2026-10-06' });
     expect(structuralParent('/cities/shenyang', '?research=A2.2')).toBe('/cities/shenyang/research/A2');
     expect(structuralParent('/cities/shenyang', '?research=A2')).toBe('/cities/shenyang');
+  });
+});
+
+
+describe('final delivery six-city structural navigation', () => {
+  it.each(['shenyang','tieling','chaoyang','jinzhou','dandong','dalian'])('%s follows one level without entering Opening', city => {
+    expect(structuralParent(`/reports/${city}`)).toBe('/reports');
+    expect(structuralParent(`/cities/${city}/decision`)).toBe(`/liaoning?city=${city}`);
+    expect(structuralParent(`/cities/${city}`)).toBe(`/liaoning?city=${city}`);
+    expect(structuralParent(`/cities/${city}/research/A6`)).toBe(`/cities/${city}`);
+    expect(structuralParent('/liaoning', `?city=${city}`)).toBe('/liaoning');
+    expect(structuralParent('/reports')).toBe('/liaoning');
+    expect(structuralParent('/liaoning')).toBeNull();
+  });
+  it('unknown and trailing-slash routes never fall back to Opening', () => {
+    expect(structuralParent('/about/')).toBe('/liaoning');
+    expect(structuralParent('/reports/')).toBe('/liaoning');
+    expect(structuralParent('/unknown')).toBe('/liaoning');
   });
 });

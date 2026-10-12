@@ -6,8 +6,8 @@
  */
 export const MOTION_DURATION = {
   fast: 0.18,
-  paperExit: 0.18,
-  paperEnter: 0.26,
+  paperExit: 0.34,
+  paperEnter: 0.46,
   content: 0.16,
   valueExit: 0.16,
   valueEnter: 0.2,
