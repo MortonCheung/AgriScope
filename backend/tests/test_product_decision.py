@@ -155,3 +155,21 @@ def test_http_product_endpoint_and_frozen_contract_remain_separate():
         assert response.json()["request"]["city_id"]=="tieling"
         assert client.post("/api/decision/evaluate",json=request().model_dump()).status_code==400
         assert client.post("/api/product/decision",json={**request().model_dump(),"area_mu":False}).status_code==400
+
+
+def test_overlapping_long_ranges_keep_discrete_windows_instead_of_one_best_date():
+    RS.bind()
+    req=request(city_id="shenyang",price_is_user=False)
+    response=S._build(req)
+    original=deepcopy(response["origin"]["forecasts"])
+    S._window_comparison(response)
+    choices=response["origin"]["window_choices"]
+    assert len(choices)==6
+    assert choices == sorted([row["window"] for row in original],key=lambda row:row["start"])
+    assert response["origin"]["forecasts"] == original
+    assert response["origin"]["window_basis"] == "overlapping_price_ranges"
+
+
+def test_llm_cannot_turn_historical_climate_into_a_current_weather_claim():
+    req=request();response=S._base(req);response["context_hash"]=S._hash(req.model_dump());response["origin"]["data_version"]="fixture"
+    assert not S._apply_llm(req,response,choice_for(response,reasons=["气候条件正常，没有气象风险。"] ))

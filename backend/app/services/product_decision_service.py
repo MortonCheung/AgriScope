@@ -257,7 +257,7 @@ def _apply_llm(request, response, choice):
     if selected is None:
         return False
     reasons = choice["reasons"]
-    if not isinstance(reasons, list) or not 1 <= len(reasons) <= 3 or any(not isinstance(reason, str) or not 1 <= len(reason) <= 180 or re.search(r"\d|模拟|演示|Final|冻结|训练|快照|API|密钥", reason) for reason in reasons):
+    if not isinstance(reasons, list) or not 1 <= len(reasons) <= 3 or any(not isinstance(reason, str) or not 1 <= len(reason) <= 180 or re.search(r"\d|模拟|演示|Final|冻结|训练|快照|API|密钥|气候.*正常|气象.*正常|天气.*正常|条件正常|未显示.*不利|稳赚|保证收益", reason) for reason in reasons):
         return False
     area = choice["area_mu"]
     if area is not None:
@@ -271,6 +271,28 @@ def _apply_llm(request, response, choice):
     response["recommendation"] = {"candidate_id": selected["id"], "reasons": reasons}
     response["origin"].update(llm_used=True, llm_status="applied", ranking=ranking)
     return True
+
+
+def _window_comparison(response):
+    selected = next((row for row in response["candidates"] if row["id"] == response["recommendation"]["candidate_id"]), None)
+    choices = []
+    forecasts = response["origin"]["forecasts"]
+    if selected and selected["horizon_days"] is not None and not response["request"]["sale_date"]:
+        current = next((row for row in forecasts if row["horizon_days"] == selected["horizon_days"] and row["price_per_kg"] == selected["price_per_kg"] and row["window"]), None)
+        if current:
+            # Keep discrete evaluated windows. Overlapping price ranges cannot
+            # justify one unique best date, or fill unevaluated gaps between dates.
+            group = [current]
+            remaining = [row for row in forecasts if row is not current and row["window"] and row["target_type"] == current["target_type"] and row["model_as_of"] == current["model_as_of"]]
+            changed = True
+            while changed:
+                changed = False
+                for row in remaining[:]:
+                    if any(not all(_finite(v) for v in [row["price_low"], row["price_high"], other["price_low"], other["price_high"]]) or max(row["price_low"], other["price_low"]) <= min(row["price_high"], other["price_high"]) for other in group):
+                        group.append(row); remaining.remove(row); changed = True
+            choices = sorted([row["window"] for row in group], key=lambda value: value["start"])
+    response["origin"]["window_choices"] = choices
+    response["origin"]["window_basis"] = "overlapping_price_ranges" if len(choices) > 1 else "evaluated_window" if choices else "user_plan" if response["request"]["sale_date"] else "not_selected"
 
 
 async def _compute(request, cache_key, context_hash, versions):
@@ -291,6 +313,7 @@ async def _compute(request, cache_key, context_hash, versions):
             response["origin"]["llm_status"] = choice["_failure"]
         elif choice is not None and not _apply_llm(request, response, choice):
             response["origin"]["llm_status"] = "rejected"
+    _window_comparison(response)
     response = ProductDecisionResponse.model_validate(response).model_dump()
     _cache[cache_key] = (time.monotonic(), deepcopy(response))
     _cache.move_to_end(cache_key)

@@ -10,7 +10,7 @@
 .market-overview__head time {font-size:10px;color:var(--ag-ink-muted);font-variant-numeric:tabular-nums;}
 .market-overview__controls {display:flex;gap:6px;margin-bottom:20px;}
 .market-overview__controls .ag-button {padding:7px 10px;font-size:12px;}
-.market-overview__controls [aria-pressed=true] {background:var(--ag-ink);color:var(--ag-paper);border-color:var(--ag-ink);}
+.market-overview__controls [aria-pressed=true] {background:var(--ag-paper-deep);color:var(--ag-ink);border-color:var(--ag-ink);}
 .market-overview__caption {display:flex;justify-content:space-between;margin:0;padding-bottom:10px;border-bottom:1px solid var(--ag-rule);font-size:11px;color:var(--ag-ink-muted);}
 .market-overview__prices {list-style:none;padding:0;margin:0;}
 .market-overview__price {padding:14px 0;border-bottom:1px solid var(--ag-rule-soft);}
