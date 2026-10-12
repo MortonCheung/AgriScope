@@ -1,10 +1,3 @@
-/* Top stays fixed. The mask reveals paper height without reflowing its contents.
-   No final clip/transform context remains around enlarged figure dialogs. */
-.ag-paper-enter { animation: ag-paper-reveal var(--ag-dur-slow) var(--ag-ease) backwards; transform-origin: top center; }
-@keyframes ag-paper-reveal {
-  from { opacity: 0; clip-path: inset(0 0 100% 0); }
-  to { opacity: 1; clip-path: inset(0 0 0% 0); }
-}
-/* Native snapshots already carry the page paper animation. */
-:root:active-view-transition .ag-paper-enter { animation: none; }
-@media (prefers-reduced-motion: reduce) { .ag-paper-enter { animation: none; } }
+/* Surface identity is structural. Only RouteTransition starts paper animation.
+   No mount animation can restart when a native snapshot transition ends. */
+[data-paper-surface] { transform-origin: top center; }

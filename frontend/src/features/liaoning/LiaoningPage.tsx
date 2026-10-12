@@ -32,14 +32,14 @@ export function LiaoningPage() {
   }, [hover, navigate, selectedCityId, setHover]);
   return <main className="liaoning-page" data-scope={selectedCityId ? 'city' : 'province'}>
     <div className="liaoning-page__stage">
-      <aside className="liaoning-paper ag-paper-enter liaoning-page__current" aria-label="最新行情">
+      <aside className="liaoning-paper liaoning-page__current" data-paper-surface aria-label="最新行情">
         <div className="liaoning-panel-content" ref={pricesRef}>
           <h1 className="liaoning-page__title">最新行情</h1>
           <MarketOverview market={market}/>
         </div>
       </aside>
       <div className="liaoning-page__window" aria-hidden />
-      <aside className="liaoning-paper ag-paper-enter liaoning-page__city" aria-label="城市与决策">
+      <aside className="liaoning-paper liaoning-page__city" data-paper-surface aria-label="城市与决策">
         <div className="liaoning-city-picker">
           <CityChoices value={selectedCityId} onChange={cityId => {
             setHover(null);

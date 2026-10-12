@@ -13,16 +13,17 @@ export function isSpatialEntry(from: string, to: string) {
   return isSpatialRoute(from) && isSpatialRoute(to);
 }
 
-/** Research points share a live paper. A different task receives a page transition. */
+/** A task owns its paper across cities and views. Unknown routes never join it. */
+export function workspaceFamily(path: string): string | null {
+  if (path === '/reports' || path === '/research' || /^\/reports\/(?:liaoning|shenyang|tieling|chaoyang|jinzhou|dandong|dalian)\/?$/.test(path)) return 'report';
+  if (path === '/decision') return 'decision';
+  const match = /^\/cities\/([^/]+)(?:\/(decision|research\/[^/]+))?\/?$/.exec(path);
+  if (!match || !isStudyCity(match[1])) return null;
+  return match[2] === 'decision' ? 'decision' : 'research';
+}
 export function isWorkspaceNavigation(from: string, to: string): boolean {
-  const cityOf = (path: string) => {
-    const city = /^\/cities\/([^/]+)(?:\/(?:decision|research\/[^/]+))?\/?$/.exec(path)?.[1]
-      ?? /^\/reports\/([^/]+)\/?$/.exec(path)?.[1];
-    return city && isStudyCity(city) ? city : null;
-  };
-  const city = cityOf(from);
-  const taskOf = (path: string) => path.startsWith('/reports/') ? 'report' : path.endsWith('/decision') ? 'decision' : 'research';
-  return Boolean(city && city === cityOf(to) && taskOf(from) === taskOf(to));
+  const family = workspaceFamily(from);
+  return family !== null && family === workspaceFamily(to);
 }
 
 function routeLayer(path: string) {

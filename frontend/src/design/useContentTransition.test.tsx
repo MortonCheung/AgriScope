@@ -18,9 +18,9 @@ describe('immediate content transition lifecycle', () => {
     expect(rendered.container.firstChild).toBe(surface);
     expect(surface?.textContent).toBe('tieling');
     expect(animate).toHaveBeenCalledWith([
-      { opacity: 0, clipPath: 'inset(0 0 100% 0)' },
-      { opacity: 1, clipPath: 'inset(0 0 0% 0)' },
-    ], expect.objectContaining({ duration: expect.any(Number) }));
+      { opacity: 0.35, transform: 'translateY(3px)' },
+      { opacity: 1, transform: 'translateY(0)' },
+    ], expect.objectContaining({ duration: 160 }));
     rendered.rerender(<Surface city="dalian"/>);
     expect(cancel).toHaveBeenCalledTimes(1);
     expect(animate).toHaveBeenCalledTimes(2);
