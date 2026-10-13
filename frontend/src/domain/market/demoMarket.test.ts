@@ -14,7 +14,7 @@ describe('homepage simulation data isolation and aggregation', () => {
   });
   it('province averages each period before calculating percentages rather than averaging percentage changes', () => {
     const province = demoMarketFor(null);
-    expect(province.scope).toBe('六城样例均值');
+    expect(province.scope).toBe('六城参考均值');
     expect(province.kind).toBe('simulation');
     expect(province.date).toBe('2026-10-10');
     province.rows.forEach((row, index) => {

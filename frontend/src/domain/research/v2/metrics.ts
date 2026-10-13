@@ -183,7 +183,7 @@ export const COLUMN_META: Record<string, ColumnMeta> = {
 
   // ---- 推演（平行情景）表：严格中文化，禁止露出 gate_min_r2 / severity_mult 这类工程字段（§47/§76/§78）----
   target: { key: 'target', label: '门控目标', kind: 'text', valueType: 'text' },
-  r2_sim_vs_actual: { key: 'r2_sim_vs_actual', label: '模拟与实测 R²', kind: 'statistical', valueType: 'number', precision: 3 },
+  r2_sim_vs_actual: { key: 'r2_sim_vs_actual', label: '情景与实测 R²', kind: 'statistical', valueType: 'number', precision: 3 },
   gate_min_r2: { key: 'gate_min_r2', label: '模型门槛（R² 下限）', kind: 'statistical', valueType: 'number', precision: 3 },
   gate_pass: { key: 'gate_pass', label: '是否通过门控', kind: 'text', valueType: 'boolean' },
   severity_mult: { key: 'severity_mult', label: '事件强度倍率', kind: 'derived', valueType: 'number', precision: 2 },

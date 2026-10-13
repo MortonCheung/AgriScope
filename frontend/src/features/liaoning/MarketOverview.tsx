@@ -12,8 +12,8 @@ export function marketTrendPoints(row: DemoPrice, date: string) {
 export function MarketOverview({ market }: { market: DemoMarket }) {
   const [view, setView] = useState<'today' | 'trend'>('today');
   return <section className="market-overview" aria-label="行情价格">
-    <div className="market-overview__head"><div className="market-overview__scope"><FlipValue value={market.scope}/><span>{DEMO_MARKET_LABEL}</span></div><time dateTime={market.date}>样例日期 {market.date}</time></div>
-    <div className="market-overview__controls" role="group" aria-label="行情视图">{(['today','trend'] as const).map(mode => <button key={mode} type="button" className="ag-button" aria-pressed={view === mode} onClick={() => setView(mode)}>{mode === 'today' ? '今日行情' : '长期趋势'}</button>)}</div>
+    <div className="market-overview__head"><div className="market-overview__scope"><FlipValue value={market.scope}/><span>{DEMO_MARKET_LABEL}</span></div><time dateTime={market.date}>参考日期 {market.date}</time></div>
+    <div className="market-overview__controls" role="group" aria-label="行情视图">{(['today','trend'] as const).map(mode => <button key={mode} type="button" className="ag-button" aria-pressed={view === mode} onClick={() => setView(mode)}>{mode === 'today' ? '参考行情' : '长期趋势'}</button>)}</div>
     <p className="market-overview__caption">批发价 <span>较昨日</span></p>
     <ul className="market-overview__prices">{market.rows.map(row => {
       const change = demoPriceChange(row, 'previous');

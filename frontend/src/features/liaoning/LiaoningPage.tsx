@@ -26,9 +26,9 @@ export function LiaoningPage() {
   }, [hover, navigate, selectedCityId, setHover]);
   return <main className="liaoning-page" data-scope={selectedCityId ? 'city' : 'province'}>
     <div className="liaoning-page__stage">
-      <aside className="liaoning-paper liaoning-page__current" data-paper-surface aria-label="最新行情">
+      <aside className="liaoning-paper liaoning-page__current" data-paper-surface aria-label="价格概览">
         <div className="liaoning-panel-content">
-          <h1 className="liaoning-page__title">最新行情</h1>
+          <h1 className="liaoning-page__title">价格概览</h1>
           <MarketOverview market={market}/>
         </div>
       </aside>

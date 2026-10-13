@@ -113,4 +113,12 @@ describe('空间外壳直接导航，整纸动画已退役', () => {
     expect(path()).toBe('/about');
     expect(screen.getByTestId('canvas-host')).toBe(canvas);
   });
+
+  it.each(['/about', '/reports'])('环境背景在 %s 仍可见，城市控件不改变该任务', url => {
+    const { container } = open(url);
+    expect(container.querySelector('.spatial-shell__canvas')?.hasAttribute('data-visible')).toBe(true);
+    expect(container.querySelector('.spatial-shell__canvas')?.hasAttribute('data-interactive')).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'tieling', hidden: true }));
+    expect(path()).toBe(url);
+  });
 });

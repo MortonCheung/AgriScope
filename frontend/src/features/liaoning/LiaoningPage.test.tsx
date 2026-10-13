@@ -24,15 +24,15 @@ describe('产品行情主页', () => {
     const { container } = render(page());
     expect(container.textContent).not.toMatch(/演示|总览|来源说明/);
     expect(screen.getByText(DEMO_MARKET_LABEL)).toBeTruthy();
-    expect(screen.getByRole('heading', { name: '最新行情' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: '价格概览' })).toBeTruthy();
     expect(container.querySelectorAll('.market-overview__price')).toHaveLength(8);
     expect(container.querySelector('.market-overview__value')?.textContent).toBe('3.9元/kg');
     expect(container.querySelector('select')).toBeNull();
     expect(container.querySelector('.liaoning-page__city .choice-buttons')).toBeNull();
     expect(container.querySelectorAll('.market-overview__caption')).toHaveLength(1);
     expect(container.textContent?.match(/批发价/g)).toHaveLength(1);
-    expect(screen.getByText('六城样例均值')).toBeTruthy();
-    expect(screen.getByText(`样例日期 ${DEMO_MARKET_DATE}`).getAttribute('dateTime')).toBe(DEMO_MARKET_DATE);
+    expect(screen.getByText('六城参考均值')).toBeTruthy();
+    expect(screen.getByText(`参考日期 ${DEMO_MARKET_DATE}`).getAttribute('dateTime')).toBe(DEMO_MARKET_DATE);
     expect(screen.queryByText(/更新|实时行情/)).toBeNull();
     expect(screen.getByText('涨幅最大')).toBeTruthy();
     expect(screen.getByText('跌幅最大')).toBeTruthy();
@@ -64,7 +64,7 @@ describe('产品行情主页', () => {
       expect(report.getAttribute('href')).toContain(`/reports/${city}?city=${city}`);
       expect(container.querySelectorAll('.market-overview__price')).toHaveLength(8);
       expect(screen.getByText(DEMO_MARKET_LABEL)).toBeTruthy();
-      expect(screen.getByText(`样例日期 ${DEMO_MARKET_DATE}`)).toBeTruthy();
+      expect(screen.getByText(`参考日期 ${DEMO_MARKET_DATE}`)).toBeTruthy();
     }
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(screen.getByTestId('url').textContent).toBe('/liaoning');

@@ -2,7 +2,7 @@ import { getCity, isStudyCity, STUDY_CITY_IDS, type StudyCityId } from '../geogr
 
 /** Homepage-only synthetic examples. Never consumed by formal observations or decisions. */
 export const DEMO_MARKET_DATE = '2026-10-10';
-export const DEMO_MARKET_LABEL = '模拟行情';
+export const DEMO_MARKET_LABEL = '情景参考价';
 export type DemoPeriod = 'previous' | 'week' | 'month';
 export interface DemoPrice {
   crop: string;
@@ -36,7 +36,7 @@ const cityMarkets = new Map<StudyCityId, DemoMarket>(STUDY_CITY_IDS.map(cityId =
 }]));
 const mean = (values: readonly number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
 const provinceMarket: DemoMarket = {
-  kind: 'simulation', cityId: null, scope: '六城样例均值', date: DEMO_MARKET_DATE,
+  kind: 'simulation', cityId: null, scope: '六城参考均值', date: DEMO_MARKET_DATE,
   rows: CROPS.map((crop, index) => ({ crop,
     pricePerKg: mean(STUDY_CITY_IDS.map(id => SAMPLES[id][index][0])),
     previous: mean(STUDY_CITY_IDS.map(id => SAMPLES[id][index][1])),

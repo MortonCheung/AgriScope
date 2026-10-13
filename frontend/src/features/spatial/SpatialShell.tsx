@@ -52,7 +52,7 @@ export function SpatialShell() {
   /** Province selection stays on the map; only the six study cities are actionable. */
   const handleSelectCity = useCallback((cityId: string) => {
     if (!isStudyCity(cityId)) return;
-    if (mode === 'opening') return;
+    if (mode === 'opening' || mode === 'none') return;
     if (mode === 'province') {
       const target = provinceUrl(cityId);
       if (target !== `${location.pathname}${location.search}`) navigate(target);
@@ -65,7 +65,7 @@ export function SpatialShell() {
     navigate(target);
   }, [location.pathname, location.search, mode, navigate]);
 
-  const canvasVisible = mode !== 'none';
+  const canvasInteractive = mode !== 'none';
   const handleBackgroundClick = useCallback(() => {
     setHoveredCity(null);
     if (mode === 'province') {
@@ -79,10 +79,11 @@ export function SpatialShell() {
   return (
     <CitySelectionContext.Provider value={handleSelectCity}>
       <div className="spatial-shell" data-stage-mode={mode}>
-        <div className="spatial-shell__canvas" aria-hidden={!canvasVisible} data-visible={canvasVisible || undefined}>
+        <div className="spatial-shell__canvas" aria-hidden={!canvasInteractive} data-visible data-interactive={canvasInteractive || undefined}>
           <LiaoningCanvas
             mode={mode === 'city' ? 'city' : mode === 'opening' ? 'opening' : 'province'}
-            active={canvasVisible}
+            active
+            interactive={canvasInteractive}
             focusCityId={focusCityId}
             hoveredCityId={hoveredCityId}
             onHoverCity={setHoveredCity}

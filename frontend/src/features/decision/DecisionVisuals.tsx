@@ -24,7 +24,7 @@ export function ConfidenceMark({confidence,label='决策可信程度'}:{confiden
   const filled={high:3,medium:2,low:1,unknown:0,reported:0}[confidence.level];
   return <div className="decision-confidence" data-level={confidence.level}>
     <span className="ag-label">{label}</span>
-    <div className="decision-confidence__value">{confidence.level!=='reported'&&<span className="decision-confidence__ticks" aria-hidden="true">{[1,2,3].map(i=><i key={i} data-filled={i<=filled||undefined}/>)}</span>}<strong>{LEVELS[confidence.level]}</strong>{confidence.score!==null&&<span className="decision-note">{formatNumber(confidence.score)} / 100</span>}{confidence.is_mock&&<span className="decision-note">演示</span>}</div>
+    <div className="decision-confidence__value">{confidence.level!=='reported'&&<span className="decision-confidence__ticks" aria-hidden="true">{[1,2,3].map(i=><i key={i} data-filled={i<=filled||undefined}/>)}</span>}<strong>{LEVELS[confidence.level]}</strong>{confidence.score!==null&&<span className="decision-note">{formatNumber(confidence.score)} / 100</span>}{confidence.is_mock&&<span className="decision-note">参考</span>}</div>
   </div>;
 }
 export function RiskScale({label,value,note}:{label:string;value:number|null;note:string}){

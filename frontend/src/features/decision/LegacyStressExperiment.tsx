@@ -43,7 +43,7 @@ export function LegacyStressExperiment({candidate,sourceLabel}:{candidate:Decisi
     {invalidLink&&<p className="decision-note" role="status">链接中的压力条件无效，当前显示原方案。</p>}
     <div className="decision-stress__reading">
       <div>
-        <div className="decision-stress__change" aria-live="polite"><p className="ag-label">{scenario.label} · {scenario.is_mock?'公式演示':sourceLabel}</p><p className="decision-note">价格 {formatNumber(c.price_pct,'%')} · 亩产 {formatNumber(c.yield_pct,'%')} · 成本 {formatNumber(c.cost_pct,'%')} · 上市延迟 {c.delay_days} 天</p><h2 className="decision-result__range">基准净收益 {money(scenario.profit.base)}</h2><p className="decision-note">相对原方案 {scenario.delta_cny===null?'待评估':`${scenario.delta_cny>0?'+':''}${money(scenario.delta_cny)}`}</p></div>
+        <div className="decision-stress__change" aria-live="polite"><p className="ag-label">{scenario.label} · {scenario.is_mock?'公式核算':sourceLabel}</p><p className="decision-note">价格 {formatNumber(c.price_pct,'%')} · 亩产 {formatNumber(c.yield_pct,'%')} · 成本 {formatNumber(c.cost_pct,'%')} · 上市延迟 {c.delay_days} 天</p><h2 className="decision-result__range">基准净收益 {money(scenario.profit.base)}</h2><p className="decision-note">相对原方案 {scenario.delta_cny===null?'待评估':`${scenario.delta_cny>0?'+':''}${money(scenario.delta_cny)}`}</p></div>
         <RangePlot title="原方案与压力情景净收益" domainRanges={domainRanges} rows={[{label:'原方案',range:candidate.profit,baseline:true},{label:'压力情景',range:scenario.profit}]}/>
         <p className="decision-note">{scenario.note}{!scenario.is_mock&&scenario.id!=='normal'&&scenario.profit.high===null?' 压力结果的上行情景待补充。':''}</p>
       </div>

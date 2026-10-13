@@ -18,7 +18,7 @@ export class MockDecisionProvider implements DecisionProvider {
   async decide(request: DecisionRequest, options: { signal?: AbortSignal } = {}): Promise<DecisionResult> {
     const errors=validateRequest(request);
     if (errors.length) throw new Error(errors.join(' '));
-    if(request.contract_version!=='0')throw new Error('历史演示不支持正式市场评估请求。');
+    if(request.contract_version!=='0')throw new Error('历史参考条件不支持正式市场评估请求。');
     options.signal?.throwIfAborted();
     if (this.testState === 'loading') return new Promise((_,reject) => {
       const abort=()=>reject(new DOMException('Aborted','AbortError'));
@@ -70,7 +70,7 @@ export class MockDecisionProvider implements DecisionProvider {
     result={...result,request,candidates,data_status:'mock',model_version:'decision-ui-formula-v0',
       recommendation:{candidate_id:null,confidence:unknownConfidence(),reasons:['自定义条件仅作方案比较，暂不生成模型推荐。']},
       issues:['scenario_only','no_clear_winner',...(candidates.some((x)=>x.data_quality.proxy_flags.length)?['proxy_only' as const]:[])],
-      warnings:['自定义条件为演示情景，价格与风险沿用明确窗口的历史样例。',...(c.actual_inputs && Object.values(c.actual_inputs).some((a)=>a.cost_per_mu)?[]:['参考成本可能缺人工、地租和折旧，利润存在高估风险。'])],
+      warnings:['自定义条件为比较情景，价格与风险沿用明确窗口的历史样例。',...(c.actual_inputs && Object.values(c.actual_inputs).some((a)=>a.cost_per_mu)?[]:['参考成本可能缺人工、地租和折旧，利润存在高估风险。'])],
       assumptions:[`价格与风险来自「${preferred.label}」样例的对应上市窗口。`,'只计算收入减成本；未重算价格、风险、置信度或排序。','预算限制种植面积，单户面积不改变市场价格。']};
     return parseDecisionResult(result);
   }

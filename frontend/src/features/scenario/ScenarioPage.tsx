@@ -51,7 +51,7 @@ function RainstormResearch() {
       <header className="scenario__head">
         <h1 className="scenario__title">沈阳暴雨模型推演</h1>
         <p className="scenario__lead">基于 2026 沈阳极端暴雨案例的平行情景实验。</p>
-        <p className="scenario__caveat">模型未达到可靠反事实预测门槛，本节为情景演示而非预测。</p>
+        <p className="scenario__caveat">调整条件下的比较结果，不作为反事实预测。</p>
         <p className="scenario__note">{REANALYSIS_NOTE} {VOLUME_UNIT_NOTE}</p>
       </header>
       {SCENARIOS.map((scenario) => (

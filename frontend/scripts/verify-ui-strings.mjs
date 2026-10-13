@@ -31,6 +31,9 @@ if (!existsSync(assetsDir)) {
 
 /** 这些词一旦出现在产物里就是红线，没有例外。 */
 const ZERO_TOLERANCE = [
+  '模拟',
+  '演示',
+  '仅供展示',
   '技术血缘',
   'sourceOfTruth',
   'frontendText',

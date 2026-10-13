@@ -26,6 +26,8 @@ import './map-stage-layout.css';
 export interface LiaoningCanvasProps {
   mode: 'opening' | 'province' | 'city';
   active?: boolean;
+  /** Ambient task backgrounds retain the camera and scene without city controls. */
+  interactive?: boolean;
   focusCityId: string | null;
   hoveredCityId: string | null;
   onHoverCity: (cityId: string | null) => void;
@@ -385,7 +387,7 @@ export function LiaoningCanvas(props: LiaoningCanvasProps) {
 
   return (
     <>
-    {props.active !== false && props.mode !== 'opening' && <CityMapNavigation onSelectCity={props.onSelectCity} onHoverCity={props.onHoverCity}
+    {props.active !== false && props.interactive !== false && props.mode !== 'opening' && <CityMapNavigation onSelectCity={props.onSelectCity} onHoverCity={props.onHoverCity}
       selectedCityId={props.focusCityId} fallback={!webglAvailable || modelState.status === 'error' || contextLost || rendererUnavailable}/>}
     {webglAvailable && modelState.status !== 'error' &&
     <MapBoundary onUnavailable={markUnavailable}>
