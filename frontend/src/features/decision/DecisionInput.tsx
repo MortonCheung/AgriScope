@@ -1,3 +1,4 @@
+import { SelectControl } from '../../components/controls/SelectControl';
 import { useEffect, useState, type FormEvent } from 'react';
 import { getCity } from '../../domain/geography/cities';
 import type { DecisionProvider, DecisionRequest, LegacyDecisionRequest, RiskPreference } from '../../domain/decision/types';
@@ -55,7 +56,7 @@ function LegacyDecisionInput({cityId,initial,onSubmit,provider,expandInputs=fals
       <p className="ag-label">{getCity(cityId)?.shortName} · 种植选择</p>
       <h1 id="decision-input-title" className="workbench__title">短期市场比较</h1>
       <p className="ag-lead">从你的土地、预算和上市时间开始。</p>
-      <p className="decision-note">{provider.data_mode==='api'?'按实际条件提交，返回方案供你比较。':'历史样例与演示情景 · 最终模型待接入'}</p>
+      <p className="decision-note">{provider.data_mode==='api'?'按实际条件提交，返回方案供你比较。':'按历史条件比较方案'}</p>
     </div>
     <form className="decision-input__form" onSubmit={submit} noValidate>
       <div className="decision-input__fields">
@@ -64,7 +65,7 @@ function LegacyDecisionInput({cityId,initial,onSubmit,provider,expandInputs=fals
         <label>最早种植<input name="planting" type="date" value={c.planting_window.start} onChange={e=>update({planting_window:{...c.planting_window,start:e.target.value}})}/></label>
         <label>最晚上市<input name="harvest" type="date" value={c.harvest_window.end} onChange={e=>update({harvest_window:{...c.harvest_window,end:e.target.value}})}/></label>
       </div>
-      <label className="decision-input__preference">这次更看重<select value={c.risk_preference} onChange={e=>update({risk_preference:e.target.value as RiskPreference})}>{Object.entries(preferenceLabels).map(([v,label])=><option key={v} value={v}>{label}</option>)}</select></label>
+      <SelectControl className="decision-input__preference" label="这次更看重" value={c.risk_preference} onChange={value=>update({risk_preference:value as RiskPreference})} options={Object.entries(preferenceLabels).map(([value,label])=>({value,label}))}/>
       <details className="decision-disclosure" open={expandInputs}>
         <summary>补充条件</summary>
         <div className="decision-input__fields decision-input__fields--advanced">
@@ -84,8 +85,8 @@ function LegacyDecisionInput({cityId,initial,onSubmit,provider,expandInputs=fals
       {sampleError&&<p className="decision-note">历史样例暂时无法加载，可填写自己的条件。</p>}
     </details>}
   </section></WorkbenchMain><WorkbenchRail>
-    <p className="ag-label">{getCity(cityId)?.shortName} · 历史演示条件</p>
-    <dl className="decision-detail__facts"><div><dt>面积</dt><dd>{c.area_mu || '未填写'} 亩</dd></div><div><dt>预算</dt><dd>{c.budget_cny ? c.budget_cny / 10000 : '未填写'} 万元</dd></div><div><dt>作物范围</dt><dd>{crops || '演示支持作物'}</dd></div></dl>
-    <p className="decision-note">历史样例与演示情景。</p>
+    <p className="ag-label">{getCity(cityId)?.shortName} · 历史参考条件</p>
+    <dl className="decision-detail__facts"><div><dt>面积</dt><dd>{c.area_mu || '未填写'} 亩</dd></div><div><dt>预算</dt><dd>{c.budget_cny ? c.budget_cny / 10000 : '未填写'} 万元</dd></div><div><dt>作物范围</dt><dd>{crops || '可选作物'}</dd></div></dl>
+    <p className="decision-note">历史条件仅作比较参考。</p>
   </WorkbenchRail></>;
 }

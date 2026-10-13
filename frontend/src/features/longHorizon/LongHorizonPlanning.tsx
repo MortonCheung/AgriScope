@@ -1,3 +1,4 @@
+import { SelectControl } from '../../components/controls/SelectControl';
 import { useSearchParams } from 'react-router-dom';
 import { ChoiceButtons } from '../../components/controls/ChoiceButtons';
 import { DiscreteHorizonSlider } from '../../components/controls/DiscreteHorizonSlider';
@@ -143,7 +144,7 @@ export function LongHorizonPlanning({ cityId, provider = getLongHorizonDecisionP
             <label>可用预算 <span className="decision-input__unit">万元</span><input name="long-budget" type="number" min="0" step="any" value={budget} onChange={e => setBudget(e.target.value)}/></label>
             {slider}
             <label>预计上市日（可选）<input name="expected-harvest-date" type="date" value={date} onChange={e => setDate(e.target.value)}/></label>
-            <label>这次更看重<select value={risk} onChange={e => setRisk(e.target.value as typeof risk)}><option value="conservative">稳健一些</option><option value="balanced">兼顾收益与风险</option><option value="aggressive">收益优先</option></select></label></div>
+            <SelectControl label="这次更看重" value={risk} onChange={value => setRisk(value as typeof risk)} options={[{value:'conservative',label:'稳健一些'},{value:'balanced',label:'兼顾收益与风险'},{value:'aggressive',label:'收益优先'}]}/></div>
           <p className="decision-note">日期与跨度以数据基准日计算。只支持已登记档位；日期不会自动吸附到附近档位。150 / 180 天为探索性结果。</p>
           <ChoiceButtons label="比较哪些作物（不限制时比较全部）" value={crops} options={cap.crops.map(c=>({value:c.id,label:c.label}))} onChange={crop=>{setCrops(crops.includes(crop)?crops.filter(v=>v!==crop):[...crops,crop]);chooseCrop(crop);}}/>
           <details className="decision-disclosure"><summary>实际成本与亩产</summary><div className="decision-input__fields"><ChoiceButtons label="实际投入对应作物" value={actualCrop} onChange={chooseCrop} options={cap.crops.map(c=>({value:c.id,label:c.label}))}/>

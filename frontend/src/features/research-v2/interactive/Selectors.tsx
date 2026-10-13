@@ -1,3 +1,4 @@
+import { SelectControl } from '../../../components/controls/SelectControl';
 import { columnLabel, valueLabel } from '../../../domain/research/v2/metrics';
 import { uniqueValuesInSourceOrder, type DataRow } from '../../../domain/research/v2/selectors';
 
@@ -5,11 +6,11 @@ import { uniqueValuesInSourceOrder, type DataRow } from '../../../domain/researc
  * 维度选择器（本轮 §33/§45/§38）。
  *
  * 视觉沿用 v1 的编辑式语言：Label + 文字选项 + 细线 active，直角；
- * 选项多时退化为原生 select —— 不引入厚重组件库，也不做圆角 pill。
+ * 选项多时使用共享可访问选择器；保持直角、细线与键盘操作。
  * 研究点数据模块与方向页 Explorer 共用同一套控件。
  */
 
-/** 选项少 → 文字选项；选项多 → 原生 select。 */
+/** 选项少 → 文字选项；选项多 → 共享选择器。 */
 const INLINE_OPTION_LIMIT = 4;
 
 function Selector({ column, options, value, onChange }: {
@@ -22,18 +23,9 @@ function Selector({ column, options, value, onChange }: {
 
   if (options.length > INLINE_OPTION_LIMIT) {
     return (
-      <label className="module-selector">
-        <span className="module-selector__label">{label}</span>
-        <select
-          className="module-selector__select"
-          value={value ?? ''}
-          onChange={(event) => onChange(event.target.value)}
-        >
-          {options.map((option) => (
-            <option key={option} value={option}>{valueLabel(column, option)}</option>
-          ))}
-        </select>
-      </label>
+      <SelectControl className="module-selector" label={label} value={value ?? ''}
+        options={options.map(option => ({ value: option, label: valueLabel(column, option) }))} onChange={onChange}/>
+
     );
   }
 

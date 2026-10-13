@@ -48,14 +48,14 @@ function mount() {
 describe('情景模拟：现实 / 模拟', () => {
   it('shows the persistent simulation banner and 现实数据 ≠ 用户假设', () => {
     mount();
-    expect(screen.getByText('当前正在查看模拟情景')).toBeTruthy();
+    expect(screen.getByText('条件推演')).toBeTruthy();
     expect(screen.getByText(/现实数据 ≠ 用户假设/)).toBeTruthy();
   });
 
   it('renders both worlds with real observed and model-scenario readings', () => {
     mount();
     expect(screen.getByText(/现实世界 · 已发布观测/)).toBeTruthy();
-    expect(screen.getByText(/模拟世界 · 模型情景/)).toBeTruthy();
+    expect(screen.getByText(/条件推演 · 模型情景/)).toBeTruthy();
     expect(screen.getAllByText(/2.4 元\/kg/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/2.2 元\/kg/).length).toBeGreaterThan(0);
   });
@@ -63,9 +63,9 @@ describe('情景模拟：现实 / 模拟', () => {
   it('distinguishes reality and simulation lines with a legend and aria summary', () => {
     mount();
     expect(screen.getByText(/现实线 · 已发布观测价格/)).toBeTruthy();
-    expect(screen.getByText(/模拟线 · 模型情景点估计/)).toBeTruthy();
+    expect(screen.getByText(/情景线 · 模型情景点估计/)).toBeTruthy();
     const chart = screen.getByRole('img', { name: /现实线/ });
-    expect(chart.getAttribute('aria-label')).toContain('模拟线');
+    expect(chart.getAttribute('aria-label')).toContain('情景线');
   });
 
   it('marks profit stress variables as USER_INPUT_REQUIRED and never fabricates a recommendation', () => {

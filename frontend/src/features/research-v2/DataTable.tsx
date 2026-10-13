@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { columnMeta, valueLabel } from '../../domain/research/v2/metrics';
 import type { V2Table } from '../../domain/research/v2/repository';
+import { SelectControl } from '../../components/controls/SelectControl';
 import { MetricValueView } from '../../components/MetricValueView';
 import './data-table.css';
 
@@ -25,7 +26,8 @@ export interface DataTableProps {
  * 筛选只是**行的呈现层过滤**，不改变任何研究数字，也不做任何计算。
  */
 export function DataTable({ table, caption, filterColumn, maxRows = 24, note }: DataTableProps) {
-  const [filter, setFilter] = useState<string>('');
+  const identity = `${table.file}:${filterColumn ?? ''}`;
+  const [storedFilter, setStoredFilter] = useState({ identity, value: '' });
 
   const columns = useMemo(
     () => table.columns.filter((key) => {
@@ -48,6 +50,12 @@ export function DataTable({ table, caption, filterColumn, maxRows = 24, note }: 
     return [...new Set(table.rows.map((row) => row[filterColumn]).filter(Boolean))].sort();
   }, [filterColumn, table.columns, table.rows]);
 
+  const filter = storedFilter.identity === identity && filterOptions.includes(storedFilter.value) ? storedFilter.value : '';
+  useEffect(() => {
+    if (storedFilter.identity !== identity || storedFilter.value && !filterOptions.includes(storedFilter.value)) {
+      setStoredFilter({ identity, value: '' });
+    }
+  }, [identity, filterOptions, storedFilter]);
   const rows = useMemo(() => {
     const filtered = filter ? table.rows.filter((row) => row[filterColumn ?? ''] === filter) : table.rows;
     return filtered.slice(0, maxRows);
@@ -59,15 +67,10 @@ export function DataTable({ table, caption, filterColumn, maxRows = 24, note }: 
         <figcaption className="data-table__head">
           {caption && <span className="data-table__caption">{caption}</span>}
           {filterOptions.length > 0 && (
-            <label className="data-table__filter">
-              <span>{columnMeta(filterColumn ?? '')?.label ?? '筛选'}</span>
-              <select value={filter} onChange={(event) => setFilter(event.target.value)}>
-                <option value="">全部</option>
-                {filterOptions.map((option) => (
-                  <option key={option} value={option}>{valueLabel(filterColumn ?? '', option)}</option>
-                ))}
-              </select>
-            </label>
+            <SelectControl className="data-table__filter" label={columnMeta(filterColumn ?? '')?.label ?? '筛选'}
+              value={filter} options={[{ value: '', label: '全部' }, ...filterOptions.map(option => ({ value: option, label: valueLabel(filterColumn ?? '', option) }))]}
+              onChange={value => setStoredFilter({ identity, value })}/>
+
           )}
         </figcaption>
       )}

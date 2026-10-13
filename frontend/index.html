@@ -6,10 +6,25 @@
     <meta name="theme-color" content="#f7f5f1" />
     <meta name="description" content="AgriScope · 面向辽宁农业市场与种植决策场景的数据分析与决策辅助平台：市场态势、价格参考、风险与研究依据。" />
     <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/no-script.css" />
     <title>AgriScope · 辽宁农业市场决策辅助</title>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <main class="no-script">
+        <h1>城市报告</h1>
+        <p>可下载各城的报告数据；启用 JavaScript 后可使用图表探索与农业决策。</p>
+        <ul>
+          <li><details><summary>沈阳</summary><a href="/api/research/shenyang/articles/A09.json" download="沈阳城市报告.json">下载报告数据</a></details></li>
+          <li><details><summary>铁岭</summary><a href="/api/research/tieling/articles/A09.json" download="铁岭城市报告.json">下载报告数据</a></details></li>
+          <li><details><summary>朝阳</summary><a href="/api/research/chaoyang/articles/A09.json" download="朝阳城市报告.json">下载报告数据</a></details></li>
+          <li><details><summary>锦州</summary><a href="/api/research/jinzhou/articles/A09.json" download="锦州城市报告.json">下载报告数据</a></details></li>
+          <li><details><summary>丹东</summary><a href="/api/research/dandong/articles/A09.json" download="丹东城市报告.json">下载报告数据</a></details></li>
+          <li><details><summary>大连</summary><a href="/api/research/dalian/articles/A09.json" download="大连城市报告.json">下载报告数据</a></details></li>
+        </ul>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

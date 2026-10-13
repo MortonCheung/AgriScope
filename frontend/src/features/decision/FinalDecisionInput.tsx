@@ -1,3 +1,4 @@
+import { SelectControl } from '../../components/controls/SelectControl';
 import { useEffect, useState, type FormEvent } from 'react';
 import type { DecisionCapability, DecisionProvider, FinalDecisionRequest, RiskPreference } from '../../domain/decision/types';
 import { validateRequest } from '../../domain/decision/validation';
@@ -44,7 +45,7 @@ export function FinalDecisionInput({cityId,initial,onSubmit,provider,expandInput
     {capError?<div className="ag-state" role="alert"><p>{capError}</p><button className="ag-button" onClick={()=>setRetry(retry+1)}>重新确认城市能力</button></div>:!cap?<div className="ag-state" role="status" aria-busy="true">确认这个城市的决策范围<i className="ag-skeleton"/></div>:!cap.supported?<div className="ag-state"><h2 className="ag-title">这个城市暂不支持种植决策</h2><p className="decision-note">{cap.limitation??'可继续查看已有研究与市场背景。'}</p></div>:<form className="decision-input__form" onSubmit={submit} noValidate>
       <div className="decision-input__fields"><label>种植面积 <span className="decision-input__unit">亩</span><input name="area" type="number" inputMode="decimal" min="0" step="any" value={area} onChange={e=>setArea(e.target.value)}/></label><label>可用预算 <span className="decision-input__unit">万元</span><input name="budget" type="number" inputMode="decimal" min="0" step="any" value={budget} onChange={e=>setBudget(e.target.value)}/></label>
         <DiscreteHorizonSlider label="市场评估跨度" nodes={horizons.map(h=>h.days).sort((a,b)=>a-b)} value={horizons.some(h=>h.days===horizon)?horizon:null} onChange={days=>{setHorizon(days);onSelection?.({horizon:days});}}/>
-        <label>这次更看重<select value={preference} onChange={e=>setPreference(e.target.value as RiskPreference)}><option value="conservative">稳健一些</option><option value="balanced">兼顾收益与风险</option><option value="aggressive">收益优先</option></select></label></div>
+        <SelectControl label="这次更看重" value={preference} onChange={value=>setPreference(value as RiskPreference)} options={[{value:'conservative',label:'稳健一些'},{value:'balanced',label:'兼顾收益与风险'},{value:'aggressive',label:'收益优先'}]}/></div>
       {mode==='scenario_only'&&<p className="decision-note">这个跨度仅作情景比较。</p>}
         <ChoiceButtons label="比较哪些作物（不限制时比较全部）" value={crops} options={cap.crops.map(c=>({value:c.id,label:c.label}))} onChange={crop=>{setCrops(crops.includes(crop)?crops.filter(v=>v!==crop):[...crops,crop]);setActualCrop(crop);onSelection?.({crop});}}/>
       <details className="decision-disclosure" open={expandInputs}><summary>实际投入</summary><div className="decision-input__fields decision-input__fields--advanced"><ChoiceButtons label="实际投入对应作物" value={actualCrop} onChange={crop=>{setActualCrop(crop);onSelection?.({crop});}} options={cap.crops.map(c=>({value:c.id,label:c.label}))}/>

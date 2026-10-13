@@ -1,3 +1,4 @@
+import { SelectControl } from '../../components/controls/SelectControl';
 import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAppContext } from '../../app/context/appContext';
@@ -12,10 +13,10 @@ import type { LayerState, ScenarioSeries } from './useScenarioSimulation';
 import './scenario-simulation.css';
 
 /**
- * 决策中心 · 情景模拟（Frontend V3 §16）。
+ * 决策中心 · 条件推演（Frontend V3 §16）。
  *
- * 左「现实世界」= /api/daily/latest 的已发布观测；右「模拟世界」= /api/forecast/long-horizon
- * 的**情景化**估计。图表画「现实线 vs 模拟线」，视觉明显区分（实线/墨色 vs 虚线/橄榄）。
+ * 左「现实世界」= /api/daily/latest 的已发布观测；右「条件推演」= /api/forecast/long-horizon
+ * 的**情景化**估计。图表画「现实线 vs 情景线」，视觉明显区分（实线/墨色 vs 虚线/橄榄）。
  * 只能调整正式模型真正支持的变量（作物 × 评估跨度）；收益压力变量需要实际投入，
  * 缺投入时如实标 USER_INPUT_REQUIRED，不给假推荐。
  */
@@ -62,39 +63,31 @@ export function ScenarioSimulation() {
   return (
     <main className="scenario scenario-sim">
       <header className="scenario-sim__banner" role="note">
-        <p className="scenario-sim__banner-flag">当前正在查看模拟情景</p>
+        <p className="scenario-sim__banner-flag">条件推演</p>
         <p className="scenario-sim__banner-note">现实数据 ≠ 用户假设：左侧是已发布观测，右侧是模型情景，两者不是同一回事。</p>
       </header>
 
       <header className="scenario__head">
-        <h1 className="scenario__title">{city?.shortName ?? cityId} · 情景模拟</h1>
+        <h1 className="scenario__title">{city?.shortName ?? cityId} · 条件推演</h1>
         <p className="scenario__lead">只调整正式模型真正支持的变量（作物 × 评估跨度），看现实与平行情景的差距。</p>
-        <p className="scenario__note">模型情景未达到校准预测标准，本节是情景演示而非预测。</p>
+        <p className="scenario__note">调整条件下的估计，不是实际观测，也不代表校准预测。</p>
       </header>
 
       <section className="scenario-sim__controls" aria-label="情景变量">
         <div className="scenario-sim__control">
-          <span className="ag-label">作物（正式模型支持）</span>
           {simulation.capability.status === 'ready' ? (
-            <select
-              aria-label="作物"
-              value={crop ?? ''}
-              onChange={(event) => setParams((previous) => { const next = new URLSearchParams(previous); next.set('crop', event.target.value); next.delete('horizon'); return next; })}
-            >
-              {simulation.capability.data.crops.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-            </select>
+            <SelectControl label="作物" value={crop ?? ''}
+              onChange={value => setParams(previous => { const next = new URLSearchParams(previous); next.set('crop', value); next.delete('horizon'); return next; })}
+              options={simulation.capability.data.crops.map(item => ({value:item.id,label:item.label}))}/>
+
           ) : <span className="scenario-sim__pending">该城市暂无可选作物</span>}
         </div>
         <div className="scenario-sim__control">
-          <span className="ag-label">评估跨度（正式模型支持）</span>
           {detail.length > 0 ? (
-            <select
-              aria-label="评估跨度"
-              value={selected?.horizon ?? detail[0].days}
-              onChange={(event) => setParams((previous) => { const next = new URLSearchParams(previous); next.set('horizon', event.target.value); return next; })}
-            >
-              {detail.map((item) => <option key={item.days} value={item.days}>{item.days} 天 · {STATUS_LABEL[item.status] ?? item.status}</option>)}
-            </select>
+            <SelectControl label="评估跨度" value={String(selected?.horizon ?? detail[0].days)}
+              onChange={value => setParams(previous => { const next = new URLSearchParams(previous); next.set('horizon', value); return next; })}
+              options={detail.map(item => ({value:String(item.days),label:`${item.days} 天 · ${STATUS_LABEL[item.status] ?? item.status}`}))}/>
+
           ) : <span className="scenario-sim__pending">该作物暂无已登记跨度</span>}
         </div>
       </section>
@@ -118,8 +111,8 @@ export function ScenarioSimulation() {
           <p className="scenario-sim__note">官方批发观测，不是模型估计。</p>
         </section>
 
-        <section className="scenario-sim__world scenario-sim__world--model" aria-label="模拟世界">
-          <p className="ag-label">模拟世界 · 模型情景</p>
+        <section className="scenario-sim__world scenario-sim__world--model" aria-label="条件推演">
+          <p className="ag-label">条件推演 · 模型情景</p>
           {simulation.series.status === 'loading' && <p className="scenario-sim__pending" role="status">读取情景中…</p>}
           {(simulation.series.status === 'missing' || simulation.series.status === 'error') && (
             <p className="scenario-sim__pending">{simulation.series.note}</p>
@@ -141,7 +134,7 @@ export function ScenarioSimulation() {
       </div>
 
       <figure className="scenario-sim__figure">
-        <figcaption className="ag-sr-only">现实线与模拟线对比图</figcaption>
+        <figcaption className="ag-sr-only">现实线与情景线对比图</figcaption>
         <RealitySimulationChart
           series={simulation.series}
           reality={observed?.pricePerKg ?? null}
@@ -150,7 +143,7 @@ export function ScenarioSimulation() {
         />
         <ul className="scenario-sim__legend">
           <li><span className="scenario-sim__legend-line scenario-sim__legend-line--reality" aria-hidden="true" />现实线 · 已发布观测价格</li>
-          <li><span className="scenario-sim__legend-line scenario-sim__legend-line--model" aria-hidden="true" />模拟线 · 模型情景点估计</li>
+          <li><span className="scenario-sim__legend-line scenario-sim__legend-line--model" aria-hidden="true" />情景线 · 模型情景点估计</li>
         </ul>
       </figure>
 
@@ -198,7 +191,7 @@ function RealitySimulationChart({ series, reality, realityLabel, selectedHorizon
   const modelPath = points.map((point, index) => `${x(index)},${y(point.point ?? NaN)}`).join(' ');
   const modelDrawable = points.every((point) => point.point !== null);
   const aria = [
-    `模拟线（模型情景点估计）：${points.map((point) => `${point.horizon} 天 ${price(point.point)}`).join('，')}`,
+    `情景线（模型情景点估计）：${points.map((point) => `${point.horizon} 天 ${price(point.point)}`).join('，')}`,
     reality === null ? '现实线无已发布观测价格' : `现实线（已发布观测）：${price(reality)}${realityLabel ? `，数据日期 ${realityLabel}` : ''}`,
   ].join('。');
 
