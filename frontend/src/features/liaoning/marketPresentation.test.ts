@@ -1,23 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { demoMarketFor, demoPriceChange, type DemoMarket } from '../../domain/market/demoMarket';
+import { INITIAL_DISPLAY_MARKET, displayMarketFor, type DisplayMarketView } from '../../domain/market/displayMarket';
 import { marketDirection, signedChange, summarizeMarket } from './marketPresentation';
-
-const market = (changes: number[]): DemoMarket => ({ ...demoMarketFor(null), rows: changes.map((change, index) => ({ crop: `品种${index}`, previous: 100, pricePerKg: 100 + change, month: 100, week: 100 })) });
-describe('displayed daily market summary', () => {
-  it('derives counts, extremes and equal-weight average from the same daily prices', () => {
-    const source = demoMarketFor('shenyang');
+const source = displayMarketFor(INITIAL_DISPLAY_MARKET, 'shenyang', 'wholesale');
+const market = (changes: number[]): DisplayMarketView => ({ ...source, rows: changes.map((change, index) => ({ ...source.rows[index], change_percent: change })) });
+describe('真实行情变动摘要', () => {
+  it('统计、极值和平均变动都来自同一组当前城市当前价格类型的八商品', () => {
     const summary = summarizeMarket(source);
-    expect(summary.rising).toBe(4); expect(summary.falling).toBe(3);
-    expect(summary.topRiser?.crop).toBe('青椒'); expect(summary.topFaller?.crop).toBe('甘蓝');
-    expect(summary.average).toBeCloseTo(source.rows.reduce((sum, row) => sum + demoPriceChange(row, 'previous'), 0) / 8);
+    expect(summary.rising).toBe(source.rows.filter(row => marketDirection(row.change_percent) === 'up').length);
+    expect(summary.falling).toBe(source.rows.filter(row => marketDirection(row.change_percent) === 'down').length);
+    expect(summary.average).toBeCloseTo(source.rows.reduce((sum, row) => sum + row.change_percent, 0) / 8);
+    expect(summarizeMarket(market([1, 3])).topRiser?.product).toBe(source.rows[1].product);
+    expect(summarizeMarket(market([-2, -4])).topFaller?.product).toBe(source.rows[1].product);
   });
-  it('never labels a rising crop as biggest fall, or flat prices as movers', () => {
+  it('全上涨时不把上涨商品说成跌幅最大，平稳时不创造涨跌', () => {
     expect(summarizeMarket(market([1, 3])).topFaller).toBeNull();
     expect(summarizeMarket(market([-2, -4])).topRiser).toBeNull();
     expect(summarizeMarket(market([0, .02, -.02]))).toMatchObject({ rising: 0, falling: 0, topRiser: null, topFaller: null });
-    expect(summarizeMarket(market([]))).toMatchObject({ average: 0, topRiser: null, topFaller: null });
+    expect(summarizeMarket({ ...source, rows: [] })).toMatchObject({ average: 0, topRiser: null, topFaller: null });
   });
-  it('shares the visible zero threshold without negative zero', () => {
+  it('格式化归零不产生负零', () => {
     expect(marketDirection(-.02)).toBe('flat'); expect(signedChange(-.02)).toBe('0.0');
     expect(signedChange(1.63)).toBe('+1.6'); expect(signedChange(-2.14)).toBe('-2.1');
   });

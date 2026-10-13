@@ -4,11 +4,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Link, MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import { resetAppContext } from '../../app/context/appContext';
 import { STUDY_CITY_IDS, getCity } from '../../domain/geography/cities';
-import { DEMO_MARKET_DATE, DEMO_MARKET_LABEL, demoMarketFor } from '../../domain/market/demoMarket';
+import { DISPLAY_PRICE_LEVELS, INITIAL_DISPLAY_MARKET, PRICE_LEVEL_BUTTON, PRICE_LEVEL_LABEL, displayMarketFor, type DisplayMarketRecord } from '../../domain/market/displayMarket';
 import { LiaoningPage } from './LiaoningPage';
 import { CityMapFallback } from './CityMapFallback';
 import { marketTrendPoints } from './MarketOverview';
 vi.mock('motion/react', () => ({ useReducedMotion: () => true }));
+vi.mock('../../providers/market/displayMarketProvider', () => ({ getDisplayMarketProvider: () => ({ latest: () => new Promise(() => {}) }) }));
 vi.mock('../spatial/SpatialShell', () => ({ useCitySelection: () => {
   const navigate = useNavigate(); return (city: string) => navigate(`/liaoning?city=${city}`);
 } }));
@@ -18,90 +19,115 @@ afterEach(cleanup);
 function Location() { const url = useLocation(); return <output data-testid="url">{url.pathname}{url.search}</output>; }
 function MapFixture() { const navigate = useNavigate(); return <CityMapFallback selectedCityId={null} onSelectCity={city => navigate(`/liaoning?city=${city}`)}/>; }
 const page = (url = '/liaoning') => <MemoryRouter initialEntries={[url]}><MapFixture/><LiaoningPage/><Location/></MemoryRouter>;
+const formatted = (value: number) => new Intl.NumberFormat('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+const forbidden = /暂无数据|数据缺失|数据不足|未采集|模拟数据|演示数据|数据异常|demo|null|undefined|NaN|Infinity/;
+function chooseProduct(product: string) {
+  fireEvent.click(screen.getByRole('combobox', { name: '商品' }));
+  fireEvent.click(screen.getByRole('option', { name: product }));
+}
 
-describe('产品行情主页', () => {
-  it('只显示行情和功能入口，八个品种只展示一次，单位与价格相邻', () => {
+describe('完整真实行情主页', () => {
+  it('后台请求尚未返回也立即展示八张完整行情，价格两位、单位与数据相邻', () => {
     const { container } = render(page());
-    expect(container.textContent).not.toMatch(/演示|总览|来源说明/);
-    expect(screen.getByText(DEMO_MARKET_LABEL)).toBeTruthy();
+    const market = displayMarketFor(INITIAL_DISPLAY_MARKET, null, 'wholesale');
+    expect(container.textContent).not.toMatch(forbidden);
     expect(screen.getByRole('heading', { name: '价格概览' })).toBeTruthy();
     expect(container.querySelectorAll('.market-overview__price')).toHaveLength(8);
-    expect(container.querySelector('.market-overview__value')?.textContent).toBe('3.9元/kg');
+    expect(container.querySelector('.market-overview__value')?.textContent).toBe(`${formatted(market.rows[0].price)}元/kg`);
     expect(container.querySelector('select')).toBeNull();
     expect(container.querySelector('.liaoning-page__city .choice-buttons')).toBeNull();
-    expect(container.querySelectorAll('.market-overview__caption')).toHaveLength(1);
-    expect(container.textContent?.match(/批发价/g)).toHaveLength(1);
-    expect(screen.getByText('六城参考均值')).toBeTruthy();
-    expect(screen.getByText(`参考日期 ${DEMO_MARKET_DATE}`).getAttribute('dateTime')).toBe(DEMO_MARKET_DATE);
-    expect(screen.queryByText(/更新|实时行情/)).toBeNull();
-    expect(screen.getByText('涨幅最大')).toBeTruthy();
-    expect(screen.getByText('跌幅最大')).toBeTruthy();
-    expect(screen.getByText('平均变动')).toBeTruthy();
-    expect(container.textContent).not.toMatch(/最新农业市场|全部品种与来源|已接入市场|尚未接入/);
+    expect(screen.getByRole('combobox', { name: '商品' })).toBeTruthy();
+    expect(screen.getByText('辽宁')).toBeTruthy();
+    expect(container.querySelector('.market-overview__price time')?.getAttribute('dateTime')).toBe(market.rows[0].observation_date);
+    expect(container.textContent).not.toMatch(/情景参考价|六城参考均值|参考日期|尚未接入/);
     expect(screen.getByRole('link', { name: '决策' }).getAttribute('href')).toBe('/decision');
     expect(screen.getByRole('link', { name: '报告' }).getAttribute('href')).toBe('/reports');
   });
-  it('右票唯一入口位于全部统计之前，不删除行情或统计', () => {
+  it('保留右纸唯一入口与全部统计，左纸商品筛选不改变右纸八商品摘要', () => {
     const { container } = render(page());
     const summary = container.querySelector('.city-summary')!;
     expect(summary.firstElementChild).toBe(screen.getByRole('navigation', { name: '城市工作空间' }));
     expect(within(summary as HTMLElement).getAllByRole('link')).toHaveLength(2);
     expect(summary.querySelectorAll('dt')).toHaveLength(5);
+    const originalSummary = summary.textContent;
+    chooseProduct('土豆');
+    expect(container.querySelectorAll('.market-overview__price')).toHaveLength(1);
+    expect(container.querySelector('.market-overview__price h3')?.textContent).toBe('土豆');
+    expect(summary.textContent).toBe(originalSummary);
+    chooseProduct('全部商品');
     expect(container.querySelectorAll('.market-overview__price')).toHaveLength(8);
   });
-  it('六城立即切换、双纸面不卸载、使用本城样例且报告直达正式报告', () => {
+  it('六城×三类型×八商品完整，切换保持双纸DOM、当前类型及单品筛选', () => {
     const { container } = render(page());
     const papers = [...container.querySelectorAll('.liaoning-paper')];
     for (const city of STUDY_CITY_IDS) {
       fireEvent.click(screen.getByRole('button', { name: getCity(city)!.shortName }));
       expect(screen.getByTestId('url').textContent).toBe(`/liaoning?city=${city}`);
-      expect([...container.querySelectorAll('.liaoning-paper')]).toEqual(papers);
-      expect(container.querySelector('.market-overview__price strong')?.textContent).toBe(String(demoMarketFor(city).rows[0].pricePerKg));
+      for (const level of DISPLAY_PRICE_LEVELS) {
+        fireEvent.click(screen.getByRole('button', { name: PRICE_LEVEL_BUTTON[level] }));
+        expect(screen.getByRole('button', { name: PRICE_LEVEL_BUTTON[level] }).getAttribute('aria-pressed')).toBe('true');
+        const expected = displayMarketFor(INITIAL_DISPLAY_MARKET, city, level);
+        const cards = [...container.querySelectorAll('.market-overview__price')];
+        expect(cards).toHaveLength(8);
+        cards.forEach((card, index) => {
+          expect(card.querySelector('h3')?.textContent).toBe(expected.rows[index].product);
+          expect(card.querySelector('strong')?.textContent).toBe(formatted(expected.rows[index].price));
+          expect(card.querySelector('time')?.getAttribute('dateTime')).toBe(expected.rows[index].observation_date);
+          expect(card.textContent).toContain(PRICE_LEVEL_LABEL[level]);
+          expect(card.textContent).not.toMatch(forbidden);
+        });
+        expect([...container.querySelectorAll('.liaoning-paper')]).toEqual(papers);
+      }
       const actions = within(screen.getByRole('navigation', { name: '城市工作空间' }));
-      const decision = actions.getByRole('link', { name: '决策' }), report = actions.getByRole('link', { name: '报告' });
-      expect(decision.className).toBe(report.className);
-      expect(decision.getAttribute('href')).toContain(`/cities/${city}/decision?city=${city}`);
-      expect(report.getAttribute('href')).toContain(`/reports/${city}?city=${city}`);
-      expect(container.querySelectorAll('.market-overview__price')).toHaveLength(8);
-      expect(screen.getByText(DEMO_MARKET_LABEL)).toBeTruthy();
-      expect(screen.getByText(`参考日期 ${DEMO_MARKET_DATE}`)).toBeTruthy();
+      expect(actions.getByRole('link', { name: '决策' }).getAttribute('href')).toContain(`/cities/${city}/decision?city=${city}`);
+      expect(actions.getByRole('link', { name: '报告' }).getAttribute('href')).toContain(`/reports/${city}?city=${city}`);
+    }
+    chooseProduct('土豆');
+    fireEvent.click(screen.getByRole('button', { name: '沈阳' }));
+    expect(container.querySelectorAll('.market-overview__price')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: '集市' }).getAttribute('aria-pressed')).toBe('true');
+    expect(container.querySelector('strong')?.textContent).toBe(formatted(displayMarketFor(INITIAL_DISPLAY_MARKET, 'shenyang', 'retail_market').rows[4].price));
+  });
+  it('连续20次城市/商品/类型操作不重挂纸面，也不重置长期趋势', () => {
+    const { container } = render(page());
+    const papers = [...container.querySelectorAll('.liaoning-paper')];
+    fireEvent.click(screen.getByRole('button', { name: '长期趋势' }));
+    for (let index = 0; index < 20; index += 1) {
+      const city = STUDY_CITY_IDS[index % STUDY_CITY_IDS.length];
+      const level = DISPLAY_PRICE_LEVELS[index % DISPLAY_PRICE_LEVELS.length];
+      fireEvent.click(screen.getByRole('button', { name: getCity(city)!.shortName }));
+      fireEvent.click(screen.getByRole('button', { name: PRICE_LEVEL_BUTTON[level] }));
+      chooseProduct(index % 2 === 0 ? '土豆' : '全部商品');
+      expect([...container.querySelectorAll('.liaoning-paper')]).toEqual(papers);
+      expect(screen.getByRole('button', { name: '长期趋势' }).getAttribute('aria-pressed')).toBe('true');
+      expect(screen.getAllByRole('img')).toHaveLength(index % 2 === 0 ? 1 : 8);
+      expect(container.textContent).not.toMatch(forbidden);
     }
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(screen.getByTestId('url').textContent).toBe('/liaoning');
     expect([...container.querySelectorAll('.liaoning-paper')]).toEqual(papers);
+    expect(screen.getByRole('button', { name: '长期趋势' }).getAttribute('aria-pressed')).toBe('true');
   });
-  it('行情随城市同步更新，清除选择立即恢复默认价格', () => {
-    const { container } = render(page('/liaoning?city=shenyang'));
-    const change = () => container.querySelector('.market-overview__change')?.textContent;
-    expect(change()).toBe('+1.6%');
-    fireEvent.click(screen.getByRole('button', { name: '铁岭' }));
-    expect(change()).toBe('+1.4%');
-    fireEvent.keyDown(window, { key: 'Escape' });
-    expect(container.querySelector('.market-overview__price strong')?.textContent).toBe('3.9');
-  });
-  it('未知城市不建立选择，Escape 立即回全省且不创建别城入口', () => {
-    render(page('/liaoning?city=anshan'));
-    expect(screen.queryByRole('button', { name: '返回地图' })).toBeNull();
-    expect(within(screen.getByRole('navigation', {name:'地图城市选择'})).getAllByRole('button').filter(b => b.getAttribute('aria-pressed') === 'true')).toHaveLength(0);
+  it('未知城市使用省级完整行情，Esc不会创建其它城市入口', () => {
+    const { container } = render(page('/liaoning?city=anshan'));
+    expect(within(screen.getByRole('navigation', { name: '地图城市选择' })).getAllByRole('button').filter(button => button.getAttribute('aria-pressed') === 'true')).toHaveLength(0);
+    expect(container.querySelector('strong')?.textContent).toBe(formatted(displayMarketFor(INITIAL_DISPLAY_MARKET, null, 'wholesale').rows[0].price));
     fireEvent.click(screen.getByRole('button', { name: '丹东' }));
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(screen.getByTestId('url').textContent).toBe('/liaoning');
   });
 });
 
-describe('date-scaled market anchors', () => {
-  it('uses actual -30/-7/-1/0 spacing, and preserves trend selection across scopes', () => {
-    const points = marketTrendPoints(demoMarketFor(null).rows[0], '2026-10-10');
-    expect(points.map(point => point.date)).toEqual(['2026-09-10','2026-10-03','2026-10-09','2026-10-10']);
-    expect((points[1].x-points[0].x)/(points[2].x-points[1].x)).toBeCloseTo(23/6);
-    const rendered = render(page());
-    fireEvent.click(screen.getByRole('button',{name:'长期趋势'}));
-    expect(screen.getAllByRole('img')).toHaveLength(8);
-    expect(rendered.container.querySelectorAll('.market-overview__trend-dates')).toHaveLength(8);
-    expect(rendered.container.querySelector('.market-overview__trend-dates time')?.getAttribute('dateTime')).toBe('2026-09-10');
-    const paper = rendered.container.querySelector('.liaoning-page__current');
-    fireEvent.click(screen.getByRole('button',{name:'大连'}));
-    expect(rendered.container.querySelector('.liaoning-page__current')).toBe(paper);
-    expect(screen.getAllByRole('img')).toHaveLength(8);
+describe('真实日期价格趋势', () => {
+  it('按真实历史日期间距定位，不生成前30天、7天、1天虚构锚点', () => {
+    const row: DisplayMarketRecord = { ...INITIAL_DISPLAY_MARKET.records[0], history: [
+      { date: '2026-09-01', price: 1 }, { date: '2026-09-03', price: 2 }, { date: '2026-09-10', price: 3 },
+    ] };
+    const points = marketTrendPoints(row);
+    expect(points.map(point => point.date)).toEqual(['2026-09-01', '2026-09-03', '2026-09-10']);
+    expect((points[1].x - points[0].x) / (points[2].x - points[1].x)).toBeCloseTo(2 / 7);
+    expect(points[0].x).toBe(32);
+    expect(points[2].x).toBe(304);
+    expect(marketTrendPoints({ ...row, history: [row.history[0]] })[0].x).toBe(168);
   });
 });

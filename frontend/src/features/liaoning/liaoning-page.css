@@ -14,6 +14,8 @@
 .market-overview__controls {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:12px;}
 .market-overview__controls .ag-button {justify-content:center;min-height:44px;padding:7px 4px;font-size:var(--ag-fs-meta);}
 .market-overview__controls [aria-pressed=true] {background:var(--ag-paper-deep);color:var(--ag-ink);border-color:var(--ag-ink);}
+.market-overview__price-levels {grid-template-columns:repeat(3,minmax(0,1fr));}
+.market-overview__product {margin-bottom:12px;}
 .market-overview__caption {display:flex;justify-content:space-between;margin:0;padding-bottom:8px;border-bottom:1px solid var(--ag-rule);font-size:var(--ag-fs-meta);color:var(--ag-ink-muted);}
 .market-overview__prices {list-style:none;padding:0;margin:0;}
 .market-overview__price {padding:10px 0;border-bottom:1px solid var(--ag-rule-soft);}
@@ -23,6 +25,7 @@
 .market-overview__value strong {font-size:27px;font-weight:400;letter-spacing:-.03em;}
 .market-overview__value small {font-size:var(--ag-fs-meta);color:var(--ag-ink-soft);}
 .market-overview__change {font-size:var(--ag-fs-meta);margin-left:auto;}
+.market-overview__meta {display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 8px;margin-top:5px;font-size:var(--ag-fs-meta);color:var(--ag-ink-muted);font-variant-numeric:tabular-nums;}
 .market-overview [data-direction=up] {color:var(--ag-clay);}
 .market-overview [data-direction=down] {color:var(--ag-olive);}
 .market-overview__trend {width:100%;margin-top:8px;}
@@ -60,4 +63,15 @@
  .market-overview__value strong {font-size:24px;}
  .city-summary__movement>div {flex-wrap:wrap;gap:4px;}
  .city-summary__movement dd {margin-left:auto;}
+}
+@media(max-width:900px) {
+ /* Keep a price visible on entry after adding the required selectors. */
+ .liaoning-page__title {margin-bottom:12px;}
+ .market-overview__head,.market-overview__controls {margin-bottom:8px;}
+ .market-overview__product {display:grid;grid-template-columns:2em minmax(0,1fr);align-items:center;gap:4px;margin-bottom:8px;}
+ .market-overview__product .select-control__trigger {padding-inline:8px;}
+ .market-overview__caption {display:none;}
+ .market-overview__price {padding-block:8px;}
+ .market-overview__price h3 {margin-bottom:2px;}
+ .market-overview__meta {font-size:11px;line-height:1.5;}
 }

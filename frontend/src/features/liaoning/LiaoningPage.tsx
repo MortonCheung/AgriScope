@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { selectedCityFromSearch, provinceUrl } from '../../app/context/provinceSelection';
 import { usePageNavigate } from '../../app/pageNavigation';
 import { useSpatialStageStore } from '../spatial/spatialStageStore';
-import { demoMarketFor } from '../../domain/market/demoMarket';
+import { displayMarketFor, type DisplayPriceLevel } from '../../domain/market/displayMarket';
+import { useDisplayMarket } from './useDisplayMarket';
 import { CitySummary } from './CitySummary';
 import { MarketOverview } from './MarketOverview';
 import '../../design/paper-motion.css';
@@ -14,7 +15,10 @@ export function LiaoningPage() {
   const hover = useSpatialStageStore(s => s.hoveredCityId);
   const setHover = useSpatialStageStore(s => s.setHoveredCity);
   const navigate = usePageNavigate();
-  const market = demoMarketFor(selectedCityId);
+  const snapshot = useDisplayMarket();
+  const [priceLevel, setPriceLevel] = useState<DisplayPriceLevel>('wholesale');
+  const [product, setProduct] = useState('');
+  const market = displayMarketFor(snapshot, selectedCityId, priceLevel);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return;
@@ -29,7 +33,7 @@ export function LiaoningPage() {
       <aside className="liaoning-paper liaoning-page__current" data-paper-surface aria-label="价格概览">
         <div className="liaoning-panel-content">
           <h1 className="liaoning-page__title">价格概览</h1>
-          <MarketOverview market={market}/>
+          <MarketOverview market={market} product={product} onProductChange={setProduct} onPriceLevelChange={setPriceLevel}/>
         </div>
       </aside>
       <div className="liaoning-page__window" aria-hidden />
