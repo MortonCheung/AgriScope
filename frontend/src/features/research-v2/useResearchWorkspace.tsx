@@ -9,6 +9,7 @@ import { useRuntimeCatalog } from '../../domain/research/runtime/catalog';
 import { canonicalPresentationId, presentationExplorers, presentedModules, presentedTopics, resolvePresentedResearch } from '../../domain/research/presentation';
 import { V2Repository } from '../../domain/research/v2/repository';
 import { WorkbenchMain, WorkbenchRail, type WorkbenchLayoutProps } from '../../components/workbench/WorkbenchLayout';
+import { DataSourceLinks } from '../../components/sources/DataSourceLinks';
 import { ResearchTree } from './ResearchTree';
 import { EvidenceRail, ModuleEvidenceRail } from './EvidenceRail';
 import { InteractivePointView } from './InteractivePointView';
@@ -96,7 +97,7 @@ export function useResearchWorkspace(cityId: string, requested?: string | null, 
       </div> : undefined}>
         {state.status === 'error' ? <p role="alert">研究目录读取失败，请稍后重试。</p> : state.status === 'ready' && !selection ? <p role="alert">没有通过发布校验的研究，请检查研究发布清单。</p> : content}
       </WorkbenchMain>
-      <WorkbenchRail>{tree && topic ? <EvidenceRail cityId={cityId} topic={topic} point={point}/> : <ModuleEvidenceRail cityId={selection ? cityId : ''} moduleId={selection?.payloadId ?? null} article={article.status === 'ready' && !selection?.replaced ? article.data : null}/>}</WorkbenchRail>
+      <WorkbenchRail>{tree && topic ? <EvidenceRail cityId={cityId} topic={topic} point={point}/> : <ModuleEvidenceRail cityId={selection ? cityId : ''} moduleId={selection?.payloadId ?? null} article={article.status === 'ready' && !selection?.replaced ? article.data : null}/>}<DataSourceLinks scope={cityId}/></WorkbenchRail>
     </>,
   };
 }

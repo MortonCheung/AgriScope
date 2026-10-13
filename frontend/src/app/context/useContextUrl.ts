@@ -11,12 +11,13 @@ export function useContextUrlSync(): void {
   useLayoutEffect(() => {
     const state = useAppContext.getState();
     const parsed = readContextFromSearch(search);
-    const pathCity = /^\/cities\/([^/]+)/.exec(pathname)?.[1];
+    const pathCity = /^\/(?:cities|reports)\/([^/]+)(?:\/|$)/.exec(pathname)?.[1];
     if (pathname === '/' || pathname === '/liaoning') {
       state.setCity(pathname === '/' ? null : selectedCityFromSearch(search));
       return;
     }
-    if (pathCity && (STUDY_CITY_IDS as readonly string[]).includes(pathCity)) state.setCity(pathCity);
+    if (pathname === '/reports/liaoning') state.setCity(null);
+    else if (pathCity && (STUDY_CITY_IDS as readonly string[]).includes(pathCity)) state.setCity(pathCity);
     else if (parsed.cityId !== undefined) state.setCity(parsed.cityId);
     if (parsed.crop !== undefined) state.setCrop(parsed.crop);
     if (parsed.horizon !== undefined) state.setHorizon(parsed.horizon);

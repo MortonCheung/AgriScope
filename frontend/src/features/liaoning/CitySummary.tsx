@@ -4,6 +4,7 @@ import { TransitionLink } from '../../app/pageNavigation';
 import type { DisplayMarketView } from '../../domain/market/displayMarket';
 import { FlipValue } from '../../components/motion/FlipValue';
 import { marketDirection, signedChange, summarizeMarket } from './marketPresentation';
+import { DataSourceLinks } from '../../components/sources/DataSourceLinks';
 
 export function CitySummary({ market }: { market: DisplayMarketView }) {
   const { rising, falling, topRiser, topFaller, average, comparable } = summarizeMarket(market);
@@ -27,5 +28,6 @@ export function CitySummary({ market }: { market: DisplayMarketView }) {
       </div>)}
       <div><dt>平均变动</dt><dd data-direction={comparable ? marketDirection(average) : undefined}><span>{comparable ? <><FlipValue value={signedChange(average)}/>%</> : '最新'}</span></dd></div>
     </dl>
+    <DataSourceLinks scope={market.cityId}/>
   </section>;
 }

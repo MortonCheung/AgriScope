@@ -8,6 +8,7 @@ import { useResearchWorkspace } from '../research-v2/useResearchWorkspace';
 import { useRuntimeCatalog } from '../../domain/research/runtime/catalog';
 import { cityContextUrl } from '../../app/context/provinceSelection';
 import { WorkbenchLayout, WorkbenchMain, WorkbenchRail } from '../../components/workbench/WorkbenchLayout';
+import { DataSourceLinks } from '../../components/sources/DataSourceLinks';
 import { WorkspaceLanding } from '../../components/workbench/WorkspaceLanding';
 import { useArticle } from '../research-v2/useV2';
 import { ModuleEvidenceRail } from '../research-v2/EvidenceRail';
@@ -63,7 +64,7 @@ export function ReportWorkspacePage() {
         <p className="report__empty" role={articleState.status === 'error' ? 'alert' : 'status'}>{articleState.status === 'loading' ? '报告载入中' : '报告读取失败，请稍后重试。'}</p>
       </div>}
     </WorkbenchMain>
-    <WorkbenchRail><ModuleEvidenceRail cityId={article ? scope : ''} moduleId={reportId} article={article} /></WorkbenchRail>
+    <WorkbenchRail><ModuleEvidenceRail cityId={article ? scope : ''} moduleId={reportId} article={article} /><DataSourceLinks scope="liaoning"/></WorkbenchRail>
     </>}
   </WorkbenchLayout>;
 }

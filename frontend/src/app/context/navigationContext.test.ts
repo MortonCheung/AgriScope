@@ -21,6 +21,11 @@ describe('全局任务入口保留实际观察上下文', () => {
     expect(primaryNavigationTarget('home', { pathname: '/cities/dandong/decision', search: '' }, context)).toBe('/liaoning?city=dandong');
     expect(primaryNavigationTarget('decision', { pathname: '/liaoning', search: '?city=tieling' }, context)).toContain('/cities/tieling/decision?');
   });
+  it('辽宁报告的路径范围优先于上一城市和 query，城市报告仍以路径为准', () => {
+    expect(navigationContext({ pathname: '/reports/liaoning', search: '?city=dalian' }, context).cityId).toBeNull();
+    expect(primaryNavigationTarget('home', { pathname: '/reports/liaoning', search: '' }, context)).toBe('/liaoning');
+    expect(navigationContext({ pathname: '/reports/tieling', search: '?city=dalian' }, context).cityId).toBe('tieling');
+  });
 
   it('报告任务始终进入六城入口，不继承旧研究点、阅读模式或决策 plan', () => {
     rememberReportLocation({ pathname: '/cities/shenyang/research/A2.2', search: '?mode=article&city=dandong&plan=old' });

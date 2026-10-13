@@ -16,7 +16,7 @@ export function navigationContext(location: NavigationLocation, context: Context
   const pathCity = /^\/(?:cities|reports)\/([^/]+)(?:\/|$)/.exec(location.pathname)?.[1];
   const cityId = location.pathname === '/' ? null
     : location.pathname === ROUTES.liaoning ? selectedCityFromSearch(location.search)
-      : pathCity && pathCity !== 'liaoning' ? knownCity(pathCity) ? pathCity : null
+      : pathCity ? knownCity(pathCity) ? pathCity : null
         : parsed.cityId ?? context.cityId;
   return { cityId, crop: parsed.crop ?? context.crop, horizon: parsed.horizon ?? context.horizon, asOf: parsed.asOf ?? context.asOf };
 }

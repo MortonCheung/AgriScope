@@ -28,12 +28,16 @@ const profit = () => results().getByText('预计收益').nextElementSibling?.tex
 describe('six-city live decision workbench', () => {
   it.each(STUDY_CITY_IDS)('shows inputs and updates results without submit in %s', city => {
     const { container } = render(view(city));
+    const sourceBlock = screen.getByRole('region', { name: '数据来源' });
+    expect(sourceBlock.getAttribute('data-source-scope')).toBe(city);
+    expect(sourceBlock.closest('[aria-live]')).toBeNull();
     expect((screen.getByLabelText(/^种植面积/) as HTMLInputElement).value).toBe('');
     expect((screen.getByLabelText(/^预计亩产/) as HTMLInputElement).value).toBe('');
     expect((screen.getByLabelText(/^每亩总成本/) as HTMLInputElement).value).toBe('');
     expect(results().queryByText('预计收益')).toBeNull();
     fill(); expect(profit()).toBe('6,000 元');
     change(/^假设销售价格/, '5'); expect(profit()).toBe('10,000 元');
+    expect(screen.getByRole('region', { name: '数据来源' })).toBe(sourceBlock);
     expect(screen.getByRole('img', { name: /利润敏感性/ })).toBeTruthy();
     expect(container.querySelector('details, [type="submit"], select')).toBeNull();
     expect(container.textContent).not.toMatch(/模拟数据|情景估算|暂未接入|模型冻结|方法与数据/);

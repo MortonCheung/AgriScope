@@ -33,7 +33,7 @@ afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 describe('one report paper across all workspace selections', () => {
   it('preserves paper/sidebar/main/rail nodes through entry, cities, composites and POP', () => {
     const { container } = render(<MemoryRouter initialEntries={['/reports']}><Controls /><Routes><Route path="/reports" element={<ReportWorkspacePage />} /><Route path="/reports/:cityId" element={<ReportWorkspacePage />} /></Routes></MemoryRouter>);
-    const selectors = ['.workbench__paper', '.workbench__sidebar', '.workbench__column', '.workbench__rail'];
+    const selectors = ['.workbench__paper', '.workbench__sidebar', '.workbench__column', '.workbench__rail', '.data-source-links'];
     const nodes = selectors.map(selector => container.querySelector(selector));
     const assertStable = () => selectors.forEach((selector, index) => expect(container.querySelector(selector)).toBe(nodes[index]));
     expect(screen.getByRole('heading', { name: '城市报告' })).toBeTruthy();
@@ -66,6 +66,7 @@ describe('one report paper across all workspace selections', () => {
     expect(container.querySelector('main')?.getAttribute('data-rail-mode')).toBe('responsive');
     expect(screen.queryByText('A4.4')).toBeNull();
     expect(container.querySelectorAll('.workbench__paper')).toHaveLength(1);
+    expect(screen.getByRole('region', { name: '数据来源' }).getAttribute('data-source-scope')).toBe('shenyang');
   });
   it('replaces the excluded Tieling deep selection with a valid URL and content', async () => {
     const {container}=render(<MemoryRouter initialEntries={['/reports/tieling?research=A6&crop=玉米&as_of=2026-10-06']}><Routes><Route path="/reports/:cityId" element={<ReportWorkspacePage/>}/></Routes></MemoryRouter>);

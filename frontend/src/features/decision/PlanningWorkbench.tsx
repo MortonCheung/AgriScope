@@ -9,6 +9,7 @@ import {
 } from '../../domain/decision/planning';
 import { createCityDecisionData, productCropOptions, productPriceFor, type ProductPrice } from '../../domain/decision/productDecision';
 import { WorkbenchMain, WorkbenchRail } from '../../components/workbench/WorkbenchLayout';
+import { DataSourceLinks } from '../../components/sources/DataSourceLinks';
 import { ChoiceButtons } from '../../components/controls/ChoiceButtons';
 import { useMarketObservation } from './useMarketObservation';
 import './planning.css';
@@ -140,7 +141,7 @@ function PlanningCity({ cityId, crops }: { cityId: string; crops: string[] }) {
         {!recommended && data.budget.shortfall > 0 && <p className="planning-budget-warning">预算缺口 {number(data.budget.shortfall)} 元</p>}
         <h3 className="ag-label">建议原因</h3><ul className="planning-reasons">{recommendationReasons?.map(reason => <li key={reason}>{reason}</li>)}</ul>
       </> : <p className="planning-empty">{budgetError || cropError && touched.crop || calculationError ? '请修正输入条件。' : '填写作物、面积、亩产和成本，即可查看结果。'}</p>}
-    </section></WorkbenchRail>
+    </section><DataSourceLinks scope={cityId}/></WorkbenchRail>
   </>;
 }
 

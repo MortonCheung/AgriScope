@@ -48,6 +48,7 @@ describe('完整真实行情主页', () => {
     expect(container.querySelector('select')).toBeNull();
     expect(container.querySelector('.liaoning-page__city .choice-buttons')).toBeNull();
     expect(screen.getByRole('combobox', { name: '商品' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: '数据来源' }).getAttribute('data-source-scope')).toBe('liaoning');
     expect(screen.getByText('辽宁')).toBeTruthy();
     expect(container.querySelector('.market-overview__price time')?.getAttribute('dateTime')).toBe(market.rows[0].observation_date);
     expect(container.textContent).not.toMatch(/情景参考价|六城参考均值|参考日期|尚未接入/);
@@ -58,7 +59,7 @@ describe('完整真实行情主页', () => {
     const { container } = render(page());
     const summary = container.querySelector('.city-summary')!;
     expect(summary.firstElementChild).toBe(screen.getByRole('navigation', { name: '城市工作空间' }));
-    expect(within(summary as HTMLElement).getAllByRole('link')).toHaveLength(2);
+    expect(within(screen.getByRole('navigation', { name: '城市工作空间' })).getAllByRole('link')).toHaveLength(2);
     expect(summary.querySelectorAll('dt')).toHaveLength(5);
     const originalSummary = summary.textContent;
     chooseProduct('土豆');
@@ -74,6 +75,7 @@ describe('完整真实行情主页', () => {
     for (const city of STUDY_CITY_IDS) {
       fireEvent.click(screen.getByRole('button', { name: getCity(city)!.shortName }));
       expect(screen.getByTestId('url').textContent).toBe(`/liaoning?city=${city}`);
+      expect(screen.getByRole('region', { name: '数据来源' }).getAttribute('data-source-scope')).toBe(city);
       for (const level of DISPLAY_PRICE_LEVELS) {
         fireEvent.click(screen.getByRole('button', { name: PRICE_LEVEL_BUTTON[level] }));
         expect(screen.getByRole('button', { name: PRICE_LEVEL_BUTTON[level] }).getAttribute('aria-pressed')).toBe('true');
