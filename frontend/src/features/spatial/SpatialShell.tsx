@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect } from 'react';
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useState } from 'react';
 import { useReducedMotion } from 'motion/react';
 import { Outlet, useLocation, NavigationType } from 'react-router-dom';
 import { isStudyCity } from '../../domain/geography/cities';
@@ -9,18 +9,24 @@ import { RouteTransition } from '../../app/RouteTransition';
 import { useAppHistory } from '../../app/appHistory';
 import { ROUTES, structuralParent } from '../../app/routes';
 import { provinceUrl, selectedCityFromSearch } from '../../app/context/provinceSelection';
+import { PAPER_NAVIGATION_EVENT, type PaperNavigationDetail } from '../../app/paperNavigation';
 import './spatial-shell.css';
 
-function stageModeForPath(pathname: string): SpatialStageMode {
+function stageModeForPath(pathname: string, search = ''): SpatialStageMode {
   if (pathname === ROUTES.root) return 'opening';
   if (pathname === ROUTES.liaoning) return 'province';
-  if (focusCityForPath(pathname)) return 'city';
+  if (focusCityForPath(pathname, search)) return 'city';
   return 'none';
 }
 
-function focusCityForPath(pathname: string): string | null {
+function focusCityForPath(pathname: string, search = ''): string | null {
   const city = /^\/(?:cities|reports)\/([^/]+)(?:\/|$)/.exec(pathname)?.[1];
-  return city && isStudyCity(city) ? city : null;
+  if (city) return isStudyCity(city) ? city : null;
+  if (pathname === ROUTES.reports || pathname === ROUTES.researchCenter) {
+    const view = new URLSearchParams(search).get('view');
+    if (view !== 'cross_city' && view !== 'synthesis') return selectedCityFromSearch(search);
+  }
+  return null;
 }
 
 /** 页面用同一套城市选择逻辑（3D 点击与 DOM 列表共用）。 */
@@ -35,8 +41,20 @@ export function SpatialShell() {
   const location = useLocation();
   const navigate = usePageNavigate();
   const reducedMotion = Boolean(useReducedMotion());
-  const mode = stageModeForPath(location.pathname);
-  const focusCityId = mode === 'province' ? selectedCityFromSearch(location.search) : focusCityForPath(location.pathname);
+  const mode = stageModeForPath(location.pathname, location.search);
+  const focusCityId = mode === 'province' ? selectedCityFromSearch(location.search) : focusCityForPath(location.pathname, location.search);
+  const [pending, setPending] = useState<PaperNavigationDetail | null>(null);
+  useLayoutEffect(() => {
+    const followIntent = (event: Event) => {
+      const detail = (event as CustomEvent<PaperNavigationDetail>).detail;
+      setPending(current => detail.phase === 'start' ? detail : current?.id === detail.id ? null : current);
+    };
+    window.addEventListener(PAPER_NAVIGATION_EVENT, followIntent);
+    return () => window.removeEventListener(PAPER_NAVIGATION_EVENT, followIntent);
+  }, []);
+  const destination = pending ? new URL(pending.target, window.location.href) : location;
+  const cameraMode = stageModeForPath(destination.pathname, destination.search);
+  const cameraCityId = cameraMode === 'province' ? selectedCityFromSearch(destination.search) : focusCityForPath(destination.pathname, destination.search);
   const hoveredCityId = useSpatialStageStore((state) => state.hoveredCityId);
   const setMode = useSpatialStageStore((state) => state.setMode);
   const focusCity = useSpatialStageStore((state) => state.focusCity);
@@ -65,7 +83,7 @@ export function SpatialShell() {
     navigate(target);
   }, [location.pathname, location.search, mode, navigate]);
 
-  const canvasInteractive = mode !== 'none';
+  const canvasInteractive = mode !== 'none' && !pending;
   const handleBackgroundClick = useCallback(() => {
     setHoveredCity(null);
     if (mode === 'province') {
@@ -81,10 +99,10 @@ export function SpatialShell() {
       <div className="spatial-shell" data-stage-mode={mode}>
         <div className="spatial-shell__canvas" aria-hidden={!canvasInteractive} data-visible data-interactive={canvasInteractive || undefined}>
           <LiaoningCanvas
-            mode={mode === 'city' ? 'city' : mode === 'opening' ? 'opening' : 'province'}
+            mode={cameraMode === 'city' ? 'city' : cameraMode === 'opening' ? 'opening' : 'province'}
             active
             interactive={canvasInteractive}
-            focusCityId={focusCityId}
+            focusCityId={cameraCityId}
             hoveredCityId={hoveredCityId}
             onHoverCity={setHoveredCity}
             onSelectCity={handleSelectCity}

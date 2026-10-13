@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import type { NavigationType } from 'react-router-dom';
 import { MOTION_DURATION, MOTION_EASE } from '../design/motion';
-import { acknowledgePaperCommit, cancelPendingPaperNavigation, changesPaper, handlePaperPopstate, paperPageKey, prefersInstantPaper, PAPER_OPEN, PAPER_CLOSED } from './paperNavigation';
+import { acknowledgePaperCommit, cancelPendingPaperNavigation, changesPaper, handlePaperPopstate, paperPageKey, paperGeometry, prefersInstantPaper } from './paperNavigation';
 
 interface PaperAction {
   key: string;
@@ -59,13 +59,14 @@ export function RouteTransition({ routeKey, pathname, search = '', children }: {
         current.seen.add(paper);
         if (!current.enter || prefersInstantPaper()) continue;
         let animation: Animation | undefined;
+        const geometry = paperGeometry(paper);
         current.guards.set(paper, { value: paper.style.getPropertyValue('clip-path'), priority: paper.style.getPropertyPriority('clip-path') });
         guardOwners.set(paper, current);
-        paper.style.setProperty('clip-path', PAPER_CLOSED);
+        paper.style.setProperty('clip-path', geometry.closed);
         try {
           animation = paper.animate?.([
-            { clipPath: PAPER_CLOSED },
-            { clipPath: PAPER_OPEN },
+            { clipPath: geometry.closed },
+            { clipPath: geometry.open },
           ], { id: 'ag-paper-enter', duration: MOTION_DURATION.paperEnter * 1000, easing: `cubic-bezier(${MOTION_EASE.standard.join(',')})`, fill: 'both' });
         } catch {
           // Unsupported geometry must leave the live surface visible and usable.
@@ -81,7 +82,7 @@ export function RouteTransition({ routeKey, pathname, search = '', children }: {
       }
     };
     reveal();
-    if (page.current) acknowledgePaperCommit(page.current, routeKey);
+    if (page.current) acknowledgePaperCommit(page.current, routeKey, to);
     const observer = new MutationObserver(reveal);
     if (page.current) observer.observe(page.current, { childList: true, subtree: true });
     return () => {

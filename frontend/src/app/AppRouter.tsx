@@ -1,4 +1,3 @@
-import type { ComponentType } from 'react';
 import { createBrowserRouter, createRoutesFromElements, Navigate, Route, RouterProvider, useLocation, useParams } from 'react-router-dom';
 import { AppShell } from './AppShell';
 import { ROUTES, parseResearchPath } from './routes';
@@ -6,19 +5,16 @@ import { useAppContext, readContextFromSearch } from './context/appContext';
 import { cityContextUrl } from './context/provinceSelection';
 import { CityDecisionEntry } from '../features/decision/CityDecisionEntry';
 import { clearLegacyNativePaperTransitions } from './nativePaperMigration';
+import { lazyPage, preloadPage } from './pageModules';
+import { configurePaperPreparation } from './paperNavigation';
 
-const load = (loader: () => Promise<Record<string, unknown>>, name: string) => async () => {
-  const module = await loader();
-  return { Component: module[name] as ComponentType };
-};
-
-const openingPage = load(() => import('../features/opening/OpeningPage'), 'OpeningPage');
-const researchHomePage = load(() => import('../features/liaoning/LiaoningPage'), 'LiaoningPage');
-const cityResearchPage = load(() => import('../features/research-v2/CityResearchPage'), 'CityResearchPage');
-const reportWorkspacePage = load(() => import('../features/report/ReportWorkspacePage'), 'ReportWorkspacePage');
-const scenarioPage = load(() => import('../features/scenario/ScenarioPage'), 'ScenarioPage');
-const decisionPage = load(() => import('../features/decision/DecisionPage'), 'DecisionPage');
-const aboutPage = load(() => import('../features/about/AboutPage'), 'AboutPage');
+const openingPage = lazyPage('opening', 'OpeningPage');
+const researchHomePage = lazyPage('home', 'LiaoningPage');
+const cityResearchPage = lazyPage('city', 'CityResearchPage');
+const reportWorkspacePage = lazyPage('reports', 'ReportWorkspacePage');
+const scenarioPage = lazyPage('scenario', 'ScenarioPage');
+const decisionPage = lazyPage('decision', 'DecisionPage');
+const aboutPage = lazyPage('about', 'AboutPage');
 
 /**
  * 「决策中心」全局入口（V3 §7）。
@@ -64,6 +60,7 @@ function LegacyResearchRedirect() {
  * 旧路径一律 Redirect，不保留独立产品入口。
  */
 clearLegacyNativePaperTransitions();
+configurePaperPreparation(preloadPage);
 const router = createBrowserRouter(createRoutesFromElements(
   <Route element={<AppShell />} hydrateFallbackElement={<div aria-hidden />}>
     <Route path={ROUTES.root} lazy={openingPage} />

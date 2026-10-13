@@ -26,6 +26,19 @@ const view = (path: string, key: string, paper = true) => {
   return <RouteTransition pathname={url.pathname} search={url.search} routeKey={key} navigationType={NavigationType.Pop} direction={0}>{paper && <main data-paper-surface />}</RouteTransition>;
 };
 describe('single WAAPI paper owner', () => {
+  it('a long publication unfolds through the visible first screen and restores unrestricted scrolling', async () => {
+    vi.stubGlobal('innerHeight', 900);
+    const box = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ top: 100, bottom: 12100, height: 12000 } as DOMRect);
+    try {
+      const rendered = render(view('/about', 'long'));
+      const paper = rendered.container.querySelector<HTMLElement>('main')!;
+      const [frames, options] = animate.mock.calls[0];
+      expect(frames).toEqual([{ clipPath: 'polygon(0 0px, 100% 0px, 100% 1px, 0 1px)' }, { clipPath: 'polygon(0 0px, 100% 0px, 100% 800px, 0 800px)' }]);
+      expect(options.duration).toBe(MOTION_DURATION.paperEnter * 1000);
+      await act(async () => effects[0].finish());
+      expect(paper.style.clipPath).toBe(''); expect(paper.style.height).toBe('');
+    } finally { box.mockRestore(); }
+  });
   it('cold surfaces enter once, including a lazily mounted paper and later child changes', async () => {
     const rendered = render(view('/reports', 'one', false));
     rendered.rerender(view('/reports', 'one'));

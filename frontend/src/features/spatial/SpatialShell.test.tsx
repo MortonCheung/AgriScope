@@ -9,14 +9,19 @@ import type { LiaoningCanvasProps } from '../liaoning/LiaoningCanvas';
 import { SpatialShell } from './SpatialShell';
 import { useSpatialStageStore } from './spatialStageStore';
 import spatialStyles from './spatial-shell.css?raw';
+import { TransitionLink } from '../../app/pageNavigation';
+import { primaryNavigationTarget } from '../../app/context/navigationContext';
+import { cancelPendingPaperNavigation, withPaperExit } from '../../app/paperNavigation';
+
+const cameraTrace = vi.hoisted(() => [] as { mode: string; city: string | null }[]);
 
 vi.mock('react-router-dom', async original => ({ ...await original<typeof import('react-router-dom')>(), useViewTransitionState: () => false }));
 vi.mock('motion/react', () => ({ useReducedMotion: () => false }));
 vi.mock('../liaoning/LiaoningCanvas', () => ({
-  LiaoningCanvas: (props: LiaoningCanvasProps) => <div data-testid="canvas-host" data-mode={props.mode} data-active={props.active} data-focus={props.focusCityId}>
+  LiaoningCanvas: (props: LiaoningCanvasProps) => { cameraTrace.push({ mode: props.mode, city: props.focusCityId }); return <div data-testid="canvas-host" data-mode={props.mode} data-active={props.active} data-focus={props.focusCityId}>
     {[...STUDY_CITY_IDS, 'fushun'].map(city => <button key={city} onClick={() => props.onSelectCity(city)}>{city}</button>)}
     <button onClick={props.onBackgroundClick}>背景空白</button>
-  </div>,
+  </div>; },
 }));
 
 function Page() {
@@ -24,6 +29,7 @@ function Page() {
   return <main><div className="city-research__paper">当前纸面</div>
     <output data-testid="location" data-state={JSON.stringify(location.state)}>{location.pathname}{location.search}</output>
     <Link to="/about">关于页面</Link>
+    <TransitionLink to={primaryNavigationTarget('reports', location)}>报告页面</TransitionLink>
   </main>;
 }
 function open(entry: string | { pathname: string; state?: unknown } = '/liaoning') {
@@ -45,11 +51,40 @@ const path = () => screen.getByTestId('location').textContent;
 beforeEach(() => {
   window.sessionStorage.clear();
   useSpatialStageStore.getState().reset();
+  cameraTrace.length = 0;
   vi.stubGlobal('matchMedia', () => ({ matches: false }));
 });
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); useSpatialStageStore.getState().reset(); });
+afterEach(() => { cancelPendingPaperNavigation(); cleanup(); vi.unstubAllGlobals(); useSpatialStageStore.getState().reset(); });
 
 describe('空间外壳直接导航，整纸动画已退役', () => {
+  it('决策直达报告的每次相机更新都保留同一城市，没有省域中转', () => {
+    open('/cities/shenyang/decision'); const host = screen.getByTestId('canvas-host');
+    cameraTrace.length = 0;
+    fireEvent.click(screen.getByRole('link', { name: '报告页面' }));
+    expect(path()).toContain('/reports/shenyang?'); expect(screen.getByTestId('canvas-host')).toBe(host);
+    expect(cameraTrace.length).toBeGreaterThan(0);
+    expect(cameraTrace.every(frame => frame.mode === 'city' && frame.city === 'shenyang')).toBe(true);
+  });
+  it.each(['/reports?city=tieling', '/reports?city=dalian'])('旧带城市报告入口 %s 在规范跳转前就保持城市背景', url => {
+    open(url); expect(cameraTrace.every(frame => frame.mode === 'city' && frame.city === url.split('=')[1])).toBe(true);
+  });
+  it.each(['/reports?city=shenyang&view=cross_city', '/reports?city=shenyang&view=synthesis', '/reports/liaoning?city=shenyang'])('综合报告 %s 保留省域背景', url => {
+    open(url); expect(cameraTrace.every(frame => frame.mode === 'province' && frame.city === null)).toBe(true);
+  });
+  it('未提交路由前背景已开始过渡，取消后回到当前城市且纸面不被替换', async () => {
+    open('/cities/shenyang/decision'); const host = screen.getByTestId('canvas-host');
+    const paper = document.querySelector('main')!; paper.setAttribute('data-paper-surface', '');
+    let reject!: (error: unknown) => void;
+    const finished = new Promise<void>((_, fail) => { reject = fail; });
+    Object.defineProperty(paper, 'animate', { value: () => ({ finished, cancel: () => reject(new DOMException('Canceled', 'AbortError')) }) });
+    let pending: void | Promise<void>; const commit = vi.fn();
+    act(() => { pending = withPaperExit('/cities/shenyang/decision', '/about', commit); });
+    expect(path()).toBe('/cities/shenyang/decision'); expect(host.dataset.mode).toBe('province');
+    expect(host.dataset.focus).toBeUndefined(); expect(commit).not.toHaveBeenCalled();
+    await act(async () => { cancelPendingPaperNavigation(); await pending; });
+    expect(host.dataset.mode).toBe('city'); expect(host.dataset.focus).toBe('shenyang');
+    expect(screen.getByTestId('canvas-host')).toBe(host); expect(commit).not.toHaveBeenCalled();
+  });
   it('决策和报告保持城市背景，背景空白与结构父级一致', () => {
     open('/cities/dandong/decision');
     const canvas = screen.getByTestId('canvas-host');

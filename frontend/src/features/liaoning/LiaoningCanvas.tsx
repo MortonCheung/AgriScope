@@ -91,7 +91,7 @@ function AssemblyDriver({ active, reducedMotion, assemblyRef, controlsRef, endPo
   return null;
 }
 
-function CameraRig({ mode, active, phase, focusCityId, reducedMotion, targetPoint, focusBounds, endPose, focusFrame, geometryRadius, provinceRadius, controlsRef }: {
+export function CameraRig({ mode, active, phase, focusCityId, reducedMotion, targetPoint, focusBounds, endPose, focusFrame, geometryRadius, provinceRadius, controlsRef }: {
   mode: LiaoningCanvasProps['mode'];
   active: boolean;
   phase: OpeningPhase;
@@ -107,18 +107,23 @@ function CameraRig({ mode, active, phase, focusCityId, reducedMotion, targetPoin
 }) {
   /** 相机是否正在移动：为真时逐帧请求渲染，否则静止画布上的 setLookAt 不会开始也不会结束。 */
   const moveSequence = useRef(0);
+  const lastRequest = useRef<{ owner: CameraControlsImpl; pose: string; animate: boolean } | null>(null);
   const invalidate = useThree((store) => store.invalidate);
   const dollying = useSpatialStageStore((state) => state.cameraMoving);
   const setCameraMoving = useSpatialStageStore((state) => state.setCameraMoving);
   useAnimationFrames(dollying && active, MOTION_DURATION.camera * 3);
-  useEffect(() => () => { moveSequence.current += 1; setCameraMoving(false); }, [setCameraMoving]);
+  useEffect(() => () => { lastRequest.current = null; moveSequence.current += 1; setCameraMoving(false); }, [setCameraMoving]);
 
   useEffect(() => {
-    if (!active) { moveSequence.current += 1; setCameraMoving(false); return; }
+    if (!active) { lastRequest.current = null; moveSequence.current += 1; setCameraMoving(false); return; }
     const instance = controlsRef.current;
     if (!instance) return;
     const radius = Math.max(12, provinceRadius);
     const move = (pose: { position: readonly [number, number, number]; target: readonly [number, number, number] }, animate = !reducedMotion) => {
+      const key = [...pose.position, ...pose.target].join(',');
+      const previous = lastRequest.current;
+      if (previous?.owner === instance && previous.pose === key && previous.animate === animate) return;
+      lastRequest.current = { owner: instance, pose: key, animate };
       setCameraMoving(animate);
       const ticket = ++moveSequence.current;
       invalidate();

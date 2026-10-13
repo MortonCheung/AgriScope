@@ -4,6 +4,8 @@
   position: fixed;
   overflow: hidden;
   inset: 0;
+  bottom: auto;
+  height: 100dvh;
   z-index: 0;
   opacity: 1;
 }
@@ -52,6 +54,7 @@
 
 /* 手机共用地图舞台，开场末帧与省域保持位置和投影尺寸一致。 */
 @media (max-width: 900px) {
+  .spatial-shell__canvas { transition: top var(--ag-dur-route) var(--ag-ease-standard), height var(--ag-dur-route) var(--ag-ease-standard); }
   .spatial-shell[data-stage-mode='opening'] .spatial-shell__canvas,
   .spatial-shell[data-stage-mode='province'] .spatial-shell__canvas { top: var(--ag-nav-height); bottom: auto; height: var(--ag-map-mobile-height); }
 }
@@ -70,4 +73,4 @@
 .liaoning-map-navigation .ag-button,
 .liaoning-map-fallback .ag-button { margin: 0; min-height: 44px; }
 
-@media(prefers-reduced-motion:reduce) { .liaoning-label, .liaoning-label::after { transition:none; } }
+@media(prefers-reduced-motion:reduce) { .liaoning-label, .liaoning-label::after, .spatial-shell__canvas { transition:none; } }

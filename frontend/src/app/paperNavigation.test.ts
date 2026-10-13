@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { acknowledgePaperCommit, cancelPendingPaperNavigation, changesPaper, handlePaperPopstate, paperPageKey, withPaperExit, PAPER_OPEN, PAPER_CLOSED } from './paperNavigation';
+import { acknowledgePaperCommit, cancelPendingPaperNavigation, changesPaper, configurePaperPreparation, handlePaperPopstate, paperPageKey, paperGeometry, withPaperExit, PAPER_OPEN, PAPER_CLOSED, PAPER_NAVIGATION_EVENT, type PaperNavigationDetail } from './paperNavigation';
 import { MOTION_DURATION } from '../design/motion';
 
-afterEach(() => { cancelPendingPaperNavigation(); document.body.innerHTML = ''; vi.unstubAllGlobals(); vi.restoreAllMocks(); delete (document as Partial<Document>).startViewTransition; });
+afterEach(() => { cancelPendingPaperNavigation(); configurePaperPreparation(); document.body.innerHTML = ''; vi.unstubAllGlobals(); vi.restoreAllMocks(); delete (document as Partial<Document>).startViewTransition; });
 function surface() {
   document.body.innerHTML = '<div class="route-page"><main data-paper-surface></main></div>';
   const effects: { finish: () => void; cancel: ReturnType<typeof vi.fn>; finished: Promise<void> }[] = [];
@@ -16,6 +16,85 @@ function surface() {
   return { animate, effects };
 }
 describe('single paper navigation', () => {
+  it('a newer target immediately takes over a closed lazy exit and old DOM acknowledgements cannot release it', async () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: false }));
+    const { animate, effects } = surface(); const page = document.querySelector<HTMLElement>('.route-page')!;
+    page.dataset.paperRouteKey = 'source';
+    let finishOld!: () => void; const oldLazy = new Promise<void>(resolve => { finishOld = resolve; });
+    const oldCommit = vi.fn(() => oldLazy), latestCommit = vi.fn();
+    const first = withPaperExit('/reports/shenyang', '/about', oldCommit);
+    effects[0].finish(); await Promise.resolve(); await Promise.resolve();
+    expect(oldCommit).toHaveBeenCalledOnce();
+    const latest = withPaperExit('/reports/shenyang', '/cities/shenyang/decision', latestCommit);
+    expect(latestCommit).toHaveBeenCalledOnce(); expect(animate).toHaveBeenCalledOnce();
+    expect(effects[0].cancel).not.toHaveBeenCalled();
+    page.dataset.paperRouteKey = 'older-about'; acknowledgePaperCommit(page, 'older-about', '/about');
+    expect(effects[0].cancel).not.toHaveBeenCalled();
+    page.dataset.paperRouteKey = 'latest-decision'; acknowledgePaperCommit(page, 'latest-decision', '/cities/shenyang/decision');
+    finishOld(); await first; await latest;
+    expect(effects[0].cancel).toHaveBeenCalledOnce();
+  });
+  it('multiple already submitted targets cannot release the newest DOM owner, and real POP still releases the held exit', async () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: false }));
+    const { effects } = surface(); const page = document.querySelector<HTMLElement>('.route-page')!; page.dataset.paperRouteKey = 'source';
+    let finishOld!: () => void; const lazy = new Promise<void>(resolve => { finishOld = resolve; });
+    const first = withPaperExit('/reports/shenyang', '/about', () => lazy);
+    effects[0].finish(); await Promise.resolve(); await Promise.resolve();
+    const second = withPaperExit('/reports/shenyang', '/cities/shenyang/decision', vi.fn());
+    const latest = withPaperExit('/reports/shenyang', '/liaoning', vi.fn());
+    page.dataset.paperRouteKey = 'old-about'; acknowledgePaperCommit(page, 'old-about', '/about');
+    page.dataset.paperRouteKey = 'old-decision'; acknowledgePaperCommit(page, 'old-decision', '/cities/shenyang/decision');
+    expect(effects[0].cancel).not.toHaveBeenCalled();
+    handlePaperPopstate('/reports/dalian'); finishOld(); await first; await second; await latest;
+    expect(effects[0].cancel).toHaveBeenCalledOnce();
+  });
+  it('a failed replacement lazy load releases the transferred closed effect', async () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: false }));
+    const { effects } = surface();
+    let finishOld!: () => void; const first = withPaperExit('/reports/shenyang', '/about', () => new Promise<void>(resolve => { finishOld = resolve; }));
+    effects[0].finish(); await Promise.resolve(); await Promise.resolve();
+    const latest = withPaperExit('/reports/shenyang', '/cities/shenyang/decision', () => Promise.reject(new Error('latest chunk failed')));
+    await expect(latest).rejects.toThrow('latest chunk failed'); finishOld(); await first;
+    expect(effects[0].cancel).toHaveBeenCalledOnce();
+  });
+  it('prepares the destination and announces camera intent during retraction, then cancels stale targets', async () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: false }));
+    const { effects } = surface(); const prepare = vi.fn(); configurePaperPreparation(prepare);
+    const events: PaperNavigationDetail[] = [];
+    const listener = (event: Event) => events.push((event as CustomEvent<PaperNavigationDetail>).detail);
+    window.addEventListener(PAPER_NAVIGATION_EVENT, listener);
+    try {
+      const stale = vi.fn(), latest = vi.fn();
+      const first = withPaperExit('/reports/shenyang', '/about', stale);
+      expect(prepare).toHaveBeenCalledOnce(); expect(events[0].phase).toBe('start');
+      expect(stale).not.toHaveBeenCalled();
+      const second = withPaperExit('/reports/shenyang', '/cities/shenyang/decision', latest, 'back');
+      expect(events.map(event => event.phase)).toEqual(['start', 'cancel', 'start']);
+      expect(events[1].id).toBe(events[0].id); expect(events[2].id).not.toBe(events[0].id);
+      effects[1].finish(); await first; await second;
+      expect(stale).not.toHaveBeenCalled(); expect(latest).toHaveBeenCalledOnce();
+      expect(events.map(event => event.phase)).toEqual(['start', 'cancel', 'start', 'finish']);
+      expect(events[3].id).toBe(events[2].id);
+    } finally { window.removeEventListener(PAPER_NAVIGATION_EVENT, listener); }
+  });
+  it('long and scrolled papers retract over the visible band without changing their layout', async () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: false })); vi.stubGlobal('innerHeight', 900);
+    const { animate, effects } = surface(); const paper = document.querySelector<HTMLElement>('main')!;
+    vi.spyOn(paper, 'getBoundingClientRect').mockReturnValue({ top: -3000, height: 12000, bottom: 9000 } as DOMRect);
+    expect(paperGeometry(paper)).toEqual({ open: 'polygon(0 3000px, 100% 3000px, 100% 3900px, 0 3900px)', closed: 'polygon(0 3000px, 100% 3000px, 100% 3001px, 0 3001px)' });
+    const pending = withPaperExit('/about', '/reports/shenyang', vi.fn());
+    expect((animate.mock.calls[0] as unknown as [Keyframe[]])[0]).toEqual([{ clipPath: paperGeometry(paper).open }, { clipPath: paperGeometry(paper).closed }]);
+    expect(paper.style.height).toBe(''); expect(paper.style.transform).toBe('');
+    effects[0].finish(); await pending;
+  });
+  it('normal sheets retain their full geometry, while long first screens unfold from their top edge', () => {
+    const paper = document.createElement('main'); vi.stubGlobal('innerHeight', 900);
+    const box = vi.spyOn(paper, 'getBoundingClientRect');
+    box.mockReturnValue({ top: 100, height: 766, bottom: 866 } as DOMRect);
+    expect(paperGeometry(paper)).toEqual({ open: PAPER_OPEN, closed: PAPER_CLOSED });
+    box.mockReturnValue({ top: 100, height: 12000, bottom: 12100 } as DOMRect);
+    expect(paperGeometry(paper)).toEqual({ open: 'polygon(0 0px, 100% 0px, 100% 800px, 0 800px)', closed: 'polygon(0 0px, 100% 0px, 100% 1px, 0 1px)' });
+  });
   it('queries, scope and cities keep the same workbench paper', () => {
     expect(changesPaper('/liaoning', '/liaoning?city=dalian')).toBe(false);
     expect(changesPaper('/cities/shenyang/decision?crop=黄瓜', '/cities/shenyang/decision?crop=甘蓝')).toBe(false);

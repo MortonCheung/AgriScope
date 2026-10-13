@@ -1,13 +1,8 @@
 import { forwardRef, useCallback, type MouseEvent } from 'react';
 import { Link, NavLink, createPath, useLocation, useNavigate, useResolvedPath, type LinkProps, type NavLinkProps, type NavigateFunction, type NavigateOptions, type To } from 'react-router-dom';
-import { cancelPendingPaperNavigation, changesPaper, withPaperExit } from './paperNavigation';
+import { cancelPendingPaperNavigation, withPaperExit } from './paperNavigation';
 
 const urlFor = (from: string, to: To) => typeof to === 'string' ? to : `${to.pathname ?? from.split(/[?#]/)[0]}${to.search ?? ''}${to.hash ?? ''}`;
-export const BEFORE_PAGE_NAVIGATION_EVENT = 'agriscope:before-page-navigation';
-function notifyBeforeNavigation(from: string, to: string) {
-  if (!changesPaper(from, to)) return;
-  window.dispatchEvent(new CustomEvent(BEFORE_PAGE_NAVIGATION_EVENT, { detail: { from, to } }));
-}
 function plainClick(event: MouseEvent<HTMLAnchorElement>, target?: string) {
   return !event.defaultPrevented && event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && (!target || target === '_self');
 }
@@ -31,7 +26,6 @@ export const TransitionLink = forwardRef<HTMLAnchorElement, LinkProps>(function 
     onClick?.(event);
     if (!plainClick(event, props.target) || props.reloadDocument || props.download !== undefined || internal === null) return;
     event.preventDefault();
-    notifyBeforeNavigation(from, target);
     void withPaperExit(from, target, () => navigate(resolved, { replace: props.replace ?? from === target, state: props.state, preventScrollReset: props.preventScrollReset, viewTransition: false }), (props.replace ?? from === target) ? 'replace' : 'push');
   }} />;
 });
@@ -46,7 +40,6 @@ export const TransitionNavLink = forwardRef<HTMLAnchorElement, NavLinkProps>(fun
     onClick?.(event);
     if (!plainClick(event, props.target) || props.reloadDocument || props.download !== undefined || internal === null) return;
     event.preventDefault();
-    notifyBeforeNavigation(from, target);
     void withPaperExit(from, target, () => navigate(resolved, { replace: props.replace ?? from === target, state: props.state, preventScrollReset: props.preventScrollReset, viewTransition: false }), (props.replace ?? from === target) ? 'replace' : 'push');
   }} />;
 });
@@ -57,7 +50,6 @@ export function usePageNavigate(): NavigateFunction {
   return useCallback((to: To | number, options?: NavigateOptions) => {
     if (typeof to === 'number') { cancelPendingPaperNavigation(); return navigate(to); }
     const target = urlFor(from, to);
-    notifyBeforeNavigation(from, target);
     return withPaperExit(from, target, () => navigate(to, { ...options, viewTransition: false }), options?.replace ? 'replace' : 'push');
   }, [navigate, from]) as NavigateFunction;
 }
