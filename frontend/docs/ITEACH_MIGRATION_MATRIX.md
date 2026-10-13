@@ -260,3 +260,14 @@
 - Excluded entries explicitly replace deep links to a valid same-city selection while retaining business context.
 - Cold assets use prefetched identity-keyed caches and reserved loading regions, never mislabeled old-city data.
 - Homepage retains bounded viewport and two independent scroll containers, promotes its single action group and truthfully labels sample data without changing values/dates.
+
+## V5 final polish (registered before replacement)
+
+- Flat city links plus a separate current-city research menu are replaced by one publication-backed city/topic/point tree. Missing point metadata is not invented.
+- Router notification completion is separated from the actual new DOM commit; exit masks stay on the old surface until acknowledgment.
+- Eight native selects are replaced by a shared keyboard-accessible combobox/listbox. Business values and actual source options remain.
+- Chart focus uses the same live chart DOM and native top layer, with truthful series/range controls; existing readout, missing-value handling, morph and source rows remain.
+- Developer sample wording becomes accurate product language (scenario reference price/date); internal simulation identity and source values/date remain.
+- One persistent environment remains visible for all main tasks; nonspatial backgrounds are read-only.
+- The report tree uses a compact ID/title grid with touch-sized rows; About uses the shared raised paper surface so the persistent map cannot overlap its text.
+- Without JavaScript, a native disclosure list offers the six actual city report payloads for download; interactive calculations and charts still require JavaScript.

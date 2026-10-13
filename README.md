@@ -9,16 +9,16 @@
 它们由 `pipelines/publishing/` 从研发态的 `data/`、`models/` 挑选生成到 `runtime/`，并登记在
 `runtime/manifest.json`；产品只读 `runtime/`。
 
-## 三个一级模块
+## 四个产品入口
 
-一级导航只有三条（定义见 `frontend/src/app/navItems.ts`）；「报告 / 推演 / 关于」不再与主线争抢顶部，
-而是分别归入研究中心与决策中心。
+一级导航为主页、决策、报告、关于（定义见 `frontend/src/app/navItems.ts`）。
 
-| 模块 | 回答 | 入口 |
-|---|---|---|
-| **辽宁农业态势**（看现在） | 辽宁 3D 沙盘 + 六城当前农业市场状态 | `/liaoning` |
-| **决策中心**（帮判断） | 短期预测、风险剖面、情景模拟、上市窗口决策 | `/decision`、`/cities/:cityId/decision`、`/scenario-lab` |
-| **研究中心**（证明依据） | 六城研究、跨城市比较、综合专题、证据溯源、正式报告 | `/research`、`/reports`、`/cities/:cityId/research/:researchId`、`/about` |
+- **主页** `/liaoning`：辽宁空间地图、六城价格概览和功能入口。首页价格是情景参考价，保留参考日期，不表达实时观测。
+- **决策** `/decision`、`/cities/:cityId/decision`：选择城市并直接输入经营条件，盈亏核算即时更新；已验证的模型建议按现有接口参与结果。
+- **报告** `/reports`：城市与综合入口工作台。城市按钮只展开目录，选择正式研究主题或研究点才进入交互内容；完整文章和城市全文保留为次级视图。
+- **关于** `/about`：项目介绍、数据来源、方法与指标定义。
+
+旧研究地址继续兼容。被发布清单排除的深链会替换为同城有效研究，并保留作物、参考日期和周期条件。
 
 ## 核心能力
 
@@ -117,7 +117,7 @@ python3 pipelines/publishing/publish_runtime.py
 # 前端
 cd frontend
 npm run typecheck          # tsc -b
-npm run test:unit          # vitest run（V4：47 files / 517 tests）
+npm run test:unit          # vitest run；实际测试计数以本次输出为准
 npm test                   # vitest + verify:v2（研究载荷）+ verify:integrity（研究完整性）
 npm run build              # tsc -b + vite build + verify-production-boundary + verify:ui（禁用字样须为 0）
 npm run preview            # 预览 dist
@@ -165,6 +165,13 @@ GET  /api/research/{city}/tables/{file}      研究数据表（CSV，按需加�
 
 完整字段与请求/响应示例见 `docs/API.md`。`/api/decision` 的 `data_status` 只允许
 `model` / `mock` / `legacy_model_fixture`；正式 HTTP 通道**拒绝**把历史样例（mock / legacy）伪装成模型结果。
+
+## 前端交互验收边界
+
+- 页面纸面转场等待实际 DOM 提交，冷加载期间保留旧纸面的关闭遮罩；内部报告选择和条件变化保持工作台 DOM。
+- 下拉控件共用 combobox/listbox，支持方向键、Home/End、Enter、Escape 和中文检索。图表放大使用原生 dialog 顶层与同一组 SVG 节点；Escape 先关闭下拉，再关闭放大视图。
+- 图例只控制真实数据系列；时间范围只对有效的实际时间轴提供，不补齐研究点或生成数值。无 JavaScript 时提供六城静态报告下载入口。
+- 验收覆盖七种屏幕宽度、六城图表、连续 20 次报告切换与决策输入、减少动画及无 WAAPI。浏览器自动化与截图、过程报告归档在外层 `archive/`，运行资产由 `runtime/manifest.json` 登记。
 
 ## 科学边界（不得弱化）
 
