@@ -13,7 +13,7 @@
 
 一级导航为主页、决策、报告、关于（定义见 `frontend/src/app/navItems.ts`）。
 
-- **主页** `/liaoning`：辽宁空间地图、六城价格概览和功能入口。首页价格是情景参考价，保留参考日期，不表达实时观测。
+- **主页** `/liaoning`：辽宁空间地图、六城价格概览和功能入口。展示已发布真实价格，支持商品及批发、超市、集市口径切换；按统一规则补齐展示，保留实际观测日期。
 - **决策** `/decision`、`/cities/:cityId/decision`：选择城市并直接输入经营条件，盈亏核算即时更新；已验证的模型建议按现有接口参与结果。
 - **报告** `/reports`：城市与综合入口工作台。城市按钮只展开目录，选择正式研究主题或研究点才进入交互内容；完整文章和城市全文保留为次级视图。
 - **关于** `/about`：项目介绍、数据来源、方法与指标定义。
@@ -95,20 +95,23 @@ cd frontend && npm run dev
 
 ### `runtime/` 与 `publishing`
 
-`runtime/manifest.json` 由 `pipelines/publishing/publish_runtime.py` 生成，登记 **20 个发布项**
-（字段：`source` / `destination` / `description` / `status`）。两条 publishing 脚本职责不同、互不覆盖，
-**必须先跑 research、再跑 runtime**：
+`runtime/manifest.json` 由 `pipelines/publishing/publish_runtime.py` 生成，登记 **21 个发布项**
+（字段：`source` / `destination` / `description` / `status`）。先生成研究和首页行情产品件，再登记运行资产：
 
 ```bash
 # 1) 研究产品件：从 monorepo 根 data/research 按选择发布到 runtime/research/product/ 与 research_catalog.json
 python3 pipelines/publishing/publish_research.py
 
-# 2) 运行资产：从根 data/、models/ 发布模型、Daily、长期与 LLM 证据到 runtime/，并写出 manifest.json
-#    它在 manifest 中如实登记第 1 步的产物；若第 1 步未跑，该项状态会是 SKIP(missing-research-product)
+# 2) 首页行情：仅选择8商品的有效真实价格与血缘，发布runtime载荷及同内容前端首屏快照
+python3 pipelines/publishing/publish_market_display.py
+
+# 3) 运行资产：从根 data/、models/ 发布模型、Daily、长期与 LLM 证据，并登记上述产品件
 python3 pipelines/publishing/publish_runtime.py
 ```
 
-两条脚本都幂等、只复制不删除源。研究完整源在 monorepo 根 `data/research`，运行时副本在 `AgriScope/runtime/`。
+发布不删除或修改源数据。研究完整源在 monorepo 根 `data/research`，运行时副本在 `AgriScope/runtime/`。
+首页接口 `/api/market/display` 只读紧凑发布件，原严格 `/api/market/observations` 保持研究和决策语义。
+商品、类型与城市切换使用完整缓存；接口失败时保留已验证的发布快照。采集时间和观测日期沿来源保留，补齐路径与口径差异存于后台血缘，不用当前发布时刻替换历史日期。
 发布项的路径与含义见 `docs/ARCHITECTURE.md`。
 
 ## 测试与验收
