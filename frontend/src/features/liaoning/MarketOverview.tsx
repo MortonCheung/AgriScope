@@ -16,7 +16,8 @@ export function marketTrendPoints(row: DisplayMarketRecord) {
     x: last === first ? 168 : 32 + (Date.parse(`${point.date}T00:00:00Z`) - first) / (last - first) * 272,
   }));
 }
-export function MarketOverview({ market, product, onProductChange, onPriceLevelChange }: {
+export function MarketOverview({ title, market, product, onProductChange, onPriceLevelChange }: {
+  title?: string;
   market: DisplayMarketView;
   product: string;
   onProductChange: (product: string) => void;
@@ -25,11 +26,14 @@ export function MarketOverview({ market, product, onProductChange, onPriceLevelC
   const [view, setView] = useState<'today' | 'trend'>('today');
   const rows = product ? market.rows.filter(row => row.product === product) : market.rows;
   return <section className="market-overview" aria-label="行情价格">
-    <div className="market-overview__head"><div className="market-overview__scope"><FlipValue value={market.scope}/><span>{PRICE_LEVEL_LABEL[market.priceLevel]}</span></div></div>
+    <div className="market-overview__toolbar">
+    <div className="market-overview__heading">{title && <h1 className="liaoning-page__title">{title}</h1>}<div className="market-overview__head"><div className="market-overview__scope"><FlipValue value={market.scope}/><span>{PRICE_LEVEL_LABEL[market.priceLevel]}</span></div></div></div>
     <div className="market-overview__controls market-overview__price-levels" role="group" aria-label="价格类型">{DISPLAY_PRICE_LEVELS.map(level => <button key={level} type="button" className="ag-button" aria-pressed={market.priceLevel === level} onClick={() => onPriceLevelChange(level)}>{PRICE_LEVEL_BUTTON[level]}</button>)}</div>
     <SelectControl className="market-overview__product" label="商品" value={product} options={productOptions} onChange={onProductChange}/>
     <div className="market-overview__controls" role="group" aria-label="行情视图">{(['today','trend'] as const).map(mode => <button key={mode} type="button" className="ag-button" aria-pressed={view === mode} onClick={() => setView(mode)}>{mode === 'today' ? '当前行情' : '长期趋势'}</button>)}</div>
     <p className="market-overview__caption">当前价格 <span>较前次</span></p>
+    </div>
+    <div className="market-overview__data" role="region" aria-label="商品行情列表" tabIndex={0}>
     <ul className="market-overview__prices">{rows.map(row => {
       const direction = marketDirection(row.change_percent);
       const comparable = row.history.length > 1;
@@ -39,7 +43,7 @@ export function MarketOverview({ market, product, onProductChange, onPriceLevelC
         <div className="market-overview__meta"><span>{PRICE_LEVEL_LABEL[row.price_level]}</span><time dateTime={row.observation_date}>更新：{row.observation_date}</time></div>
         {view === 'trend' && <MarketTrend row={row}/>}
       </li>;
-    })}</ul>
+    })}</ul></div>
   </section>;
 }
 function MarketTrend({ row }: { row: DisplayMarketRecord }) {

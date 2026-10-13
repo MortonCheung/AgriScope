@@ -28,6 +28,59 @@ function chooseProduct(product: string) {
 }
 
 describe('完整真实行情主页', () => {
+  it('固定标题与所有行情操作，只有商品列表进入可聚焦的数据滚动区', () => {
+    const { container } = render(page());
+    const toolbar = container.querySelector('.market-overview__toolbar')!;
+    const data = screen.getByRole('region', { name: '商品行情列表' });
+    expect(toolbar.contains(screen.getByRole('heading', { name: '价格概览' }))).toBe(true);
+    expect(toolbar.contains(screen.getByRole('combobox', { name: '商品' }))).toBe(true);
+    expect(toolbar.contains(screen.getByRole('group', { name: '价格类型' }))).toBe(true);
+    expect(toolbar.contains(screen.getByRole('group', { name: '行情视图' }))).toBe(true);
+    expect(toolbar.contains(data)).toBe(false);
+    expect(data.contains(screen.getByRole('combobox', { name: '商品' }))).toBe(false);
+    expect(data.querySelectorAll('.market-overview__price')).toHaveLength(8);
+    expect(data.getAttribute('tabindex')).toBe('0');
+    data.focus(); expect(document.activeElement).toBe(data);
+    expect(data.closest('.liaoning-page__current')).toBe(container.querySelector('.liaoning-page__current'));
+    expect(data.closest('.liaoning-page__city')).toBeNull();
+  });
+  it('城市与类型切换保留列表及卡片身份，左右小票滚动状态互不写入', () => {
+    const { container } = render(page());
+    const data = screen.getByRole('region', { name: '商品行情列表' });
+    const current = container.querySelector<HTMLElement>('.liaoning-page__current')!;
+    const city = container.querySelector<HTMLElement>('.liaoning-page__city')!;
+    const prices = Array.from(data.querySelectorAll('.market-overview__price'));
+    data.scrollTop = 120; city.scrollTop = 40;
+    fireEvent.scroll(data);
+    expect(city.scrollTop).toBe(40); expect(current.scrollTop).toBe(0);
+    fireEvent.click(screen.getByRole('button', { name: '铁岭' }));
+    fireEvent.click(screen.getByRole('button', { name: '超市' }));
+    fireEvent.click(screen.getByRole('button', { name: '长期趋势' }));
+    expect(screen.getByRole('region', { name: '商品行情列表' })).toBe(data);
+    expect(Array.from(data.querySelectorAll('.market-overview__price'))).toEqual(prices);
+    expect(data.scrollTop).toBe(120); expect(city.scrollTop).toBe(40);
+    city.scrollTop = 90; fireEvent.scroll(city);
+    expect(data.scrollTop).toBe(120); expect(current.scrollTop).toBe(0);
+    expect(screen.getByRole('button', { name: '超市' }).getAttribute('aria-pressed')).toBe('true');
+    expect(within(data).getAllByRole('img')).toHaveLength(8);
+  });
+  it('固定区商品下拉仍通过Portal展示，键盘选择与Esc关闭不丢失城市上下文', () => {
+    const { container } = render(page('/liaoning?city=shenyang'));
+    const trigger = screen.getByRole('combobox', { name: '商品' });
+    trigger.focus(); fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+    const popup = screen.getByRole('listbox');
+    expect(container.querySelector('.liaoning-page__current')?.contains(popup)).toBe(false);
+    expect(document.body.contains(popup)).toBe(true);
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+    fireEvent.keyDown(trigger, { key: 'Enter' });
+    expect(screen.getByRole('region', { name: '商品行情列表' }).querySelectorAll('.market-overview__price')).toHaveLength(1);
+    expect(container.querySelector('.market-overview__price h3')?.textContent).toBe('黄瓜');
+    expect(document.activeElement).toBe(trigger);
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+    fireEvent.keyDown(trigger, { key: 'Escape' });
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(screen.getByTestId('url').textContent).toBe('/liaoning?city=shenyang');
+  });
   it('单期观测卡片与摘要显示最新，不把无对比的价格当作持平', () => {
     const market = displayMarketFor(INITIAL_DISPLAY_MARKET, 'shenyang', 'wholesale');
     const singlePeriod = { ...market, rows: market.rows.map(row => ({ ...row, history: [row.history.at(-1)!], change_percent: 0 })) };

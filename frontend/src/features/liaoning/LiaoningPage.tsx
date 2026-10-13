@@ -31,9 +31,8 @@ export function LiaoningPage() {
   return <main className="liaoning-page" data-scope={selectedCityId ? 'city' : 'province'}>
     <div className="liaoning-page__stage">
       <aside className="liaoning-paper liaoning-page__current" data-paper-surface aria-label="价格概览">
-        <div className="liaoning-panel-content">
-          <h1 className="liaoning-page__title">价格概览</h1>
-          <MarketOverview market={market} product={product} onProductChange={setProduct} onPriceLevelChange={setPriceLevel}/>
+        <div className="liaoning-panel-content liaoning-panel-content--market">
+          <MarketOverview title="价格概览" market={market} product={product} onProductChange={setProduct} onPriceLevelChange={setPriceLevel}/>
         </div>
       </aside>
       <div className="liaoning-page__window" aria-hidden />
