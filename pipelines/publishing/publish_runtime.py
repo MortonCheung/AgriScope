@@ -87,6 +87,9 @@ RESEARCH_DEST = RUNTIME / "research"                  # 只放产品件：produc
 RESEARCH_PRODUCT = RESEARCH_DEST / "product"
 RESEARCH_CATALOG = RESEARCH_DEST / "research_catalog.json"
 
+# 首页行情只登记 publish_market_display.py 已筛选生成的紧凑载荷，不能复制原始市场全集。
+MARKET_DEST = RUNTIME / "data" / "market"
+
 # 运行时空目录（fcommon.ensure_final_dirs 要求存在）
 EMPTY_DIRS = [RUNTIME / "models" / "evaluation" / "final"]
 
@@ -138,6 +141,17 @@ def main() -> int:
     records.append(research_record)
     print(f"  [{research_record['status']}] {research_record['destination']}  <-  "
           f"{research_record['source']}  (publish_research.py)")
+
+    market_ready = (MARKET_DEST / "display.json").is_file()
+    market_record = {
+        "source": "data/processed/market",
+        "destination": str(MARKET_DEST.relative_to(AGRISCOPE)),
+        "description": "首页六城三口径真实价格展示载荷及后台血缘，由 publish_market_display.py 选择发布",
+        "asset_type": "market_display",
+        "status": "PUBLISHED(market-display)" if market_ready else "SKIP(missing-market-display)",
+    }
+    records.append(market_record)
+    print(f"  [{market_record['status']}] {market_record['destination']}  (publish_market_display.py)")
 
     manifest = {
         "generated_at": datetime.now(timezone.utc).isoformat(),

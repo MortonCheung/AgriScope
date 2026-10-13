@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-09T09:42:59.797614+00:00",
+  "generated_at": "2026-10-13T04:41:57.397502+00:00",
   "publisher": "AgriScope/pipelines/publishing/publish_runtime.py",
   "note": "运行资产快照；由 publishing 从根 data/models 生成，产品只读 runtime/。",
   "assets": [
@@ -123,6 +123,13 @@
       "description": "六城与跨城市研究产品载荷（product/ + research_catalog.json，由 publish_research.py 从 data/research 按选择发布）",
       "asset_type": "research_product",
       "status": "PUBLISHED(research-product)"
+    },
+    {
+      "source": "data/processed/market",
+      "destination": "runtime/data/market",
+      "description": "首页六城三口径真实价格展示载荷及后台血缘，由 publish_market_display.py 选择发布",
+      "asset_type": "market_display",
+      "status": "PUBLISHED(market-display)"
     }
   ]
 }
