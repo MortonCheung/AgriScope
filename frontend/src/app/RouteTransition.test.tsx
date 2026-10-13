@@ -26,6 +26,11 @@ const view = (path: string, key: string, paper = true) => {
   return <RouteTransition pathname={url.pathname} search={url.search} routeKey={key} navigationType={NavigationType.Pop} direction={0}>{paper && <main data-paper-surface />}</RouteTransition>;
 };
 describe('single WAAPI paper owner', () => {
+  it('a decision city chooser changing to the real workbench reveals the new paper', () => {
+    const opened = render(view('/decision', 'chooser'));
+    animate.mockClear(); opened.rerender(view('/cities/tieling/decision?city=tieling', 'workspace'));
+    expect(animate).toHaveBeenCalledOnce(); expect(animate.mock.calls[0][1].id).toBe('ag-paper-enter');
+  });
   it('a long publication unfolds through the visible first screen and restores unrestricted scrolling', async () => {
     vi.stubGlobal('innerHeight', 900);
     const box = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ top: 100, bottom: 12100, height: 12000 } as DOMRect);

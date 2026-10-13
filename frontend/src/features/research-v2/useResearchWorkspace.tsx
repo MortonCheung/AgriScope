@@ -90,7 +90,7 @@ export function useResearchWorkspace(cityId: string, requested?: string | null, 
       {modules.filter(module => !topics.some(item => item.id === canonicalPresentationId(module.module_id))).map(module => <button type="button" className="module-workspace__item" key={module.module_id} onClick={() => { select(module.module_id); close(); }}>{module.title}</button>)}
     </> : <ol className="module-workspace__list">{modules.map(module => <li key={module.module_id}><button type="button" className="module-workspace__item" data-selected={module.module_id === selection?.payloadId || undefined} onClick={() => { select(module.module_id); close(); }}>{module.title}</button></li>)}</ol>,
     children: <>
-      <WorkbenchMain toolbar={selection && !selection.replaced ? <div className="city-research__modes" role="tablist" aria-label="研究呈现方式">
+      <WorkbenchMain contentKey={`${cityId}:${currentSelection}:${mode}:${loading ? 'loading' : 'ready'}`} toolbar={selection && !selection.replaced ? <div className="city-research__modes" role="tablist" aria-label="研究呈现方式">
         {(selection.kind === 'interactive' || point) && <button type="button" role="tab" className="city-research__mode" aria-selected={mode === 'interactive'} onClick={() => setMode('interactive')}>{selection.kind === 'interactive' ? '交互研究' : '研究结论'}</button>}
         <button type="button" role="tab" className="city-research__mode" aria-selected={mode === 'article'} onClick={() => setMode('article')}>完整文章</button>
         {reportHost && modules.some(module => module.module_id === 'A09') && <button type="button" className="city-research__mode" onClick={() => navigate(href('A9', true))}>城市报告全文</button>}

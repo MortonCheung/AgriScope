@@ -2,7 +2,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { WorkbenchLayout, WorkbenchMain, WorkbenchRail } from './WorkbenchLayout';
-afterEach(cleanup);
+const preferences = vi.hoisted(() => ({ reduced: false }));
+vi.mock('motion/react', async original => ({ ...await original<typeof import('motion/react')>(), useReducedMotion: () => preferences.reduced }));
+afterEach(() => { cleanup(); preferences.reduced = false; vi.restoreAllMocks(); });
 const view = (module: string, onEscape = vi.fn()) => <WorkbenchLayout resetKey="shenyang" sidebarLabel="目录" railLabel="当前结果" onEscape={onEscape} sidebar={close => <button onClick={close}>选择模块</button>}><WorkbenchMain><h1>{module}</h1></WorkbenchMain><WorkbenchRail>{module}结果</WorkbenchRail></WorkbenchLayout>;
 describe('共享工作台的稳定边界与局部面板', () => {
   it('keeps paper/sidebar DOM while replacing module slots, with exactly three columns', () => {
@@ -51,7 +53,7 @@ describe('共享工作台的稳定边界与局部面板', () => {
   });
   it('twenty content changes preserve the host and do not fade the reading or results columns', () => {
     const descriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'animate');
-    const animate = vi.fn(() => ({ cancel: vi.fn() }));
+    const animate = vi.fn((_frames: Keyframe[], _options: KeyframeAnimationOptions) => ({ cancel: vi.fn() }));
     Object.defineProperty(HTMLElement.prototype, 'animate', { configurable: true, value: animate });
     try {
       const workspace = (key: string) => <WorkbenchLayout resetKey={key} contentKey={key} sidebarLabel="章节" railLabel="依据" sidebar={() => <p>目录</p>}><WorkbenchMain>{key}正文</WorkbenchMain><WorkbenchRail>{key}来源</WorkbenchRail></WorkbenchLayout>;
@@ -62,7 +64,41 @@ describe('共享工作台的稳定边界与局部面板', () => {
         opened.rerender(workspace(`research-${index}`));
         selectors.forEach((selector, position) => expect(opened.container.querySelector(selector)).toBe(nodes[position]));
       }
-      expect(animate).not.toHaveBeenCalled();
+      expect(animate).toHaveBeenCalledTimes(20);
+      for (const [frames, options] of animate.mock.calls) {
+        expect(options.id).toBe('ag-content-switch');
+        expect(frames.every((frame: Keyframe) => !('opacity' in frame) && !('filter' in frame))).toBe(true);
+      }
+    } finally {
+      if (descriptor) Object.defineProperty(HTMLElement.prototype, 'animate', descriptor);
+      else delete (HTMLElement.prototype as Partial<HTMLElement>).animate;
+    }
+  });
+  it('explicit article and mode identity moves only live content, preserves the source and never replays for unchanged input', () => {
+    const cancel = vi.fn();
+    const descriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'animate');
+    const animate = vi.fn((_frames: Keyframe[], _options: KeyframeAnimationOptions) => ({ cancel }));
+    Object.defineProperty(HTMLElement.prototype, 'animate', { configurable: true, value: animate });
+    try {
+    const workspace = (identity: string, input: string) => <WorkbenchLayout resetKey="shenyang" contentKey="shenyang" sidebarLabel="文章" railLabel="依据" sidebar={() => <p>稳定目录</p>}>
+      <WorkbenchMain contentKey={identity}>{input}</WorkbenchMain>
+      <WorkbenchRail><section>当前结论</section><section className="data-source-links">来源</section></WorkbenchRail>
+    </WorkbenchLayout>;
+    const opened = render(workspace('A1.3:interactive', '条件1'));
+    const paper = opened.container.querySelector('.workbench__paper');
+    const source = opened.container.querySelector('.data-source-links');
+    expect(animate).not.toHaveBeenCalled();
+    opened.rerender(workspace('A1.4:interactive', '条件1'));
+    expect(animate).toHaveBeenCalledTimes(2);
+    opened.rerender(workspace('A1.4:interactive', '条件2'));
+    expect(animate).toHaveBeenCalledTimes(2); expect(cancel).not.toHaveBeenCalled();
+    opened.rerender(workspace('A1.4:article', '条件2'));
+    expect(animate).toHaveBeenCalledTimes(4); expect(cancel).toHaveBeenCalledTimes(2);
+    expect(opened.container.querySelector('.workbench__paper')).toBe(paper);
+    expect(opened.container.querySelector('.data-source-links')).toBe(source);
+    preferences.reduced = true;
+    opened.rerender(workspace('A2:interactive', '条件2'));
+    expect(animate).toHaveBeenCalledTimes(4); expect(cancel).toHaveBeenCalledTimes(4);
     } finally {
       if (descriptor) Object.defineProperty(HTMLElement.prototype, 'animate', descriptor);
       else delete (HTMLElement.prototype as Partial<HTMLElement>).animate;

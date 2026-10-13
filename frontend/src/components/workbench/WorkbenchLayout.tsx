@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useId, useRef, useState, type ReactNode, type Ref } from 'react';
 import './workbench.css';
 import '../../design/paper-motion.css';
+import { useContentTransition } from '../../design/useContentTransition';
 
 const RailContext = createContext<{ id: string; label: string; hidden: boolean }>({ id: '', label: '当前信息', hidden: false });
 
@@ -26,7 +27,8 @@ export function WorkbenchLayout({ sidebar, sidebarLabel, railLabel, children, cl
   const sidebarRef = useRef<HTMLElement>(null);
   const drawerToggle = useRef<HTMLButtonElement>(null);
   const railToggle = useRef<HTMLButtonElement>(null);
-  const paper = useRef<HTMLDivElement>(null);
+  const paper = useContentTransition<HTMLDivElement>(surface => `${contentKey ?? ''}:${mode ?? ''}:${surface.querySelector<HTMLElement>('.workbench__stage')?.dataset.contentKey ?? ''}`,
+    '.workbench__stage, .workbench__rail > :not(.data-source-links)');
   const closeDrawer = () => { setDrawerOpen(false); if (drawerOpen) drawerToggle.current?.focus(); };
   const closeRail = () => { setRailOpen(false); if (railOpen) railToggle.current?.focus(); };
 
@@ -64,10 +66,10 @@ export function WorkbenchLayout({ sidebar, sidebarLabel, railLabel, children, cl
   </main>;
 }
 
-export function WorkbenchMain({ children, toolbar, className = '', label }: { children: ReactNode; toolbar?: ReactNode; className?: string; label?: string }) {
+export function WorkbenchMain({ children, toolbar, className = '', label, contentKey }: { children: ReactNode; toolbar?: ReactNode; className?: string; label?: string; contentKey?: string }) {
   return <section className={`workbench__column city-research__column ${className}`} aria-label={label}>
     {toolbar}
-    <div className="workbench__stage city-research__stage">{children}</div>
+    <div className="workbench__stage city-research__stage" data-content-key={contentKey}>{children}</div>
   </section>;
 }
 

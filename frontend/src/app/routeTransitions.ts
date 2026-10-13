@@ -13,10 +13,10 @@ export function isSpatialEntry(from: string, to: string) {
   return isSpatialRoute(from) && isSpatialRoute(to);
 }
 
-/** A task owns its paper across cities and views. Unknown routes never join it. */
+/** Families reflect persistent paper hosts; the decision chooser owns a separate paper. */
 export function workspaceFamily(path: string): string | null {
   if (path === '/reports' || path === '/research' || /^\/reports\/(?:liaoning|shenyang|tieling|chaoyang|jinzhou|dandong|dalian)\/?$/.test(path)) return 'report';
-  if (path === '/decision') return 'decision';
+  if (path === '/decision') return 'decision-entry';
   const match = /^\/cities\/([^/]+)(?:\/(decision|research\/[^/]+))?\/?$/.exec(path);
   if (!match || !isStudyCity(match[1])) return null;
   return match[2] === 'decision' ? 'decision' : 'research';

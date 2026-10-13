@@ -3,6 +3,12 @@ import { describe, expect, it } from 'vitest';
 import { getRouteDirection, isSpatialEntry, isWorkspaceNavigation } from './routeTransitions';
 
 describe('route transition direction', () => {
+  it.each(['shenyang','tieling','chaoyang','jinzhou','dandong','dalian'])('选城入口与%s正式决策拥有不同纸面，同纸城市切换仍保留宿主', city => {
+    const path = `/cities/${city}/decision`;
+    expect(isWorkspaceNavigation('/decision', path)).toBe(false);
+    expect(isWorkspaceNavigation(path, '/decision')).toBe(false);
+    expect(isWorkspaceNavigation('/cities/shenyang/decision', path)).toBe(true);
+  });
   const research = '/cities/shenyang/research/G1';
 
   it.each([

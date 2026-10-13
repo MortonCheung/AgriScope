@@ -16,6 +16,14 @@ function surface() {
   return { animate, effects };
 }
 describe('single paper navigation', () => {
+  it('changing from the city chooser retracts its separate paper before entering the decision workbench', async () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: false }));
+    expect(changesPaper('/decision', '/cities/tieling/decision?city=tieling')).toBe(true);
+    const { animate, effects } = surface(); const commit = vi.fn();
+    const pending = withPaperExit('/decision', '/cities/tieling/decision?city=tieling', commit);
+    expect(animate).toHaveBeenCalledOnce(); expect(commit).not.toHaveBeenCalled();
+    effects[0].finish(); await pending; expect(commit).toHaveBeenCalledOnce();
+  });
   it('a newer target immediately takes over a closed lazy exit and old DOM acknowledgements cannot release it', async () => {
     vi.stubGlobal('matchMedia', () => ({ matches: false }));
     const { animate, effects } = surface(); const page = document.querySelector<HTMLElement>('.route-page')!;

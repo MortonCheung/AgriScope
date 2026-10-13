@@ -11,6 +11,26 @@ function LocalReading({ identity }: { identity: string }) {
   return <div ref={ref}>{identity}</div>;
 }
 describe('local content motion never fades a surface', () => {
+  it('unsupported content effects leave the updated content usable', () => {
+    const node = document.createElement('div');
+    Object.defineProperty(node, 'animate', { value: () => { throw new DOMException('Unsupported'); } });
+    expect(() => animateContentSurface(node)).not.toThrow();
+    expect(node.style.transform).toBe('');
+  });
+  it('an active paper reveal owns entrance; local changes do not create a second reveal', () => {
+    const animate = vi.fn(() => ({ cancel: vi.fn() }));
+    Object.defineProperty(HTMLElement.prototype, 'animate', { configurable: true, value: animate });
+    const get = vi.fn(() => [{ id: 'ag-paper-enter', playState: 'running' }]);
+    Object.defineProperty(HTMLElement.prototype, 'getAnimations', { configurable: true, value: get });
+    try {
+      const opened = render(<LocalReading identity="shenyang"/>);
+      opened.rerender(<LocalReading identity="tieling"/>);
+      expect(animate).not.toHaveBeenCalled();
+      get.mockReturnValue([]);
+      opened.rerender(<LocalReading identity="dalian"/>);
+      expect(animate).toHaveBeenCalledOnce();
+    } finally { delete (HTMLElement.prototype as Partial<HTMLElement>).getAnimations; }
+  });
   it('contains no opacity, filter or scaling keyframes', () => {
     const node = document.createElement('div'); const animate = vi.fn();
     Object.defineProperty(node, 'animate', { value: animate });
