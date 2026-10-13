@@ -46,10 +46,7 @@ export function ReportWorkspacePage() {
     railMode={entry || composite ? 'hidden' : 'responsive'}
     sidebarLabel={entry || composite ? '报告目录' : '研究目录'} railLabel="研究依据"
     onEscape={() => navigate(entry ? ROUTES.liaoning : ROUTES.reports)}
-    sidebar={close => entry ? null : <>
-      <ReportNavigation close={close}/>
-      {city ? research.sidebar(close) : null}
-    </>}
+    sidebar={close => entry ? null : <ReportNavigation close={close}/>}
   >
     {city ? research.children : <>
     <WorkbenchMain>

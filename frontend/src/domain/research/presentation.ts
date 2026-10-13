@@ -1,4 +1,4 @@
-import type { TopicExplorer } from './catalog';
+import { listTopics, type ResearchTopic, type TopicExplorer } from './catalog';
 import { columnMeta } from './v2/metrics';
 import type { V2Catalog, V2CatalogModule } from './v2/types';
 
@@ -19,6 +19,18 @@ export function presentedModules(catalog: V2Catalog | null, cityId: string): V2C
 }
 export function presentedInteractiveModules(catalog: V2Catalog | null, cityId: string): V2CatalogModule[] {
   return presentedModules(catalog, cityId).filter(module => module.presentation?.kind === 'interactive');
+}
+
+/** Curated points are offered only when the same published policy accepts them. */
+export function presentedTopics(catalog: V2Catalog | null, cityId: string): ResearchTopic[] {
+  const modules = presentedModules(catalog, cityId);
+  return listTopics(cityId).filter(topic => modules.some(module => canonicalPresentationId(module.module_id) === topic.id)).map(topic => ({
+    ...topic,
+    points: topic.points.filter(point => {
+      const selection = resolvePresentedResearch(catalog, cityId, point.id);
+      return selection !== null && !selection.replaced;
+    }),
+  }));
 }
 
 export interface PresentedResearchSelection {

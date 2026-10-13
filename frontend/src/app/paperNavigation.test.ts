@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cancelPendingPaperNavigation, changesPaper, paperPageKey, withPaperExit, PAPER_OPEN, PAPER_CLOSED } from './paperNavigation';
+import { acknowledgePaperCommit, cancelPendingPaperNavigation, changesPaper, handlePaperPopstate, paperPageKey, withPaperExit, PAPER_OPEN, PAPER_CLOSED } from './paperNavigation';
 import { MOTION_DURATION } from '../design/motion';
 
 afterEach(() => { cancelPendingPaperNavigation(); document.body.innerHTML = ''; vi.unstubAllGlobals(); vi.restoreAllMocks(); delete (document as Partial<Document>).startViewTransition; });
@@ -55,6 +55,16 @@ describe('single paper navigation', () => {
     expect(old).not.toHaveBeenCalled(); expect(latest).toHaveBeenCalledOnce();
     expect(effects[0].cancel).toHaveBeenCalled();
   });
+  it('a replacement target starts from the interrupted closed geometry instead of reopening old content', async () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: false }));
+    const { animate, effects } = surface(); const old = vi.fn(), latest = vi.fn();
+    const pending = withPaperExit('/reports', '/about', old);
+    document.querySelector<HTMLElement>('main')!.style.clipPath = PAPER_CLOSED;
+    const current = withPaperExit('/reports', '/cities/dandong/decision', latest);
+    expect((animate.mock.calls[1] as unknown as [Keyframe[], KeyframeAnimationOptions])[0][0].clipPath).toBe(PAPER_CLOSED);
+    effects[1].finish(); await pending; await current;
+    expect(old).not.toHaveBeenCalled(); expect(latest).toHaveBeenCalledOnce();
+  });
   it('an immediate same-workspace intent also invalidates a previous delayed target', async () => {
     vi.stubGlobal('matchMedia', () => ({ matches: false }));
     const { animate } = surface(); const old = vi.fn(), latest = vi.fn();
@@ -91,6 +101,29 @@ describe('single paper navigation', () => {
     expect(commit).toHaveBeenCalledOnce();
     expect(withPaperExit('/reports', '/about', vi.fn())).toBe(pending); expect(animate).toHaveBeenCalledOnce();
     finishCommit(); await pending;
+    expect(effects[0].cancel).toHaveBeenCalledOnce();
+  });
+  it('a void POP commit keeps the connected source closed until its real DOM owner confirms the new key', async () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: false }));
+    const { animate, effects } = surface(); const page = document.querySelector<HTMLElement>('.route-page')!;
+    page.dataset.paperRouteKey = 'source';
+    const commit = vi.fn(); const pending = withPaperExit('/reports', '/liaoning', commit, 'back');
+    effects[0].finish(); await Promise.resolve(); await Promise.resolve();
+    expect(commit).toHaveBeenCalledOnce(); expect(effects[0].cancel).not.toHaveBeenCalled();
+    expect(page.isConnected).toBe(true);
+    for (let count = 0; count < 20; count++) expect(withPaperExit('/reports', '/liaoning', vi.fn(), 'back')).toBe(pending);
+    handlePaperPopstate('/liaoning');
+    expect(animate).toHaveBeenCalledOnce(); expect(effects[0].cancel).not.toHaveBeenCalled();
+    acknowledgePaperCommit(page, 'source'); expect(effects[0].cancel).not.toHaveBeenCalled();
+    page.dataset.paperRouteKey = 'destination'; acknowledgePaperCommit(page, 'destination');
+    await pending; expect(effects[0].cancel).toHaveBeenCalledOnce();
+  });
+  it('unrelated browser POP interrupts even after the old exit has submitted its navigation', async () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: false }));
+    const { effects } = surface(); document.querySelector<HTMLElement>('.route-page')!.dataset.paperRouteKey = 'source';
+    const pending = withPaperExit('/reports', '/liaoning', vi.fn(), 'back');
+    effects[0].finish(); await Promise.resolve(); await Promise.resolve();
+    handlePaperPopstate('/about'); await pending;
     expect(effects[0].cancel).toHaveBeenCalledOnce();
   });
   it('a canceled finished Promise cannot be mistaken for a completed exit', async () => {

@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
-import { StrictMode } from 'react';
+import { StrictMode, Suspense } from 'react';
 import { cleanup, render, act } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { NavigationType } from 'react-router-dom';
+import { createMemoryRouter, NavigationType, Outlet, RouterProvider, useLocation } from 'react-router-dom';
 import { RouteTransition } from './RouteTransition';
 import { withPaperExit } from './paperNavigation';
 import { PAPER_OPEN, PAPER_CLOSED } from './paperNavigation';
@@ -77,7 +77,7 @@ describe('single WAAPI paper owner', () => {
     const rendered = render(view('/reports', 'one'));
     await act(async () => effects[0].finish());
     rendered.unmount(); await act(async () => {});
-    expect(effects[0].cancel).not.toHaveBeenCalled();
+    expect(effects[0].cancel).toHaveBeenCalledOnce();
   });
   it('real POP cancels an exit before its old target can commit', async () => {
     render(view('/reports', 'one'));
@@ -119,6 +119,71 @@ describe('single WAAPI paper owner', () => {
     expect(frames).toEqual([{ clipPath: PAPER_CLOSED }, { clipPath: PAPER_OPEN }]);
     expect(frames.every((frame: Keyframe) => !('opacity' in frame) && !('transform' in frame))).toBe(true);
     expect(options.duration).toBe(MOTION_DURATION.paperEnter * 1000);
-    expect(options.fill).toBeUndefined();
+    expect(options.fill).toBe('both');
+  });
+  it('the first reveal has closed base geometry and restores an existing inline clipping rule', async () => {
+    const rendered = render(<RouteTransition pathname="/reports" routeKey="one" navigationType={NavigationType.Pop} direction={0}>
+      <main data-paper-surface style={{ clipPath: 'inset(2px)' }} />
+    </RouteTransition>);
+    const paper = rendered.container.querySelector<HTMLElement>('main')!;
+    expect(paper.style.clipPath).toBe(PAPER_CLOSED);
+    await act(async () => effects[0].finish());
+    expect(paper.style.clipPath).toBe('inset(2px)');
+    expect(effects[0].cancel).toHaveBeenCalledOnce();
+  });
+  it('a canceled reveal restores the original rule and cannot overwrite the next owner’s guard', async () => {
+    const rendered = render(view('/reports', 'one'));
+    rendered.rerender(view('/about', 'two'));
+    const paper = rendered.container.querySelector<HTMLElement>('main')!;
+    await act(async () => {});
+    expect(paper.style.clipPath).toBe(PAPER_CLOSED);
+    await act(async () => effects[1].finish());
+    expect(paper.style.clipPath).toBe('');
+  });
+  it.each([false, true])('real Router completion waits for the destination DOM before releasing the exit (suspended=%s)', async suspended => {
+    let ready = !suspended, finishContent!: () => void;
+    const content = new Promise<void>(resolve => { finishContent = () => { ready = true; resolve(); }; });
+    function Shell() {
+      const location = useLocation();
+      return <RouteTransition pathname={location.pathname} search={location.search} routeKey={location.key} navigationType={NavigationType.Push} direction={0}><Outlet /></RouteTransition>;
+    }
+    function Destination() {
+      if (!ready) throw content;
+      return <main data-paper-surface>new about content</main>;
+    }
+    const router = createMemoryRouter([{ element: <Shell />, children: [
+      { path: '/reports', element: <main data-paper-surface>old report content</main> },
+      { path: '/about', lazy: async () => ({ Component: Destination }) },
+    ] }], { initialEntries: ['/reports'] });
+    const rendered = render(<Suspense fallback="loading destination"><RouterProvider router={router} /></Suspense>);
+    try {
+      await act(async () => effects[0].finish());
+      const oldPaper = rendered.container.querySelector('main')!;
+      let routerCompleted = false;
+      const pending = withPaperExit('/reports', '/about', () => {
+        const navigation = router.navigate('/about');
+        void navigation.then(() => { routerCompleted = true; });
+        return navigation;
+      });
+      const exit = effects.find(effect => effect.id === 'ag-paper-exit')!;
+      const visibleAtCancellation: (string | null | undefined)[] = [];
+      exit.cancel.mockImplementation(() => { visibleAtCancellation.push(rendered.container.querySelector('main')?.textContent); });
+      await act(async () => { exit.finish(); });
+      expect(router.state.location.pathname).toBe('/about');
+      expect(routerCompleted).toBe(true);
+      if (suspended) {
+        expect(oldPaper.isConnected).toBe(true);
+        expect(exit.cancel).not.toHaveBeenCalled();
+        expect(withPaperExit('/reports', '/about', vi.fn())).toBe(pending);
+        await act(async () => finishContent());
+      }
+      await pending;
+      expect(oldPaper.isConnected).toBe(false);
+      expect(visibleAtCancellation).toEqual(['new about content']);
+      expect(effects.filter(effect => effect.id === 'ag-paper-enter')).toHaveLength(2);
+      expect(rendered.container.querySelector('main')?.style.clipPath).toBe(PAPER_CLOSED);
+      await act(async () => effects.at(-1)!.finish());
+      expect(rendered.container.querySelector('main')?.style.clipPath).toBe('');
+    } finally { rendered.unmount(); router.dispose(); }
   });
 });

@@ -36,13 +36,30 @@ a.reports__name:hover { color: var(--ag-ink); border-bottom-color: var(--ag-ink)
 .report-index-workbench .workbench__body { grid-template-columns:var(--ag-sidebar-width,216px) minmax(0,1fr); }
 .report-index-workbench .workbench__rail,.report-index-workbench .workbench__rail-toggle { display:none; }
 .report-workbench .report-navigation { margin-bottom:32px; }
+.city-report-tree { list-style:none;padding:0;margin:0;display:flex;flex-direction:column; }
+.city-report-tree__toggle { width:100%;min-height:44px;padding:12px 8px;display:flex;align-items:center;justify-content:space-between;gap:12px;font:inherit;text-align:left;color:var(--ag-ink-soft);background:none;border:0;border-bottom:1px solid var(--ag-rule-soft);cursor:pointer;transition:color var(--ag-dur-fast) var(--ag-ease),background var(--ag-dur-fast) var(--ag-ease); }
+.city-report-tree__toggle:hover,.city-report-tree__city[data-current]>.city-report-tree__toggle {color:var(--ag-ink);background:var(--ag-paper-sunken);}
+.city-report-tree__toggle:disabled {opacity:.45;cursor:default;}
+.city-report-tree__toggle:focus-visible {outline:2px solid var(--ag-focus);outline-offset:-2px;}
+.city-report-tree__chevron {transition:transform var(--ag-dur-fast) var(--ag-ease);}
+.city-report-tree__toggle[aria-expanded='true'] .city-report-tree__chevron {transform:rotate(180deg);}
+.city-report-tree__panel {padding:8px 0 12px 12px;border-left:1px solid var(--ag-rule);margin-left:8px;}
+.city-report-tree__panel[hidden] {display:none;}
+.report-navigation--overview .city-report-tree {width:min(100%,760px);}
+.city-report-tree .tree__topic-title {font-size:var(--ag-fs-small);}
+.city-report-tree .tree__topic-head {min-width:0;}
+.city-report-tree .tree__toggle {display:grid;grid-template-columns:2.4em minmax(0,1fr);gap:8px;width:100%;min-height:44px;}
+.city-report-tree .tree__point-link {display:grid;grid-template-columns:3.2em minmax(0,1fr);gap:8px;min-height:44px;padding:8px 0 8px 6px;}
+.city-report-tree .tree__topic-title,.city-report-tree .tree__point-title {min-width:0;line-height:1.65;overflow-wrap:anywhere;}
+.city-report-tree .tree__topic-id,.city-report-tree .tree__point-id {min-width:0;white-space:nowrap;}
+@media(prefers-reduced-motion:reduce) {.city-report-tree__toggle,.city-report-tree__chevron{transition:none;}}
 .report-entry-workbench .workbench__body { grid-template-columns:minmax(0,1fr); }
 .report-entry-workbench .workbench__sidebar,.report-entry-workbench .workbench__chrome { display:none; }
 @media(max-width:1024px){.report-index-workbench .workbench__body{grid-template-columns:minmax(0,1fr);}}
 
 /* Report reading owns more space than the decision result column. */
 .report-workbench {
-  --ag-sidebar-width: clamp(172px, 12vw, 204px);
+  --ag-sidebar-width: clamp(236px, 18vw, 280px);
   --ag-rail-width: clamp(200px, 14vw, 238px);
   --ag-paper-max-width: 1720px;
   --ag-readable-width: 760px;

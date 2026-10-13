@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import runtimeCatalog from '../../../../runtime/research/research_catalog.json';
@@ -13,22 +13,25 @@ vi.mock('../../domain/research/runtime/catalog', async importOriginal => ({...aw
 const catalog = runtimeCatalog as unknown as V2Catalog;
 beforeEach(()=>{resetAppContext(); vi.stubGlobal('matchMedia',()=>({matches:false,addEventListener:vi.fn(),removeEventListener:vi.fn()}));});
 afterEach(()=>{cleanup();vi.unstubAllGlobals();});
-const renderedCityLinks=()=>document.querySelectorAll('.report-navigation__cities a');
+const renderedCityLinks=()=>document.querySelectorAll('.city-report-tree__toggle:not(:disabled)');
 const open=()=>render(<MemoryRouter initialEntries={['/reports']}><ResearchCenterPage/></MemoryRouter>);
 describe('direct report entry with scientific catalog boundaries',()=>{
   it('offers six city reports directly in one workspace without model or duplicate city entrances',()=>{
     vi.mocked(useRuntimeCatalog).mockReturnValue({status:'ready',catalog});
     const {container}=open();
-    const links=[...container.querySelectorAll('.report-navigation__cities a')];
+    const links=[...container.querySelectorAll('.city-report-tree__toggle')];
     expect(links.map(link=>link.textContent?.replace('↗',''))).toEqual(STUDY_CITY_IDS.map(id=>getCity(id)!.shortName));
-    links.forEach((link,index)=>expect(link.getAttribute('href')).toBe(`/reports/${STUDY_CITY_IDS[index]}?city=${STUDY_CITY_IDS[index]}`));
+    links.forEach(link=>expect(link.getAttribute('aria-expanded')).toBe('false'));
+    fireEvent.click(screen.getByRole('button',{name:'沈阳'}));
+    expect(screen.getByRole('button',{name:'沈阳'}).getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByRole('button',{name:/市场时间结构与季节性/})).toBeTruthy();
     expect(container.textContent).not.toMatch(/进入研究|研究模块|策展树|证据链/);
     expect(container.querySelector('details')).toBeNull();
     expect(container.querySelector('.workbench__paper')).toBeTruthy();
     expect(container.querySelector('.workbench__sidebar')?.childElementCount).toBe(0);
     expect(container.querySelectorAll('.report-navigation__cities')).toHaveLength(1);
   });
-  it('never creates report links during loading, error, or a city catalog without a formal A09',()=>{
+  it('never enables city disclosure during loading, error, or a city catalog without approved research',()=>{
     vi.mocked(useRuntimeCatalog).mockReturnValue({status:'loading'});
     const rendered=open();
     expect(renderedCityLinks()).toHaveLength(0);

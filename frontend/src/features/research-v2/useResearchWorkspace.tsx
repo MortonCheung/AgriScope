@@ -4,9 +4,9 @@ import { readContextFromSearch } from '../../app/context/appContext';
 import { usePageNavigate } from '../../app/pageNavigation';
 import { ROUTES, structuralParent } from '../../app/routes';
 import { cityContextUrl, provinceUrl } from '../../app/context/provinceSelection';
-import { getCatalog, listTopics } from '../../domain/research/catalog';
+import { getCatalog } from '../../domain/research/catalog';
 import { useRuntimeCatalog } from '../../domain/research/runtime/catalog';
-import { canonicalPresentationId, presentationExplorers, presentedModules, resolvePresentedResearch } from '../../domain/research/presentation';
+import { canonicalPresentationId, presentationExplorers, presentedModules, presentedTopics, resolvePresentedResearch } from '../../domain/research/presentation';
 import { V2Repository } from '../../domain/research/v2/repository';
 import { WorkbenchMain, WorkbenchRail, type WorkbenchLayoutProps } from '../../components/workbench/WorkbenchLayout';
 import { ResearchTree } from './ResearchTree';
@@ -33,12 +33,7 @@ export function useResearchWorkspace(cityId: string, requested?: string | null, 
   const modules = useMemo(() => presentedModules(catalog, cityId), [catalog, cityId]);
   const selectedModule = modules.find(module => module.module_id === selection?.payloadId) ?? null;
   const tree = getCatalog(cityId);
-  const topics = useMemo(() => listTopics(cityId).filter(topic => modules.some(module => canonicalPresentationId(module.module_id) === topic.id)).map(topic => ({
-    ...topic, points: topic.points.filter(point => {
-      const resolved = resolvePresentedResearch(catalog, cityId, point.id);
-      return resolved !== null && !resolved.replaced;
-    }),
-  })), [catalog, cityId, modules]);
+  const topics = useMemo(() => presentedTopics(catalog, cityId), [catalog, cityId]);
   const topic = topics.find(item => item.id === selection?.moduleId) ?? null;
   const point = topic?.points.find(item => item.id === selection?.selectionId) ?? null;
   const article = useArticle(cityId, selection?.payloadId ?? null);
