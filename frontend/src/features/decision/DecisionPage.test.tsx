@@ -18,12 +18,12 @@ function choose(name: string) { fireEvent.click(within(screen.getByRole('group',
 function fill() { choose('玉米'); for (const [label, value] of [[/^种植面积/, '1'], [/^预计亩产/, '100'], [/^每亩总成本/, '50'], [/^假设销售价格/, '1'], [/^可销售比例/, '100']] as const) fireEvent.change(screen.getByLabelText(label), { target: { value } }); }
 const profit = () => within(screen.getByRole('region', { name: '农业决策结果' })).getByText('预计收益').nextElementSibling?.textContent;
 describe('one live decision workspace across six cities', () => {
-  it.each(STUDY_CITY_IDS)('keeps the same inputs, result and city choices in %s', city => {
+  it.each(STUDY_CITY_IDS)('keeps the same inputs, result and city choices in %s', async city => {
     const { container } = renderAt(city);
     const links = within(screen.getByRole('navigation', { name: '决策城市' })).getAllByRole('link');
     expect(links.map(link => link.textContent)).toEqual(STUDY_CITY_IDS.map(id => getCity(id)?.shortName));
     expect(links.find(link => link.getAttribute('aria-current') === 'page')?.textContent).toBe(getCity(city)?.shortName);
-    expect(screen.getByRole('heading', { name: '农业决策' })).toBeTruthy(); fill(); expect(profit()).toBe('50 元');
+    expect(screen.queryByRole('heading', { name: '农业决策' })).toBeNull(); fill(); await waitFor(() => expect(profit()).toBe('50 元'));
     expect(container.querySelectorAll('.workbench__body > aside, .workbench__body > section')).toHaveLength(3);
     expect(container.querySelector('details, [role="tab"], [type="submit"]')).toBeNull();
     expect(container.textContent).not.toMatch(/模型能力|尚未发布|模拟数据|经营计划|短期市场比较|上市窗口情景/);

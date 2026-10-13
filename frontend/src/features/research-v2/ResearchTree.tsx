@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { ResearchPoint, ResearchTopic } from '../../domain/research/catalog';
 import { ROUTES } from '../../app/routes';
+import { MOTION_DURATION, MOTION_EASE } from '../../design/motion';
 import './research-tree.css';
 
 export interface ResearchTreeProps {
@@ -23,19 +24,24 @@ export interface ResearchTreeProps {
 }
 
 /** 展开/收起：height + opacity + translateY，220–300ms，尊重 prefers-reduced-motion（§20）。 */
-const EXPAND_DURATION = 0.26;
+const pointVariants = {
+  closed: { opacity: 0, y: -2, transition: { duration: MOTION_DURATION.fast } },
+  open: (index: number) => ({ opacity: 1, y: 0, transition: { duration: MOTION_DURATION.fast, delay: Math.min(index, 4) * 0.016, ease: MOTION_EASE.out } }),
+};
 
 function StatusMark({ point }: { point: ResearchPoint }) {
   if (point.status === 'ready') return null;
   return <span className="tree__point-state" aria-hidden>{point.status === 'pending' ? '·' : '—'}</span>;
 }
 
-function PointRow({ cityId, point, current, selected, onSelect }: {
+function PointRow({ cityId, point, current, selected, onSelect, index, reducedMotion }: {
   cityId: string;
   point: ResearchPoint;
   current: boolean;
   selected: boolean;
   onSelect?: (researchId: string) => void;
+  index: number;
+  reducedMotion: boolean;
 }) {
   const inner = (
     <>
@@ -47,7 +53,7 @@ function PointRow({ cityId, point, current, selected, onSelect }: {
 
   if (onSelect) {
     return (
-      <li className="tree__point" data-current={current || undefined} data-selected={selected || undefined}>
+      <motion.li className="tree__point" data-current={current || undefined} data-selected={selected || undefined} variants={reducedMotion ? undefined : pointVariants} custom={index}>
         <button
           type="button"
           className="tree__point-link"
@@ -56,14 +62,14 @@ function PointRow({ cityId, point, current, selected, onSelect }: {
         >
           {inner}
         </button>
-      </li>
+      </motion.li>
     );
   }
 
   return (
-    <li className="tree__point" data-current={current || undefined} data-selected={selected || undefined}>
-      <Link className="tree__point-link" to={ROUTES.research(cityId, point.id)}>{inner}</Link>
-    </li>
+    <motion.li className="tree__point" data-current={current || undefined} data-selected={selected || undefined} variants={reducedMotion ? undefined : pointVariants} custom={index}>
+      <Link className="tree__point-link" to={ROUTES.research(cityId, point.id)} aria-current={current ? 'page' : undefined}>{inner}</Link>
+    </motion.li>
   );
 }
 
@@ -78,6 +84,7 @@ function TopicBlock({ cityId, topic, currentTopicId, currentPointId, selectedId,
   defaultOpen: boolean;
 }) {
   const reducedMotion = Boolean(useReducedMotion());
+  const panelId = useId();
   const containsCurrent = topic.id === currentTopicId
     || topic.points.some((point) => point.id === currentPointId);
   const containsSelection = topic.id === selectedId
@@ -97,6 +104,7 @@ function TopicBlock({ cityId, topic, currentTopicId, currentPointId, selectedId,
           type="button"
           className="tree__toggle"
           aria-expanded={open}
+          aria-controls={panelId}
           aria-current={topic.id === selectedId ? 'true' : undefined}
           onClick={handleHead}
         >
@@ -108,17 +116,22 @@ function TopicBlock({ cityId, topic, currentTopicId, currentPointId, selectedId,
           <Link className="tree__topic-open" to={ROUTES.research(cityId, topic.id)} aria-label={`进入 ${topic.id}`}>→</Link>
         )}
       </div>
+      <div id={panelId} className="tree__points-clip" aria-hidden={!open} inert={!open}>
       <AnimatePresence initial={false}>
         {open && (
           <motion.ol
             className="tree__points"
-            initial={reducedMotion ? false : { height: 0, opacity: 0, y: -4 }}
-            animate={{ height: 'auto', opacity: 1, y: 0 }}
-            exit={{ height: 0, opacity: 0, y: -4 }}
-            transition={{ duration: reducedMotion ? 0 : EXPAND_DURATION, ease: [0.16, 1, 0.3, 1] }}
+            initial={reducedMotion ? false : 'closed'}
+            animate="open"
+            exit="closed"
+            variants={{
+              open: { height: 'auto', opacity: 1, y: 0, marginBottom: 12 },
+              closed: { height: 0, opacity: 0, y: -4, marginBottom: 0 },
+            }}
+            transition={{ duration: reducedMotion ? 0 : MOTION_DURATION.normal, ease: MOTION_EASE.out }}
             style={{ overflow: 'hidden' }}
           >
-            {topic.points.map((point) => (
+            {topic.points.map((point, index) => (
               <PointRow
                 key={point.id}
                 cityId={cityId}
@@ -126,11 +139,14 @@ function TopicBlock({ cityId, topic, currentTopicId, currentPointId, selectedId,
                 current={point.id === currentPointId}
                 selected={point.id === selectedId}
                 onSelect={onSelect}
+                index={index}
+                reducedMotion={reducedMotion}
               />
             ))}
           </motion.ol>
         )}
       </AnimatePresence>
+      </div>
     </li>
   );
 }

@@ -21,6 +21,6 @@ export function DecisionPage() {
   }, [params, setParams]);
   if (!isStudyCity(cityId)) return <main className="decision"><h1 className="ag-section-title">选择城市</h1><TransitionLink to={ROUTES.liaoning} className="ag-button">返回首页</TransitionLink></main>;
   return <WorkbenchLayout className="decision-workbench decision-workbench--live" railMode="persistent" resetKey={cityId} contentKey={cityId} sidebarLabel="城市" railLabel="实时结果" onEscape={() => navigate(structuralParent(location.pathname, location.search) ?? provinceUrl(cityId))}
-    sidebar={close => <nav aria-label="决策城市"><ol className="workbench__menu">{STUDY_CITY_IDS.map(id => <li key={id}><WorkspaceLink to={`${ROUTES.decision(id)}?city=${id}`} aria-current={id === cityId ? 'page' : undefined} onClick={() => close()}>{getCity(id)?.shortName}</WorkspaceLink></li>)}</ol></nav>}
+    sidebar={close => <nav aria-label="决策城市" className="decision-city-navigation"><ol className="workbench__menu">{STUDY_CITY_IDS.map(id => <li key={id}><WorkspaceLink to={`${ROUTES.decision(id)}?city=${id}`} aria-current={id === cityId ? 'page' : undefined} onClick={() => close()}>{getCity(id)?.shortName}</WorkspaceLink></li>)}</ol></nav>}
   ><PlanningWorkbench cityId={cityId}/></WorkbenchLayout>;
 }

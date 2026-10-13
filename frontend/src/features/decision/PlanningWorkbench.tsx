@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import { isKnownCrop, readContextFromSearch, useAppContext, writeContextToSearch } from '../../app/context/appContext';
 import { STUDY_CITY_IDS, getCity } from '../../domain/geography/cities';
@@ -11,6 +11,7 @@ import { createCityDecisionData, productCropOptions, productPriceFor, type Produ
 import { WorkbenchMain, WorkbenchRail } from '../../components/workbench/WorkbenchLayout';
 import { DataSourceLinks } from '../../components/sources/DataSourceLinks';
 import { ChoiceButtons } from '../../components/controls/ChoiceButtons';
+import { FlipValue } from '../../components/motion/FlipValue';
 import { useMarketObservation } from './useMarketObservation';
 import './planning.css';
 import { cropIdentity, sameCrop } from '../../domain/decision/cropIdentity';
@@ -19,7 +20,6 @@ import type { ProductDecisionRequest } from '../../domain/decision/productApi';
 
 export interface PlanningWorkbenchProps { cityId: string }
 const number = (n: number, digits = 2) => n.toLocaleString('zh-CN', { maximumFractionDigits: digits });
-const value = (n: number | null, unit: string) => n === null ? '—' : `${number(n)} ${unit}`;
 const CUSTOM = '__custom__';
 
 function draftFor(session: PlanningSession, crop: string, price: ProductPrice): PlanningDraft {
@@ -37,6 +37,8 @@ export function PlanningWorkbench({ cityId }: PlanningWorkbenchProps) {
 function PlanningCity({ cityId, crops }: { cityId: string; crops: string[] }) {
   const city = getCity(cityId)!;
   const id = useId();
+  const resultSection = useRef<HTMLElement>(null);
+  const resultHeading = useRef<HTMLHeadingElement>(null);
   const [params, setParams] = useSearchParams();
   const location = useLocation();
   const [session, setSession] = useState(() => {
@@ -111,18 +113,22 @@ function PlanningCity({ cityId, crops }: { cityId: string; crops: string[] }) {
     syncCrop(next === CUSTOM ? session.customCrop.trim() : next);
   };
   const options = [...crops, ...(crop && isKnownCrop(crop) && session.activeCrop !== CUSTOM && !crops.includes(crop) ? [crop] : [])];
+  const showResult = () => {
+    const reduced = resultSection.current?.ownerDocument.defaultView?.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    resultSection.current?.scrollIntoView({ behavior: reduced ? 'instant' : 'smooth', block: 'start' });
+    resultHeading.current?.focus({ preventScroll: true });
+  };
   return <>
-    <WorkbenchMain label="输入条件"><div className="planning-workbench">
-      <h1 className="workbench__title">农业决策</h1>
+    <WorkbenchMain label="输入条件" contentKey={`${cityId}:${session.activeCrop}`}><div className="planning-workbench">
       <section className="planning-form" aria-label={`${city.shortName}经营条件`}>
-        <h2 className="ag-title">输入条件</h2>
+        <div className="planning-form__heading"><h1 className="ag-title">输入条件</h1><button type="button" className="planning-result-jump" onClick={showResult}>查看结果 <span aria-hidden>↓</span></button></div>
         <ChoiceButtons label="作物" value={session.activeCrop} onChange={chooseCrop} options={[...options.map(name => ({ value: name, label: name })), { value: CUSTOM, label: '自定义作物' }]}/>
         {session.activeCrop === CUSTOM && <label className="planning-field planning-custom" htmlFor={`${id}-custom`}><span>作物名称</span><input id={`${id}-custom`} maxLength={12} value={session.customCrop} onChange={event => { const text = event.target.value; const customCrop = sameCrop(text.trim(), '土豆') ? '土豆' : text; setSession(previous => ({ ...previous, customCrop })); setTouched(previous => ({ ...previous, crop: true })); syncCrop(customCrop.trim()); }}/></label>}
         {touched.crop && cropError && <p className="planning-error" role="alert">{cropError}</p>}
-        <div className="planning-inputs">
+        <div className="planning-inputs planning-inputs--primary">
           {PLANNING_FIELDS.filter(({ key }) => key === 'areaMu').map(field => <PlanningField key={field.key} field={field} id={id} draft={draft} error={touched[field.key] ? validation.errors[field.key] : undefined} onChange={updateDraft}/>)}
           <label className="planning-field" htmlFor={`${id}-budget`}><span>可用预算<small>元</small></span><input id={`${id}-budget`} name="budget" type="number" inputMode="decimal" min="0" step="any" value={budgetText} onChange={event => { setSession(previous => ({ ...previous, budgetCny: event.target.value })); setTouched(previous => ({ ...previous, budget: true })); }} aria-invalid={Boolean(budgetError)} aria-describedby={budgetError ? `${id}-budget-error` : undefined}/>{budgetError && <em id={`${id}-budget-error`} className="planning-error" role="alert">{budgetError}</em>}</label>
-          <label className="planning-field" htmlFor={`${id}-saleDate`}><span>销售时间</span><input id={`${id}-saleDate`} name="saleDate" type="date" value={saleDate} onChange={event => { setSession(previous => ({ ...previous, saleDate: event.target.value })); setTouched(previous => ({ ...previous, saleDate: true })); }} aria-invalid={Boolean(saleError)}/>{saleError && <em className="planning-error" role="alert">{saleError}</em>}</label>
+          <label className="planning-field planning-field--date" htmlFor={`${id}-saleDate`}><span>销售时间</span><input id={`${id}-saleDate`} name="saleDate" type="date" value={saleDate} onChange={event => { setSession(previous => ({ ...previous, saleDate: event.target.value })); setTouched(previous => ({ ...previous, saleDate: true })); }} aria-invalid={Boolean(saleError)}/>{saleError && <em className="planning-error" role="alert">{saleError}</em>}</label>
         </div>
         <ChoiceButtons label="目标" value={session.target ?? 'balanced'} onChange={target => setSession(previous => ({ ...previous, target: target as PlanningSession['target'] }))} options={[{ value: 'balanced', label: '兼顾收益与风险' }, { value: 'conservative', label: '控制风险' }, { value: 'aggressive', label: '收益优先' }]}/>
         <div className="planning-inputs">
@@ -132,8 +138,8 @@ function PlanningCity({ cityId, crops }: { cityId: string; crops: string[] }) {
       </section>
       {lines && <section className="planning-section" aria-labelledby={`${id}-sensitivity`}><h2 className="ag-title" id={`${id}-sensitivity`}>收益变化</h2><SensitivityChart lines={lines}/></section>}
     </div></WorkbenchMain>
-    <WorkbenchRail><section className="planning-result" aria-label="农业决策结果" aria-live="polite">
-      <h2 className="ag-title">实时结果</h2>
+    <WorkbenchRail><section ref={resultSection} className="planning-result" aria-label="农业决策结果" aria-live="polite">
+      <h2 ref={resultHeading} className="ag-title" tabIndex={-1}>实时结果</h2>
       {data ? <>
         <div className="planning-recommendation"><p className="ag-label">推荐方案</p><h3>{recommended ? recommended.area_mu < validation.inputs!.areaMu ? '调整种植规模' : '按推荐条件安排生产' : data.suggestion}</h3><p>{crop} · {number(recommended?.area_mu ?? validation.inputs!.areaMu)} 亩</p>{recommended && <p>参考售价 {number(recommended.price_per_kg)} 元/kg</p>}{recommended?.horizon_days && !recommended.sales_window && <p>价格参考周期 {recommended.horizon_days} 天</p>}</div>
         <ResultReadings result={result!}/>
@@ -150,7 +156,17 @@ function PlanningField({ field, id, draft, error, onChange }: { field: typeof PL
 }
 
 function ResultReadings({ result }: { result: PlanningResult }) {
-  return <dl className="planning-readings">{[['预计收益', result.profitCny, '元'], ['销售收入', result.revenueCny, '元'], ['总成本', result.costCny, '元'], ['保本价格', result.breakEvenPrice, '元/kg'], ['保本亩产', result.breakEvenYield, 'kg/亩']].map(([label, n, unit]) => <div key={String(label)} data-primary={label === '预计收益' || undefined} data-negative={Number(n) < 0}><dt>{label}</dt><dd>{value(n as number | null, String(unit))}</dd></div>)}</dl>;
+  const total = Math.max(result.revenueCny, result.costCny) || 1;
+  const readings: { label: string; value: number | null; unit: string; share?: number }[] = [
+    { label: '预计收益', value: result.profitCny, unit: '元' },
+    { label: '销售收入', value: result.revenueCny, unit: '元', share: result.revenueCny / total },
+    { label: '总成本', value: result.costCny, unit: '元', share: result.costCny / total },
+    { label: '保本价格', value: result.breakEvenPrice, unit: '元/kg' },
+    { label: '保本亩产', value: result.breakEvenYield, unit: 'kg/亩' },
+  ];
+  return <dl className="planning-readings">{readings.map(reading => <div key={reading.label} data-primary={reading.label === '预计收益' || undefined} data-negative={reading.value !== null && reading.value < 0} data-measure={reading.share !== undefined ? reading.label === '销售收入' ? 'income' : 'cost' : undefined}>
+    <dt>{reading.label}</dt><dd>{reading.value === null ? '—' : <><FlipValue value={number(reading.value)}/>{' '}<span className="planning-reading__unit">{reading.unit}</span></>}{reading.share !== undefined && <span className="planning-reading__track" aria-hidden><i style={{ transform: `scaleX(${reading.share})` }}/></span>}</dd>
+  </div>)}</dl>;
 }
 
 function SensitivityChart({ lines }: { lines: SensitivityLine[] }) {

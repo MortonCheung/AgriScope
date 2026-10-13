@@ -238,3 +238,11 @@
 .market-observation__point:hover { r: 4; }
 
 .decision-city-workspace { width:min(calc(100% - 2 * var(--ag-gutter)), 1600px); margin:calc(var(--ag-nav-height) + var(--ag-space-6)) auto var(--ag-space-6); padding:clamp(24px,4vw,56px); background:var(--ag-paper-raised); border:1px solid var(--ag-rule-soft); }
+
+/* Each city owns its small selection marker; no cross-route shared slider. */
+.decision-city-navigation .workbench__menu a.workspace-choice { min-height:44px;padding-inline:8px;transition:color var(--ag-dur-fast) var(--ag-ease),background-color var(--ag-dur-selection) var(--ag-ease-standard),transform var(--ag-dur-selection) var(--ag-ease-standard); }
+.decision-city-navigation .workbench__menu a.workspace-choice::before { content:'';position:absolute;left:0;top:12px;bottom:12px;width:1px;background:var(--ag-ink);transform:scaleY(0);transform-origin:top;transition:transform var(--ag-dur-selection) var(--ag-ease-standard); }
+.decision-city-navigation .workbench__menu a.workspace-choice[aria-current='page'] { background:color-mix(in srgb,var(--ag-ink) 3%,transparent);transform:translateX(3px); }
+.decision-city-navigation .workbench__menu a.workspace-choice[aria-current='page']::before { transform:scaleY(1); }
+.decision-city-navigation .workbench__menu a.workspace-choice:active { transform:translateX(2px); }
+@media(prefers-reduced-motion:reduce) { .decision-city-navigation .workbench__menu a.workspace-choice,.decision-city-navigation .workbench__menu a.workspace-choice::before { transition:none; } }

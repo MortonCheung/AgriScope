@@ -6,11 +6,15 @@ import catalogJson from '../../../../runtime/research/research_catalog.json';
 import type { V2Catalog } from '../../domain/research/v2/types';
 import { resetAppContext } from '../../app/context/appContext';
 import { CityReportTree } from './CityReportTree';
+import { presentedTopics } from '../../domain/research/presentation';
+
+const motionPreference = vi.hoisted(() => ({ reduced: true }));
+vi.mock('motion/react', async importOriginal => ({ ...await importOriginal<typeof import('motion/react')>(), useReducedMotion: () => motionPreference.reduced }));
 
 const catalog = catalogJson as unknown as V2Catalog;
 function Location() { const location = useLocation(); return <output data-testid="location">{location.pathname}{location.search}</output>; }
 const open = (url = '/reports') => render(<MemoryRouter initialEntries={[url]}><CityReportTree catalog={catalog}/><Location/></MemoryRouter>);
-beforeEach(() => { resetAppContext(); vi.stubGlobal('matchMedia', () => ({matches:true,addEventListener:vi.fn(),removeEventListener:vi.fn()})); });
+beforeEach(() => { resetAppContext(); motionPreference.reduced = true; vi.stubGlobal('matchMedia', () => ({matches:true,addEventListener:vi.fn(),removeEventListener:vi.fn()})); });
 afterEach(() => { cleanup();vi.unstubAllGlobals(); });
 describe('one city/topic/point tree consumes the verified publication', () => {
   it('city disclosure does not navigate; selecting a valid topic carries real conditions', () => {
@@ -41,5 +45,59 @@ describe('one city/topic/point tree consumes the verified publication', () => {
   it('does not advertise a city when publication metadata is missing', () => {
     render(<MemoryRouter><CityReportTree catalog={{...catalog,presentation_version:undefined}}/></MemoryRouter>);
     for(const button of document.querySelectorAll('.city-report-tree__toggle'))expect(button.hasAttribute('disabled')).toBe(true);
+  });
+  it.each([false, true])('retains city and topic nodes, manual expansion and scroll when collapsing (reduced=%s)', reduced => {
+    motionPreference.reduced = reduced;
+    open('/reports/shenyang?research=A1.3');
+    const city = screen.getByRole('button', { name: '沈阳' });
+    const panel = document.getElementById(city.getAttribute('aria-controls')!)!;
+    const secondTopic = presentedTopics(catalog, 'shenyang')[1];
+    const topic = within(panel).getByRole('button', { name: `${secondTopic.id} ${secondTopic.title}` });
+    const topicNode = topic.closest('.tree__topic');
+    fireEvent.click(topic);
+    expect(topic.getAttribute('aria-expanded')).toBe('true');
+    panel.scrollTop = 96;
+    fireEvent.click(city);
+    expect(document.getElementById(city.getAttribute('aria-controls')!)).toBe(panel);
+    expect(panel.getAttribute('aria-hidden')).toBe('true');
+    expect(panel.hasAttribute('inert')).toBe(true);
+    expect(within(panel).queryByRole('button')).toBeNull();
+    fireEvent.click(city);
+    expect(panel.getAttribute('aria-hidden')).toBe('false');
+    expect(panel.hasAttribute('inert')).toBe(false);
+    expect(topic.closest('.tree__topic')).toBe(topicNode);
+    expect(topic.getAttribute('aria-expanded')).toBe('true');
+    expect(panel.scrollTop).toBe(96);
+  });
+  it('keeps every disclosure id mounted and excludes closed cities from interaction immediately', () => {
+    motionPreference.reduced = false;
+    open('/reports');
+    const city = screen.getByRole('button', { name: '铁岭' });
+    const panel = document.getElementById(city.getAttribute('aria-controls')!)!;
+    expect(panel.hasAttribute('inert')).toBe(true);
+    fireEvent.click(city);
+    expect(panel.hasAttribute('inert')).toBe(false);
+    fireEvent.click(city);
+    expect(panel.hasAttribute('inert')).toBe(true);
+    expect(panel.getAttribute('aria-hidden')).toBe('true');
+    for (const toggle of document.querySelectorAll('.city-report-tree__toggle')) {
+      expect(document.getElementById(toggle.getAttribute('aria-controls')!)).toBeTruthy();
+    }
+  });
+  it('applies rapid topic selections immediately and keeps all city toggle nodes stable', () => {
+    motionPreference.reduced = false;
+    const { container } = open('/reports');
+    const city = screen.getByRole('button', { name: '沈阳' });
+    const cityNodes = [...container.querySelectorAll('.city-report-tree__toggle')];
+    fireEvent.click(city);
+    const panel = document.getElementById(city.getAttribute('aria-controls')!)!;
+    const topics = presentedTopics(catalog, 'shenyang').slice(0, 3);
+    for (const topic of topics) {
+      fireEvent.click(within(panel).getByRole('button', { name: `${topic.id} ${topic.title}` }));
+      expect(new URLSearchParams(screen.getByTestId('location').textContent!.split('?')[1]).get('research')).toBe(topic.id);
+    }
+    expect([...container.querySelectorAll('.city-report-tree__toggle')]).toEqual(cityNodes);
+    expect(panel.hasAttribute('inert')).toBe(false);
+    expect(screen.getByTestId('location').textContent).toContain('/reports/shenyang?');
   });
 });

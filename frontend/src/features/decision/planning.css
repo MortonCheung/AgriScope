@@ -1,15 +1,16 @@
 .planning-workbench { color: var(--ag-ink); }
 .planning-form { padding: 0; }
 .planning-result { padding: 0; min-width: 0; }
-.planning-inputs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.1rem 1rem; margin-block: 1.2rem; }
+.planning-inputs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 12px; margin-block: 16px; }
+.planning-field--date { grid-column: 1 / -1; }
 .planning-field { display: grid; gap: .45rem; min-width: 0; font-size: .88rem; }
 .planning-field > span { display: flex; justify-content: space-between; gap: .6rem; }
 .planning-field small { color: var(--ag-ink-muted); font-size: .78rem; }
-.planning-field input, .planning-field select, .planning-climate-select select { min-height: 44px; width: 100%; padding: .7rem .75rem; background: var(--ag-paper-raised); color: var(--ag-ink); border: 1px solid var(--ag-rule-strong); border-radius: 0; font: inherit; }
+.planning-field input, .planning-field select, .planning-climate-select select { min-height: 44px; min-width: 0; width: 100%; padding: .55rem .65rem; background: var(--ag-paper-raised); color: var(--ag-ink); border: 1px solid var(--ag-rule-strong); border-radius: 0; font: inherit; transition: border-color var(--ag-dur-fast) var(--ag-ease-standard), background var(--ag-dur-fast) var(--ag-ease-standard); }
 .planning-field input:focus-visible, .planning-field select:focus-visible, .planning-climate-select select:focus-visible { outline: 2px solid var(--ag-focus); outline-offset: 2px; }
 .planning-field [aria-invalid=true] { border-color: var(--ag-danger); }
 .planning-error { color: var(--ag-danger); font-size: .8rem; font-style: normal; margin: 0; }
-.planning-readings { margin-block: 1.6rem; }
+.planning-readings { margin-block: 1rem; }
 .planning-readings > div { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding-block: .9rem; border-bottom: 1px solid var(--ag-rule); }
 .planning-readings dt { color: var(--ag-ink-soft); font-size: .9rem; }
 .planning-readings dd { margin: 0; font-size: clamp(1.15rem, 2vw, 1.65rem); font-variant-numeric: tabular-nums; }
@@ -52,21 +53,44 @@
   .planning-observations { grid-template-columns: 1fr; }
   .planning-observations { gap: 2rem; }
 }
-@media (max-width: 420px) {
+@media (max-width: 349px) {
   .planning-inputs { grid-template-columns: 1fr; }
+  .planning-field--date { grid-column: auto; }
+}
+@media (max-width: 420px) {
   .planning-table-scroll td, .planning-table-scroll th { padding-inline: .5rem; }
 }
 
 /* Phase 4：中央条件与右栏结果各自由共享工作台滚动。 */
-.planning-workbench { min-width: 0; }
-.planning-result .planning-readings > div { display: grid; gap: .35rem; }
-.planning-result .planning-readings dd { overflow-wrap: anywhere; }
+.planning-workbench { min-width: 0; container-type: inline-size; container-name: planning; }
+.planning-result .planning-readings > div { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); align-items: baseline; gap: 6px 10px; padding-block: 12px; }
+.planning-result .planning-readings dd { min-width: 0; font-size: var(--ag-fs-body); text-align: right; overflow-wrap: anywhere; }
+.planning-result .planning-readings > [data-primary] { grid-template-columns: minmax(0, 1fr); gap: 6px; padding-block: 6px 14px; }
+.planning-result .planning-readings > [data-primary] dd { text-align: left; }
+.planning-readings .flip-value { max-width: 100%; }
+.planning-readings .flip-value__item { white-space: normal; overflow-wrap: anywhere; }
+.planning-reading__unit { font-size: var(--ag-fs-meta); color: var(--ag-ink-muted); white-space: nowrap; }
+.planning-reading__track { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--ag-rule-soft); pointer-events: none; }
+.planning-reading__track i { display: block; height: 100%; background: var(--ag-olive); transform-origin: left; transition: transform var(--ag-dur-normal) var(--ag-ease-standard); }
+.planning-readings [data-measure='cost'] .planning-reading__track i { background: var(--ag-ink-muted); }
+.planning-result { scroll-margin-top: calc(var(--ag-nav-height) + 16px); }
+.planning-result > .ag-title:focus-visible { outline: 2px solid var(--ag-focus); outline-offset: 5px; }
+@container planning (min-width: 510px) {
+  .planning-inputs--primary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .planning-inputs--primary .planning-field--date { grid-column: auto; }
+}
+.decision-workbench--live .workbench__stage { padding-top: 24px; padding-bottom: 40px; }
+.decision-workbench--live .workbench__rail, .decision-workbench--live .workbench__sidebar { padding-bottom: 40px; }
 .planning-background { margin-top: var(--ag-space-6); border-top: 1px solid var(--ag-rule-soft); }
 .planning-background > summary { min-height: 44px; padding-block: 12px; cursor: pointer; color: var(--ag-ink-soft); font-size: var(--ag-fs-small); }
 .planning-workbench .planning-observations { grid-template-columns: minmax(0, 1fr); }
 
 /* One live decision surface; input edits update readings without remounting. */
-.planning-form > .ag-title { margin-block: 1.6rem 1rem; }
+.planning-form__heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.planning-form__heading > .ag-title { margin: 0; }
+.planning-result-jump { display: none; min-height: 44px; padding: 4px 0; border: 0; background: transparent; color: var(--ag-ink-muted); font: inherit; font-size: var(--ag-fs-small); cursor: pointer; }
+.planning-result-jump:hover { color: var(--ag-ink); }
+.planning-result-jump:focus-visible { outline: 2px solid var(--ag-focus); outline-offset: 3px; }
 .planning-custom { margin-top: 1rem; }
 .planning-recommendation { padding-block: 1rem 1.25rem; border-bottom: 1px solid var(--ag-rule); }
 .planning-recommendation h3 { font-size: var(--ag-fs-body); font-weight: 500; line-height: 1.6; margin-block: .6rem; }
@@ -82,15 +106,17 @@
 /* City navigation shares the header's local underline; paper stays still. */
 .decision-workbench--live .workbench__menu a.workspace-choice { font-size:var(--ag-fs-small); background:transparent; }
 @media (max-width:768px) {
+  .planning-result-jump { display: inline-flex; align-items: center; gap: 6px; }
   .decision-workbench--live .workbench__menu { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px 20px; }
   .decision-workbench--live .workbench__menu a.workspace-choice { justify-content:center; }
 }
 /* Keep direct input choices compact without drawing a wall of boxes. */
 .planning-form .choice-buttons__items { gap:6px 16px; }
-.planning-form .choice-buttons button { position:relative; padding:8px 2px; border:0; background:transparent; }
+.planning-form .choice-buttons button { position:relative; padding:8px 2px; border:0; background:transparent; transition:color var(--ag-dur-fast) var(--ag-ease-standard), transform var(--ag-dur-fast) var(--ag-ease-standard); }
+.planning-form .choice-buttons button:active:not(:disabled) { transform:translateY(1px); }
 .planning-form .choice-buttons button::after { content:''; position:absolute; left:0; right:0; bottom:0; height:1px; background:var(--ag-ink); transform:scaleX(0); transform-origin:left; transition:transform var(--ag-dur-underline) var(--ag-ease-standard); }
 .planning-form .choice-buttons button:hover:not(:disabled), .planning-form .choice-buttons button[aria-pressed=true] { background:transparent; color:var(--ag-ink); }
 .planning-form .choice-buttons button:hover:not(:disabled)::after, .planning-form .choice-buttons button[aria-pressed=true]::after { transform:scaleX(1); }
-@media(prefers-reduced-motion:reduce) { .planning-form .choice-buttons button::after { transition:none; } }
+@media(prefers-reduced-motion:reduce) { .planning-form .choice-buttons button, .planning-form .choice-buttons button::after, .planning-reading__track i, .planning-field input { transition:none; } .planning-form .choice-buttons button:active:not(:disabled) { transform:none; } }
 
 .planning-window-options {list-style:none;padding:0;margin:0;display:grid;gap:8px;font-size:12px;font-variant-numeric:tabular-nums;}

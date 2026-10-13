@@ -5,6 +5,9 @@ import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { DecisionPage } from './DecisionPage';
 import { CityDecisionEntry } from './CityDecisionEntry';
 import { resetAppContext } from '../../app/context/appContext';
+// This flow verifies exact calculations and restored inputs; value animation
+// and its current accessible reading are covered by the component checks.
+vi.mock('motion/react', async original => ({ ...await original<typeof import('motion/react')>(), useReducedMotion: () => true }));
 vi.mock('../../domain/observations/useObservations', () => ({ useObservations: () => ({ status: 'error', error: 'connection' }) }));
 vi.mock('./useMarketObservation', () => ({ useMarketObservation: () => ({ status: 'error', error: 'connection', retry: vi.fn() }) }));
 beforeEach(() => {

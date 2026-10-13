@@ -16,7 +16,7 @@ beforeEach(() => {
   sessionStorage.clear(); resetAppContext(); vi.mocked(useProductDecision).mockReturnValue(null);
   vi.mocked(useMarketObservation).mockReturnValue({ status: 'error', error: 'connection', retry: vi.fn() });
 });
-afterEach(cleanup);
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 const view = (cityId: string) => <MemoryRouter><PlanningWorkbench cityId={cityId}/></MemoryRouter>;
 function choose(crop: string) { fireEvent.click(within(screen.getByRole('group', { name: '作物' })).getByRole('button', { name: crop })); }
 function change(label: RegExp | string, input: string) { fireEvent.change(screen.getByLabelText(label), { target: { value: input } }); }
@@ -24,7 +24,12 @@ function fill(price = '4') {
   choose('玉米'); change(/^种植面积/, '10'); change(/^预计亩产/, '500'); change(/^每亩总成本/, '1000'); change(/^假设销售价格/, price); change(/^可销售比例/, '80');
 }
 const results = () => within(screen.getByRole('region', { name: '农业决策结果' }));
-const profit = () => results().getByText('预计收益').nextElementSibling?.textContent;
+const reading = (label: string) => {
+  const displayed = results().getByText(label).nextElementSibling!;
+  const number = displayed.querySelector('.flip-value');
+  return number ? `${number.getAttribute('aria-label') ?? number.textContent} ${displayed.querySelector('.planning-reading__unit')?.textContent}` : displayed.textContent;
+};
+const profit = () => reading('预计收益');
 describe('six-city live decision workbench', () => {
   it.each(STUDY_CITY_IDS)('shows inputs and updates results without submit in %s', city => {
     const { container } = render(view(city));
@@ -101,6 +106,91 @@ describe('six-city live decision workbench', () => {
     change('作物名称', 'bad!'); expect(useAppContext.getState().crop).toBeNull(); expect(new URLSearchParams(screen.getByLabelText('路由').textContent!).has('crop')).toBe(false);
     choose('玉米'); expect(useAppContext.getState()).toMatchObject({ cityId: 'tieling', crop: '玉米', horizon: 7, asOf: '2026-09-14' });
     expect(new URLSearchParams(screen.getByLabelText('路由').textContent!).get('crop')).toBe('玉米');
+  });
+});
+
+describe('compact decision readings and result access', () => {
+  it('presents one input heading without the redundant visible page title', () => {
+    render(view('shenyang'));
+    expect(screen.getByRole('heading', { level: 1, name: '输入条件' })).toBeTruthy();
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+    expect(screen.queryByRole('heading', { name: '农业决策' })).toBeNull();
+    expect(screen.getByRole('heading', { name: '实时结果' })).toBeTruthy();
+  });
+
+  it('changes content identity for city/crop selection while keeping numeric edits in the same stage', () => {
+    const { container } = render(view('shenyang'));
+    const stage = container.querySelector('.workbench__stage')!;
+    expect(stage.getAttribute('data-content-key')).toBe('shenyang:');
+    choose('玉米');
+    expect(stage.getAttribute('data-content-key')).toBe('shenyang:玉米');
+    change(/^种植面积/, '10');
+    change(/^预计亩产/, '500');
+    expect(stage.getAttribute('data-content-key')).toBe('shenyang:玉米');
+    choose('玉米');
+    expect(container.querySelector('.workbench__stage')).toBe(stage);
+    expect(stage.getAttribute('data-content-key')).toBe('shenyang:玉米');
+    choose('大豆');
+    expect(stage.getAttribute('data-content-key')).toBe('shenyang:大豆');
+    choose('自定义作物');
+    const customIdentity = stage.getAttribute('data-content-key');
+    change('作物名称', '草'); change('作物名称', '草莓');
+    expect(stage.getAttribute('data-content-key')).toBe(customIdentity);
+  });
+
+  it('shows current result values with units outside the animated number and honest income/cost lengths', () => {
+    const { container } = render(view('shenyang')); fill();
+    expect(reading('销售收入')).toBe('16,000 元');
+    expect(reading('总成本')).toBe('10,000 元');
+    expect(reading('保本价格')).toBe('2.5 元/kg');
+    const income = container.querySelector<HTMLElement>('[data-measure="income"] .planning-reading__track i')!;
+    const cost = container.querySelector<HTMLElement>('[data-measure="cost"] .planning-reading__track i')!;
+    expect(income.style.transform).toBe('scaleX(1)');
+    expect(cost.style.transform).toBe('scaleX(0.625)');
+    const resultSection = screen.getByRole('region', { name: '农业决策结果' });
+    const revenueReading = results().getByText('销售收入').nextElementSibling!;
+    expect(revenueReading.querySelector('.flip-value')?.textContent).not.toContain('元');
+    expect(revenueReading.querySelector('.planning-reading__unit')?.textContent).toBe('元');
+    change(/^假设销售价格/, '5');
+    expect(reading('销售收入')).toBe('20,000 元');
+    expect(cost.style.transform).toBe('scaleX(0.5)');
+    expect(screen.getByRole('region', { name: '农业决策结果' })).toBe(resultSection);
+    expect(container.querySelector('[data-measure="cost"] .planning-reading__track i')).toBe(cost);
+  });
+
+  it('keeps zero and loss comparisons bounded and clears them for invalid conditions', () => {
+    const { container } = render(view('tieling')); fill('0');
+    const scales = () => Array.from(container.querySelectorAll<HTMLElement>('.planning-reading__track i')).map(line => line.style.transform);
+    expect(profit()).toBe('-10,000 元');
+    expect(scales()).toEqual(['scaleX(0)', 'scaleX(1)']);
+    expect(results().getByText('预计收益').parentElement?.getAttribute('data-negative')).toBe('true');
+    change(/^每亩总成本/, '0');
+    expect(profit()).toBe('0 元');
+    expect(scales()).toEqual(['scaleX(0)', 'scaleX(0)']);
+    expect(container.textContent).not.toMatch(/NaN|Infinity/);
+    change(/^假设销售价格/, '0.000025');
+    change(/^每亩总成本/, '0.01');
+    expect(reading('销售收入')).toBe('0.1 元');
+    expect(reading('总成本')).toBe('0.1 元');
+    expect(scales()).toEqual(['scaleX(1)', 'scaleX(1)']);
+    change(/^种植面积/, '0');
+    expect(container.querySelector('.planning-reading__track')).toBeNull();
+    expect(results().queryByText('预计收益')).toBeNull();
+  });
+
+  it.each([false, true])('scrolls and focuses the actual result without changing route (reduce=%s)', reduced => {
+    vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: reduced, addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn() })));
+    function Probe() { const location = useLocation(); return <output aria-label="完整路由">{location.pathname}{location.search}{location.hash}</output>; }
+    render(<MemoryRouter initialEntries={['/cities/shenyang/decision?city=shenyang&horizon=7#saved']}><Probe/><PlanningWorkbench cityId="shenyang"/></MemoryRouter>);
+    const section = screen.getByRole('region', { name: '农业决策结果' });
+    section.scrollIntoView = vi.fn();
+    const heading = screen.getByRole('heading', { name: '实时结果' });
+    const focus = vi.spyOn(heading, 'focus');
+    fireEvent.click(screen.getByRole('button', { name: '查看结果' }));
+    expect(section.scrollIntoView).toHaveBeenCalledWith({ behavior: reduced ? 'instant' : 'smooth', block: 'start' });
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+    expect(document.activeElement).toBe(heading);
+    expect(screen.getByLabelText('完整路由').textContent).toBe('/cities/shenyang/decision?city=shenyang&horizon=7#saved');
   });
 });
 
