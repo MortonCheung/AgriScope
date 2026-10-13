@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter, defaultdict
+from contextlib import closing
 from dataclasses import dataclass
 from datetime import date, datetime, timezone, timedelta
 import hashlib
@@ -15,9 +16,12 @@ import json
 import math
 import os
 from pathlib import Path
+import re
+import sqlite3
 import sys
 import tempfile
 from typing import Any
+from urllib.parse import urlparse, parse_qs
 
 import pandas as pd
 
@@ -31,7 +35,7 @@ from backend.app.services.market_display_service import (  # noqa: E402
 CITY_IDS = {"沈阳": "shenyang", "铁岭": "tieling", "朝阳": "chaoyang",
             "锦州": "jinzhou", "丹东": "dandong", "大连": "dalian"}
 ALIASES = {
-    "黄瓜": {"黄瓜", "黃瓜"}, "甘蓝": {"甘蓝", "甘兰", "包菜"},
+    "黄瓜": {"黄瓜", "黃瓜"}, "甘蓝": {"甘蓝", "甘兰", "包菜", "圆白菜"},
     "青椒": {"青椒", "圆椒", "元椒"}, "尖椒": {"尖椒"},
     "土豆": {"土豆", "马铃薯", "新土豆"}, "西红柿": {"西红柿", "番茄"},
     "茄子": {"茄子", "紫茄子", "绿茄子", "青茄子", "茄子（紫）", "茄子（青）", "茄子_紫", "茄子_青"},
@@ -50,6 +54,16 @@ INPUTS = {
     "market": "data/processed/market/price_observation.parquet",
     "province": "data/processed/market/province_price_reference.parquet",
     "daily": "data/processed/daily/daily_market_price.parquet",
+}
+DEFAULT_FEED_DB = "data/raw/market_feed/42ef2fd/market-feed-sevenday.sqlite"
+# Five registered source adapters serve seven regions. Retain their actual price type.
+FEED_SOURCES = {
+    "SRC-LN-FGW-DAILY": ({"liaoning"}, {"market_average", "purchase"}, {"fgw.ln.gov.cn"}, "liaoning_fgw_daily-"),
+    "SRC-SY-CLZ": ({"shenyang"}, {"wholesale", "supermarket", "retail_market"},
+                   {"fgw.shenyang.gov.cn", "www.lnsyjgjc.com"}, "shenyang_clz-"),
+    "SRC-CY-FGW-BASKET": ({"chaoyang"}, {"market_average"}, {"fgw.chaoyang.gov.cn"}, "chaoyang_basket-"),
+    "SRC-JZ-CLZ-WEEKLY": ({"jinzhou"}, {"retail"}, {"www.jz.gov.cn"}, "jinzhou_weekly-"),
+    "SRC-LN-FGW-BYCITY": ({"dalian", "dandong", "tieling"}, {"market_average"}, {"fgw.ln.gov.cn"}, "lnfgw_by_city-"),
 }
 CHINA_TZ = timezone(timedelta(hours=8))
 
@@ -123,12 +137,18 @@ class Observation:
     source_path: str
     timestamp_basis: str
     evidence_paths: tuple[str, ...] = ()
+    specification: str = ""
+    evidence_basis: str = ""
+    raw_evidence_reference: str = ""
+    provided_record_hash: str = ""
+    current_primary_price_match: bool = False
 
     @property
     def identity(self) -> tuple:
         # Preserve actual source, market, price type and raw product identity.
         return (self.region, self.product, self.level, self.source_id,
-                self.source_name, self.market, self.raw_product)
+                self.source_name, self.market, self.raw_product, self.specification,
+                "provided_feed" if self.family == "provided_feed" else "")
 
     def provenance(self) -> dict:
         return dict(region=self.region, product=self.product, price_level=self.level,
@@ -137,7 +157,10 @@ class Observation:
                     raw_product=self.raw_product, source_id=self.source_id, source_name=self.source_name,
                     source_url=self.source_url, market=self.market, quality=self.quality,
                     source_path=self.source_path, timestamp_basis=self.timestamp_basis,
-                    evidence_paths=list(self.evidence_paths))
+                    evidence_paths=list(self.evidence_paths), specification=self.specification,
+                    evidence_basis=self.evidence_basis, raw_evidence_reference=self.raw_evidence_reference,
+                    provided_record_hash=self.provided_record_hash,
+                    current_primary_price_match=self.current_primary_price_match)
 
 
 @dataclass
@@ -155,9 +178,14 @@ class Reader:
         self.hashes: dict[str, str] = {}
         self.stats = {family: Counter() for family in INPUTS}
         self.json_cache: dict[str, dict | None] = {}
+        self.feed_receipt: dict | None = None
+
+    def reference(self, path: Path) -> str:
+        path = path.resolve()
+        return path.relative_to(self.root).as_posix() if path.is_relative_to(self.root) else str(path)
 
     def json(self, path: Path) -> dict | None:
-        relative = path.relative_to(self.root).as_posix()
+        relative = self.reference(path)
         if relative not in self.json_cache:
             try:
                 value = json.loads(path.read_text(encoding="utf-8"))
@@ -166,6 +194,164 @@ class Reader:
             except (OSError, ValueError):
                 self.json_cache[relative] = None
         return self.json_cache[relative]
+
+    def feed(self, path: Path) -> list[Observation]:
+        """User-provided observation DB; hashes/runs verified, raw bytes not claimed."""
+        path = path.resolve()
+        if not path.is_file():
+            raise ValueError("Provided market feed DB does not exist")
+        if Path(str(path) + "-wal").is_file() and Path(str(path) + "-wal").stat().st_size:
+            raise ValueError("Provided market feed must be a checkpointed DB snapshot")
+        reference, digest = self.reference(path), _hash(path)
+        receipt_path = path.parent / "provenance.json"
+        receipt = self.json(receipt_path)
+        if not isinstance(receipt, dict) or receipt.get("sha256") != digest:
+            raise ValueError("Provided market feed receipt/hash does not match")
+        self.hashes[reference] = digest
+        self.feed_receipt = dict(database=reference, receipt=self.reference(receipt_path),
+                                 receipt_content=receipt, evidence_basis="provided_git_observation_db",
+                                 raw_response_verification="not_bundled")
+        required = {"record_hash", "content_hash", "region_id", "source_id", "source_name", "source_url",
+                    "market_id", "product_raw", "product_standard", "product_specification", "observation_date",
+                    "collected_at", "original_price", "original_unit", "price_per_kg", "price_level",
+                    "quality_status", "raw_evidence_path", "source_parser_version"}
+        run_fields = {"region_id", "source_id", "status", "started_at", "finished_at", "latest_date"}
+        try:
+            with closing(sqlite3.connect(path.as_uri() + "?mode=ro&immutable=1", uri=True)) as connection:
+                connection.row_factory = sqlite3.Row
+                if connection.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
+                    raise ValueError("Provided market feed DB integrity failed")
+                columns = {row[1] for row in connection.execute("PRAGMA table_info(observations)")}
+                runs_columns = {row[1] for row in connection.execute("PRAGMA table_info(runs)")}
+                if not required <= columns or not run_fields <= runs_columns:
+                    raise ValueError("Provided market feed DB schema is incomplete")
+                rows = [dict(row) for row in connection.execute("SELECT * FROM observations ORDER BY observation_date,record_hash")]
+                runs = [dict(row) for row in connection.execute("SELECT * FROM runs")]
+        except sqlite3.Error as exc:
+            raise ValueError("Provided market feed DB is unreadable") from exc
+        self.stats["provided_feed"] = Counter(input_rows=len(rows))
+        primary_matches = self.feed_primary(rows, receipt)
+        points = []
+        identity_fields = ["region_id", "source_id", "market_id", "product_raw",
+                           "product_specification", "observation_date", "price_level"]
+        for row in rows:
+            identity = "\0".join(_text(row.get(key)) for key in identity_fields)
+            expected_record = hashlib.sha256(identity.encode()).hexdigest()[:20]
+            content = identity + "\0" + repr(row["original_price"]) + "\0" + _text(row["original_unit"])
+            expected_content = hashlib.sha256(content.encode()).hexdigest()[:20]
+            if row["record_hash"] != expected_record or row["content_hash"] != expected_content:
+                raise ValueError("Provided market feed record/content hash failed")
+            raw_product = _text(row["product_raw"])
+            product = next((crop for crop, aliases in ALIASES.items() if raw_product in aliases), None)
+            if product is None:
+                self.stats["provided_feed"]["unselected_product_identity"] += 1
+                continue
+            # Only these explicit aliases may differ from the producer's canonical name.
+            if _text(row["product_standard"]) not in {product, raw_product}:
+                self.stats["provided_feed"]["canonical_identity_mismatch"] += 1
+                continue
+            source_id, region, level = row["source_id"], row["region_id"], row["price_level"]
+            declared = FEED_SOURCES.get(source_id)
+            source_url = _text(row["source_url"])
+            url = urlparse(source_url)
+            if (declared is None or region not in declared[0] or level not in declared[1]
+                    or url.scheme not in {"https", "http"} or url.hostname not in declared[2]
+                    or not _text(row["source_parser_version"]).startswith(declared[3])
+                    or not _text(row["source_name"]) or not _text(row["market_id"])):
+                self.stats["provided_feed"]["unregistered_source_region_or_level"] += 1
+                continue
+            if row["quality_status"] != "OK":
+                self.stats["provided_feed"]["quality_rejected"] += 1
+                continue
+            raw_day = _text(row["observation_date"])
+            day = _day(raw_day) if re.fullmatch(r"\d{4}-\d{2}-\d{2}", raw_day) else None
+            collected_raw = _text(row["collected_at"])
+            collected = _timestamp(collected_raw)
+            if (day is None or not collected or "T" not in collected_raw
+                    or not re.search(r"(?:Z|[+-]\d{2}:\d{2})$", collected_raw)
+                    or date.fromisoformat(collected[:10]) < date.fromisoformat(day)):
+                self.stats["provided_feed"]["invalid_date_or_timestamp"] += 1
+                continue
+            collection_time = datetime.fromisoformat(collected)
+            matched_run = False
+            for run in runs:
+                if (run["region_id"] != region or run["source_id"] != source_id
+                        or run["status"] not in {"SUCCESS", "PARTIAL", "NO_NEW_PUBLICATION"}
+                        or _text(run["latest_date"]) < day):
+                    continue
+                try:
+                    start = datetime.fromisoformat(_text(run["started_at"]).replace("Z", "+00:00"))
+                    end = datetime.fromisoformat(_text(run["finished_at"]).replace("Z", "+00:00"))
+                    if start <= collection_time <= end:
+                        matched_run = True
+                        break
+                except (ValueError, TypeError):
+                    continue
+            if not matched_run:
+                self.stats["provided_feed"]["no_successful_collection_run"] += 1
+                continue
+            unit = _text(row["original_unit"])
+            original, normalized = _positive(row["original_price"]), _positive(row["price_per_kg"])
+            if unit not in MASS_FACTORS or original is None or normalized is None:
+                self.stats["provided_feed"]["invalid_mass_unit_or_price"] += 1
+                continue
+            price = round(original * MASS_FACTORS[unit], 10)
+            if not math.isclose(price, normalized, abs_tol=.0001):
+                self.stats["provided_feed"]["normalization_mismatch"] += 1
+                continue
+            point = Observation(region, product, level, day, price, collected, original, unit, raw_product,
+                                source_id, _text(row["source_name"]), source_url, _text(row["market_id"]), "A",
+                                "provided_feed", reference, "provided_collection_db",
+                                (reference, self.reference(receipt_path)),
+                                _text(row["product_specification"]),
+                                "provided_git_observation_db_raw_responses_not_bundled",
+                                _text(row["raw_evidence_path"]), row["record_hash"],
+                                row["record_hash"] in primary_matches)
+            points.append(point)
+            self.stats["provided_feed"]["accepted_rows"] += 1
+        return points
+
+    def feed_primary(self, rows: list[dict], receipt: dict) -> set[str]:
+        """Optional current Shenyang wholesale response; never asserts other sources verified."""
+        verification = receipt.get("current_primary_verification")
+        if not isinstance(verification, dict):
+            return set()
+        response_path = (self.root / _text(verification.get("response_file"))).resolve()
+        if not response_path.is_relative_to(self.root / "data/raw"):
+            raise ValueError("Primary price evidence is outside registered raw data")
+        raw = self.json(response_path)
+        if (not isinstance(raw, dict) or not isinstance(raw.get("data"), list)
+                or _hash(response_path) != verification.get("sha256")
+                or len(raw["data"]) != verification.get("row_count")):
+            raise ValueError("Primary price response hash/schema failed")
+        parsed = urlparse(_text(verification.get("url")))
+        query = parse_qs(parsed.query)
+        day = _day(query.get("dates", [""])[0])
+        if (parsed.hostname != "www.lnsyjgjc.com" or parsed.path != "/api/showList"
+                or query.get("marketType") != ["1"] or day is None):
+            raise ValueError("Primary price response scope is not Shenyang wholesale")
+        verified = set()
+        for item in raw["data"]:
+            if not isinstance(item, dict):
+                raise ValueError("Primary price response record is invalid")
+            try:
+                actual_day = datetime.fromtimestamp(float(item["dates"]) / 1000, CHINA_TZ).date().isoformat()
+            except (KeyError, TypeError, ValueError, OverflowError) as exc:
+                raise ValueError("Primary price response date is invalid") from exc
+            if actual_day != day or _text(item.get("marketType")) != "1":
+                raise ValueError("Primary price response differs from requested date/type")
+            matched = [row for row in rows if row["region_id"] == "shenyang"
+                       and row["source_id"] == "SRC-SY-CLZ" and row["price_level"] == "wholesale"
+                       and row["observation_date"] == day and row["product_raw"] == item.get("productName")
+                       and _text(row["product_specification"]) == _text(item.get("grade"))
+                       and row["original_unit"] == item.get("unit")
+                       and _positive(item.get("price")) == row["original_price"]]
+            if not matched:
+                raise ValueError("Primary price response differs from provided observation DB")
+            verified.update(row["record_hash"] for row in matched)
+        self.feed_receipt["current_primary_price_match_record_hashes"] = sorted(verified)
+        self.feed_receipt["current_primary_scope"] = "Shenyang wholesale only; original other responses not bundled"
+        return verified
 
     def daily_evidence(self, row: dict, day: str, price: float) -> tuple | None:
         raw_path = _text(row.get("raw_file"))
@@ -378,9 +564,12 @@ def _mean(region: str, product: str, level: str, candidates: list[Series]) -> tu
                           for point, sources in zip(history, contributors)]))
 
 
-def build(project_root: Path) -> tuple[dict, dict]:
+def build(project_root: Path, feed_db: Path | None = None) -> tuple[dict, dict]:
     reader = Reader(project_root)
     observations = [point for family in INPUTS for point in reader.rows(family)]
+    selected_feed = Path(feed_db).resolve() if feed_db is not None else reader.root / DEFAULT_FEED_DB
+    if feed_db is not None or selected_feed.is_file():
+        observations.extend(reader.feed(selected_feed))
     series, conflicts = _series(observations)
     records, lineage = [], []
     for region in REGIONS:
@@ -410,6 +599,8 @@ def build(project_root: Path) -> tuple[dict, dict]:
                  tier_counts=dict(Counter(str(row["tier"]) for row in lineage)),
                  observation_date_range=[min(r["observation_date"] for r in records), max(r["observation_date"] for r in records)],
                  record_count=len(records), records=lineage)
+    if reader.feed_receipt is not None:
+        audit["provided_feed"] = reader.feed_receipt
     return payload, audit
 
 
@@ -434,11 +625,11 @@ def _atomic(path: Path, contents: bytes) -> None:
 
 
 def publish(project_root: Path, runtime_root: Path | None = None,
-            frontend_root: Path | None = None) -> dict:
+            frontend_root: Path | None = None, feed_db: Path | None = None) -> dict:
     project_root = Path(project_root).resolve()
     runtime_root = Path(runtime_root or project_root / "AgriScope/runtime").resolve()
     frontend_root = Path(frontend_root or project_root / "AgriScope/frontend").resolve()
-    payload, audit = build(project_root)
+    payload, audit = build(project_root, feed_db)
     contents = _encoded(payload)
     digest = hashlib.sha256(contents).hexdigest()
     audit["display_sha256"] = digest
@@ -460,9 +651,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--project-root", type=Path, default=PRODUCT_ROOT.parent)
     parser.add_argument("--runtime-root", type=Path)
     parser.add_argument("--frontend-root", type=Path)
+    parser.add_argument("--feed-db", type=Path, help="Optional latest user-provided observation DB with adjacent provenance.json")
     args = parser.parse_args(argv)
     try:
-        print(json.dumps(publish(args.project_root, args.runtime_root, args.frontend_root), ensure_ascii=False))
+        print(json.dumps(publish(args.project_root, args.runtime_root, args.frontend_root, args.feed_db), ensure_ascii=False))
     except (OSError, ValueError, KeyError, TypeError) as exc:
         print(f"Market publication refused: {exc}", file=sys.stderr)
         return 1

@@ -112,6 +112,7 @@ python3 pipelines/publishing/publish_runtime.py
 发布不删除或修改源数据。研究完整源在 monorepo 根 `data/research`，运行时副本在 `AgriScope/runtime/`。
 首页接口 `/api/market/display` 只读紧凑发布件，原严格 `/api/market/observations` 保持研究和决策语义。
 商品、类型与城市切换使用完整缓存；接口失败时保留已验证的发布快照。采集时间和观测日期沿来源保留，补齐路径与口径差异存于后台血缘，不用当前发布时刻替换历史日期。
+发布器同时支持已提供的采集观测 SQLite 快照：默认读取外层 `data/raw/market_feed/42ef2fd/market-feed-sevenday.sqlite`，也可传 `--feed-db <快照路径>`；旁置 `provenance.json` 必须记录匹配的 SHA256。数据库以只读方式读取，逐条验证身份、内容哈希、来源、单位和采集任务；原始数据库不进入运行包。新观测与既有来源沿同一四级规则选择，同来源与规格的历史才可计算涨跌。单期卡片显示“最新”，平均变动仅统计有实际前次观测的商品。
 发布项的路径与含义见 `docs/ARCHITECTURE.md`。
 
 ## 测试与验收
@@ -138,11 +139,6 @@ python3 -m pytest backend/tests -q
 完整验收**不训练**；各指标由代码/预测记录重算，不采信历史报告的 PASS。发布时重新生成并校验运行时清单：
 `python3 pipelines/publishing/publish_runtime.py` 后 `python3 scripts/verify_assets.py`。
 密钥扫描：`python3 scripts/secret_scan.py`（须为 `SECRET_SCAN_CLEAN`）。
-
-> 已知既有问题：第 0 步资产清单校验目前对「研究产品件」这一发布项报 `ASSETS_VERIFY_FAILED` ——
-> `publish_runtime.py` 为该发布项写状态 `PUBLISHED(research-product)`，而 `verify_assets.py` 只接受 `OK`。
-> 其余各步（Backend / Final / Daily / Long-Horizon 门禁 / 各层 pytest / 独立重算）均通过。
-> 该项属 publishing 与资产校验器的状态约定不一致，待修。
 
 ## API（唯一后端）
 

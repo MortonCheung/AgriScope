@@ -115,6 +115,8 @@
 
 每条记录提供 `region`、`product`、`price_level`、`price`、`observation_date`、`collectedAt`、`change_percent` 与 `history`。价格为正有限的元/kg 数值；展示统一两位小数。观测日期为实际 `YYYY-MM-DD`，采集字段允许实际日期精度或带时区 ISO 时间。历史为最多4个真实日期价格点，末点与当前价格一致，最后两个同源观测用于涨跌；单点不编造涨跌。
 
+`history` 仅一个点时，`change_percent: 0` 是无对比数值的接口占位，不能据此判定价格持平。前端此时显示“最新”，平均变动排除这类商品。两个及以上实际同源历史点才展示百分比变化。
+
 可选查询参数 `region`、`product`、`price_level` 精确筛选已验证的完整包。六城 region 为 `shenyang`、`tieling`、`chaoyang`、`jinzhou`、`dandong`、`dalian`；默认省级为 `liaoning`。非法条件返回422；损坏或不完整发布包返回503，前端继续显示已验证的快照。
 
 发布优先使用同城同品种同类型最近有效数据，其次同城其他实际来源，再取同省相近类型，最后采用同商品区域均值。真实来源、原始口径、单位、采集时间依据和补齐路径只保存于 `runtime/data/market/lineage.json`，不进入公开接口或用户界面。现有 `/api/market/observations` 不消费本展示补齐结果。

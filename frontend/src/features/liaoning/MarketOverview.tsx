@@ -32,9 +32,10 @@ export function MarketOverview({ market, product, onProductChange, onPriceLevelC
     <p className="market-overview__caption">当前价格 <span>较前次</span></p>
     <ul className="market-overview__prices">{rows.map(row => {
       const direction = marketDirection(row.change_percent);
-      const movement = direction === 'flat' ? '平稳' : `${direction === 'up' ? '↑' : '↓'}${Math.abs(row.change_percent).toFixed(1)}%`;
+      const comparable = row.history.length > 1;
+      const movement = !comparable ? '最新' : direction === 'flat' ? '平稳' : `${direction === 'up' ? '↑' : '↓'}${Math.abs(row.change_percent).toFixed(1)}%`;
       return <li className="market-overview__price" key={row.product}>
-        <h3>{row.product}</h3><div className="market-overview__row"><p className="market-overview__value"><strong><FlipValue value={price.format(row.price)}/></strong><small>元/kg</small></p><span className="market-overview__change" data-direction={direction} aria-label={`较前次 ${direction === 'flat' ? '平稳' : `${signedChange(row.change_percent)}%`}`}><FlipValue value={movement}/></span></div>
+        <h3>{row.product}</h3><div className="market-overview__row"><p className="market-overview__value"><strong><FlipValue value={price.format(row.price)}/></strong><small>元/kg</small></p><span className="market-overview__change" data-direction={direction} aria-label={comparable ? `较前次 ${direction === 'flat' ? '平稳' : `${signedChange(row.change_percent)}%`}` : '最新观测'}><FlipValue value={movement}/></span></div>
         <div className="market-overview__meta"><span>{PRICE_LEVEL_LABEL[row.price_level]}</span><time dateTime={row.observation_date}>更新：{row.observation_date}</time></div>
         {view === 'trend' && <MarketTrend row={row}/>}
       </li>;

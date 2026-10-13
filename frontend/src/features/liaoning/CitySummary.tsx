@@ -6,7 +6,7 @@ import { FlipValue } from '../../components/motion/FlipValue';
 import { marketDirection, signedChange, summarizeMarket } from './marketPresentation';
 
 export function CitySummary({ market }: { market: DisplayMarketView }) {
-  const { rising, falling, topRiser, topFaller, average } = summarizeMarket(market);
+  const { rising, falling, topRiser, topFaller, average, comparable } = summarizeMarket(market);
   return <section className="city-summary" aria-label="行情摘要">
     <nav className="city-summary__actions" aria-label="城市工作空间">
       {market.cityId ? <>
@@ -23,9 +23,9 @@ export function CitySummary({ market }: { market: DisplayMarketView }) {
     </dl>
     <dl className="city-summary__highlights">
       {([{ label: '涨幅最大', row: topRiser }, { label: '跌幅最大', row: topFaller }] as const).map(({ label, row }) => <div key={label}>
-        <dt>{label}</dt><dd>{row ? <><FlipValue value={row.product}/><span data-direction={marketDirection(row.change)}><FlipValue value={signedChange(row.change)}/>%</span></> : '平稳'}</dd>
+        <dt>{label}</dt><dd>{row ? <><FlipValue value={row.product}/><span data-direction={marketDirection(row.change)}><FlipValue value={signedChange(row.change)}/>%</span></> : comparable ? '平稳' : '最新'}</dd>
       </div>)}
-      <div><dt>平均变动</dt><dd data-direction={marketDirection(average)}><span><FlipValue value={signedChange(average)}/>%</span></dd></div>
+      <div><dt>平均变动</dt><dd data-direction={comparable ? marketDirection(average) : undefined}><span>{comparable ? <><FlipValue value={signedChange(average)}/>%</> : '最新'}</span></dd></div>
     </dl>
   </section>;
 }

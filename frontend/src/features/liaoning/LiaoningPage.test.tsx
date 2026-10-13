@@ -7,7 +7,8 @@ import { STUDY_CITY_IDS, getCity } from '../../domain/geography/cities';
 import { DISPLAY_PRICE_LEVELS, INITIAL_DISPLAY_MARKET, PRICE_LEVEL_BUTTON, PRICE_LEVEL_LABEL, displayMarketFor, type DisplayMarketRecord } from '../../domain/market/displayMarket';
 import { LiaoningPage } from './LiaoningPage';
 import { CityMapFallback } from './CityMapFallback';
-import { marketTrendPoints } from './MarketOverview';
+import { MarketOverview, marketTrendPoints } from './MarketOverview';
+import { CitySummary } from './CitySummary';
 vi.mock('motion/react', () => ({ useReducedMotion: () => true }));
 vi.mock('../../providers/market/displayMarketProvider', () => ({ getDisplayMarketProvider: () => ({ latest: () => new Promise(() => {}) }) }));
 vi.mock('../spatial/SpatialShell', () => ({ useCitySelection: () => {
@@ -27,6 +28,16 @@ function chooseProduct(product: string) {
 }
 
 describe('完整真实行情主页', () => {
+  it('单期观测卡片与摘要显示最新，不把无对比的价格当作持平', () => {
+    const market = displayMarketFor(INITIAL_DISPLAY_MARKET, 'shenyang', 'wholesale');
+    const singlePeriod = { ...market, rows: market.rows.map(row => ({ ...row, history: [row.history.at(-1)!], change_percent: 0 })) };
+    const { container } = render(<MemoryRouter><MarketOverview market={singlePeriod} product="" onProductChange={() => {}} onPriceLevelChange={() => {}}/><CitySummary market={singlePeriod}/></MemoryRouter>);
+    expect(container.querySelectorAll('[aria-label="最新观测"]')).toHaveLength(8);
+    expect(container.querySelectorAll('.market-overview__change')).toHaveLength(8);
+    expect([...container.querySelectorAll('.market-overview__change')].every(element => element.textContent === '最新')).toBe(true);
+    expect(container.querySelector('.city-summary__highlights')?.textContent).not.toMatch(/平稳|0\.0%/);
+    expect(container.querySelector('.city-summary__highlights')?.textContent).toContain('平均变动最新');
+  });
   it('后台请求尚未返回也立即展示八张完整行情，价格两位、单位与数据相邻', () => {
     const { container } = render(page());
     const market = displayMarketFor(INITIAL_DISPLAY_MARKET, null, 'wholesale');
