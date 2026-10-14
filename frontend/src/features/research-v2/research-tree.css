@@ -117,3 +117,15 @@
 @media (prefers-reduced-motion: reduce) {
   .tree__toggle, .tree__point-link, .tree__toggle::before, .tree__point-link::before, .tree__topic-title, .tree__point-title, .tree__topic-open { transition:none; }
 }
+
+/* The report picker has one moving paper tint; other research views retain their ink rules. */
+.tree[data-moving-selection] .tree__toggle::before,
+.tree[data-moving-selection] .tree__point-link::before { content:none; }
+.tree[data-moving-selection] .tree__point-title { text-decoration:none; }
+.tree[data-moving-selection] .tree__topic[data-selected]>.tree__topic-head .tree__toggle,
+.tree[data-moving-selection] .tree__point[data-selected] .tree__point-link { background:transparent; }
+.tree[data-moving-selection] .tree__toggle:hover,
+.tree[data-moving-selection] .tree__point-link:hover { background:var(--ag-hover); }
+.tree__chevron { align-self:center; flex-shrink:0; color:var(--ag-ink-muted); transition:transform var(--ag-dur-normal) var(--ag-ease-standard),color var(--ag-dur-fast) var(--ag-ease); }
+.tree__toggle[aria-expanded='true'] .tree__chevron { transform:rotate(180deg); color:var(--ag-ink); }
+@media(prefers-reduced-motion:reduce) { .tree__chevron { transition:none; } }

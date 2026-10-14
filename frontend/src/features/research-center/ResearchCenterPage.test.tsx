@@ -30,6 +30,7 @@ describe('direct report entry with scientific catalog boundaries',()=>{
     expect(container.querySelector('.workbench__paper')).toBeTruthy();
     expect(container.querySelector('.workbench__sidebar')?.childElementCount).toBe(0);
     expect(container.querySelectorAll('.report-navigation__cities')).toHaveLength(1);
+    expect(screen.queryByRole('link', { name: '方法与来源' })).toBeNull();
   });
   it('never enables city disclosure during loading, error, or a city catalog without approved research',()=>{
     vi.mocked(useRuntimeCatalog).mockReturnValue({status:'loading'});

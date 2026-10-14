@@ -7,10 +7,10 @@
 .select-control__value { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .select-control__trigger svg { flex-shrink:0; fill:none; stroke:currentColor; stroke-width:1.2; transition:transform var(--ag-dur-fast) var(--ag-ease); }
 .select-control__trigger[aria-expanded='true'] svg { transform:rotate(180deg); }
-.select-control__popup { position:fixed; z-index:300; margin:0; padding:4px; list-style:none; box-sizing:border-box; overflow-y:auto; overscroll-behavior:contain; border:1px solid var(--ag-rule-strong); border-radius:0; background:var(--ag-paper-raised); color:var(--ag-ink); box-shadow:var(--ag-shadow-raised); font:inherit; animation:ag-select-open var(--ag-dur-fast) var(--ag-ease) both; }
+.select-control__popup { position:fixed; z-index:300; margin:0; padding:4px; list-style:none; box-sizing:border-box; overflow-y:auto; overscroll-behavior:contain; border:1px solid var(--ag-rule-strong); border-radius:0; background:var(--ag-paper-raised); color:var(--ag-ink); box-shadow:var(--ag-shadow-raised); font:inherit; }
+.select-control__popup[data-state='closing'] { pointer-events:none; }
 .select-control__popup [role='option'] { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:44px; padding:8px 10px; cursor:pointer; font-size:var(--ag-fs-small); line-height:1.5; }
 .select-control__popup [role='option'][data-active] { background:var(--ag-hover); }
 .select-control__popup [role='option'][aria-selected='true'] { color:var(--ag-ink); font-weight:500; }
 .select-control__popup [role='option'][aria-disabled='true'] { color:var(--ag-ink-muted); cursor:default; }
-@keyframes ag-select-open { from { transform:translateY(-3px); opacity:0; } to { transform:translateY(0); opacity:1; } }
-@media(prefers-reduced-motion:reduce) { .select-control__trigger,.select-control__trigger svg { transition:none; } .select-control__popup { animation:none; } }
+@media(prefers-reduced-motion:reduce) { .select-control__trigger,.select-control__trigger svg { transition:none; } }

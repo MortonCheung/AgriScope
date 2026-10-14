@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { UNAVAILABLE_DISPLAY_MARKET, INITIAL_DISPLAY_MARKET, validateDisplayMarket, displayMarketFor } from '../../domain/market/displayMarket';
 import { MarketOverview } from './MarketOverview';
 import { createDisplayMarketStore } from './useDisplayMarket';
-vi.mock('motion/react', () => ({ useReducedMotion: () => true }));
+vi.mock('motion/react', async importOriginal => ({ ...await importOriginal<typeof import('motion/react')>(), useReducedMotion: () => true }));
 afterEach(cleanup);
 const available = () => {
   const data = structuredClone(UNAVAILABLE_DISPLAY_MARKET);

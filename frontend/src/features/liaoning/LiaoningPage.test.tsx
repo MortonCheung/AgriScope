@@ -9,7 +9,7 @@ import { LiaoningPage } from './LiaoningPage';
 import { CityMapFallback } from './CityMapFallback';
 import { MarketOverview, marketTrendPoints } from './MarketOverview';
 import { CitySummary } from './CitySummary';
-vi.mock('motion/react', () => ({ useReducedMotion: () => true }));
+vi.mock('motion/react', async importOriginal => ({ ...await importOriginal<typeof import('motion/react')>(), useReducedMotion: () => true }));
 vi.mock('./useDisplayMarket', async () => { const { INITIAL_DISPLAY_MARKET } = await import('../../domain/market/displayMarket'); return { useDisplayMarket: () => INITIAL_DISPLAY_MARKET }; });
 vi.mock('../spatial/SpatialShell', () => ({ useCitySelection: () => {
   const navigate = useNavigate(); return (city: string) => navigate(`/liaoning?city=${city}`);

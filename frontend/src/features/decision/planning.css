@@ -112,11 +112,9 @@
 }
 /* Keep direct input choices compact without drawing a wall of boxes. */
 .planning-form .choice-buttons__items { gap:6px 16px; }
-.planning-form .choice-buttons button { position:relative; padding:8px 2px; border:0; background:transparent; transition:color var(--ag-dur-fast) var(--ag-ease-standard), transform var(--ag-dur-fast) var(--ag-ease-standard); }
+.planning-form .choice-buttons button { position:relative; padding:8px 6px; border:0; background:transparent; transition:color var(--ag-dur-fast) var(--ag-ease-standard), transform var(--ag-dur-fast) var(--ag-ease-standard); }
 .planning-form .choice-buttons button:active:not(:disabled) { transform:translateY(1px); }
-.planning-form .choice-buttons button::after { content:''; position:absolute; left:0; right:0; bottom:0; height:1px; background:var(--ag-ink); transform:scaleX(0); transform-origin:left; transition:transform var(--ag-dur-underline) var(--ag-ease-standard); }
 .planning-form .choice-buttons button:hover:not(:disabled), .planning-form .choice-buttons button[aria-pressed=true] { background:transparent; color:var(--ag-ink); }
-.planning-form .choice-buttons button:hover:not(:disabled)::after, .planning-form .choice-buttons button[aria-pressed=true]::after { transform:scaleX(1); }
 @media(prefers-reduced-motion:reduce) { .planning-form .choice-buttons button, .planning-form .choice-buttons button::after, .planning-reading__track i, .planning-field input { transition:none; } .planning-form .choice-buttons button:active:not(:disabled) { transform:none; } }
 
 .planning-window-options {list-style:none;padding:0;margin:0;display:grid;gap:8px;font-size:12px;font-variant-numeric:tabular-nums;}

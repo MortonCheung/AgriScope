@@ -5,7 +5,7 @@
 .liaoning-page__current {display:flex;overflow:hidden;scrollbar-gutter:auto;}
 .liaoning-panel-content--market {display:flex;flex:1;min-width:0;min-height:0;}
 .market-overview {display:flex;flex-direction:column;flex:1;min-width:0;min-height:0;}
-.market-overview__toolbar {flex:0 0 auto;min-width:0;}
+.market-overview__toolbar {flex:0 0 auto;min-width:0;position:relative;z-index:2;border-bottom:1px solid var(--ag-rule);background:var(--ag-paper-raised);box-shadow:0 6px 10px -10px color-mix(in srgb,var(--ag-ink) 22%,transparent);}
 .market-overview__data {flex:1 1 0;min-width:0;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;}
 .market-overview__data:focus-visible {outline:2px solid var(--ag-focus,var(--ag-ink));outline-offset:-2px;}
 .liaoning-page__window {min-height:0;}
@@ -22,7 +22,7 @@
 .market-overview__controls [aria-pressed=true] {background:var(--ag-paper-deep);color:var(--ag-ink);border-color:var(--ag-ink);}
 .market-overview__price-levels {grid-template-columns:repeat(3,minmax(0,1fr));}
 .market-overview__product {margin-bottom:12px;}
-.market-overview__caption {display:flex;justify-content:space-between;margin:0;padding-bottom:8px;border-bottom:1px solid var(--ag-rule);font-size:var(--ag-fs-meta);color:var(--ag-ink-muted);}
+.market-overview__caption {display:flex;justify-content:space-between;margin:0;padding-bottom:8px;font-size:var(--ag-fs-meta);color:var(--ag-ink-muted);}
 .market-overview__prices {list-style:none;padding:0;margin:0;}
 .market-overview__price {padding:10px 0;border-bottom:1px solid var(--ag-rule-soft);}
 .market-overview__price h3 {font-size:var(--ag-fs-small);font-weight:500;margin:0 0 4px;}
@@ -35,6 +35,7 @@
 .market-overview [data-direction=up] {color:var(--ag-clay);}
 .market-overview [data-direction=down] {color:var(--ag-olive);}
 .market-overview__trend {width:100%;margin-top:8px;}
+.market-overview__trend-reveal {overflow:hidden;}
 .market-overview__trend svg {width:100%;overflow:visible;}
 .market-overview__trend polyline {fill:none;stroke:var(--ag-olive);stroke-width:1.5;}
 .market-overview__trend circle {fill:var(--ag-olive);}

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 import {
   DISPLAY_PRICE_LEVELS, DISPLAY_PRODUCTS, PRICE_LEVEL_BUTTON, PRICE_LEVEL_LABEL,
   type DisplayMarketRecord, type DisplayMarketView, type DisplayPriceLevel,
@@ -6,6 +7,8 @@ import {
 import { SelectControl } from '../../components/controls/SelectControl';
 import { FlipValue } from '../../components/motion/FlipValue';
 import { marketDirection, signedChange } from './marketPresentation';
+import { SelectionGroup } from '../../components/controls/SelectionGroup';
+import { MOTION_DURATION, MOTION_EASE } from '../../design/motion';
 const price = new Intl.NumberFormat('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const productOptions = [{ value: '', label: '全部商品' }, ...DISPLAY_PRODUCTS.map(product => ({ value: product, label: product }))];
 
@@ -24,13 +27,14 @@ export function MarketOverview({ title, market, product, onProductChange, onPric
   onPriceLevelChange: (level: DisplayPriceLevel) => void;
 }) {
   const [view, setView] = useState<'today' | 'trend'>('today');
+  const reduced = Boolean(useReducedMotion());
   const products = DISPLAY_PRODUCTS.filter(name => (!product || name === product) && (market.rows.some(row => row.product === name) || market.missing?.some(row => row.product === name)));
   return <section className="market-overview" aria-label="行情价格">
     <div className="market-overview__toolbar">
     <div className="market-overview__heading">{title && <h1 className="liaoning-page__title">{title}</h1>}<div className="market-overview__head"><div className="market-overview__scope"><FlipValue value={market.scope}/><span>{PRICE_LEVEL_LABEL[market.priceLevel]}</span></div></div></div>
-    <div className="market-overview__controls market-overview__price-levels" role="group" aria-label="价格类型">{DISPLAY_PRICE_LEVELS.map(level => <button key={level} type="button" className="ag-button" aria-pressed={market.priceLevel === level} onClick={() => onPriceLevelChange(level)}>{PRICE_LEVEL_BUTTON[level]}</button>)}</div>
+    <SelectionGroup className="market-overview__controls market-overview__price-levels" value={market.priceLevel} role="group" aria-label="价格类型">{DISPLAY_PRICE_LEVELS.map(level => <button key={level} type="button" data-selection-value={level} className="ag-button" aria-pressed={market.priceLevel === level} onClick={() => onPriceLevelChange(level)}>{PRICE_LEVEL_BUTTON[level]}</button>)}</SelectionGroup>
     <SelectControl className="market-overview__product" label="商品" value={product} options={productOptions} onChange={onProductChange}/>
-    <div className="market-overview__controls" role="group" aria-label="行情视图">{(['today','trend'] as const).map(mode => <button key={mode} type="button" className="ag-button" aria-pressed={view === mode} onClick={() => setView(mode)}>{mode === 'today' ? '当前行情' : '长期趋势'}</button>)}</div>
+    <SelectionGroup className="market-overview__controls" value={view} role="group" aria-label="行情视图">{(['today','trend'] as const).map(mode => <button key={mode} type="button" data-selection-value={mode} className="ag-button" aria-pressed={view === mode} onClick={() => setView(mode)}>{mode === 'today' ? '当前行情' : '长期趋势'}</button>)}</SelectionGroup>
     <p className="market-overview__caption">当前价格 <span>较前次</span></p>
     </div>
     <div className="market-overview__data" role="region" aria-label="商品行情列表" tabIndex={0}>
@@ -43,7 +47,9 @@ export function MarketOverview({ title, market, product, onProductChange, onPric
       return <li className="market-overview__price" key={row.product}>
         <h3>{row.product}</h3><div className="market-overview__row"><p className="market-overview__value"><strong><FlipValue value={price.format(row.price)}/></strong><small>元/kg</small></p><span className="market-overview__change" data-direction={direction} aria-label={comparable ? `较前次 ${direction === 'flat' ? '平稳' : `${signedChange(row.change_percent)}%`}` : '最新观测'}><FlipValue value={movement}/></span></div>
         <div className="market-overview__meta"><span>{PRICE_LEVEL_LABEL[row.price_level]}</span><time dateTime={row.observation_date}>更新：{row.observation_date}</time></div>
-        {view === 'trend' && <MarketTrend row={row}/>}
+        <motion.div className="market-overview__trend-reveal" aria-hidden={view !== 'trend'} inert={view !== 'trend'} initial={false}
+          animate={{ height: view === 'trend' ? 'auto' : 0, opacity: view === 'trend' ? 1 : 0, clipPath: view === 'trend' ? 'inset(0 0 0% 0)' : 'inset(0 0 100% 0)' }}
+          transition={{ duration: reduced ? 0 : MOTION_DURATION.normal, ease: MOTION_EASE.out }}><MarketTrend row={row}/></motion.div>
       </li>;
     })}</ul></div>
   </section>;

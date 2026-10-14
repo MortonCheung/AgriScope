@@ -1,8 +1,11 @@
 // @vitest-environment jsdom
 import { useState } from 'react';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SelectControl, type SelectControlProps } from './SelectControl';
+
+const preferences = vi.hoisted(() => ({ reduced: false }));
+vi.mock('motion/react', async original => ({ ...await original<typeof import('motion/react')>(), useReducedMotion: () => preferences.reduced }));
 
 const options = [
   { value: 'cucumber', label: '黄瓜' },
@@ -16,7 +19,7 @@ function Harness({ onChange = vi.fn(), ...props }: Partial<SelectControlProps>) 
     onChange={next => { setValue(next); onChange(next); }}/>;
 }
 const activeText = () => document.getElementById(screen.getByRole('combobox').getAttribute('aria-activedescendant') ?? '')?.textContent;
-afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.useRealTimers(); vi.unstubAllGlobals(); });
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.useRealTimers(); vi.unstubAllGlobals(); preferences.reduced = false; });
 
 describe('shared paper select is keyboard, touch and clipping safe', () => {
   it('renders one labeled tab stop and opens the list outside its paper container', () => {
@@ -32,6 +35,50 @@ describe('shared paper select is keyboard, touch and clipping safe', () => {
     fireEvent.click(screen.getByRole('option', { name: '大豆' }));
     expect(button.textContent).toContain('大豆');
     expect(screen.queryByRole('listbox')).toBeNull();
+    expect(document.activeElement).toBe(button);
+  });
+  it('commits the choice and closes semantics immediately while the noninteractive paper retracts', async () => {
+    const change = vi.fn(); render(<Harness onChange={change}/>);
+    const button = screen.getByRole('combobox'); button.focus(); fireEvent.click(button);
+    const list = screen.getByRole('listbox');
+    const oldCorn = screen.getByRole('option', { name: '玉米' });
+    fireEvent.click(screen.getByRole('option', { name: '大豆' }));
+    expect(change).toHaveBeenCalledExactlyOnceWith('soy');
+    expect(button.textContent).toContain('大豆');
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    expect(button.hasAttribute('aria-controls')).toBe(false);
+    expect(button.hasAttribute('aria-activedescendant')).toBe(false);
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(list.isConnected).toBe(true);
+    expect(list.getAttribute('aria-hidden')).toBe('true');
+    expect(list.hasAttribute('inert')).toBe(true);
+    fireEvent.click(oldCorn);
+    expect(change).toHaveBeenCalledTimes(1);
+    expect(document.activeElement).toBe(button);
+    await waitFor(() => expect(list.isConnected).toBe(false));
+  });
+  it('interrupts retraction without letting an old completion remove the reopened popup', async () => {
+    render(<Harness/>); const button = screen.getByRole('combobox'); button.focus(); fireEvent.click(button);
+    const list = screen.getByRole('listbox');
+    fireEvent.keyDown(button, { key: 'Escape' });
+    expect(list.getAttribute('aria-hidden')).toBe('true');
+    fireEvent.click(button);
+    expect(screen.getByRole('listbox')).toBe(list);
+    expect(list.hasAttribute('inert')).toBe(false);
+    expect(list.hasAttribute('aria-hidden')).toBe(false);
+    await act(() => new Promise(resolve => setTimeout(resolve, 350)));
+    expect(screen.getByRole('listbox')).toBe(list);
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+    fireEvent.keyDown(button, { key: 'Escape' });
+    await waitFor(() => expect(list.isConnected).toBe(false));
+  });
+  it('removes the popup immediately when reduced motion is preferred', () => {
+    preferences.reduced = true;
+    render(<Harness/>); const button = screen.getByRole('combobox'); button.focus(); fireEvent.click(button);
+    const list = screen.getByRole('listbox');
+    fireEvent.keyDown(button, { key: 'Escape' });
+    expect(list.isConnected).toBe(false);
+    expect(document.querySelector('[role="listbox"]')).toBeNull();
     expect(document.activeElement).toBe(button);
   });
   it('moves without changing the value until confirmation and skips disabled options', () => {
@@ -127,6 +174,8 @@ describe('shared paper select is keyboard, touch and clipping safe', () => {
     expect(parseFloat(popup.style.width)).toBe(180);
     expect(parseFloat(popup.style.bottom)).toBe(90);
     expect(parseFloat(popup.style.maxHeight)).toBe(320);
+    expect(popup.dataset.side).toBe('above');
+    expect(popup.style.transformOrigin).toBe('bottom center');
     act(()=>window.dispatchEvent(new Event('resize')));
     expect(parseFloat(popup.style.left)+parseFloat(popup.style.width)).toBeLessThanOrEqual(382);
   });
