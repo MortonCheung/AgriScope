@@ -6,7 +6,7 @@
 
 产品代码、前端及已发布资产放 `/opt/agriscope`，`AGRISCOPE_ROOT=/opt/agriscope`。新增每日原始证据、加工结果、日志、锁放独立 `/srv/agriscope-worker`，`PROJECT_ROOT=/srv/agriscope-worker`。API 不写 worker；冻结模型、canonical 输入和研究只从产品 `runtime/` 读取，不训练、不覆盖。
 
-Linux 集成基准为 Python 3.11、glibc 2.24 以上（建议 Ubuntu 22.04/24.04 或等价环境）、系统 CA 证书与 `libgomp`。按 `backend/requirements.txt` 安装既有固定版本，不为部署升级模型依赖。实际 pandas 2.3.3 的 CPython 3.11 Linux wheel 使用 manylinux 2.24/2.28；云主机架构与系统版本需在正式部署时确认。
+Linux 集成基准为 Python 3.11、glibc 2.24 以上（建议 Ubuntu 22.04/24.04 或等价环境）、系统 CA 证书与 `libgomp`。采集入口保留系统信任库并加载固定certifi的Mozilla CA，始终验证证书链及主机名；私有CA仅用显式AGRISCOPE_SOURCE_CA_FILE配置，不用verify=False。按 `backend/requirements.txt` 安装既有固定版本，不为部署升级模型依赖。实际 pandas 2.3.3 的 CPython 3.11 Linux wheel 使用 manylinux 2.24/2.28；云主机架构与系统版本需在正式部署时确认。
 
 已构建 `frontend/dist` 由 Nginx 直接提供，运行服务器无需 Node。仅从源码构建时需要 Node 20.19 以上或 22.12 以上；建议固定 Node 22 LTS 的兼容版本，执行 `npm ci` 与 `npm run build`。
 

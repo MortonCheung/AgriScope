@@ -171,3 +171,20 @@ def test_extended_input_labels_normalized_kg_without_changing_price(monkeypatch,
     assert float(extended.iloc[-1]['price_per_kg']) == 6.0
     assert extended.iloc[-1]['unit_original'] == '元/kg'
     assert frozen_path.read_bytes() == before
+
+
+def test_empty_worker_collection_failure_does_not_enter_features_or_inference(monkeypatch,tmp_path):
+    from daily import run_daily as daily
+    monkeypatch.setattr(C,'LOG_DIR',tmp_path/'logs')
+    monkeypatch.setattr(C,'PROCESSED_DAILY_DIR',tmp_path/'processed')
+    monkeypatch.setattr(C,'ensure_dirs',lambda:None)
+    monkeypatch.setattr(daily,'_dates_to_collect',lambda *_:[DAY])
+    monkeypatch.setattr(SRC,'collect_day',lambda *a,**k:[SRC.RawResult(DAY,'1','actual-url',SRC.ST_FAIL,error='offline')])
+    monkeypatch.setattr(NZ,'build',lambda **k:{'status':'NO_RAW','rows':0})
+    monkeypatch.setattr(NZ,'consistency_vs_canonical',lambda:{'status':'NOT_AVAILABLE'})
+    monkeypatch.setattr(daily.FT,'build',lambda **k:(_ for _ in ()).throw(AssertionError('no price input; must not build features')))
+    recorded=[];monkeypatch.setattr(daily.SN,'load_monitor',lambda:{'consecutive_failures':0,'last_success_date':'2026-10-12'})
+    monkeypatch.setattr(daily.SN,'save_monitor',lambda value:recorded.append(value))
+    summary,code=daily.run(DAY)
+    assert code==2 and summary['crawl_status']=='FAILED' and summary['failure_reason']=='SOURCE_COLLECTION_FAILED'
+    assert recorded[-1]['last_success_date']=='2026-10-12' and recorded[-1]['consecutive_failures']==1

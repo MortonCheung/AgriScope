@@ -194,6 +194,20 @@ def run(target_date: str, city: str = C.PRIMARY_CITY, dry_run: bool = False,
                     "rows_accepted": report.get("rows_accepted"),
                     "qc_flagged": report.get("qc_flagged"), "consistency": cons})
 
+    # A fresh worker with no successful source response has no normalized table yet.
+    # Report the collection outcome directly instead of turning it into a file error.
+    if report.get("status") == "NO_RAW" or not (C.PROCESSED_DAILY_DIR / "daily_market_price.parquet").is_file():
+        reason = "SOURCE_COLLECTION_FAILED" if crawl_status == "FAILED" else "NO_VALID_PRICE_OBSERVATIONS"
+        monitor = SN.load_monitor()
+        monitor.update(last_attempt_at=IO.now_str(), last_failure_reason=reason,
+                       consecutive_failures=monitor.get("consecutive_failures", 0) + 1,
+                       crawl_status=crawl_status, snapshot_status="failed", records_fetched=summary.get("records_fetched", 0))
+        SN.save_monitor(monitor)
+        summary.update(snapshot_status="failed", latest_data_date=_last_data_date(),
+                       rows_total=0, rows_accepted=0, failure_reason=reason)
+        log(f"job_end {reason}; previous valid snapshot retained")
+        return summary, EXIT_FAILED
+
     # ---------------- 4. 特征 ----------------
     feat = FT.build(write=True)
     latest = FT.latest_by_crop(feat, as_of=target_date)

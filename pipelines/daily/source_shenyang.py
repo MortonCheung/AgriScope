@@ -58,7 +58,17 @@ class RawResult:
 
 
 def _ctx() -> ssl.SSLContext:
-    return ssl.create_default_context(cafile=C.SOURCE_CA_FILE)
+    context = ssl.create_default_context(cafile=C.SOURCE_CA_FILE)
+    if C.SOURCE_CA_FILE is None:
+        # Retain the system trust store and add the packaged Mozilla CA roots.
+        # This never disables peer or hostname verification.
+        try:
+            import certifi
+        except ImportError:
+            pass  # Pure stdlib installs still require the OS CA store to validate the peer.
+        else:
+            context.load_verify_locations(cafile=certifi.where())
+    return context
 
 
 def _build_url(target_date: str, market_type: str) -> str:

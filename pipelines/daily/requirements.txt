@@ -12,6 +12,7 @@ pandas==2.3.3
 numpy==2.0.2
 pyarrow==20.0.0
 PyYAML==6.0.3
+certifi==2026.7.22
 
 # --- Final Model 推理（加载 models/models/final/*.pkl）必需 ---
 scikit-learn==1.6.1
