@@ -26,8 +26,8 @@ _LOADED: Dict[str, object] = {"loaded": False, "file": None, "applied": 0, "kept
 
 # 判定一个目录是否为合法 AgriScope 根（存在的哨兵文件）。用于拒绝 .env 中过期的绝对路径，
 # 避免把后端 / decision_engine / Long-Horizon 静默指向仓库之外的旧数据副本。
-ROOT_SENTINELS = ("backend/app/main.py", "models/src/decision_engine/common.py",
-                  "data/daily/run_daily.py")
+ROOT_SENTINELS = ("backend/app/main.py", "pipelines/daily/run_daily.py",
+                  "runtime/manifest.json")
 ROOT_KEYS = ("AGRISCOPE_ROOT", "PROJECT_ROOT")
 
 
@@ -88,8 +88,11 @@ def load_env(path: Optional[Path | str] = None, *, override: bool = False) -> Di
         if key in os.environ and not override:
             kept += 1
             continue
-        if key in ROOT_KEYS and not is_valid_root(Path(value).expanduser()):
+        if key == "AGRISCOPE_ROOT" and not is_valid_root(Path(value).expanduser()):
             # 过期/错误的根路径：拒绝注入，避免把模型与数据指向错误的目录树。
+            rejected.append(key)
+            continue
+        if key in ("PROJECT_ROOT", "AGRISCOPE_WORKER_ROOT") and not Path(value).expanduser().is_absolute():
             rejected.append(key)
             continue
         os.environ[key] = value

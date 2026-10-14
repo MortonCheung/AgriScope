@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -52,8 +53,16 @@ def _iter_new_raw():
     for day_dir in sorted(base.iterdir()):
         if not day_dir.is_dir():
             continue
-        for f in sorted(day_dir.glob("mt*.json")):
-            yield day_dir.name, f.stem.replace("mt", ""), f
+        meta = IO.read_json_safe(day_dir / "metadata.json", {}) or {}
+        for mt in C.MARKET_TYPES:
+            source = meta.get(f"mt{mt}") or {}
+            pointer = source.get("active_raw_path")
+            f = C.ROOT / pointer if isinstance(pointer, str) else day_dir / f"mt{mt}.json"
+            if not f.is_file() or f.is_symlink() or not f.resolve().is_relative_to(day_dir.resolve()):
+                continue
+            if pointer and source.get("raw_sha256") != hashlib.sha256(f.read_bytes()).hexdigest():
+                continue
+            yield day_dir.name, mt, f, source.get("crawl_time")
 
 
 def _iter_legacy_raw():
@@ -143,8 +152,8 @@ def _read_source(date: str, mt: str, path: Path, crawl_time: str | None = None) 
 def load_raw_records(include_legacy: bool = True) -> pd.DataFrame:
     """汇总所有原始证据 → 未去重、未 QC 的原始行。"""
     rows = []
-    for date, mt, path in _iter_new_raw():
-        rows += _read_source(date, mt, path)
+    for date, mt, path, crawl_time in _iter_new_raw():
+        rows += _read_source(date, mt, path, crawl_time)
     # 旧布局（data/raw/prices/shenyang_clz）仅用于历史 seed，见 seed_legacy_raw()，
     # 避免与新布局重复计入。
     return pd.DataFrame(rows)

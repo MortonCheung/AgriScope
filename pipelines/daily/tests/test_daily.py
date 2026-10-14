@@ -225,7 +225,7 @@ class _FakeResp:
 
 def test_fetch_ok(monkeypatch):
     payload = {"code": 0, "count": 10,
-               "data": [{"productName": "土豆", "price": "1.0", "unit": "元/500g"}] * 10}
+               "data": [{"productName": "土豆", "price": "1.0", "unit": "元/500g", "dates": 1790784000000, "marketType": 1}] * 10}
     monkeypatch.setattr(SRC.urllib.request, "urlopen", lambda *a, **k: _FakeResp(payload))
     r = SRC.fetch("2026-10-01", "1")
     assert r.status == SRC.ST_OK and r.count == 10 and r.schema_ok
@@ -583,7 +583,8 @@ def test_case_G_final_unavailable_partial(tmp_path):
     dates = [str(d.date()) for d in pd.date_range("2026-01-01", periods=30, freq="D")]
     _seed_raw(tmp_path, dates)
     t = dates[-1]
-    assert _run(tmp_path, "--date", t, "--no-collect").returncode in (0, 2)
+    # Frozen inputs are runtime-owned; missing worker/models no longer means unready.
+    assert _run(tmp_path, "--date", t, "--no-collect", env_extra={"AGRISCOPE_ROOT": str(tmp_path / 'empty-product')}).returncode in (0, 2)
     s = _snap(tmp_path, t)
     assert s["model"]["model_status"] in ("MODEL_UNAVAILABLE", "PARTIAL")
     assert s["model"]["fallback_used"] is False
@@ -650,7 +651,7 @@ def test_no_junk_versioned_snapshot_files(tmp_path):
 
 
 def test_raw_attempts_preserved_on_recrawl(tmp_path):
-    """同日重复抓取：旧响应保留在 attempts/，当前 mt*.json 为本次使用（§23）。"""
+    """同日重复抓取：旧 mt bytes 保持，成功 pointer 推进到不可变新响应。"""
     import daily.source_shenyang as SRCm
     monkeypatch_dirs = None
     day = tmp_path / "data" / "raw" / "daily" / "shenyang_clz" / "2026-01-01"
@@ -673,10 +674,12 @@ def test_raw_attempts_preserved_on_recrawl(tmp_path):
         SRCm.C.RAW_DAILY_DIR = old_root
         SRCm.C.ROOT = old_root2
     attempts = list((day / "attempts").glob("*.json"))
-    assert len(attempts) == 1                      # 旧响应被保留
+    assert len(attempts) == 1
     cur = json.loads((day / "mt1.json").read_text(encoding="utf-8"))
-    assert cur["data"][0]["price"] == "9.9"        # 当前 = 本次使用
-    assert json.loads(attempts[0].read_text(encoding="utf-8"))["data"][0]["price"] == "1.0"
+    assert cur["data"][0]["price"] == "1.0"
+    assert json.loads(attempts[0].read_text(encoding="utf-8"))["data"][0]["price"] == "9.9"
+    meta = json.loads((day / "metadata.json").read_text())
+    assert tmp_path / meta["mt1"]["active_raw_path"] == attempts[0]
 
 
 def test_case_I_backfill_no_rollback(tmp_path):

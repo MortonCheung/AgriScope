@@ -244,7 +244,7 @@ def run(target_date: str, city: str = C.PRIMARY_CITY, dry_run: bool = False,
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="AgriScope Daily · 每日市场脉搏流水线")
     ap.add_argument("--date", default=None, help="目标日期 YYYY-MM-DD（默认北京时间今天）；用于 backfill")
-    ap.add_argument("--city", default=C.PRIMARY_CITY, help="城市（默认 沈阳）")
+    ap.add_argument("--city", default=C.PRIMARY_CITY, choices=[C.PRIMARY_CITY, "shenyang"], help="仅沈阳有正式 Daily collector")
     ap.add_argument("--dry-run", action="store_true", help="只抓取/解析/QC，不写 Daily 数据")
     ap.add_argument("--no-collect", action="store_true", help="跳过网络采集，只用已有原始证据")
     ap.add_argument("--force", action="store_true", help="已存在的原始响应也重新抓取")
@@ -253,6 +253,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--markets", default=None, help="逗号分隔 marketType，默认 1,2,3")
     ap.add_argument("--no-snapshot", action="store_true", help="只跑到推理，不写 Snapshot")
     args = ap.parse_args(argv)
+    args.city = C.PRIMARY_CITY
 
     target_date = args.date or IO.today_str()
     market_types = args.markets.split(",") if args.markets else None

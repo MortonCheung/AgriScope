@@ -2,7 +2,7 @@
 """Daily 流水线配置：路径 / 版本 / 来源定义 / 作物清单 / 口径规则。
 
 硬约束（与治理口径严格一致）：
-  - ROOT 由本文件位置推导（可用 AGRISCOPE_ROOT 覆盖），禁止硬编码 Mac 路径；
+  - 产品/runtime 只读，ROOT 是独立 worker，由共享 agriscope_paths 合同解析；
   - 正式支持作物清单来自 **Final Model capability**（capabilities.SHENYANG_CROPS），
     不写死；
   - price_level 分类沿用 data/metadata/governance 既有口径；
@@ -12,10 +12,17 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from pathlib import Path
 
 # ---------------------------------------------------------------- 路径
-ROOT = Path(os.environ.get("PROJECT_ROOT") or next(p for p in Path(__file__).resolve().parents if (p / "AgriScope").is_dir() and (p / "data").is_dir())).resolve()
+_CODE_PRODUCT = Path(__file__).resolve().parents[2]
+if str(_CODE_PRODUCT) not in sys.path:
+    sys.path.insert(0, str(_CODE_PRODUCT))
+from agriscope_paths import paths
+
+_PATHS = paths()
+PRODUCT_DIR, ROOT, RUNTIME_DIR = _PATHS.product, _PATHS.worker, _PATHS.runtime
 DATA_DIR = ROOT / "data"
 RAW_DAILY_DIR = DATA_DIR / "raw" / "daily"              # 每日原始证据（新增，不动旧 raw）
 PROCESSED_DAILY_DIR = DATA_DIR / "processed" / "daily"
@@ -26,20 +33,20 @@ LOCK_PATH = PROCESSED_DAILY_DIR / ".run.lock"
 # Daily 自己持有的 Final Model 输入快照工作区（冻结模型 + 实时输入），不写入 models/
 FINAL_INPUT_DIR = PROCESSED_DAILY_DIR / "final_input"
 
-GOV_DIR = DATA_DIR / "metadata" / "governance"
-MODEL_READY_DIR = DATA_DIR / "model_ready"
-MODELS_DIR = ROOT / "models"
+GOV_DIR = RUNTIME_DIR / "data" / "metadata" / "governance"
+MODEL_READY_DIR = RUNTIME_DIR / "data" / "model_ready"
+MODELS_DIR = RUNTIME_DIR / "models"
 
 # 模型训练用的 canonical 价格表（只读，绝不改写）
 CANONICAL_MARKET_DAILY = MODEL_READY_DIR / "shenyang_core" / "market_daily.parquet"
-MODEL_SRC = ROOT / "AgriScope" / "pipelines" / "modeling" / "src"   # decision_engine 包所在目录
+MODEL_SRC = PRODUCT_DIR / "pipelines" / "modeling" / "src"
 
 # Final Model 冻结产物（只读；迁移后新布局）
 FINAL_REPORTS_DIR = MODELS_DIR / "reports" / "final"
-FINAL_SNAPSHOT_DIR = DATA_DIR / "model_ready" / "snapshots" / "final_v1"
+FINAL_SNAPSHOT_DIR = MODEL_READY_DIR / "snapshots" / "final_v1"
 FINAL_RUN_META = FINAL_REPORTS_DIR / "FINAL_RUN_META.json"
 FINAL_OUTPUT_SCHEMA = FINAL_REPORTS_DIR / "FINAL_MODEL_OUTPUT_SCHEMA.json"
-FINAL_MODELS_DIR = MODELS_DIR / "short_term" / "final"
+FINAL_MODELS_DIR = MODELS_DIR / "models" / "final"
 
 # ---------------------------------------------------------------- 版本
 DAILY_PIPELINE_VERSION = "1.1.0"     # 本轮封版版本（排错用）
@@ -120,6 +127,25 @@ VOLUME_SOURCE_UNIT_UNVERIFIED = True
 HTTP_TIMEOUT = int(os.environ.get("AGRISCOPE_HTTP_TIMEOUT", "30"))
 HTTP_RETRIES = int(os.environ.get("AGRISCOPE_HTTP_RETRIES", "3"))
 HTTP_SLEEP = float(os.environ.get("AGRISCOPE_HTTP_SLEEP", "0.8"))
+SOURCE_CA_FILE = os.environ.get("AGRISCOPE_SOURCE_CA_FILE") or None
+
+
+def bind_frozen_engine_paths():
+    """Only rebind loader paths in this worker process; never train or write frozen assets."""
+    if str(MODEL_SRC) not in sys.path:
+        sys.path.insert(0, str(MODEL_SRC))
+    import decision_engine.common as cm
+    cm.ROOT, cm.DE = RUNTIME_DIR, MODELS_DIR
+    binding = {"ROOT": RUNTIME_DIR, "DE": MODELS_DIR, "MODEL_READY": MODEL_READY_DIR,
+               "GOV_DIR": GOV_DIR, "REPORTS_DIR": FINAL_REPORTS_DIR,
+               "FINAL_MODELS_DIR": FINAL_MODELS_DIR, "SNAPSHOT_DIR": FINAL_SNAPSHOT_DIR,
+               "MANIFEST_DIR": FINAL_INPUT_DIR / "manifests", "FINAL_EVAL_DIR": FINAL_INPUT_DIR / "evaluation"}
+    for name, module in list(sys.modules.items()):
+        if name.startswith("decision_engine.final") and module is not None:
+            for key, value in binding.items():
+                if hasattr(module, key):
+                    setattr(module, key, value)
+    return cm
 
 # ---------------------------------------------------------------- 作物清单
 def supported_crops(city: str = PRIMARY_CITY) -> list[str]:
@@ -127,10 +153,10 @@ def supported_crops(city: str = PRIMARY_CITY) -> list[str]:
 
     读取失败才回退到内置常量，并打印警告（不静默）。
     """
+    if city != PRIMARY_CITY:
+        raise ValueError("UNSUPPORTED_COLLECTOR: Daily 仅登记沈阳真实来源。")
     try:
-        import sys
-        if str(MODEL_SRC) not in sys.path:
-            sys.path.insert(0, str(MODEL_SRC))
+        bind_frozen_engine_paths()
         from decision_engine.final import capabilities as CAP  # noqa: PLC0415
         cap = CAP.city_capability(city)
         crops = list(cap.get("crops") or [])

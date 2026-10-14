@@ -16,11 +16,8 @@ from typing import List
 
 
 def _resolve_root() -> Path:
-    env = os.environ.get("AGRISCOPE_ROOT")
-    if env:
-        return Path(env).resolve()
-    # backend/app/config.py -> parents[0]=app, [1]=backend, [2]=项目根
-    return Path(__file__).resolve().parents[2]
+    from agriscope_paths import paths
+    return paths().product
 
 
 ROOT = _resolve_root()

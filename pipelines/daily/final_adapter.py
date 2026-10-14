@@ -104,13 +104,7 @@ def _ensure_decision_engine():
 
     这样服务器上（不同目录）也能运行，且**不修改 models/ 任何文件**。
     """
-    if str(C.MODEL_SRC) not in sys.path:
-        sys.path.insert(0, str(C.MODEL_SRC))
-    import decision_engine.common as cm  # noqa: PLC0415
-    if str(cm.ROOT) != str(C.ROOT):
-        cm.ROOT = C.ROOT
-        cm.DE = C.MODELS_DIR
-    return cm
+    return C.bind_frozen_engine_paths()
 
 
 def _live_wholesale_rows() -> pd.DataFrame:
@@ -163,10 +157,13 @@ class FinalModelAdapter:
     name = "final"
 
     def __init__(self, city: str = C.PRIMARY_CITY):
+        if city != C.PRIMARY_CITY:
+            raise ValueError("UNSUPPORTED_COLLECTOR: 不能将沈阳采集观测改标为其他城市。")
         self.city = city
         _ensure_decision_engine()
         from decision_engine.final import fcommon, build, risk, inference, artifacts  # noqa: PLC0415
         from decision_engine.final import capabilities as CAP  # noqa: PLC0415
+        C.bind_frozen_engine_paths()  # modules may have been loaded before this worker adapter
         self._fcommon, self._build, self._risk = fcommon, build, risk
         self._inference, self._artifacts, self._cap = inference, artifacts, CAP
         self.ext_root = C.FINAL_INPUT_DIR / "extended_snapshot"
@@ -233,7 +230,8 @@ class FinalModelAdapter:
             add["price_level"] = C.MODEL_PRICE_LEVEL
             add["market_name"] = "沈阳菜篮子信息发布平台（批发口径）"
             add["source_name"] = new["source_name"].values
-            add["unit_original"] = "元/斤"
+            # price_per_kg is a QC-normalized input; raw units remain in immutable source evidence.
+            add["unit_original"] = "元/kg"
             add["frequency"] = "daily"
         ext = pd.concat([frozen.drop(columns=["_dt"]), add], ignore_index=True)
         ext["observation_date"] = pd.to_datetime(ext["observation_date"])
@@ -352,6 +350,8 @@ class FinalModelAdapter:
             mr_pct = None
             if not mr_hist.empty:
                 s = mr_hist[(mr_hist["crop"] == crop)]
+                if as_of:
+                    s = s[pd.to_datetime(s["date"]) <= pd.Timestamp(as_of)]
                 if len(s):
                     series = s.sort_values("date")["market_risk"]
                     mr_pct = float(series.expanding(min_periods=60).rank(pct=True).iloc[-1] * 100) \

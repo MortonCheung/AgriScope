@@ -17,15 +17,20 @@ import pandas as pd
 from joblib import parallel_backend
 
 _HERE = Path(__file__).resolve()
-PROJECT = Path(os.environ.get('PROJECT_ROOT') or _HERE.parents[3]).resolve()   # monorepo 根
-AGRISCOPE = _HERE.parents[2]                                                   # AgriScope 仓
+AGRISCOPE = _HERE.parents[2]
+if str(AGRISCOPE) not in sys.path:
+    sys.path.insert(0, str(AGRISCOPE))
+from agriscope_paths import paths
+_PATHS = paths()
+AGRISCOPE, PROJECT, RUNTIME = _PATHS.product, _PATHS.worker, _PATHS.runtime
 for path in (AGRISCOPE, AGRISCOPE / 'pipelines', AGRISCOPE / 'pipelines' / 'modeling',
              AGRISCOPE / 'pipelines' / 'modeling' / 'src'):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 SNAPSHOT_DIR = PROJECT / 'data/processed/long_horizon/snapshots'
 LOCK_PATH = PROJECT / 'data/processed/long_horizon/.run.lock'
-FROZEN_DATA = PROJECT / 'data/model_ready/snapshots/final_v1/datasets/decision_dataset_沈阳.parquet'
+FROZEN_DATA = RUNTIME / 'data/model_ready/snapshots/final_v1/datasets/decision_dataset_沈阳.parquet'
+MODEL_INDEX = RUNTIME / 'models/models/long_horizon/index.json'
 DAILY_DATA = PROJECT / 'data/processed/daily/daily_market_price.parquet'
 DAILY_LATEST = PROJECT / 'data/processed/daily/snapshots/latest.json'
 TARGETS = ('cycle_market_average', 'harvest_market_price')
@@ -91,7 +96,7 @@ def number(v):
 def build(as_of: Optional[str] = None):
     from long_horizon.v2 import load_bundle, predict_at
     history, runtime = load_runtime_history(as_of)
-    bundle = load_bundle()
+    bundle = load_bundle(MODEL_INDEX)
     latest = runtime['latest_data_date']
     if as_of and str(pd.Timestamp(as_of).date()) > latest:
         raise ValueError('as_of cannot advance beyond observed market history')
