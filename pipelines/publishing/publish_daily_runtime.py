@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from agriscope_daily_publication import EXTENDED_FILES, PREFIX, digest, generation_id, resolve
+from agriscope_publication import publication_lock, retain_entry
 
 
 def _json(path):
@@ -94,7 +95,7 @@ def publish(project_root, runtime_dir, include_long_horizon=True):
         raise ValueError('publication directory escapes runtime')
     if (publication_dir / '.publish.lock').is_symlink():
         raise ValueError('publication lock cannot be a symlink')
-    with (publication_dir / '.publish.lock').open('a') as lock:
+    with publication_lock(runtime), (publication_dir / '.publish.lock').open('a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         original = manifest.read_bytes()
         obj = json.loads(original)
@@ -166,6 +167,8 @@ def publish(project_root, runtime_dir, include_long_horizon=True):
         entry = dict(schema_version=1, generation=PREFIX + identity, files=files,
                      snapshot_hash=snapshot['snapshot_hash'], latest_data_date=snapshot['latest_data_date'],
                      snapshot_generated_at=snapshot['generated_at'], published_at=datetime.now(timezone.utc).isoformat())
+        retain_entry(runtime, 'daily_publication', obj.get('daily_publication'))
+        entry = retain_entry(runtime, 'daily_publication', entry)
         obj['daily_publication'] = entry
         if manifest.read_bytes() != original:
             raise ValueError('manifest changed during publication')
@@ -173,7 +176,7 @@ def publish(project_root, runtime_dir, include_long_horizon=True):
             path = Path(temporary.name)
             try:
                 json.dump(obj, temporary, ensure_ascii=False, indent=2)
-                temporary.flush(); os.fsync(temporary.fileno())
+                temporary.flush(); os.fsync(temporary.fileno()); os.fchmod(temporary.fileno(), 0o640)
             except Exception:
                 path.unlink(missing_ok=True)
                 raise

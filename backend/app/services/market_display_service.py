@@ -2,10 +2,11 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from datetime import date, datetime
+from datetime import date, datetime, timezone, timedelta
 from functools import lru_cache
 import json
 import math
+import os
 from pathlib import Path
 import re
 from typing import Any, Optional
@@ -24,7 +25,7 @@ def _day(value: Any) -> bool:
     if not isinstance(value, str) or not DAY_PATTERN.fullmatch(value):
         return False
     try:
-        return date.fromisoformat(value) <= date.today()
+        return date.fromisoformat(value) <= datetime.now(timezone(timedelta(hours=8))).date()
     except ValueError:
         return False
 
@@ -52,12 +53,15 @@ def validate_display(data: Any) -> dict:
         return (isinstance(value, list) and len(value) == len(expected)
                 and all(isinstance(item, str) for item in value) and set(value) == set(expected))
 
-    if (not isinstance(data, dict) or set(data) != {"schema_version", "products", "price_levels", "records"}
-            or data.get("schema_version") != "1"
+    version = data.get("schema_version") if isinstance(data, dict) else None
+    fields = {"schema_version", "products", "price_levels", "records"}
+    if version == "2": fields |= {"missing", "coverage"}
+    if (not isinstance(data, dict) or set(data) != fields
+            or version not in ("1", "2")
             or not members(data.get("products"), PRODUCTS)
             or not members(data.get("price_levels"), PRICE_LEVELS)
             or not isinstance(data.get("records"), list)
-            or len(data["records"]) != len(REGIONS) * len(PRODUCTS) * len(PRICE_LEVELS)):
+            or (version == "1" and len(data["records"]) != len(REGIONS) * len(PRODUCTS) * len(PRICE_LEVELS))):
         raise ValueError("Incomplete market publication")
     seen = set()
     for row in data["records"]:
@@ -88,6 +92,28 @@ def validate_display(data: Any) -> dict:
         change = (last["price"] / history[-2]["price"] - 1) * 100 if len(history) > 1 else 0
         if abs(change - row["change_percent"]) > 0.0001:
             raise ValueError("Market change differs from comparable history")
+    if version == "2":
+        missing, coverage = data.get("missing"), data.get("coverage")
+        if not isinstance(missing, list) or not isinstance(coverage, dict) or set(coverage) != set(REGIONS):
+            raise ValueError("Invalid observed-market availability")
+        for row in missing:
+            if (not isinstance(row, dict) or set(row) != {"region", "product", "price_level", "reason"}
+                    or row["region"] not in REGIONS or row["product"] not in PRODUCTS
+                    or row["price_level"] not in PRICE_LEVELS or row["reason"] != "no_local_observation"):
+                raise ValueError("Invalid missing local observation")
+            key = row["region"], row["product"], row["price_level"]
+            if key in seen: raise ValueError("Duplicate observed/missing market cell")
+            seen.add(key)
+        if len(seen) != len(REGIONS) * len(PRODUCTS) * len(PRICE_LEVELS):
+            raise ValueError("Incomplete observed-market availability")
+        for region, item in coverage.items():
+            records = [row for row in data["records"] if row["region"] == region]
+            if (not isinstance(item, dict) or set(item) != {"collection_status", "available_records", "total_records", "latest_observation_date"}
+                    or item["collection_status"] != ("scheduled" if region == "shenyang" else "not_configured")
+                    or type(item["available_records"]) is not int or item["available_records"] != len(records)
+                    or item["total_records"] != len(PRODUCTS) * len(PRICE_LEVELS)
+                    or item["latest_observation_date"] != max((r["observation_date"] for r in records), default=None)):
+                raise ValueError("Market coverage differs from local observations")
     return data
 
 
@@ -105,7 +131,18 @@ def display(region: Optional[str] = None, product: Optional[str] = None,
                                   ("price_level", price_level, PRICE_LEVELS)]:
         if value is not None and value not in allowed:
             raise ApiError(422, ErrorCode.BAD_REQUEST, "行情查询条件不正确。", {"field": field})
-    path = C.RUNTIME_DIR / "data" / "market" / "display.json"
+    from agriscope_market_publication import resolve
+    try:
+        publication = resolve(C.RUNTIME_DIR)
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise ApiError(503, ErrorCode.RESEARCH_UNAVAILABLE, "行情发布包校验未通过。") from exc
+    if publication:
+        path = publication['directory'] / 'display.json'
+    elif os.environ.get('AGRISCOPE_MARKET_POLICY', 'observed') != 'competition':
+        # A release has no verified current observation until the first worker publication.
+        return empty_observed(region, product, price_level)
+    else:
+        path = C.RUNTIME_DIR / "data" / "market" / "display.json"
     try:
         stat = path.stat()
     except OSError as exc:
@@ -115,6 +152,22 @@ def display(region: Optional[str] = None, product: Optional[str] = None,
                        (region is None or row["region"] == region)
                        and (product is None or row["product"] == product)
                        and (price_level is None or row["price_level"] == price_level)]
+    if body["schema_version"] == "2":
+        body["missing"] = [row for row in body["missing"] if
+                           (region is None or row["region"] == region)
+                           and (product is None or row["product"] == product)
+                           and (price_level is None or row["price_level"] == price_level)]
+    return body
+
+
+def empty_observed(region=None, product=None, price_level=None):
+    body = {"schema_version": "2", "products": list(PRODUCTS), "price_levels": list(PRICE_LEVELS),
+            "records": [], "missing": [{"region": r, "product": p, "price_level": l, "reason": "no_local_observation"}
+                         for r in REGIONS for p in PRODUCTS for l in PRICE_LEVELS
+                         if (region is None or region == r) and (product is None or product == p) and (price_level is None or price_level == l)],
+            "coverage": {r: {"collection_status": "scheduled" if r == "shenyang" else "not_configured",
+                          "available_records": 0, "total_records": len(PRODUCTS) * len(PRICE_LEVELS),
+                          "latest_observation_date": None} for r in REGIONS}}
     return body
 
 

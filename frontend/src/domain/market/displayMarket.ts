@@ -22,17 +22,22 @@ export interface DisplayMarketRecord {
   change_percent: number;
   history: { date: string; price: number }[];
 }
+export interface MissingMarketCell { region: DisplayRegion; product: DisplayProduct; price_level: DisplayPriceLevel; reason: 'no_local_observation' }
+export interface MarketCoverage { collection_status: 'scheduled' | 'not_configured'; available_records: number; total_records: number; latest_observation_date: string | null }
 export interface DisplayMarketSnapshot {
-  schema_version: '1';
+  schema_version: '1' | '2';
   products: DisplayProduct[];
   price_levels: DisplayPriceLevel[];
   records: DisplayMarketRecord[];
+  missing?: MissingMarketCell[];
+  coverage?: Record<DisplayRegion, MarketCoverage>;
 }
 export interface DisplayMarketView {
   cityId: StudyCityId | null;
   scope: string;
   priceLevel: DisplayPriceLevel;
   rows: DisplayMarketRecord[];
+  missing?: MissingMarketCell[];
 }
 
 const validDay = (value: unknown): value is string => {
@@ -54,9 +59,9 @@ export function validateDisplayMarket(value: unknown): DisplayMarketSnapshot {
   const data = value as DisplayMarketSnapshot | null;
   const fail = (): never => { throw new Error('行情发布包校验未通过。'); };
   const regions: readonly string[] = [...STUDY_CITY_IDS, 'liaoning'];
-  if (!data || data.schema_version !== '1' || !exactMembers(data.products, DISPLAY_PRODUCTS)
+  if (!data || !['1', '2'].includes(data.schema_version) || !exactMembers(data.products, DISPLAY_PRODUCTS)
     || !exactMembers(data.price_levels, DISPLAY_PRICE_LEVELS) || !Array.isArray(data.records)
-    || data.records.length !== regions.length * DISPLAY_PRODUCTS.length * DISPLAY_PRICE_LEVELS.length) return fail();
+    || (data.schema_version === '1' && data.records.length !== regions.length * DISPLAY_PRODUCTS.length * DISPLAY_PRICE_LEVELS.length)) return fail();
   const keys = new Set<string>();
   for (const row of data.records) {
     if (!row || !regions.includes(row.region) || !DISPLAY_PRODUCTS.includes(row.product)
@@ -78,6 +83,22 @@ export function validateDisplayMarket(value: unknown): DisplayMarketSnapshot {
     const change = previousPoint ? (last.price / previousPoint.price - 1) * 100 : 0;
     if (Math.abs(change - row.change_percent) > 0.0001) fail();
   }
+  if (data.schema_version === '2') {
+    if (!Array.isArray(data.missing) || !data.coverage || Object.keys(data.coverage).length !== regions.length) fail();
+    for (const row of data.missing!) {
+      if (!row || !regions.includes(row.region) || !DISPLAY_PRODUCTS.includes(row.product) || !DISPLAY_PRICE_LEVELS.includes(row.price_level) || row.reason !== 'no_local_observation') fail();
+      const key = `${row.region}:${row.product}:${row.price_level}`;
+      if (keys.has(key)) fail(); keys.add(key);
+    }
+    if (keys.size !== regions.length * DISPLAY_PRODUCTS.length * DISPLAY_PRICE_LEVELS.length) fail();
+    for (const region of regions as DisplayRegion[]) {
+      const item = data.coverage![region];
+      const rows = data.records.filter(row => row.region === region);
+      const latest = rows.map(row => row.observation_date).sort().at(-1) ?? null;
+      if (!item || item.collection_status !== (region === 'shenyang' ? 'scheduled' : 'not_configured') || item.available_records !== rows.length
+        || item.total_records !== DISPLAY_PRODUCTS.length * DISPLAY_PRICE_LEVELS.length || item.latest_observation_date !== latest) fail();
+    }
+  }
   return data;
 }
 
@@ -88,6 +109,14 @@ export function displayMarketFor(snapshot: DisplayMarketSnapshot, cityId: string
   const selectedCity = cityId && isStudyCity(cityId) ? cityId : null;
   const region = selectedCity ?? 'liaoning';
   return { cityId: selectedCity, scope: selectedCity ? getCity(selectedCity)!.shortName : '辽宁', priceLevel,
-    rows: DISPLAY_PRODUCTS.map(product => snapshot.records.find(row => row.region === region && row.product === product && row.price_level === priceLevel)!),
+    rows: snapshot.records.filter(row => row.region === region && row.price_level === priceLevel).sort((a, b) => DISPLAY_PRODUCTS.indexOf(a.product) - DISPLAY_PRODUCTS.indexOf(b.product)),
+    ...(snapshot.schema_version === '2' ? { missing: snapshot.missing!.filter(row => row.region === region && row.price_level === priceLevel) } : {}),
   };
 }
+
+// No city or price-level substitution may seed an unverified server response.
+export const UNAVAILABLE_DISPLAY_MARKET: DisplayMarketSnapshot = validateDisplayMarket({
+  schema_version: '2', products: [...DISPLAY_PRODUCTS], price_levels: [...DISPLAY_PRICE_LEVELS], records: [],
+  missing: [...STUDY_CITY_IDS, 'liaoning' as const].flatMap(region => DISPLAY_PRODUCTS.flatMap(product => DISPLAY_PRICE_LEVELS.map(price_level => ({ region, product, price_level, reason: 'no_local_observation' as const })))),
+  coverage: Object.fromEntries([...STUDY_CITY_IDS, 'liaoning'].map(region => [region, { collection_status: region === 'shenyang' ? 'scheduled' : 'not_configured', available_records: 0, total_records: 24, latest_observation_date: null }])),
+});

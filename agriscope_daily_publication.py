@@ -51,6 +51,13 @@ def resolve(runtime_dir):
     entry = obj.get('daily_publication')
     if entry is None:
         return None
+    return validate_entry(runtime, entry)
+
+
+def validate_entry(runtime, entry):
+    runtime = Path(runtime)
+    if not isinstance(entry, dict):
+        raise ValueError('invalid Daily publication pointer')
     files = entry.get('files')
     relative = entry.get('generation')
     if entry.get('schema_version') != 1 or not isinstance(files, dict) or not REQUIRED <= set(files) <= ALLOWED:

@@ -43,3 +43,7 @@ llm/artifacts/
 # --- Long-Horizon 研究中间产物（大 parquet/csv；源与交付报告仍进 Git）---
 pipelines/long_horizon/artifacts/
 pipelines/long_horizon/reports/
+
+# Mutable publication transaction state (never part of a source release).
+runtime/.manifest.lock
+runtime/publication_history/

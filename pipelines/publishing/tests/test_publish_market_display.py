@@ -176,7 +176,7 @@ def daily(root, raw_price=2, normalized_price=4, status="OK"):
     path = root / raw_path
     path.parent.mkdir(parents=True, exist_ok=True)
     stamp = int(datetime(2025, 1, 4, tzinfo=timezone(timedelta(hours=8))).timestamp() * 1000)
-    path.write_text(json.dumps({"data": [dict(productName="黄瓜", price=raw_price, unit="元/500g", dates=stamp)]}))
+    path.write_text(json.dumps({"data": [dict(productName="黄瓜", price=raw_price, unit="元/500g", dates=stamp, marketType="2")]}))
     (path.parent / "metadata.json").write_text(json.dumps({"mt2": dict(status=status, date=day,
         price_level="supermarket", crawl_time="2025-01-05 08:09:10")}))
     return dict(city="沈阳", crop_standard="黄瓜", crop_raw="黄瓜", price=normalized_price / 2,
@@ -469,3 +469,11 @@ def test_declared_primary_response_must_really_match_db_scope_and_hash(tmp_path,
         proof.write_text('{"data":[]}')
     with pytest.raises(ValueError, match="Primary price"):
         P.build(tmp_path)
+
+
+def test_raw_price_type_cannot_be_relabelled_as_the_metadata_type(tmp_path):
+    source=daily(tmp_path)
+    raw=tmp_path/source['raw_file'];payload=json.loads(raw.read_text());payload['data'][0]['marketType']='1';raw.write_text(json.dumps(payload))
+    package(tmp_path,daily=[source]);body,audit=P.build(tmp_path,strict=True)
+    assert not any(row['region']=='shenyang' and row['product']=='黄瓜' and row['price_level']=='supermarket' for row in body['records'])
+    assert audit['input_statistics']['daily']['unverified_daily_evidence']==1

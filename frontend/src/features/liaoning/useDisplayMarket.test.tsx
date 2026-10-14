@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { StrictMode } from 'react';
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
-import { INITIAL_DISPLAY_MARKET, displayMarketFor, type DisplayMarketSnapshot } from '../../domain/market/displayMarket';
+import { INITIAL_DISPLAY_MARKET, UNAVAILABLE_DISPLAY_MARKET, displayMarketFor, type DisplayMarketSnapshot } from '../../domain/market/displayMarket';
 import { createDisplayMarketStore, useDisplayMarket } from './useDisplayMarket';
 const provider = vi.hoisted(() => ({ latest: vi.fn() }));
 vi.mock('../../providers/market/displayMarketProvider', () => ({ getDisplayMarketProvider: () => provider }));
@@ -15,10 +15,10 @@ describe('首页整包缓存生命周期', () => {
     provider.latest.mockImplementation(() => new Promise<DisplayMarketSnapshot>(done => { resolve = done; }));
     function Probe({ city }: { city: string }) {
       const market = displayMarketFor(useDisplayMarket(), city, 'wholesale');
-      return <output>{market.scope}:{market.rows[0].price}</output>;
+      return <output>{market.scope}:{market.rows[0]?.price ?? '尚无本地观测'}</output>;
     }
     const view = render(<StrictMode><Probe city="shenyang"/></StrictMode>);
-    expect(screen.getByText(`沈阳:${displayMarketFor(INITIAL_DISPLAY_MARKET, 'shenyang', 'wholesale').rows[0].price}`)).toBeTruthy();
+    expect(screen.getByText('沈阳:尚无本地观测')).toBeTruthy();
     await waitFor(() => expect(provider.latest).toHaveBeenCalledTimes(1));
     for (let index = 0; index < 20; index += 1) view.rerender(<StrictMode><Probe city={index % 2 ? 'dalian' : 'tieling'}/></StrictMode>);
     const next = copy();
@@ -30,7 +30,7 @@ describe('首页整包缓存生命周期', () => {
     expect(screen.getByText(`铁岭:${displayMarketFor(next, 'tieling', 'wholesale').rows[0].price}`)).toBeTruthy();
     expect(provider.latest).toHaveBeenCalledTimes(1);
   });
-  it('请求未返回时首屏立即完整，StrictMode/多个订阅合用一次请求，成功原子替换', async () => {
+  it('请求未返回时首屏明确无已验证观测，StrictMode/多个订阅合用一次请求，成功原子替换', async () => {
     let resolve!: (snapshot: DisplayMarketSnapshot) => void;
     const load = vi.fn(() => new Promise<DisplayMarketSnapshot>(done => { resolve = done; }));
     const store = createDisplayMarketStore(load);
@@ -40,8 +40,9 @@ describe('首页整包缓存生命周期', () => {
     stop();
     store.subscribe(second);
     expect(store.refresh()).toBe(request);
-    expect(store.getSnapshot()).toBe(INITIAL_DISPLAY_MARKET);
-    expect(store.getSnapshot().records).toHaveLength(168);
+    expect(store.getSnapshot()).toBe(UNAVAILABLE_DISPLAY_MARKET);
+    expect(store.getSnapshot().records).toHaveLength(0);
+    expect(store.getSnapshot().missing).toHaveLength(168);
     await Promise.resolve();
     expect(load).toHaveBeenCalledTimes(1);
     const next = copy();
@@ -61,9 +62,9 @@ describe('首页整包缓存生命周期', () => {
     const notify = vi.fn();
     store.subscribe(notify);
     await store.refresh();
-    expect(store.getSnapshot()).toBe(INITIAL_DISPLAY_MARKET);
+    expect(store.getSnapshot()).toBe(UNAVAILABLE_DISPLAY_MARKET);
     await store.refresh();
-    expect(store.getSnapshot()).toBe(INITIAL_DISPLAY_MARKET);
+    expect(store.getSnapshot()).toBe(UNAVAILABLE_DISPLAY_MARKET);
     expect(notify).not.toHaveBeenCalled();
     await store.refresh();
     expect(store.getSnapshot()).toBe(good);

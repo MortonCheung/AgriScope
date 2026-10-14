@@ -7,6 +7,7 @@ Source identity and adoption rules live in a private metadata publication.
 from __future__ import annotations
 
 import argparse
+import shutil
 from collections import Counter, defaultdict
 from contextlib import closing
 from dataclasses import dataclass
@@ -93,7 +94,7 @@ def _day(value: Any) -> str | None:
     value = _text(value)
     try:
         day = date.fromisoformat(value[:10])
-        return day.isoformat() if day <= date.today() else None
+        return day.isoformat() if day <= datetime.now(CHINA_TZ).date() else None
     except ValueError:
         return None
 
@@ -108,7 +109,7 @@ def _timestamp(value: Any) -> str | None:
         timestamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
         if timestamp.tzinfo is None:
             timestamp = timestamp.replace(tzinfo=CHINA_TZ)
-        return timestamp.isoformat(timespec="seconds") if timestamp.date() <= date.today() else None
+        return timestamp.isoformat(timespec="seconds") if timestamp.date() <= datetime.now(CHINA_TZ).date() else None
     except ValueError:
         return None
 
@@ -357,23 +358,31 @@ class Reader:
         raw_path = _text(row.get("raw_file"))
         path = (self.root / raw_path).resolve()
         raw_base = (self.root / "data/raw/daily/shenyang_clz").resolve()
-        if not path.is_relative_to(raw_base) or path.parent.name != day or path.stem not in {"mt1", "mt2", "mt3"}:
-            return None
-        metadata_path = path.parent / "metadata.json"
-        metadata, raw = self.json(metadata_path), self.json(path)
-        entry = (metadata or {}).get(path.stem)
+        day_dir = raw_base / day
         levels = {"mt1": "wholesale", "mt2": "supermarket", "mt3": "retail_market"}
+        market = path.name.split(".")[0]
+        if (market not in levels or path.is_symlink() or not path.is_relative_to(day_dir)
+                or path.parent not in (day_dir, day_dir / 'attempts')
+                or not re.fullmatch(r'mt[123](?:\.[0-9a-f]{16}\.[0-9a-f]{32})?\.json', path.name)):
+            return None
+        metadata_path = day_dir / "metadata.json"
+        if metadata_path.is_symlink() or not metadata_path.resolve().is_relative_to(day_dir): return None
+        metadata, raw = self.json(metadata_path), self.json(path)
+        entry = (metadata or {}).get(market)
         if (not isinstance(entry, dict) or not isinstance(raw, dict) or entry.get("status") != "OK"
-                or entry.get("date") != day or entry.get("price_level") != levels[path.stem]
-                or _text(row.get("price_level")) != levels[path.stem]
+                or entry.get("date") != day or entry.get("price_level") != levels[market]
+                or _text(row.get("price_level")) != levels[market]
                 or not isinstance(raw.get("data"), list)):
             return None
+        if entry.get('active_raw_path'):
+            active = (self.root / entry['active_raw_path']).resolve()
+            if active != path or entry.get('raw_sha256') != _hash(path): return None
         collected = _timestamp(entry.get("crawl_time"))
         if not collected:
             return None
         unit, product = _text(row.get("unit_raw")), _text(row.get("crop_raw"))
         for item in raw["data"]:
-            if not isinstance(item, dict) or _text(item.get("productName")) != product or _text(item.get("unit")) != unit:
+            if not isinstance(item, dict) or _text(item.get("marketType")) != market[2:] or _text(item.get("productName")) != product or _text(item.get("unit")) != unit:
                 continue
             actual = _positive(item.get("price"))
             if actual is not None and math.isclose(actual * MASS_FACTORS[unit], price, abs_tol=.000001):
@@ -564,14 +573,19 @@ def _mean(region: str, product: str, level: str, candidates: list[Series]) -> tu
                           for point, sources in zip(history, contributors)]))
 
 
-def build(project_root: Path, feed_db: Path | None = None) -> tuple[dict, dict]:
+def build(project_root: Path, feed_db: Path | None = None, strict: bool = False) -> tuple[dict, dict]:
     reader = Reader(project_root)
-    observations = [point for family in INPUTS for point in reader.rows(family)]
+    observations = []
+    for family, relative in INPUTS.items():
+        if strict and not (reader.root / relative).is_file():
+            reader.stats[family]["asset_unavailable"] += 1
+            continue
+        observations.extend(reader.rows(family))
     selected_feed = Path(feed_db).resolve() if feed_db is not None else reader.root / DEFAULT_FEED_DB
     if feed_db is not None or selected_feed.is_file():
         observations.extend(reader.feed(selected_feed))
     series, conflicts = _series(observations)
-    records, lineage = [], []
+    records, lineage, missing = [], [], []
     for region in REGIONS:
         for product in PRODUCTS:
             candidates = [s for s in series if s.latest.product == product]
@@ -579,6 +593,9 @@ def build(project_root: Path, feed_db: Path | None = None) -> tuple[dict, dict]:
                 same_region = [s for s in candidates if s.latest.region == region]
                 chosen = _best([s for s in same_region if s.latest.level == level], level)
                 tier = 1
+                if strict and chosen is None:
+                    missing.append(dict(region=region, product=product, price_level=level, reason="no_local_observation"))
+                    continue
                 if chosen is None:
                     chosen, tier = _best(same_region, level), 2
                 if chosen is None and region != "liaoning":
@@ -586,8 +603,13 @@ def build(project_root: Path, feed_db: Path | None = None) -> tuple[dict, dict]:
                 row, evidence = _adopt(region, product, level, chosen, tier) if chosen else _mean(region, product, level, candidates)
                 records.append(row)
                 lineage.append(evidence)
-    payload = validate_display(dict(schema_version="1", products=list(PRODUCTS),
-                                    price_levels=list(PRICE_LEVELS), records=records))
+    payload = dict(schema_version="2" if strict else "1", products=list(PRODUCTS), price_levels=list(PRICE_LEVELS), records=records)
+    if strict:
+        payload.update(missing=missing, coverage={region: dict(
+            collection_status="scheduled" if region == "shenyang" else "not_configured",
+            available_records=sum(row["region"] == region for row in records), total_records=len(PRODUCTS) * len(PRICE_LEVELS),
+            latest_observation_date=max((row["observation_date"] for row in records if row["region"] == region), default=None)) for region in REGIONS})
+    payload = validate_display(payload)
     # Source changes while reading must never publish a mixed generation.
     for relative, digest in reader.hashes.items():
         if _hash(reader.root / relative) != digest:
@@ -597,7 +619,8 @@ def build(project_root: Path, feed_db: Path | None = None) -> tuple[dict, dict]:
                  source_hashes=reader.hashes, input_statistics={k: dict(v) for k, v in reader.stats.items()},
                  same_source_conflict_days_omitted=conflicts,
                  tier_counts=dict(Counter(str(row["tier"]) for row in lineage)),
-                 observation_date_range=[min(r["observation_date"] for r in records), max(r["observation_date"] for r in records)],
+                 observation_date_range=[min((r["observation_date"] for r in records), default=None), max((r["observation_date"] for r in records), default=None)],
+                 policy="local_same_price_level" if strict else "competition_complete", missing_count=len(missing),
                  record_count=len(records), records=lineage)
     if reader.feed_receipt is not None:
         audit["provided_feed"] = reader.feed_receipt
@@ -625,11 +648,15 @@ def _atomic(path: Path, contents: bytes) -> None:
 
 
 def publish(project_root: Path, runtime_root: Path | None = None,
-            frontend_root: Path | None = None, feed_db: Path | None = None) -> dict:
+            frontend_root: Path | None = None, feed_db: Path | None = None, *, strict: bool = False, write_frontend: bool = True) -> dict:
     project_root = Path(project_root).resolve()
     runtime_root = Path(runtime_root or project_root / "AgriScope/runtime").resolve()
     frontend_root = Path(frontend_root or project_root / "AgriScope/frontend").resolve()
-    payload, audit = build(project_root, feed_db)
+    payload, audit = build(project_root, feed_db, strict)
+    if strict:
+        if write_frontend:
+            raise ValueError("scheduled observed publications must not mutate frontend sources")
+        return publish_generation(runtime_root, payload, audit)
     contents = _encoded(payload)
     digest = hashlib.sha256(contents).hexdigest()
     audit["display_sha256"] = digest
@@ -646,15 +673,73 @@ def publish(project_root: Path, runtime_root: Path | None = None,
                 runtime_destination=str(destinations[0]), frontend_destination=str(destinations[1]))
 
 
+def publish_generation(runtime_root: Path, payload: dict, audit: dict) -> dict:
+    """Immutable data-only publication; one atomic manifest commit exposes both files."""
+    from agriscope_daily_publication import digest, generation_id
+    from agriscope_market_publication import PREFIX, resolve, validate_entry
+    from agriscope_publication import atomic_bytes, publication_lock, retain_entry
+    runtime = Path(runtime_root).resolve()
+    manifest = runtime / 'manifest.json'
+    if not manifest.is_file() or manifest.is_symlink():
+        raise ValueError('existing runtime manifest required')
+    # A changed wall-clock audit timestamp cannot defeat repeated-run idempotency.
+    content = _encoded(validate_display(payload))
+    audit = {k: v for k, v in audit.items() if k != 'generated_at'}
+    audit['display_sha256'] = hashlib.sha256(content).hexdigest()
+    data = {'display.json': content, 'lineage.json': _encoded(audit)}
+    files = {name: hashlib.sha256(body).hexdigest() for name, body in data.items()}
+    identity = generation_id(files)
+    parent = runtime / PREFIX
+    parent.mkdir(parents=True, exist_ok=True)
+    if parent.is_symlink() or not parent.resolve().is_relative_to(runtime):
+        raise ValueError('market publication directory escapes runtime')
+    with publication_lock(runtime):
+        original = manifest.read_bytes()
+        obj = json.loads(original)
+        previous = resolve(runtime)
+        if previous and previous['generation'] == PREFIX + identity:
+            return {'status': 'UNCHANGED', 'generation': previous['generation'], 'record_count': len(payload['records']), 'missing_count': len(payload['missing'])}
+        if previous:
+            old = json.loads((previous['directory'] / 'display.json').read_text())
+            previous_dates = {(r['region'], r['product'], r['price_level']): r['observation_date'] for r in old['records']}
+            new_keys = {(r['region'], r['product'], r['price_level']) for r in payload['records']}
+            if not set(previous_dates) <= new_keys:
+                raise ValueError('local observations disappeared; preserve the previous generation')
+            for row in payload['records']:
+                if row['observation_date'] < previous_dates.get((row['region'], row['product'], row['price_level']), ''):
+                    raise ValueError('local observation date regression')
+        destination = parent / identity
+        if not destination.exists():
+            with tempfile.TemporaryDirectory(prefix='.stage-', dir=parent) as temporary:
+                stage = Path(temporary) / 'generation'; stage.mkdir()
+                for name, body in data.items(): atomic_bytes(stage / name, body, 0o440)
+                os.replace(stage, destination)
+                fd = os.open(parent, os.O_RDONLY)
+                try: os.fsync(fd)
+                finally: os.close(fd)
+        entry = dict(schema_version=1, generation=PREFIX + identity, files=files,
+                     published_at=datetime.now(timezone.utc).isoformat())
+        validate_entry(runtime, entry)
+        retain_entry(runtime, 'market_publication', obj.get('market_publication'))
+        entry = retain_entry(runtime, 'market_publication', entry)
+        obj['market_publication'] = entry
+        if manifest.read_bytes() != original:
+            raise ValueError('manifest changed during publication')
+        atomic_bytes(manifest, json.dumps(obj, ensure_ascii=False, indent=2).encode())
+        return {'status': 'PUBLISHED', 'generation': entry['generation'], 'record_count': len(payload['records']),
+                'missing_count': len(payload['missing']), 'coverage': payload['coverage']}
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--project-root", type=Path, default=PRODUCT_ROOT.parent)
     parser.add_argument("--runtime-root", type=Path)
     parser.add_argument("--frontend-root", type=Path)
+    parser.add_argument("--strict", action="store_true", help="Only local same-level observations; missing cells remain explicitly unavailable")
     parser.add_argument("--feed-db", type=Path, help="Optional latest user-provided observation DB with adjacent provenance.json")
     args = parser.parse_args(argv)
     try:
-        print(json.dumps(publish(args.project_root, args.runtime_root, args.frontend_root, args.feed_db), ensure_ascii=False))
+        print(json.dumps(publish(args.project_root, args.runtime_root, args.frontend_root, args.feed_db, strict=args.strict, write_frontend=not args.strict), ensure_ascii=False))
     except (OSError, ValueError, KeyError, TypeError) as exc:
         print(f"Market publication refused: {exc}", file=sys.stderr)
         return 1

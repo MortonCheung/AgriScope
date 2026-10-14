@@ -24,7 +24,7 @@ export function MarketOverview({ title, market, product, onProductChange, onPric
   onPriceLevelChange: (level: DisplayPriceLevel) => void;
 }) {
   const [view, setView] = useState<'today' | 'trend'>('today');
-  const rows = product ? market.rows.filter(row => row.product === product) : market.rows;
+  const products = DISPLAY_PRODUCTS.filter(name => (!product || name === product) && (market.rows.some(row => row.product === name) || market.missing?.some(row => row.product === name)));
   return <section className="market-overview" aria-label="行情价格">
     <div className="market-overview__toolbar">
     <div className="market-overview__heading">{title && <h1 className="liaoning-page__title">{title}</h1>}<div className="market-overview__head"><div className="market-overview__scope"><FlipValue value={market.scope}/><span>{PRICE_LEVEL_LABEL[market.priceLevel]}</span></div></div></div>
@@ -34,7 +34,9 @@ export function MarketOverview({ title, market, product, onProductChange, onPric
     <p className="market-overview__caption">当前价格 <span>较前次</span></p>
     </div>
     <div className="market-overview__data" role="region" aria-label="商品行情列表" tabIndex={0}>
-    <ul className="market-overview__prices">{rows.map(row => {
+    <ul className="market-overview__prices">{products.map(name => {
+      const row = market.rows.find(item => item.product === name);
+      if (!row) return <li className="market-overview__price" key={name} data-availability="missing"><h3>{name}</h3><p className="market-overview__meta">尚无本地观测</p><div className="market-overview__meta"><span>{PRICE_LEVEL_LABEL[market.priceLevel]}</span></div></li>;
       const direction = marketDirection(row.change_percent);
       const comparable = row.history.length > 1;
       const movement = !comparable ? '最新' : direction === 'flat' ? '平稳' : `${direction === 'up' ? '↑' : '↓'}${Math.abs(row.change_percent).toFixed(1)}%`;

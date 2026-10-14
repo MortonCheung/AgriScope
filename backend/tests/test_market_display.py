@@ -22,6 +22,7 @@ def snapshot():
 
 @pytest.fixture
 def publication(tmp_path, monkeypatch):
+    monkeypatch.setenv('AGRISCOPE_MARKET_POLICY', 'competition')
     path = tmp_path / "data/market/display.json"
     path.parent.mkdir(parents=True)
     path.write_text(json.dumps(snapshot(), ensure_ascii=False))
