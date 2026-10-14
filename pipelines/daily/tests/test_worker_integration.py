@@ -114,12 +114,13 @@ def test_empty_then_complete_same_day_adopts_valid_response(worker, monkeypatch)
     SRC._archive(fetched(monkeypatch, json.dumps(payload()).encode()))
     assert len(NZ.load_raw_records()) == 10
 
-@pytest.mark.parametrize('defect', ['missing_date', 'wrong_date', 'nonfinite', 'unit', 'field_on_one_row', 'missing_market_type', 'wrong_market_type'])
+@pytest.mark.parametrize('defect', ['missing_date', 'wrong_date', 'nonfinite', 'boolean_price', 'unit', 'field_on_one_row', 'missing_market_type', 'wrong_market_type'])
 def test_source_schema_rejects_unverified_freshness_and_price(worker, monkeypatch, defect):
     raw = payload()
     if defect == 'missing_date': del raw['data'][0]['dates']
     if defect == 'wrong_date': raw['data'][0]['dates'] = EPOCH - 86400000
     if defect == 'nonfinite': raw['data'][0]['price'] = 'Infinity'
+    if defect == 'boolean_price': raw['data'][0]['price'] = True
     if defect == 'unit': raw['data'][0]['unit'] = '元/盒'
     if defect == 'field_on_one_row': del raw['data'][0]['productName']
     if defect == 'missing_market_type': del raw['data'][0]['marketType']

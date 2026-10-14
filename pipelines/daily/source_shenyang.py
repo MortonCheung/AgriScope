@@ -127,6 +127,8 @@ def _schema_check(res: RawResult) -> str | None:
         published = IO.epoch_ms_to_tz_str(row.get("dates"))
         if not published or not published.startswith(res.date):
             return f"{SCHEMA_CHANGED}: 来源观测日期缺失或与请求日期不一致"
+        if isinstance(row["price"], bool):
+            return f"{SCHEMA_CHANGED}: 布尔值不是有效价格"
         try:
             price = float(row["price"])
         except (TypeError, ValueError, OverflowError):
