@@ -300,3 +300,9 @@
 - A complete city/product/price-type publication replaces per-selection network loads; a validated bundled publication and last-good cache keep the first view and failed refreshes complete.
 - The strict research/decision observations API remains unchanged. The independent display API applies explicit fallback priorities with lineage retained in backend assets.
 - Existing paper layout, map, FlipValue, trend toggle and research views remain. Price-type buttons and a shared product selector operate on the same paper DOM; trends use actual selected-source dates and prior observations.
+
+## 精准连续性修复（2026-10-15，修改前登记）
+
+- 上轮移除的工作台按钮底部细线恢复为已有自持生长/收回动画；保留局部滑动底纹，不恢复左侧竖线，也不使用跨路由共享 layoutId。
+- 工作台整块 stage 的 8px 入场位移退役；稳定输入与工具栏不动，只有正文/依据内容使用从当前位置开始的小幅反馈，既有结果数字动画保留。纸面不清空、不增加延迟。
+- 决策、报告、关于的外层纸张边距向首页既有边界对齐；首页、地图比例、独立滚动和关于内部阅读行长保留。

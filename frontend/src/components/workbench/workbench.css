@@ -1,6 +1,6 @@
 /* 研究与决策共用同一张纸、栅格和滚动边界。 */
-.workbench { display: flex; justify-content: center; min-height: 100dvh; padding: calc(var(--ag-nav-height) + clamp(16px, 4vh, 56px)) clamp(12px, 3vw, 40px) clamp(16px, 4vh, 56px); }
-.workbench__paper { display: flex; flex-direction: column; width: min(100%, var(--ag-paper-max-width, 1600px)); height: calc(100dvh - var(--ag-nav-height) - clamp(32px, 8vh, 112px)); overflow: hidden; background: var(--ag-paper-raised); border: 1px solid var(--ag-rule-soft); box-shadow: 0 1px 0 color-mix(in srgb, var(--ag-rule) 40%, transparent); }
+.workbench { display: flex; justify-content: center; min-height: 100dvh; padding: calc(var(--ag-nav-height) + var(--ag-paper-gutter-y)) var(--ag-paper-gutter-x) var(--ag-paper-gutter-y); }
+.workbench__paper { display: flex; flex-direction: column; width: 100%; height: calc(100dvh - var(--ag-nav-height) - 2 * var(--ag-paper-gutter-y)); overflow: hidden; background: var(--ag-paper-raised); border: 1px solid var(--ag-rule-soft); box-shadow: 0 1px 0 color-mix(in srgb, var(--ag-rule) 40%, transparent); }
 .workbench__chrome { display: none; align-items: center; padding: 14px clamp(16px, 2vw, 26px); border-bottom: 1px solid var(--ag-rule-soft); }
 .workbench__actions { display: flex; gap: var(--ag-space-4); }
 .workbench__toggle { display: none; min-height: 32px; padding: 4px 2px; border: 0; border-bottom: 1px solid transparent; background: none; color: var(--ag-ink-muted); font: inherit; font-size: var(--ag-fs-small); cursor: pointer; }
@@ -11,6 +11,7 @@
 .workbench__sidebar { padding: var(--ag-space-5) clamp(16px, 2vw, 26px) var(--ag-space-10); background: var(--ag-paper-sunken); border-right: 1px solid var(--ag-rule-soft); }
 .workbench__column { display: flex; flex-direction: column; }
 .workbench__stage { display: flex; flex-direction: column; min-width: 0; padding: clamp(22px, 3vw, 40px) clamp(20px, 2.4vw, 32px) var(--ag-space-10); }
+.workbench__content { display:flex;flex-direction:column;min-width:0; }
 .workbench__rail { padding: var(--ag-space-6) clamp(14px, 1.6vw, 22px) var(--ag-space-10); background: var(--ag-paper-sunken); border-left: 1px solid var(--ag-rule-soft); }
 .workbench__backdrop { display: none; }
 .workbench__title { margin: 0 0 var(--ag-space-5); font-family: var(--ag-font-display); font-size: var(--ag-fs-title); font-weight: 400; line-height: 1.4; }
@@ -38,7 +39,6 @@
   .workbench__backdrop[data-open] { display: block; }
 }
 @media (max-width: 768px) {
-  .workbench { padding-inline: 8px; }
   .workbench__body { grid-template-columns: minmax(0, 1fr); }
   .workbench__rail { display: none; border-left: 0; border-top: 1px solid var(--ag-rule-soft); }
   .workbench__body[data-rail-open] { grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
@@ -50,7 +50,7 @@
 
 /* Live decision inputs and results stay present at every viewport size. */
 @media (max-width: 768px) {
-  .decision-workbench--live .workbench__paper { height:auto;min-height:calc(100dvh - var(--ag-nav-height) - 32px);overflow:visible; }
+  .decision-workbench--live .workbench__paper { height:auto;min-height:calc(100dvh - var(--ag-nav-height) - 2 * var(--ag-paper-gutter-y));overflow:visible; }
   .decision-workbench--live .workbench__body { display:flex;flex-direction:column;overflow:visible; }
   .decision-workbench--live .workbench__column { overflow:visible; }
   .decision-workbench--live .workbench__rail { display:block;overflow:visible; }

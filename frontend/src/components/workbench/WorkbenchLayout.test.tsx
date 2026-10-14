@@ -104,4 +104,30 @@ describe('共享工作台的稳定边界与局部面板', () => {
       else delete (HTMLElement.prototype as Partial<HTMLElement>).animate;
     }
   });
+  it('keeps input controls and reading chrome outside local content effects through repeated crop selections', () => {
+    const descriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'animate');
+    const targets: HTMLElement[] = [];
+    Object.defineProperty(HTMLElement.prototype, 'animate', { configurable: true, value: function(this: HTMLElement) { targets.push(this); return { cancel: vi.fn() }; } });
+    try {
+      const view = (crop: string) => <WorkbenchLayout resetKey="shenyang" contentKey="shenyang" sidebarLabel="城市" railLabel="结果" sidebar={() => <p>城市索引</p>}>
+        <WorkbenchMain contentKey={crop} contentMotion={false} toolbar={<button>稳定工具栏</button>}><form><button>黄瓜</button><input aria-label="面积" defaultValue="10"/></form></WorkbenchMain>
+        <WorkbenchRail><section className="planning-result">{crop}结果</section><section className="data-source-links">来源</section></WorkbenchRail>
+      </WorkbenchLayout>;
+      const opened = render(view('黄瓜'));
+      const paper = opened.container.querySelector('.workbench__paper');
+      const input = screen.getByRole('textbox', { name: '面积' });
+      const toolbar = screen.getByRole('button', { name: '稳定工具栏' });
+      for (let index = 0; index < 20; index++) {
+        opened.rerender(view(index % 2 ? '黄瓜' : '甘蓝'));
+        expect(opened.container.querySelector('.workbench__paper')).toBe(paper);
+        expect(screen.getByRole('textbox', { name: '面积' })).toBe(input);
+        expect(screen.getByRole('button', { name: '稳定工具栏' })).toBe(toolbar);
+      }
+      expect(targets).toHaveLength(0);
+      expect(opened.container.querySelector('.workbench__stage')?.getAttribute('style')).toBeNull();
+    } finally {
+      if (descriptor) Object.defineProperty(HTMLElement.prototype, 'animate', descriptor);
+      else delete (HTMLElement.prototype as Partial<HTMLElement>).animate;
+    }
+  });
 });

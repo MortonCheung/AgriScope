@@ -51,6 +51,16 @@ a.reports__name:hover { color: var(--ag-ink); border-bottom-color: var(--ag-ink)
 .city-report-tree__content {padding:8px 0 12px 12px;border-left:1px solid var(--ag-rule);}
 .city-report-tree__content .module-workspace__item[data-selected] {background:transparent;border-left-color:transparent;}
 .city-report-tree__content .module-workspace__item:hover {background:var(--ag-hover);}
+/* One bottom ink rule complements the moving tint; the retired left marker stays absent. */
+.city-report-tree__toggle::after,
+.city-report-tree__content .tree__toggle::after,
+.city-report-tree__content .tree__point-link::after,
+.city-report-tree__content .module-workspace__item::after {content:'';position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--ag-ink);transform:scaleX(0);transform-origin:left;transition:transform var(--ag-dur-underline) var(--ag-ease-standard);pointer-events:none;}
+.city-report-tree__toggle:hover:not(:disabled)::after,
+.city-report-tree__city[data-current]>.city-report-tree__toggle::after,
+.city-report-tree__content [data-selection-value]:hover::after,
+.city-report-tree__content [data-selection-value][aria-current]::after {transform:scaleX(1);}
+.city-report-tree__content .module-workspace__item {position:relative;}
 .report-navigation--overview .city-report-tree {width:min(100%,760px);}
 .city-report-tree .tree__topic-title {font-size:var(--ag-fs-small);}
 .city-report-tree .tree__topic-head {min-width:0;}
@@ -58,7 +68,7 @@ a.reports__name:hover { color: var(--ag-ink); border-bottom-color: var(--ag-ink)
 .city-report-tree .tree__point-link {display:grid;grid-template-columns:3.2em minmax(0,1fr);gap:8px;min-height:44px;padding:8px 0 8px 6px;}
 .city-report-tree .tree__topic-title,.city-report-tree .tree__point-title {min-width:0;line-height:1.65;overflow-wrap:anywhere;}
 .city-report-tree .tree__topic-id,.city-report-tree .tree__point-id {min-width:0;white-space:nowrap;}
-@media(prefers-reduced-motion:reduce) {.city-report-tree__toggle,.city-report-tree__toggle::before,.city-report-tree__toggle>span,.city-report-tree__chevron{transition:none;}}
+@media(prefers-reduced-motion:reduce) {.city-report-tree__toggle,.city-report-tree__toggle::before,.city-report-tree__toggle>span,.city-report-tree__chevron,.city-report-tree__toggle::after,.city-report-tree__content [data-selection-value]::after{transition:none;}}
 .report-entry-workbench .workbench__body { grid-template-columns:minmax(0,1fr); }
 .report-entry-workbench .workbench__sidebar,.report-entry-workbench .workbench__chrome { display:none; }
 @media(max-width:1024px){.report-index-workbench .workbench__body{grid-template-columns:minmax(0,1fr);}}
