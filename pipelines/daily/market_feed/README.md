@@ -36,9 +36,13 @@ python3 -m pipelines.daily.market_feed status                    # 查看最新�
 python3 -m pipelines.daily.market_feed publish                   # 仅用已有库重发区域快照
 ```
 
-环境变量：`AGRISCOPE_MARKET_FEED_HOME`（运行目录，默认本目录 `.data/`）、
-`AGRISCOPE_MARKET_FEED_REPORT_DIR`（汇总报表目录，默认仓库 `data/market_feed/`）、
-`AGRISCOPE_HTTP_TIMEOUT/RETRIES/SLEEP`、`AGRISCOPE_SY_LOOKBACK`。
+环境变量：`AGRISCOPE_MARKET_FEED_HOME`（运行目录，默认 **worker 的** `$PROJECT_ROOT/market_feed/`；
+按共享路径合同 `agriscope_paths` 解析，绝不写入只读产品目录）、
+`AGRISCOPE_MARKET_FEED_REPORT_DIR`（汇总报表目录，默认 `$PROJECT_ROOT/market_feed/reports/`）、
+`AGRISCOPE_HTTP_TIMEOUT/RETRIES/SLEEP`、`AGRISCOPE_SOURCE_CA_FILE`（可选自定义 CA）、`AGRISCOPE_SY_LOOKBACK`。
+
+**TLS**：所有请求使用 `ssl.create_default_context()`（系统信任库 + certifi），
+**始终开启证书与主机名校验**，从不为了抓取成功而关闭校验。
 
 ### 每日汇总报表（`aggregate` / `daily`）
 
@@ -62,16 +66,28 @@ python3 -m json.tool data/market_feed/2026-10-13-sevenday.json   # JSON 校验
 ## 产物
 
 ```
-$AGRISCOPE_MARKET_FEED_HOME/
+$AGRISCOPE_MARKET_FEED_HOME/                   # 默认 $PROJECT_ROOT/market_feed/
   raw/<region>/<source>/<date>/*            # 原始证据（原子写；重复抓取进 attempts/）
   market_feed.sqlite                        # 历史价格（observations + revisions + runs）
-  snapshots/index.json                      # 轻量索引（每区域，前端入口）
+  publication/market-feed.sqlite            # checkpointed 快照（交给产品发布器校验）
+  publication/provenance.json               # 快照 SHA256 收据
+  snapshots/index.json                      # 轻量索引（每区域）
   snapshots/regions/<region>.json           # 每区域行情快照
   logs/run_*.json                           # 每次运行摘要
-
-$AGRISCOPE_MARKET_FEED_REPORT_DIR/            # 默认 仓库 data/market_feed/
-  YYYY-MM-DD-sevenday.json                  # 每日汇总报表（前端可直接消费）
+  reports/YYYY-MM-DD-sevenday.json          # 每日汇总报表
 ```
+
+## 与产品 V3 发布的接入（`publish-product`）
+
+```bash
+python3 -m pipelines.daily.market_feed publish-product    # 导出快照并发布产品 V3 不可变行情代
+```
+
+`product_bridge` 把 worker 观测库 checkpoint 后导出为快照 + `provenance.json`，
+再调用 `pipelines/publishing/publish_market_display.py`（strict）生成
+`runtime/data/market/publications/<generation>/{display.json,lineage.json}` 并**原子切换 manifest**。
+`coverage.collection_status` 由**真实成功运行**推导（SUCCESS/PARTIAL/NO_NEW_PUBLICATION），
+而非硬编码；未验证地区如实标 `not_configured`。
 
 ## 保证
 
@@ -90,4 +106,6 @@ python3 -m pytest pipelines/daily/market_feed/tests -q
 
 ## 部署
 
-见 `deploy/agriscope-market-feed.{service,timer}` 与 `deploy/market-feed.README.md`。
+采集由 `scripts/run_daily_chain.py` 的 **market_feed 阶段**统一调度（20:30 主采 / 23:30 补偿），
+与沈阳模型链**解耦**：单区失败不阻断其他区域，模型失败不破坏已发布的行情。
+见 `deploy/agriscope-daily-chain.{service,timer}`、`deploy/runtime.env.example` 与 `deploy/README.md`。

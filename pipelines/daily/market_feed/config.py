@@ -13,26 +13,39 @@
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 # ---------------------------------------------------------------- 路径
 PKG_DIR = Path(__file__).resolve().parent
-REPO_ROOT = PKG_DIR.parents[2]  # .../AgriScope  (worktree 根)
+REPO_ROOT = PKG_DIR.parents[2]  # .../AgriScope  (worktree 根 = 只读产品)
 
-HOME = Path(os.environ.get("AGRISCOPE_MARKET_FEED_HOME") or (PKG_DIR / ".data")).resolve()
+# 运行目录必须落在独立 worker，绝不写进只读产品源码/历史 raw。
+# 复用共享路径合同 agriscope_paths（PROJECT_ROOT / AGRISCOPE_WORKER_ROOT）。
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+try:
+    from agriscope_paths import paths as _paths
+    WORKER_ROOT = _paths().worker
+except Exception:  # noqa: BLE001 - 无合同模块时退化为产品同级 agriscope-worker
+    WORKER_ROOT = (REPO_ROOT.parent / "agriscope-worker").resolve()
+
+HOME = Path(os.environ.get("AGRISCOPE_MARKET_FEED_HOME") or (WORKER_ROOT / "market_feed")).resolve()
 RAW_DIR = HOME / "raw"            # 原始证据（原始响应原样落盘）
 DB_PATH = HOME / "market_feed.sqlite"
 SNAPSHOT_DIR = HOME / "snapshots"  # 供前端读取的版本化 JSON（每区域）
 LOG_DIR = HOME / "logs"
 LOCK_PATH = HOME / ".run.lock"
 
-# 每日汇总产物目录（同城+同品种+同日 算术平均的报表 JSON）。
-# 默认写到仓库内 data/market_feed/（便于版本管理/备份，按需求不加入 .gitignore）；
-# 服务器上由 systemd 覆盖为运行目录下的 report/。
+# 每日汇总产物目录（同城+同品种+同日 算术平均的报表 JSON）——同样落在 worker。
 REPORT_DIR = Path(
     os.environ.get("AGRISCOPE_MARKET_FEED_REPORT_DIR")
-    or str(REPO_ROOT / "data" / "market_feed")
+    or str(WORKER_ROOT / "market_feed" / "reports")
 ).resolve()
+
+# 产品 runtime 的 V3 行情发布目录（只读产品的 runtime 由发布器原子写入）。
+PRODUCT_ROOT = REPO_ROOT
+RUNTIME_DIR = PRODUCT_ROOT / "runtime"
 
 # ---------------------------------------------------------------- 版本
 SCHEMA_VERSION = "1.0.0"          # 快照 JSON 契约版本
@@ -44,6 +57,8 @@ TZ_NAME = "Asia/Shanghai"
 HTTP_TIMEOUT = int(os.environ.get("AGRISCOPE_HTTP_TIMEOUT", "30"))
 HTTP_RETRIES = int(os.environ.get("AGRISCOPE_HTTP_RETRIES", "3"))
 HTTP_SLEEP = float(os.environ.get("AGRISCOPE_HTTP_SLEEP", "1.0"))
+# 自定义 CA（可选）；为空时使用系统信任库 + certifi，绝不关闭校验。
+SOURCE_CA_FILE = os.environ.get("AGRISCOPE_SOURCE_CA_FILE") or None
 USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"

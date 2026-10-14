@@ -99,6 +99,14 @@ def cmd_publish(_args) -> int:
     return 0
 
 
+def cmd_publish_product(_args) -> int:
+    """把 worker 观测库导出为快照并发布为产品 V3 不可变行情代。"""
+    from . import product_bridge as BR
+    out = BR.publish_product(strict=True)
+    print(json.dumps(out, ensure_ascii=False, indent=1))
+    return 0
+
+
 def _aggregate(out_dir=None) -> dict:
     C.ensure_dirs()
     store = Store()
@@ -148,6 +156,9 @@ def main(argv=None) -> int:
 
     pb = sub.add_parser("publish", help="仅用已有数据库重发快照")
     pb.set_defaults(func=cmd_publish)
+
+    pp = sub.add_parser("publish-product", help="导出观测库并发布产品 V3 不可变行情代")
+    pp.set_defaults(func=cmd_publish_product)
 
     ag = sub.add_parser("aggregate", help="用已有数据库生成每日汇总报表 JSON")
     ag.add_argument("--out-dir")

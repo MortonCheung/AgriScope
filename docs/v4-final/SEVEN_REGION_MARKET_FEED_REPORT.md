@@ -58,8 +58,7 @@
 | `sources/base.py` / `sources/__init__.py` | 适配器基类 / 七区域注册表 |
 | `README.md` | 使用说明 |
 | `tests/`（4 文件） | 35 项自动化测试 |
-| `deploy/agriscope-market-feed.{service,timer}` | systemd 采集单元与定时器 |
-| `deploy/market-feed.README.md` | 部署/回滚手册 |
+| `deploy/agriscope-daily-chain.{service,timer}` | 七地区采集已并入每日编排（采集由链统一调度） |
 | `docs/v4-final/SEVEN_REGION_MARKET_FEED_CONTRACT.md` | 前端交接契约（版本化 JSON） |
 
 **未改动**：`frontend/**`、`models/**`、`runtime/manifest.json`、既有 `pipelines/daily/*`、正式研究/模型资产与冻结 API 契约。
@@ -171,7 +170,7 @@ python3 -m pytest pipelines/daily/market_feed/tests -q
 | 测试 | `tests/test_aggregate.py`（新增 8 项；全套 **43 passed**） |
 | 报表样本 | `data/market_feed/2026-10-13-sevenday.json`（**204 条真实条目**，7 区） |
 | 数据库样本 | `data/market_feed/market-feed-sevenday.sqlite`（214 条真实观测，`sqlite3` 可查） |
-| 系统单元 | `deploy/agriscope-market-feed.service`（`ExecStart=... daily`）+ `.timer` |
+| 系统单元 | 采集并入 `scripts/run_daily_chain.py` 的 market_feed 阶段（`deploy/agriscope-daily-chain.*`） |
 | 契约文档 | `docs/v4-final/SEVEN_REGION_MARKET_FEED_CONTRACT.md` 第 8 节 |
 
 ## 聚合规则与真实结果

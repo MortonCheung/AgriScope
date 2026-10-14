@@ -335,7 +335,7 @@ def main(argv=None) -> int:
         return 1
     print("\n状态：DAILY_PIPELINE_FROZEN_WITH_KNOWN_LIMITATIONS")
     print("已知限制（允许清单）：")
-    for lim in ("仅沈阳（其余五城未经实时源/口径验证，未上线）",
+    for lim in ("Daily 模型链仅沈阳（冻结模型能力范围，不扩城）；七地区行情由 pipelines/daily/market_feed 独立采集并按 V3 发布",
                 "仅 wholesale 单一价格口径为主链（零售层仅存档，model_comparable=false）",
                 "官方数据为日度发布，存在自然延迟（当日数据常需次日）",
                 "无天气 / 无新闻舆情 / 无 LLM 摘要（本轮不做）",

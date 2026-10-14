@@ -7,7 +7,7 @@
 
 ## 1. 文件位置与更新机制
 
-运行目录由 `AGRISCOPE_MARKET_FEED_HOME` 决定（服务器 `/var/lib/agriscope-market-feed`）：
+运行目录由 `AGRISCOPE_MARKET_FEED_HOME` 决定（默认 worker 的 `$PROJECT_ROOT/market_feed`，与只读产品分离）：
 
 ```
 snapshots/index.json               # 轻量索引：先读它，再按需读区域文件
@@ -219,5 +219,66 @@ snapshots/regions/<regionId>.json  # 每区域完整快照
 - 前端渲染按钮时应以每城的 `supportedPriceLevels` 为准，**不要假设所有城市都有三档**。
 
 前端若需"回到原始"（每来源/市场明细与历史序列），使用第 3 节的 `regions/<id>.json`。
+
+---
+
+## 9. Market Display V3（后端正式 API 契约，`GET /api/market/display`）
+
+第 1–8 节描述的是 market_feed **内部**快照（研发用）。面向前端的**正式**契约是后端
+`GET /api/market/display`，`schema_version = "3"`，由不可变行情代（manifest 指针）提供。
+
+### 9.1 顶层结构
+
+```json
+{
+  "schema_version": "3",
+  "products": ["黄瓜","甘蓝","青椒","尖椒","土豆","西红柿","茄子","大白菜"],
+  "price_levels": ["wholesale","supermarket","retail_market","market_average"],
+  "published_at": "2026-10-14T04:33:57+00:00",
+  "records": [],
+  "missing": [],
+  "coverage": {}
+}
+```
+
+- 七地区固定：`shenyang tieling chaoyang jinzhou dandong dalian liaoning`；八商品固定；
+  **四种价格口径**固定（V3 新增 `market_average` = 官方市场监测均价，与批发价严格区分）。
+- 完整网格 `7 × 8 × 4 = 224`；每个格子**要么**在 `records`、**要么**在 `missing`，不重不漏。
+- `published_at`：当前不可变行情代的**实际成功发布时间**（来自原子 manifest 指针；
+  文件内容里为 `null` 以保证发布幂等）。
+
+### 9.2 record
+
+```json
+{ "region": "chaoyang", "product": "黄瓜", "price_level": "market_average", "price": 3.6,
+  "observation_date": "2026-10-14", "collectedAt": "2026-10-14T12:26:42+08:00",
+  "change_percent": 0, "history": [{"date":"2026-10-14","price":3.6}],
+  "unit": "元/kg", "source": {"id":"SRC-CY-FGW-BASKET","name":"…","url":"https://fgw.chaoyang.gov.cn/…"} }
+```
+
+- `history` 沿用最多 4 个真实历史点；无前次可比记录时仅 1 点且 `change_percent = 0`
+  （兼容数值，**不代表真实涨跌为 0**；前端用 `history.length` 判断）。
+- `source` 为该记录**真实来源身份**，可追溯。
+
+### 9.3 missing / coverage
+
+```json
+{"region":"chaoyang","product":"甘蓝","price_level":"wholesale","reason":"no_local_observation"}
+```
+
+```json
+{"chaoyang": {"collection_status": "configured", "available_records": 6, "total_records": 32,
+              "latest_observation_date": "2026-10-14", "latest_collected_at": "2026-10-14T12:26:42+08:00"}}
+```
+
+- `collection_status ∈ {configured, not_configured}`：**仅当该地区采集器已被真实、成功运行验证**
+  才为 `configured`（由 worker `runs` 推导，**非硬编码**，也不代表 systemd timer 已启用）。
+- `available_records` = 该地区有效网格数；`total_records = 8 × 4 = 32`。
+- 时间字段全部真实；`latest_observation_date` 为观测日，`latest_collected_at` 为采集时刻。
+
+### 9.4 兼容性
+
+- 仍可**只读**历史 `schema_version = "1"`（竞争补齐，3 口径）与 `"2"`（早期严格观测）。
+- 正式生产发布默认 **V3**；旧 competition 补齐逻辑不在生产默认路径。
 
 

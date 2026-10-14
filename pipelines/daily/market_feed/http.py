@@ -35,9 +35,20 @@ class Response:
 
 
 def _ssl_ctx() -> ssl.SSLContext:
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
+    """Standard-library TLS with peer + hostname verification always ON.
+
+    Mirrors pipelines/daily/source_shenyang.py: keep the OS trust store and add the
+    packaged Mozilla roots (certifi). Never disables certificate or hostname checks —
+    the task forbids disabling TLS validation to make a fetch succeed.
+    """
+    ctx = ssl.create_default_context(cafile=C.SOURCE_CA_FILE)
+    if C.SOURCE_CA_FILE is None:
+        try:
+            import certifi
+        except ImportError:
+            pass  # Pure-stdlib installs still rely on the OS CA store.
+        else:
+            ctx.load_verify_locations(cafile=certifi.where())
     return ctx
 
 
