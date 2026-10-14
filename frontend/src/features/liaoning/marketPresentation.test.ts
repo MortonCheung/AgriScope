@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { INITIAL_DISPLAY_MARKET, displayMarketFor, type DisplayMarketView } from '../../domain/market/displayMarket';
+import { displayMarketFor, type DisplayMarketView } from '../../domain/market/displayMarket';
+import { TEST_DISPLAY_MARKET as INITIAL_DISPLAY_MARKET } from '../../test/fixtures/marketDisplay';
 import { marketDirection, signedChange, summarizeMarket } from './marketPresentation';
 const source = displayMarketFor(INITIAL_DISPLAY_MARKET, 'shenyang', 'wholesale');
 const market = (changes: number[]): DisplayMarketView => ({ ...source, rows: changes.map((change, index) => ({ ...source.rows[index], change_percent: change,

@@ -20,7 +20,8 @@
 .market-overview__controls {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:12px;}
 .market-overview__controls .ag-button {justify-content:center;min-height:44px;padding:7px 4px;font-size:var(--ag-fs-meta);}
 .market-overview__controls [aria-pressed=true] {background:var(--ag-paper-deep);color:var(--ag-ink);border-color:var(--ag-ink);}
-.market-overview__price-levels {grid-template-columns:repeat(3,minmax(0,1fr));}
+.market-overview__price-levels {grid-template-columns:repeat(2,minmax(0,1fr));}
+.market-overview__price-levels .ag-button {white-space:normal;line-height:1.4;}
 .market-overview__product {margin-bottom:12px;}
 .market-overview__caption {display:flex;justify-content:space-between;margin:0;padding-bottom:8px;font-size:var(--ag-fs-meta);color:var(--ag-ink-muted);}
 .market-overview__prices {list-style:none;padding:0;margin:0;}
@@ -32,6 +33,10 @@
 .market-overview__value small {font-size:var(--ag-fs-meta);color:var(--ag-ink-soft);}
 .market-overview__change {font-size:var(--ag-fs-meta);margin-left:auto;}
 .market-overview__meta {display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 8px;margin-top:5px;font-size:var(--ag-fs-meta);color:var(--ag-ink-muted);font-variant-numeric:tabular-nums;}
+.market-overview__source {display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:44px;color:var(--ag-ink-muted);font-size:var(--ag-fs-meta);text-decoration:none;}
+.market-overview__source>span:first-child {min-width:0;overflow-wrap:anywhere;}
+.market-overview__source:hover {color:var(--ag-ink);}
+.market-overview__source:focus-visible {outline:2px solid var(--ag-ink);outline-offset:-2px;}
 .market-overview [data-direction=up] {color:var(--ag-clay);}
 .market-overview [data-direction=down] {color:var(--ag-olive);}
 .market-overview__trend {width:100%;margin-top:8px;}
@@ -84,12 +89,18 @@
 }
 @media(max-width:600px) and (max-height:700px) {
  /* A short ticket keeps all controls at 44px and reserves the rest for prices. */
- .market-overview__heading {display:flex;align-items:baseline;justify-content:space-between;gap:6px;margin-bottom:4px;}
- .market-overview__heading .liaoning-page__title {font-size:clamp(18px,6vw,24px);white-space:nowrap;margin:0;}
+ .market-overview__heading {display:flex;align-items:baseline;justify-content:space-between;gap:6px;margin-bottom:0;}
+ .market-overview__heading .liaoning-page__title {font-size:18px;white-space:nowrap;margin:0;}
  .market-overview__head {margin:0;}
  .market-overview__scope {font-size:var(--ag-fs-micro);line-height:1.3;}
  .market-overview__scope>span:last-child {display:none;}
  .market-overview__controls,.market-overview__product {margin-bottom:4px;}
  .market-overview__controls .ag-button {padding-inline:2px;white-space:nowrap;font-size:var(--ag-fs-micro);}
+ /* A short ticket keeps all four 44px targets reachable without consuming a
+    second control row. Only this fixed control strip scrolls horizontally. */
+ .market-overview__price-levels {display:flex;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;overscroll-behavior-inline:contain;}
+ .market-overview__price-levels::-webkit-scrollbar {display:none;}
+ .market-overview__price-levels .ag-button {flex:0 0 56px;min-width:56px;white-space:nowrap;}
+ .market-overview__price-levels .ag-button:focus-visible {outline-offset:-3px;}
  .market-overview__product .select-control__trigger {font-size:var(--ag-fs-small);line-height:1.5;min-height:44px;}
 }

@@ -4,13 +4,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Link, MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import { resetAppContext } from '../../app/context/appContext';
 import { STUDY_CITY_IDS, getCity } from '../../domain/geography/cities';
-import { DISPLAY_PRICE_LEVELS, INITIAL_DISPLAY_MARKET, PRICE_LEVEL_BUTTON, PRICE_LEVEL_LABEL, displayMarketFor, type DisplayMarketRecord } from '../../domain/market/displayMarket';
+import { DISPLAY_PRICE_LEVELS, PRICE_LEVEL_BUTTON, PRICE_LEVEL_LABEL, displayMarketFor, type DisplayMarketRecord } from '../../domain/market/displayMarket';
+import { TEST_DISPLAY_MARKET_V3 as INITIAL_DISPLAY_MARKET, sparseMarketFixture } from '../../test/fixtures/marketDisplay';
 import { LiaoningPage } from './LiaoningPage';
 import { CityMapFallback } from './CityMapFallback';
 import { MarketOverview, marketTrendPoints } from './MarketOverview';
 import { CitySummary } from './CitySummary';
 vi.mock('motion/react', async importOriginal => ({ ...await importOriginal<typeof import('motion/react')>(), useReducedMotion: () => true }));
-vi.mock('./useDisplayMarket', async () => { const { INITIAL_DISPLAY_MARKET } = await import('../../domain/market/displayMarket'); return { useDisplayMarket: () => INITIAL_DISPLAY_MARKET }; });
+vi.mock('./useDisplayMarket', async () => { const { TEST_DISPLAY_MARKET_V3 } = await import('../../test/fixtures/marketDisplay'); return { useDisplayMarket: () => TEST_DISPLAY_MARKET_V3, useDisplayMarketStatus: () => 'idle' }; });
 vi.mock('../spatial/SpatialShell', () => ({ useCitySelection: () => {
   const navigate = useNavigate(); return (city: string) => navigate(`/liaoning?city=${city}`);
 } }));
@@ -28,6 +29,14 @@ function chooseProduct(product: string) {
 }
 
 describe('完整真实行情主页', () => {
+  it('价型键盘焦点显式进入控制条可视范围，商品列表保持独立', () => {
+    render(page());
+    const button = screen.getByRole('button', { name: '监测均价' });
+    const reveal = vi.fn(); button.scrollIntoView = reveal;
+    fireEvent.focus(button);
+    expect(reveal).toHaveBeenCalledWith({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
+    expect(screen.getByRole('region', { name: '商品行情列表' }).contains(button)).toBe(false);
+  });
   it('固定标题与所有行情操作，只有商品列表进入可聚焦的数据滚动区', () => {
     const { container } = render(page());
     const toolbar = container.querySelector('.market-overview__toolbar')!;
@@ -90,8 +99,9 @@ describe('完整真实行情主页', () => {
     expect([...container.querySelectorAll('.market-overview__change')].every(element => element.textContent === '最新')).toBe(true);
     expect(container.querySelector('.city-summary__highlights')?.textContent).not.toMatch(/平稳|0\.0%/);
     expect(container.querySelector('.city-summary__highlights')?.textContent).toContain('平均变动最新');
+    expect([...container.querySelectorAll('.city-summary__movement dd')].map(item => item.textContent)).toEqual(['— 个品种', '— 个品种']);
   });
-  it('后台请求尚未返回也立即展示八张完整行情，价格两位、单位与数据相邻', () => {
+  it('已验证V3快照展示八张行情，价格两位、单位与真实日期相邻', () => {
     const { container } = render(page());
     const market = displayMarketFor(INITIAL_DISPLAY_MARKET, null, 'wholesale');
     expect(container.textContent).not.toMatch(forbidden);
@@ -113,7 +123,7 @@ describe('完整真实行情主页', () => {
     const summary = container.querySelector('.city-summary')!;
     expect(summary.firstElementChild).toBe(screen.getByRole('navigation', { name: '城市工作空间' }));
     expect(within(screen.getByRole('navigation', { name: '城市工作空间' })).getAllByRole('link')).toHaveLength(2);
-    expect(summary.querySelectorAll('dt')).toHaveLength(5);
+    expect(summary.querySelectorAll('.city-summary__movement dt, .city-summary__highlights dt')).toHaveLength(5);
     const originalSummary = summary.textContent;
     chooseProduct('土豆');
     expect(container.querySelectorAll('.market-overview__price')).toHaveLength(1);
@@ -122,7 +132,7 @@ describe('完整真实行情主页', () => {
     chooseProduct('全部商品');
     expect(container.querySelectorAll('.market-overview__price')).toHaveLength(8);
   });
-  it('六城×三类型×八商品完整，切换保持双纸DOM、当前类型及单品筛选', () => {
+  it('六城×四类型×八商品完整，切换保持双纸DOM、当前类型及单品筛选', () => {
     const { container } = render(page());
     const papers = [...container.querySelectorAll('.liaoning-paper')];
     for (const city of STUDY_CITY_IDS) {
@@ -151,8 +161,42 @@ describe('完整真实行情主页', () => {
     chooseProduct('土豆');
     fireEvent.click(screen.getByRole('button', { name: '沈阳' }));
     expect(container.querySelectorAll('.market-overview__price')).toHaveLength(1);
-    expect(screen.getByRole('button', { name: '集市' }).getAttribute('aria-pressed')).toBe('true');
-    expect(container.querySelector('strong')?.textContent).toBe(formatted(displayMarketFor(INITIAL_DISPLAY_MARKET, 'shenyang', 'retail_market').rows[4].price));
+    expect(screen.getByRole('button', { name: '监测均价' }).getAttribute('aria-pressed')).toBe('true');
+    expect(container.querySelector('strong')?.textContent).toBe(formatted(displayMarketFor(INITIAL_DISPLAY_MARKET, 'shenyang', 'market_average').rows[4].price));
+  });
+  it.each([null, ...STUDY_CITY_IDS])('%s 各商品真实来源随价型更新，四口径按钮不改商品选择', city => {
+    const { container } = render(page(city ? `/liaoning?city=${city}` : '/liaoning'));
+    for (const product of INITIAL_DISPLAY_MARKET.products) {
+      chooseProduct(product);
+      for (const level of DISPLAY_PRICE_LEVELS) {
+        fireEvent.click(screen.getByRole('button', { name: PRICE_LEVEL_BUTTON[level] }));
+        const row = displayMarketFor(INITIAL_DISPLAY_MARKET, city, level).rows.find(item => item.product === product)!;
+        const link = screen.getByRole('link', { name: `${product}数据来源：${row.source!.name}` });
+        expect(link.getAttribute('href')).toBe(row.source!.url);
+        expect(container.querySelector('.market-overview__price h3')?.textContent).toBe(product);
+        expect(container.querySelectorAll('.market-overview__price')).toHaveLength(1);
+      }
+    }
+    expect(screen.getByRole('region', { name: '数据来源' }).textContent).toContain('多来源');
+  });
+  it('缺项口径不借监测均价，主动选择缺项仍保留商品并显示本地缺项', () => {
+    const row = INITIAL_DISPLAY_MARKET.records.find(item => item.region === 'liaoning' && item.product === '黄瓜' && item.price_level === 'market_average')!;
+    const snapshot = sparseMarketFixture([row]);
+    const { container, rerender } = render(<MarketOverview market={displayMarketFor(snapshot, null, 'wholesale')} product="黄瓜" onProductChange={() => {}} onPriceLevelChange={() => {}}/>);
+    expect(container.querySelectorAll('.market-overview__price')).toHaveLength(1);
+    expect(screen.getByText('尚无本地观测')).toBeTruthy();
+    expect(container.querySelector('strong')).toBeNull();
+    rerender(<MarketOverview market={displayMarketFor(snapshot, null, 'market_average')} product="黄瓜" onProductChange={() => {}} onPriceLevelChange={() => {}}/>);
+    expect(container.querySelector('strong')?.textContent).toBe(formatted(row.price));
+    expect(screen.getByRole('button', { name: '监测均价' }).getAttribute('aria-pressed')).toBe('true');
+    expect(container.querySelector('.market-overview__price')?.textContent).toContain('官方市场监测均价');
+  });
+  it('合法极小正价格不因两位格式化变成虚构零值', () => {
+    const row = { ...INITIAL_DISPLAY_MARKET.records[0], price: 0.001, history: [{ date: INITIAL_DISPLAY_MARKET.records[0].observation_date, price: 0.001 }] };
+    const snapshot = sparseMarketFixture([row]);
+    const { container } = render(<MarketOverview market={displayMarketFor(snapshot, row.region, row.price_level)} product={row.product} onProductChange={() => {}} onPriceLevelChange={() => {}}/>);
+    expect(container.querySelector('.market-overview__value')?.textContent).toBe('<0.01元/kg');
+    expect(container.querySelector('circle title')?.textContent).toContain('<0.01 元/kg');
   });
   it('连续20次城市/商品/类型操作不重挂纸面，也不重置长期趋势', () => {
     const { container } = render(page());
