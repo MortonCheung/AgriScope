@@ -139,6 +139,31 @@ def test_pointer_cannot_escape_day_or_use_changed_bytes(worker, monkeypatch):
     meta = json.loads(original); meta['mt1']['active_raw_path'] = str(PRODUCT / 'runtime/manifest.json')
     path.write_text(json.dumps(meta)); assert NZ.load_raw_records().empty
 
+
+@pytest.mark.parametrize('market_type', ['2', '3'])
+def test_retail_non_mass_goods_do_not_discard_verified_vegetable_rows(worker, monkeypatch, market_type):
+    raw = {'code': 0, 'count': 2, 'data': [
+        {'productName': '黄瓜', 'price': '1.87', 'unit': '元/500g', 'dates': EPOCH, 'marketType': int(market_type)},
+        {'productName': '花生油', 'price': '156.27', 'unit': '元/5L', 'dates': EPOCH, 'marketType': int(market_type)},
+    ]}
+    body = json.dumps(raw, ensure_ascii=False).encode()
+    class Response:
+        def __enter__(self): return self
+        def __exit__(self, *args): pass
+        def read(self): return body
+    monkeypatch.setattr(SRC.urllib.request, 'urlopen', lambda *args, **kwargs: Response())
+    result = SRC._archive(SRC.fetch(DAY, market_type))
+    assert result.schema_ok and (worker / result.raw_path).read_bytes() == body
+    normalized = NZ.run_qc(NZ.load_raw_records(), ['黄瓜'])
+    vegetable = normalized.loc[normalized['crop_raw'] == '黄瓜'].iloc[0]
+    oil = normalized.loc[normalized['crop_raw'] == '花生油'].iloc[0]
+    assert vegetable['quality_status'] == C.QC_OK
+    assert vegetable['price_per_kg'] == 3.74
+    assert vegetable['price_level'] == C.MARKET_TYPES[market_type]['price_level']
+    assert not vegetable['model_comparable']
+    assert oil['quality_status'] == C.QC_REJECTED and 'UNIT_UNKNOWN' in oil['qc_flags']
+    assert pd.isna(oil['price_per_kg'])
+
 def test_tls_verifies_hostname_and_certificate_and_explicit_ca_is_not_bypassed(monkeypatch, tmp_path):
     monkeypatch.setattr(C, 'SOURCE_CA_FILE', None)
     context = SRC._ctx()

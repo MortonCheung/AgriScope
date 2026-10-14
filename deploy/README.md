@@ -47,6 +47,7 @@ python3 scripts/build_deploy_bundle.py --label YOUR_RELEASE --output-dir /ABSOLU
 - 交付文件校验失败时，API 的 `ExecStartPre` 阻止启动；不以清空旧资产或补假数据绕过。
 - LLM 使用 HTTPS、默认 TLS 校验、连接与总超时，服务端可回到既有统计方案；不会把传输异常或密钥回传前端。
 - 部署环境默认 `AGRISCOPE_MARKET_POLICY=observed`，代码在该变量缺省时也采用observed，只有显式competition才启用旧比赛完整视图兼容。首个严格行情发布代产生前，API 返回明确的本地观测缺项，不读取旧比赛包的跨城市补值；首次发布必须先通过来源与完整性验证。当前正式每日采集仅配置沈阳，其余五城仍为 `not_configured`，这是六城每日更新的明确阻塞，不得宣称六城实时采集已完成。真实的既有同城、同商品、同口径记录可展示；不能借其他城市或其他价型包装成本地实时数据。
+- 沈阳超市、集市响应同时包含按重量计价的蔬菜和按升/袋计价的其他商品。请求价格类型、观测日期、必需字段和有效价格仍逐行核验；无法确认重量换算的商品在原有质检中以 `UNIT_UNKNOWN` 拒收，原始响应保留。它们不会使同一响应中的有效蔬菜整批丢失，也不会被猜重量或进入批发模型。
 - 云端 HTTPS、Nginx、systemd、实际机器轮子兼容与权限，只有在相应环境实测后才能标为通过。本机模板检查不能替代 `nginx -t`、`systemd-analyze verify` 与独立 release API 验证。
 
 ## 回滚

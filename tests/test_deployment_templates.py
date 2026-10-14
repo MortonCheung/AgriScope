@@ -39,6 +39,16 @@ def test_worker_writes_new_state_and_generation_not_frozen_inputs():
     assert not any(path in writable for path in readonly)
 
 
+def test_refresh_readiness_command_resolves_from_product_directory():
+    service = unit('deploy/agriscope-api-refresh.service')['Service']
+    assert service['WorkingDirectory'] == '/opt/agriscope'
+    assert service['ExecCondition'] == '/bin/systemctl is-active --quiet agriscope-api.service'
+    assert 'try-restart agriscope-api.service' in service['ExecStart']
+    relative_probe = service['ExecStartPost'].split()[1]
+    assert (ROOT / relative_probe).is_file()
+    assert '--timeout 60' in service['ExecStartPost']
+
+
 def test_static_spa_api_and_https_use_one_product_and_finite_timeouts():
     for filename in ['nginx.conf.example', 'nginx.https.conf.example']:
         text = (ROOT / 'deploy' / filename).read_text()

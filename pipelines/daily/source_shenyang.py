@@ -131,6 +131,7 @@ def _schema_check(res: RawResult) -> str | None:
     missing = [k for k in _REQUIRED_FIELDS if not all(isinstance(r, dict) and k in r for r in res.records)]
     if missing:
         return f"{SCHEMA_CHANGED}: 记录缺少必需字段 {missing}"
+    is_wholesale = C.MARKET_TYPES.get(res.market_type, {}).get("model_comparable")
     for row in res.records:
         if str(row["marketType"]) != res.market_type:
             return f"{SCHEMA_CHANGED}: 来源价格类型与请求 marketType 不一致"
@@ -143,9 +144,14 @@ def _schema_check(res: RawResult) -> str | None:
             price = float(row["price"])
         except (TypeError, ValueError, OverflowError):
             price = math.nan
-        if not math.isfinite(price) or price <= 0 or not str(row["productName"]).strip() or str(row["unit"]).replace(" ", "") not in C.UNIT_TO_KG:
+        unit = row["unit"]
+        if (not math.isfinite(price) or price <= 0 or not str(row["productName"]).strip()
+                or not isinstance(unit, str) or not unit.strip()
+                or (is_wholesale and unit.replace(" ", "") not in C.UNIT_TO_KG)):
             return f"{SCHEMA_CHANGED}: 非法商品、价格或未确认单位"
-    is_wholesale = C.MARKET_TYPES.get(res.market_type, {}).get("model_comparable")
+        # Retail responses also contain oil/bag prices. Keep their original evidence;
+        # normalization rejects those rows as UNIT_UNKNOWN instead of dropping valid
+        # mass-unit vegetables from the same response. Never guess a mass conversion.
     if is_wholesale and res.count != C.EXPECTED_WHOLESALE_CROPS:
         return (f"{SCHEMA_CHANGED}: 批发口径作物数 {res.count} ≠ 期望 "
                 f"{C.EXPECTED_WHOLESALE_CROPS}")

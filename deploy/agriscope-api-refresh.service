@@ -3,6 +3,7 @@ Description=Rebind AgriScope API after a validated immutable publication
 
 [Service]
 Type=oneshot
+WorkingDirectory=/opt/agriscope
 ExecCondition=/bin/systemctl is-active --quiet agriscope-api.service
 ExecStart=/bin/systemctl try-restart agriscope-api.service
 ExecStartPost=/opt/agriscope/.venv/bin/python scripts/check_ready.py --timeout 60
