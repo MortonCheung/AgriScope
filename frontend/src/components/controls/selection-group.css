@@ -1,0 +1,6 @@
+.selection-group { position:relative; isolation:isolate; }
+.selection-group__surface { position:absolute; top:0; left:0; margin:0; padding:0; border:0; list-style:none; background:var(--ag-paper-deep); pointer-events:none; z-index:0; }
+.selection-group [data-selection-value] { position:relative; z-index:1; }
+.selection-group [data-selection-value][aria-pressed='true'],
+.selection-group [data-selection-value][aria-current] { background:transparent; }
+@media(prefers-reduced-motion:reduce) { .selection-group [data-selection-value] { transition:none; } }

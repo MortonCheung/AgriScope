@@ -10,7 +10,7 @@
 .workspace-landing .workspace-city-selector .workspace-choice { font-family:var(--ag-font-display); font-size:clamp(22px,2vw,30px); padding-block:16px; }
 .workspace-landing__secondary, .workspace-landing .report-navigation__supplement { border-top:1px solid var(--ag-rule); margin-top:40px; padding-top:20px; }
 .report-navigation__supplement, .report-navigation__research { list-style:none; padding:0; margin:24px 0 0; display:grid; gap:8px; }
-.workspace-landing .report-navigation__supplement { grid-template-columns:repeat(4,minmax(0,1fr)); gap:20px; }
+.workspace-landing .report-navigation__supplement { grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px; }
 .report-navigation .workspace-choice { font-size:var(--ag-fs-small); }
 .report-navigation:not(.report-navigation--overview) .workspace-city-selector { grid-template-columns:1fr; gap:0; }
 @media(max-width:600px) {

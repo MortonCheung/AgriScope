@@ -1,5 +1,7 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
+import { motion, useReducedMotion } from 'motion/react';
+import { MOTION_DURATION, MOTION_EASE } from '../../design/motion';
 import './select-control.css';
 
 export interface SelectControlProps {
@@ -20,6 +22,9 @@ export function SelectControl({ label, value, options, onChange, disabled = fals
   const popup = useRef<HTMLUListElement>(null);
   const search = useRef({ text: '', time: 0 });
   const [open, setOpen] = useState(false);
+  const [retained, setRetained] = useState(false);
+  const reduced = useReducedMotion();
+  const expandedNow = useRef(false);
   const [activeValue, setActiveValue] = useState<string | null>(null);
   const [position, setPosition] = useState<PopupPosition | null>(null);
   const available = options.filter(option => !option.disabled);
@@ -28,6 +33,7 @@ export function SelectControl({ label, value, options, onChange, disabled = fals
   const active = available.find(option => option.value === activeValue)
     ?? available.find(option => option.value === value) ?? available[0];
   const expanded = open && !inactive;
+  const above = position?.bottom !== undefined;
   const optionId = (index: number) => `${id}-option-${index}`;
   const close = (restoreFocus = false) => {
     setOpen(false);
@@ -35,7 +41,7 @@ export function SelectControl({ label, value, options, onChange, disabled = fals
     if (restoreFocus) button.current?.focus();
   };
   const choose = (next: string) => {
-    if (!available.some(option => option.value === next)) return;
+    if (!expanded || !available.some(option => option.value === next)) return;
     onChange(next);
     close(true);
   };
@@ -86,6 +92,11 @@ export function SelectControl({ label, value, options, onChange, disabled = fals
   };
 
   useEffect(() => { if (inactive) setOpen(false); }, [inactive]);
+  useLayoutEffect(() => {
+    expandedNow.current = expanded;
+    if (expanded) setRetained(true);
+    else if (reduced) setRetained(false);
+  }, [expanded, reduced]);
   useEffect(() => {
     setActiveValue(value);
   }, [value]);
@@ -159,15 +170,26 @@ export function SelectControl({ label, value, options, onChange, disabled = fals
       <span id={`${id}-value`} className="select-control__value">{selected?.label ?? '请选择'}</span>
       <svg aria-hidden viewBox="0 0 12 12" width="12" height="12"><path d="m2 4 4 4 4-4"/></svg>
     </button>
-    {expanded && typeof document !== 'undefined' && createPortal(<ul ref={popup} id={`${id}-listbox`}
+    {position && (expanded || (!reduced && retained)) && typeof document !== 'undefined' && createPortal(<motion.ul ref={popup} id={`${id}-listbox`}
       role="listbox" aria-labelledby={`${id}-label`} className="select-control__popup"
-      style={position ?? { visibility: 'hidden' }}>
+      aria-hidden={!expanded || undefined} inert={!expanded || undefined}
+      data-side={above ? 'above' : 'below'} data-state={expanded ? 'open' : 'closing'}
+      style={{ ...position, transformOrigin: above ? 'bottom center' : 'top center' }}
+      initial={reduced ? false : 'closed'} animate={expanded ? 'open' : 'closed'}
+      variants={{
+        open: { clipPath: 'inset(0% 0% 0% 0%)', y: 0, opacity: 1 },
+        closed: { clipPath: above ? 'inset(100% 0% 0% 0%)' : 'inset(0% 0% 100% 0%)', y: above ? 3 : -3, opacity: 0 },
+      }}
+      transition={{ duration: reduced ? 0 : expanded ? MOTION_DURATION.normal : MOTION_DURATION.fast, ease: MOTION_EASE.out }}
+      onAnimationComplete={definition => {
+        if (definition === 'closed' && !expandedNow.current) setRetained(false);
+      }}>
       {options.map((option, index) => <li key={option.value} id={optionId(index)} role="option"
         aria-selected={option.value === value} aria-disabled={option.disabled || undefined}
         data-active={option.value === active?.value || undefined}
         onMouseDown={event => event.preventDefault()}
-        onPointerMove={() => { if (!option.disabled) setActiveValue(option.value); }}
+        onPointerMove={() => { if (expanded && !option.disabled) setActiveValue(option.value); }}
         onClick={() => choose(option.value)}>{option.label}<span aria-hidden>{option.value === value ? '✓' : ''}</span></li>)}
-    </ul>, button.current?.closest('dialog[aria-modal="true"]') ?? document.body)}
+    </motion.ul>, button.current?.closest('dialog[aria-modal="true"]') ?? document.body)}
   </div>;
 }
