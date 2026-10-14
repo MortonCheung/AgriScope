@@ -10,6 +10,12 @@ from pipelines.publishing import publish_daily_runtime
 from pipelines.long_horizon import run_long_horizon_job
 
 
+@pytest.fixture(autouse=True)
+def isolated_presentation_stage(monkeypatch):
+    # Existing chain tests must not load real frozen artifacts or write Runtime.
+    monkeypatch.setattr(chain, '_presentation', lambda _env, _timeout: {'exit_code': 0, 'stdout': ''})
+
+
 def test_failed_daily_cannot_publish_or_trigger_long_job(tmp_path,monkeypatch):
     calls=[];writes=[]
     monkeypatch.setattr(chain,'PROJECT',tmp_path)
@@ -109,6 +115,7 @@ def test_dry_run_cannot_publish_even_if_child_summary_claims_valid_snapshot(tmp_
     summary = {'snapshot_status': 'complete', 'crawl_status': 'OK', 'snapshot_hash': 'valid', 'collection_completed_at': 'actual', 'records_fetched': 10}
     monkeypatch.setattr(chain, '_run_process', lambda *args: SimpleNamespace(returncode=0, stdout='SUMMARY ' + json.dumps(summary)))
     monkeypatch.setattr(publish_daily_runtime, 'publish', lambda *a, **k: pytest.fail('dry publication'))
+    monkeypatch.setattr(chain, '_presentation', lambda *a: pytest.fail('dry presentation publication'))
     assert chain.main(['--dry-run']) == 0
     assert final_state(tmp_path)['status'] == 'DRY_RUN'
 
@@ -133,3 +140,57 @@ def test_same_run_successful_prices_publish_market_despite_inference_failure(tmp
     assert state['status'] == 'MARKET_SUCCESS_DAILY_FAILED'
     assert state['stages']['market_publication']['status'] == 'SUCCESS'
     assert state['stages']['runtime_publication']['status'] == 'SKIPPED'
+
+
+def test_failed_collection_still_attempts_presentation_without_false_collection_success(tmp_path, monkeypatch):
+    monkeypatch.setattr(chain, 'PROJECT', tmp_path)
+    monkeypatch.setattr(chain, '_run_process', lambda *a: SimpleNamespace(returncode=2, stdout='SUMMARY {"crawl_status":"FAILED"}\n'))
+    calls = []
+    monkeypatch.setattr(chain, '_presentation', lambda env, timeout: calls.append((env, timeout)) or {'exit_code': 0})
+    assert chain.main([]) == 2
+    state = final_state(tmp_path)
+    assert state['collection_status'] == 'NO_NEW_VALID_OBSERVATIONS'
+    assert state['stages']['daily']['status'] == 'FAILED'
+    assert state['stages']['presentation_publication']['status'] == 'SUCCESS'
+    assert state['status'] == 'LONG_HORIZON_SKIPPED_DAILY_NOT_SUCCESSFUL'
+    assert calls[0][0]['PROJECT_ROOT'] == str(tmp_path) and calls[0][1] == 300
+
+
+@pytest.mark.parametrize('failure', ['process', 'timeout'])
+def test_presentation_failure_is_monitorable_and_preserves_original_daily_exit(tmp_path, monkeypatch, failure):
+    monkeypatch.setattr(chain, 'PROJECT', tmp_path)
+    monkeypatch.setattr(chain, '_run_process', lambda *a: SimpleNamespace(returncode=2, stdout='SUMMARY {"crawl_status":"FAILED"}\n'))
+    def run(*a):
+        if failure == 'timeout': raise chain.subprocess.TimeoutExpired('presentation', 1)
+        return {'exit_code': 3}
+    monkeypatch.setattr(chain, '_presentation', run)
+    assert chain.main([]) == 2
+    state = final_state(tmp_path)
+    assert state['presentation_publication_exit'] == 9
+    assert state['stages']['presentation_publication']['status'] == ('TIMED_OUT' if failure == 'timeout' else 'FAILED')
+
+
+def test_only_presentation_failure_returns_its_own_code(tmp_path, monkeypatch):
+    monkeypatch.setattr(chain, 'PROJECT', tmp_path)
+    summary = {'snapshot_status': 'complete', 'crawl_status': 'SKIPPED', 'snapshot_hash': 'real-existing'}
+    monkeypatch.setattr(chain, '_run_process', lambda *a: SimpleNamespace(returncode=0, stdout='SUMMARY ' + json.dumps(summary)))
+    monkeypatch.setattr(publish_daily_runtime, 'publish', lambda *a, **k: {'status': 'UNCHANGED'})
+    monkeypatch.setattr(chain, '_presentation', lambda *a: {'exit_code': 1})
+    assert chain.main(['--no-collect']) == 9
+    state = final_state(tmp_path)
+    assert state['status'] == 'PRESENTATION_PUBLICATION_FAILED' and state['daily_exit'] == 0
+
+
+def test_presentation_command_only_writes_runtime_and_reuses_process_runner(monkeypatch):
+    calls = []
+    monkeypatch.setattr(chain, '_process_result', lambda command, env, timeout: calls.append((command, env, timeout)) or {'exit_code': 0})
+    # Retrieve the real function; the fixture overrides only the module attribute.
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('isolated_presentation_command', chain.__file__)
+    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    monkeypatch.setattr(module, '_process_result', lambda command, env, timeout: calls.append((command, env, timeout)) or {'exit_code': 0})
+    assert module._presentation({'fixture': 'env'}, 12)['exit_code'] == 0
+    command, env, timeout = calls[0]
+    assert command[1].endswith('publish_market_presentation.py')
+    assert '--runtime-root' in command and '--project-root' in command and '--frontend-bootstrap' not in command
+    assert env == {'fixture': 'env'} and timeout == 12

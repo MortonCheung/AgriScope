@@ -22,6 +22,7 @@ MANIFEST = ROOT / 'runtime/manifest.json'
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 OPERATIONAL_MANIFEST_FIELDS = {'daily_publication', 'market_publication', 'publication_rollbacks'}
+PRESENTATION_DYNAMIC_FILES = {'runtime/data/market/presentation/latest.json', 'runtime/data/market/presentation/current.json'}
 
 # 成功态前缀；SKIP(missing-src) 等不在其中，仍然会失败。
 OK_STATUS_PREFIXES = ('OK', 'PUBLISHED')
@@ -68,12 +69,21 @@ def verify_deployment(man, root=ROOT):
     files = man.get('files')
     if man.get('schema_version') != 1 or not isinstance(files, dict) or not files:
         return ['invalid deployment file manifest']
+    try:
+        current_presentation = set(presentation_files(root))
+    except (OSError, ValueError, TypeError, KeyError):
+        current_presentation = set()
+        problems.append('continuous presentation publication invalid')
     for relative, identity in files.items():
         try:
             target = _plain_path(Path(root), relative)
             if not isinstance(identity, dict) or not target.is_file():
                 raise ValueError('missing file identity')
             data = target.read_bytes()
+            if relative in PRESENTATION_DYNAMIC_FILES and current_presentation:
+                # Daily may replace the operational quote release; verify the
+                # current receipt and immutable anchors instead of old bytes.
+                continue
             if relative == 'runtime/manifest.json' and man.get('runtime_base_manifest_sha256'):
                 current = json.loads(data)
                 if runtime_base_digest(current) != man['runtime_base_manifest_sha256']:
@@ -87,6 +97,40 @@ def verify_deployment(man, root=ROOT):
     if man.get('runtime_base_manifest_sha256') and 'runtime/manifest.json' not in files:
         problems.append('deployment manifest omits runtime identity')
     return problems
+
+
+def presentation_files(root=ROOT):
+    """Select and verify the separate operational receipt, without base-manifest edits."""
+    root = Path(root).resolve()
+    latest = _plain_path(root, 'runtime/data/market/presentation/latest.json')
+    receipt_path = _plain_path(root, 'runtime/data/market/presentation/current.json')
+    if not latest.exists() and not receipt_path.exists():
+        return []  # Backwards compatible releases do not require this feature.
+    receipt = json.loads(receipt_path.read_text(encoding='utf-8'))
+    expected_release = receipt.get('sha256')
+    if not isinstance(expected_release, str) or len(expected_release) != 64 or any(c not in '0123456789abcdef' for c in expected_release):
+        raise ValueError('invalid presentation generation digest')
+    if receipt.get('path') not in {'data/market/presentation/latest.json', 'data/market/presentation/releases/' + expected_release + '.json'}:
+        raise ValueError('invalid presentation generation path')
+    generation = _plain_path(root / 'runtime', receipt['path'])
+    if (receipt.get('schema_version') != 'presentation-release-1'
+            or expected_release != hashlib.sha256(generation.read_bytes()).hexdigest()):
+        raise ValueError('continuous presentation receipt mismatch')
+    from backend.app.services.market_presentation_service import validate
+    payload = validate(json.loads(generation.read_text(encoding='utf-8')))
+    anchor = receipt.get('anchor_asset')
+    if not isinstance(anchor, dict) or anchor != payload.get('provenance', {}).get('anchor_asset'):
+        raise ValueError('continuous presentation omits selected anchors')
+    expected = anchor.get('sha256')
+    if not isinstance(expected, str) or len(expected) != 64 or any(c not in '0123456789abcdef' for c in expected):
+        raise ValueError('invalid selected anchor digest')
+    if anchor.get('path') != 'data/market/presentation/inputs/' + expected + '.json':
+        raise ValueError('invalid selected anchor path')
+    anchor_path = _plain_path(root / 'runtime', anchor['path'])
+    if hashlib.sha256(anchor_path.read_bytes()).hexdigest() != expected:
+        raise ValueError('selected anchor digest mismatch')
+    selected = [generation, receipt_path, anchor_path]
+    return sorted(p.relative_to(root).as_posix() for p in selected)
 
 
 def publication_files(man, root=ROOT):
@@ -164,6 +208,7 @@ def verify(man, root=ROOT, refresh=False):
         ok += 1
     try:
         publication_files(man, root)
+        presentation_files(root)
     except (OSError, ValueError, TypeError):
         problems.append('immutable publication invalid')
     return {'ok': ok, 'total': len(assets), 'problems': problems,

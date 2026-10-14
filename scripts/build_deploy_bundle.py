@@ -13,7 +13,7 @@ import tempfile
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
-from verify_assets import _plain_path, publication_files, runtime_base_digest, verify
+from verify_assets import _plain_path, publication_files, presentation_files, runtime_base_digest, verify
 
 
 def forbidden_file(path):
@@ -32,6 +32,7 @@ def bundle_paths(root, tracked, manifest):
         raise RuntimeError('Runtime assets invalid: ' + '; '.join(problems))
     paths = set(p for p in tracked if p and p != 'deployment-manifest.json')
     current_publication_files = set(publication_files(manifest, root))
+    current_publication_files.update(presentation_files(root))
     paths.update(current_publication_files)
     for asset in manifest['assets']:
         if not asset.get('required', True):
@@ -49,7 +50,7 @@ def bundle_paths(root, tracked, manifest):
         raise RuntimeError('Missing built frontend/dist/index.html')
     paths.update(p.relative_to(root).as_posix() for p in (root / 'frontend/dist').rglob('*') if p.is_file())
     paths = {p for p in paths if '__pycache__' not in Path(p).parts and not p.endswith(('.pyc', '.pyo'))}
-    generation_roots = ('runtime/data/processed/daily/publications/', 'runtime/data/market/publications/', 'runtime/publication_history/')
+    generation_roots = ('runtime/data/processed/daily/publications/', 'runtime/data/market/publications/', 'runtime/publication_history/', 'runtime/data/market/presentation/')
     paths = {p for p in paths if not p.startswith(generation_roots) or p in current_publication_files}
     for path in paths:
         try:

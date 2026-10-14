@@ -1,4 +1,5 @@
 import { getCity, isStudyCity, STUDY_CITY_IDS, type StudyCityId } from '../geography/cities';
+import type { MarketPresentationSnapshot } from './marketPresentationSnapshot';
 
 export const DISPLAY_PRODUCTS = ['黄瓜', '甘蓝', '青椒', '尖椒', '土豆', '西红柿', '茄子', '大白菜'] as const;
 export const LEGACY_DISPLAY_PRICE_LEVELS = ['wholesale', 'supermarket', 'retail_market'] as const;
@@ -44,17 +45,27 @@ export interface DisplayMarketSnapshot {
   coverage: Record<DisplayRegion, MarketCoverage>;
   published_at?: string | null;
 }
+export type MarketSnapshot = DisplayMarketSnapshot | MarketPresentationSnapshot;
+/** A view may contain a calculated price; observation timestamps stay nullable. */
+export interface DisplayMarketRow extends Omit<DisplayMarketRecord, 'observation_date' | 'collectedAt'> {
+  observation_date: string | null;
+  collectedAt: string | null;
+  display_date?: string;
+  sources?: MarketSource[];
+  trend_history?: { date: string; price: number }[];
+  trend_sources?: MarketSource[];
+}
 export interface DisplayMarketView {
   cityId: StudyCityId | null;
   scope: string;
   priceLevel: DisplayPriceLevel;
-  rows: DisplayMarketRecord[];
+  rows: DisplayMarketRow[];
   missing?: MissingMarketCell[];
-  schemaVersion?: DisplayMarketSnapshot['schema_version'];
+  schemaVersion?: MarketSnapshot['schema_version'];
   coverage?: MarketCoverage;
   publishedAt?: string | null;
   /** Actual rows of this region, retaining each original price level/source. */
-  regionRows?: DisplayMarketRecord[];
+  regionRows?: DisplayMarketRow[];
 }
 
 const object = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -83,6 +94,7 @@ const validSource = (value: unknown): value is MarketSource => {
   try { const url = new URL(raw); return ['http:', 'https:'].includes(url.protocol) && Boolean(url.hostname) && !url.username && !url.password; }
   catch { return false; }
 };
+export const marketValidation = { object, validDay, positivePrice, exactMembers, isoTimestamp, validTimestamp, validSource };
 
 /** Validate every cell and its evidence before atomically replacing a publication. */
 export function validateDisplayMarket(value: unknown): DisplayMarketSnapshot {
@@ -145,9 +157,20 @@ export function validateDisplayMarket(value: unknown): DisplayMarketSnapshot {
   return data;
 }
 
-export function displayMarketFor(snapshot: DisplayMarketSnapshot, cityId: string | null, priceLevel: DisplayPriceLevel): DisplayMarketView {
+export function displayMarketFor(snapshot: MarketSnapshot, cityId: string | null, priceLevel: DisplayPriceLevel): DisplayMarketView {
   const selectedCity = cityId && isStudyCity(cityId) ? cityId : null;
   const region: DisplayRegion = selectedCity ?? 'liaoning';
+  if (snapshot.schema_version === 'presentation-1') {
+    const regionRows = snapshot.records.filter(row => row.region === region).map((row): DisplayMarketRow => ({
+      region: row.region, product: row.product, price_level: row.price_level, price: row.price, unit: row.unit,
+      observation_date: row.observed_at, collectedAt: row.collected_at, display_date: row.display_date,
+      history: row.history, trend_history: row.trend_history, trend_sources: row.trend_sources, change_percent: row.change_percent,
+      sources: row.sources, source: row.sources.length === 1 ? row.sources[0] : undefined,
+    }));
+    return { cityId: selectedCity, scope: selectedCity ? getCity(selectedCity)!.shortName : '辽宁', priceLevel,
+      rows: regionRows.filter(row => row.price_level === priceLevel).sort((a,b) => DISPLAY_PRODUCTS.indexOf(a.product) - DISPLAY_PRODUCTS.indexOf(b.product)),
+      missing: [], schemaVersion: snapshot.schema_version, publishedAt: snapshot.published_at, regionRows };
+  }
   const regionRows = snapshot.records.filter(row => row.region === region);
   // V2 never provided this fourth price level: show explicit absence, never alias wholesale.
   const missing = snapshot.price_levels.includes(priceLevel)
@@ -160,7 +183,8 @@ export function displayMarketFor(snapshot: DisplayMarketSnapshot, cityId: string
   };
 }
 
-// Empty availability is the only seed until an API publication has passed validation.
+// Strict observation consumers retain an honest empty availability matrix.
+// Product presentation has its own validated published release and continuity rules.
 export const UNAVAILABLE_DISPLAY_MARKET: DisplayMarketSnapshot = validateDisplayMarket({
   schema_version: '3', products: [...DISPLAY_PRODUCTS], price_levels: [...DISPLAY_PRICE_LEVELS], records: [], published_at: null,
   missing: DISPLAY_REGIONS.flatMap(region => DISPLAY_PRODUCTS.flatMap(product => DISPLAY_PRICE_LEVELS.map(price_level => ({ region, product, price_level, reason: 'no_local_observation' as const })))),

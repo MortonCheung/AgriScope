@@ -4,6 +4,8 @@ import { StrictMode } from 'react';
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import { UNAVAILABLE_DISPLAY_MARKET, displayMarketFor, type DisplayMarketSnapshot } from '../../domain/market/displayMarket';
 import { makeMarketFixture } from '../../test/fixtures/marketDisplay';
+import { makePresentationFixture } from '../../test/fixtures/marketPresentation';
+import publishedPresentation from '../../domain/market/publishedPresentation.json';
 import { createDisplayMarketStore, useDisplayMarket } from './useDisplayMarket';
 const provider = vi.hoisted(() => ({ latest: vi.fn() }));
 vi.mock('../../providers/market/displayMarketProvider', () => ({ getDisplayMarketProvider: () => provider }));
@@ -19,15 +21,17 @@ function deferred() {
 
 describe('首页整包缓存生命周期', () => {
   it('StrictMode只刷一次整包；20次切城及迟来的响应始终显示当前城市', async () => {
-    const response = deferred(); provider.latest.mockImplementation(() => response.promise);
+    let resolve!: (value: ReturnType<typeof makePresentationFixture>) => void;
+    const response = new Promise<ReturnType<typeof makePresentationFixture>>(done => { resolve = done; }); provider.latest.mockImplementation(() => response);
     function Probe({ city }: { city: string }) {
       const market = displayMarketFor(useDisplayMarket(), city, 'wholesale');
       return <output>{market.scope}:{market.rows[0]?.price ?? '尚无本地观测'}</output>;
     }
     const view = render(<StrictMode><Probe city="shenyang"/></StrictMode>);
-    expect(screen.getByText('沈阳:尚无本地观测')).toBeTruthy(); await waitFor(() => expect(provider.latest).toHaveBeenCalledTimes(1));
+    const initial = publishedPresentation.records.find(row => row.region === 'shenyang' && row.product === '黄瓜' && row.price_level === 'wholesale')!;
+    expect(screen.getByText(`沈阳:${initial.price}`)).toBeTruthy(); await waitFor(() => expect(provider.latest).toHaveBeenCalledTimes(1));
     for (let index = 0; index < 20; index += 1) view.rerender(<StrictMode><Probe city={index % 2 ? 'dalian' : 'tieling'}/></StrictMode>);
-    const next = copy(); await act(async () => { response.resolve(next); });
+    const next = makePresentationFixture(); await act(async () => { resolve(next); });
     expect(screen.getByText(`大连:${displayMarketFor(next, 'dalian', 'wholesale').rows[0].price}`)).toBeTruthy(); expect(provider.latest).toHaveBeenCalledTimes(1);
     view.unmount(); render(<StrictMode><Probe city="tieling"/></StrictMode>);
     expect(screen.getByText(`铁岭:${displayMarketFor(next, 'tieling', 'wholesale').rows[0].price}`)).toBeTruthy(); expect(provider.latest).toHaveBeenCalledTimes(1);

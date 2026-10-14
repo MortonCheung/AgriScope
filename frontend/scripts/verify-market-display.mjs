@@ -1,4 +1,4 @@
-/** Formal market values come only from a validated API snapshot, never bundled seeds. */
+/** Production imports may use an audited published presentation, never synthetic/legacy seeds. */
 import { readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { dirname, resolve, relative } from 'node:path';
@@ -33,4 +33,8 @@ async function visit(path) {
 await visit(resolve(source, 'main.tsx'));
 const domain = await readFile(resolve(source, 'domain/market/displayMarket.ts'), 'utf8');
 if (/INITIAL_DISPLAY_MARKET/.test(domain)) throw new Error('Formal market still exposes an obsolete initial price seed.');
-console.log(`[verify-market-display] ${visited.size} production source modules checked; API-only market, no bundled test/legacy seeds. V2/V3 cell validation is covered by Vitest.`);
+const bootstrap = await readFile(resolve(source, 'domain/market/publishedPresentation.json'), 'utf8');
+const published = JSON.parse(bootstrap);
+if (published.schema_version !== 'presentation-1' || published.records?.length !== 224 || !/^[a-f0-9]{64}$/.test(published.input_hash)
+  || /SYNTHETIC|example\.test|provenance|\/Users\/|outputs\//.test(bootstrap)) throw new Error('Invalid production presentation projection.');
+console.log(`[verify-market-display] ${visited.size} production source modules checked; published presentation has 224 cells; no bundled test/legacy seeds. Full evidence validation is covered by Vitest.`);

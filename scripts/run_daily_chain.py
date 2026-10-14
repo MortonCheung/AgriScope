@@ -121,6 +121,12 @@ def _process_result(command, env, timeout):
     print(output, end='')
     return {'exit_code': completed.returncode, 'stdout': output}
 
+def _presentation(env, timeout):
+    # A separate process isolates frozen inference caches and obeys the same
+    # process-group deadline as the existing jobs. Daily never changes a build.
+    return _process_result([sys.executable, str(_CODE_PRODUCT / 'pipelines/publishing/publish_market_presentation.py'),
+                            '--project-root', str(PROJECT), '--runtime-root', str(RUNTIME)], env, timeout)
+
 def _execute(argv, result):
     probe = argparse.ArgumentParser(add_help=False)
     probe.add_argument('--city', choices=['沈阳', 'shenyang'], default='沈阳')
@@ -129,7 +135,8 @@ def _execute(argv, result):
                PYTHONPATH=os.pathsep.join([str(ROOT), str(ROOT / 'pipelines/modeling'), str(ROOT / 'pipelines/modeling/src')]))
     daily_timeout = float(os.environ.get('AGRISCOPE_DAILY_TIMEOUT_SECONDS', '900'))
     long_timeout = float(os.environ.get('AGRISCOPE_LONG_TIMEOUT_SECONDS', '900'))
-    if not 0 < daily_timeout <= 86400 or not 0 < long_timeout <= 86400: raise ValueError('invalid stage timeout')
+    presentation_timeout = float(os.environ.get('AGRISCOPE_PRESENTATION_TIMEOUT_SECONDS', '300'))
+    if any(not 0 < timeout <= 86400 for timeout in (daily_timeout, long_timeout, presentation_timeout)): raise ValueError('invalid stage timeout')
     daily, failure = _stage(result, 'daily', lambda: _process_result([sys.executable, 'pipelines/daily/run_daily.py', *argv], env, daily_timeout))
     summary, summary_error = _summary(daily['stdout']) if daily else ({}, 'DAILY_NOT_COMPLETED')
     result['daily_exit'] = daily['exit_code'] if daily else failure
@@ -160,13 +167,21 @@ def _execute(argv, result):
     if market_exit: result['status'] = 'MARKET_PUBLICATION_FAILED'
     elif result['daily_exit'] and collection: result['status'] = 'MARKET_SUCCESS_DAILY_FAILED'
     if not result['daily_exit'] and summary_error: result['daily_exit'] = 8
-    return result['daily_exit'] or result.get('runtime_publication_exit', 0) or result.get('market_publication_exit', 0) or (5 if result.get('long_horizon_exit') else 0)
+    original_exit = result['daily_exit'] or result.get('runtime_publication_exit', 0) or result.get('market_publication_exit', 0) or (5 if result.get('long_horizon_exit') else 0)
+    if '--dry-run' not in argv:
+        # Even a failed/no-new collection can refresh from real existing inputs.
+        # Its failure remains a collection failure and keeps the original code.
+        presentation, presentation_failure = _stage(result, 'presentation_publication', lambda: _presentation(env, presentation_timeout))
+        presentation_exit = presentation['exit_code'] if presentation else presentation_failure
+        result['presentation_publication_exit'] = 9 if presentation_exit else 0
+        if presentation_exit and not original_exit: result['status'] = 'PRESENTATION_PUBLICATION_FAILED'
+    return original_exit or result.get('presentation_publication_exit', 0)
 
 def main(argv=None):
     argv = list(argv or [])
     result = {'run_id': uuid.uuid4().hex, 'started_at': _now(), 'status': 'STARTING', 'collector_cities': ['shenyang'],
               'external_blocked_collector_cities': ['chaoyang', 'jinzhou', 'tieling', 'dandong', 'dalian'],
-              'stages': {key: {'status': 'SKIPPED'} for key in ['daily', 'long_horizon', 'runtime_publication', 'market_publication']}}
+              'stages': {key: {'status': 'SKIPPED'} for key in ['daily', 'long_horizon', 'runtime_publication', 'market_publication', 'presentation_publication']}}
     active = False
     try:
         with chain_lock():
