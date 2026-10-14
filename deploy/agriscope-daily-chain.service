@@ -1,5 +1,5 @@
 [Unit]
-Description=AgriScope Daily then isolated Long-Horizon inference
+Description=AgriScope isolated worker and immutable runtime publication
 After=network-online.target
 Wants=network-online.target
 
@@ -9,6 +9,18 @@ User=agriscope
 Group=agriscope
 WorkingDirectory=/opt/agriscope
 EnvironmentFile=/etc/agriscope/runtime.env
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PYTHONUNBUFFERED=1
+Environment=MPLCONFIGDIR=/var/cache/agriscope/matplotlib
 ExecStart=/opt/agriscope/.venv/bin/python scripts/run_daily_chain.py
-TimeoutStartSec=1800
+TimeoutStartSec=2100
+TimeoutStopSec=30
 UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+CacheDirectory=agriscope
+LogsDirectory=agriscope
+ReadWritePaths=/srv/agriscope-worker /opt/agriscope/runtime /opt/agriscope/runtime/data/processed/daily/publications /opt/agriscope/runtime/data/market/publications /opt/agriscope/runtime/publication_history /var/cache/agriscope /var/log/agriscope
+ReadOnlyPaths=/opt/agriscope/runtime/models /opt/agriscope/runtime/research /opt/agriscope/runtime/data /opt/agriscope/runtime/llm /opt/agriscope/runtime/LONG_HORIZON_V2_REGISTRY.csv

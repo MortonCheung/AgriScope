@@ -14,51 +14,158 @@ manifest 由 `AgriScope/pipelines/publishing/publish_runtime.py` 生成，结构
 from __future__ import annotations
 import json
 import sys
+import hashlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / 'runtime/manifest.json'
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+OPERATIONAL_MANIFEST_FIELDS = {'daily_publication', 'market_publication', 'publication_rollbacks'}
 
 # 成功态前缀；SKIP(missing-src) 等不在其中，仍然会失败。
 OK_STATUS_PREFIXES = ('OK', 'PUBLISHED')
 
 
 def _is_ok_status(status) -> bool:
-    return isinstance(status, str) and status.startswith(OK_STATUS_PREFIXES)
+    return isinstance(status, str) and (status == 'OK' or status == 'PUBLISHED' or status.startswith('PUBLISHED(') and status.endswith(')'))
 
 
 def _nonempty(p: Path) -> bool:
     if p.is_file():
         return p.stat().st_size > 0
     if p.is_dir():
-        return any(p.iterdir())
+        return any(child.is_file() and child.stat().st_size > 0 for child in p.rglob('*'))
     return False
 
 
+def _plain_path(root: Path, relative: str) -> Path:
+    path = Path(relative)
+    if path.is_absolute() or '..' in path.parts or not path.parts:
+        raise ValueError('invalid relative path')
+    base = root.resolve()
+    target = base / path
+    if not target.resolve().is_relative_to(base):
+        raise ValueError('path escapes product')
+    for candidate in (target, *target.parents):
+        if candidate == base:
+            break
+        if candidate.is_symlink():
+            raise ValueError('symlink in product asset')
+    return target
+
+
+def runtime_base_digest(man):
+    if not isinstance(man, dict):
+        raise ValueError('runtime manifest must be an object')
+    base = {key: value for key, value in man.items() if key not in OPERATIONAL_MANIFEST_FIELDS}
+    return hashlib.sha256(json.dumps(base, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+
+
+def verify_deployment(man, root=ROOT):
+    """An extracted release carries exact file identities independent of old runtime schemas."""
+    problems = []
+    files = man.get('files')
+    if man.get('schema_version') != 1 or not isinstance(files, dict) or not files:
+        return ['invalid deployment file manifest']
+    for relative, identity in files.items():
+        try:
+            target = _plain_path(Path(root), relative)
+            if not isinstance(identity, dict) or not target.is_file():
+                raise ValueError('missing file identity')
+            data = target.read_bytes()
+            if relative == 'runtime/manifest.json' and man.get('runtime_base_manifest_sha256'):
+                current = json.loads(data)
+                if runtime_base_digest(current) != man['runtime_base_manifest_sha256']:
+                    raise ValueError('runtime base identity mismatch')
+                publication_files(current, root)
+                continue
+            if identity.get('size') != len(data) or identity.get('sha256') != hashlib.sha256(data).hexdigest():
+                raise ValueError('file identity mismatch')
+        except (OSError, ValueError, TypeError):
+            problems.append(f'deployment file invalid: {relative}')
+    if man.get('runtime_base_manifest_sha256') and 'runtime/manifest.json' not in files:
+        problems.append('deployment manifest omits runtime identity')
+    return problems
+
+
+def publication_files(man, root=ROOT):
+    """Validate and select current immutable generations, never their research source tree."""
+    selected = []
+    runtime = Path(root) / 'runtime'
+    for name in ('daily_publication', 'market_publication'):
+        entry = man.get(name)
+        if entry is None:
+            continue
+        if name == 'daily_publication':
+            from agriscope_daily_publication import resolve
+        else:
+            from agriscope_market_publication import resolve
+        verified = resolve(runtime)
+        if not verified or {key: value for key, value in verified.items() if key != 'directory'} != entry:
+            raise ValueError('publication changed during verification')
+        directory = _plain_path(runtime, verified['generation'])
+        if not directory.is_dir():
+            raise ValueError('missing ' + name + ' generation')
+        for relative, expected in entry['files'].items():
+            path = _plain_path(directory, relative)
+            if not isinstance(expected, str) or not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+                raise ValueError('digest mismatch in ' + name)
+            selected.append(path.relative_to(Path(root).resolve()).as_posix())
+        receipt = runtime / 'publication_history' / name / (Path(entry['generation']).name + '.json')
+        if receipt.exists():
+            receipt = _plain_path(Path(root), receipt.relative_to(Path(root)).as_posix())
+            if json.loads(receipt.read_text()) != entry:
+                raise ValueError('publication receipt differs from current pointer')
+            selected.append(receipt.relative_to(Path(root).resolve()).as_posix())
+    return selected
+
+
 def verify(man, root=ROOT, refresh=False):
+    if not isinstance(man, dict):
+        return {'ok': 0, 'total': 0, 'problems': ['runtime manifest must be an object']}
     problems, ok = [], 0
     assets = man.get('assets', [])
+    if not isinstance(assets, list):
+        return {'ok': 0, 'total': 0, 'problems': ['manifest assets must be a list']}
     if not assets:
         problems.append('manifest has no assets')
     seen = set()
     for asset in assets:
-        dest = asset.get('destination', '')
+        if not isinstance(asset, dict):
+            problems.append('manifest asset must be an object')
+            continue
+        dest = asset.get('destination') or asset.get('path', '')
         status = asset.get('status')
         if not dest or dest in seen:
             problems.append(f'invalid/duplicate destination: {dest}')
             continue
         seen.add(dest)
-        p = (root / dest).resolve()
-        if not p.is_relative_to(root.resolve()):
-            problems.append(f'destination escapes AgriScope: {dest}')
+        try:
+            p = _plain_path(Path(root), dest)
+        except (ValueError, TypeError):
+            problems.append(f'destination escapes AgriScope or uses symlink: {dest}')
             continue
-        if not _is_ok_status(status):
+        if not asset.get('required', True) and not p.exists():
+            continue
+        if not _is_ok_status(status) and not (status is None and 'path' in asset):
             problems.append(f'source unavailable -> {dest} (status={status!r}, source={asset.get("source")})')
             continue
         if not _nonempty(p):
             problems.append(f'missing/empty destination: {dest}')
             continue
+        if p.is_dir() and any(child.is_symlink() for child in p.rglob('*')):
+            problems.append(f'symlink in destination: {dest}')
+            continue
+        expected = asset.get('sha256')
+        if expected is not None and (not p.is_file() or hashlib.sha256(p.read_bytes()).hexdigest() != expected):
+            problems.append(f'asset digest mismatch: {dest}')
+            continue
         ok += 1
+    try:
+        publication_files(man, root)
+    except (OSError, ValueError, TypeError):
+        problems.append('immutable publication invalid')
     return {'ok': ok, 'total': len(assets), 'problems': problems,
             'generated_at': man.get('generated_at'), 'publisher': man.get('publisher')}
 
@@ -67,6 +174,12 @@ def main(argv=None):
     refresh = '--refresh' in (sys.argv[1:] if argv is None else argv)
     man = json.loads(MANIFEST.read_text())
     result = verify(man, refresh=refresh)
+    release_manifest = ROOT / 'deployment-manifest.json'
+    if release_manifest.is_file():
+        try:
+            result['problems'].extend(verify_deployment(json.loads(release_manifest.read_text()), ROOT))
+        except (OSError, ValueError, TypeError):
+            result['problems'].append('deployment manifest unreadable')
     print(json.dumps(result, ensure_ascii=False))
     print('ASSETS_VERIFY_FAILED' if result['problems'] else 'ASSETS_VERIFY_OK')
     return 1 if result['problems'] else 0

@@ -1,6 +1,7 @@
 [Unit]
-Description=AgriScope RC2 API (single worker)
+Description=AgriScope API (published runtime, single worker)
 After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
@@ -8,11 +9,24 @@ User=agriscope
 Group=agriscope
 WorkingDirectory=/opt/agriscope
 EnvironmentFile=/etc/agriscope/runtime.env
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PYTHONUNBUFFERED=1
+Environment=MPLCONFIGDIR=/var/cache/agriscope/matplotlib
 ExecStartPre=/opt/agriscope/.venv/bin/python scripts/verify_assets.py
-ExecStart=/opt/agriscope/.venv/bin/python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8787 --workers 1
+ExecStart=/opt/agriscope/.venv/bin/python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8787 --workers 1 --proxy-headers --forwarded-allow-ips 127.0.0.1
 Restart=on-failure
 RestartSec=5
+TimeoutStopSec=30
+LimitNOFILE=4096
 UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+RuntimeDirectory=agriscope
+CacheDirectory=agriscope
+LogsDirectory=agriscope
+ReadWritePaths=/run/agriscope /var/cache/agriscope /var/log/agriscope
 
 [Install]
 WantedBy=multi-user.target

@@ -130,6 +130,433 @@
       "description": "首页六城三口径真实价格展示载荷及后台血缘，由 publish_market_display.py 选择发布",
       "asset_type": "market_display",
       "status": "PUBLISHED(market-display)"
+    },
+    {
+      "source": "models/long_horizon/index.json",
+      "destination": "runtime/models/models/long_horizon/index.json",
+      "status": "OK",
+      "sha256": "5b135cf3538e3be8dbce610746d0c34842fe6103158878d66758a582176ca3c5",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop02_h30_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop02_h30_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "14ff6229cb28b273381c2b078ed084c569bc6cbfce5897499378be30e8a86dd3",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop03_h30_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop03_h30_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "00e845d8ebb74383e1236eea4f2ad0ae7d7bc39d3623bb701ef4934f2d7e31df",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop08_h30_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop08_h30_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "c0f550b8c8a947e13c0aea51411162852861448f25bec43d46a250ec867152eb",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop09_h30_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop09_h30_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "52712c3fd80a3e459475bf0de7a335f55171bc7424246c08da69ff67cd3ffd4d",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop00_h30_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop00_h30_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "4caea77f4bf3bc0bbaf16330fb2cc64019c14c6ad10f6caf5e9830fab0399da4",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop01_h30_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop01_h30_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "55036dd56e0131e5ed5e796f4a0c2515b108a00cf789c569d6f33faeaaac3d8e",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop02_h30_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop02_h30_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "72844b997ead8f95f3c023ef09338df8722fe58c7c2514b53857192409f6dd98",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop04_h30_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop04_h30_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "6f56a4fba694813b6a6c85e2c368f591d79e0e243f4dc22eaf3b9bd048e5bf0b",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop06_h30_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop06_h30_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "f247ea49929dc656a22b1cfeb12d1d5b721b5ea7de8be26fe01f1a083265392e",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop07_h30_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop07_h30_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "08117573c288cc958a3706e2118726e0e75b09c36b6c405236ba8409ae925040",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop09_h30_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop09_h30_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "486147db0b0f28abe528ca69999412e5c5de78181bfe3e791dc42aa3618a2f75",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop00_h60_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop00_h60_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "b709971dee694bd7edafdd9deba830f947031529ae087b1608dc14f53b6c0a03",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop02_h60_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop02_h60_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "93acaccc07af9e7160ffd5bbe0c74de250f32c2c4a5c11604f863078a20af2b2",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop03_h60_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop03_h60_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "3289f79e092ab10e49512fdd4fe5a5590e8ba2d4febb876597e788361ef46bbd",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop04_h60_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop04_h60_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "f72dcc85751bcfd982b052db42bd7037fa7d8f9836c0a476467479a2ff8ffb20",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop06_h60_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop06_h60_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "d8de4a95ceac04dcf2f44ca61c27d3c29ec2e9582d2e39af6c5845013fa7b160",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop09_h60_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop09_h60_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "db429ec1d6dbe1ba9a702edbcf484c4dc9fe39746494e441cebf221e3b88f63c",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop00_h60_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop00_h60_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "e92c67cce2e854e5aa1af413c8199e66f0c66757e404ae14a6e46aed56db48f9",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop01_h60_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop01_h60_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "72c410b85b3fe0bdaceddfef4f0a3b904ded5b601f9fabfa8d6e0c08f11af051",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop02_h60_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop02_h60_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "31356a1c13d7e5026c1cd97a36c803542649e79f867f56d4f2e01f998031a141",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop03_h60_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop03_h60_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "fdf0116e14eb83f16cc7c70d52225b8b10b1eb731497b130a7f84fc78aa790e8",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop04_h60_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop04_h60_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "c6976bbf1ac024be7fcae4fdb86a16f4a2d35862ebd2a65f9279aef49834bea7",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop07_h60_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop07_h60_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "98ba8a17da59b7c1faf5022823fcddccd05c9c3649a686245274341c54a245b0",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop09_h60_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop09_h60_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "e725c1b4cfb774f72c55ae655b00e7a73aaa22204197cca4edde827158593b30",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop00_h90_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop00_h90_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "89c9fa6a9b17f324108a1f796a99ace2f892cdfdad84dcc4a6f5a1e92fe7758b",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop01_h90_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop01_h90_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "011105fcb2bc4131ad4aea6e68cba8956e6c23b600e01b28663eeabc2c96ea7d",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop02_h90_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop02_h90_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "52fb23e492f54a9425dcc9386178c1445da942998ff0845d3febd2912ab23eea",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop03_h90_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop03_h90_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "1a4368bd538bec3cb05d9363a0f5d69f63019ad3e179cccd24f45df830dbac29",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop04_h90_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop04_h90_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "aff826eead99986b09ad40c8161a8a0896c64d01dc504c487c0dbfddbe8bd7f6",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop06_h90_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop06_h90_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "70375ed5d14dcb2d83e8dedffba4bdef2df0d007726499af1efc5db39b467f17",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop07_h90_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop07_h90_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "f02fb30dc747573ee7d7119d3babb277bb785b81b24d3f477f505b567aed6c34",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop00_h90_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop00_h90_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "533df3e0bf634bfb066bb189aedae27905041f87b79a874598f2b7cf85e1c5de",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop04_h90_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop04_h90_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "b85ebcfba2357d67aa2016ece1d136cec6a6d486e7c2c2887632fcfd34212966",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop07_h90_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop07_h90_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "92e715e9ca4218f2a8be8e72bcf4ed7e3ded90990030600102f4f73d00925104",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop09_h90_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop09_h90_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "50e5157d1b8121ba4b48a47233d93ada4feeec8bc6dfb23e7ae03c0053037032",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop03_h120_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop03_h120_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "f06e065bd69d3edfd18b4e2393d9f09cb7ceac2c6550dd51e8691c0991b93992",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop04_h120_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop04_h120_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "519f86b5aa2d3373354938de89de27148428f7383e9f131a99f68dd413e57ce0",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop06_h120_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop06_h120_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "a5a37b2ecbd4d9dff1725790267da55806292617d9b477b4007c6fac10343b86",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop07_h120_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop07_h120_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "32eba25c658419bf53c4ee8613725310e079b29ad778b369a6ddde17d174a706",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop08_h120_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop08_h120_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "2daad94e88e4c08d4f54d23fbcea3b051757f95d7a4da09a72f224ddb6229084",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop00_h120_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop00_h120_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "2e8c22286b0a61478acf2ce5d4a804ea5575b94beda65743f8df1be9535f590a",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop07_h120_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop07_h120_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "3e025d541e354d1e2bbe54eb5c47e4911f0547eab9a8c7547c0c31edbca933c5",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop09_h120_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop09_h120_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "d6f5ac9ec7d5365dd10447a839ff5199d25079f159d1ae3cef1da81b25c8982c",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop03_h150_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop03_h150_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "d992a6208ca86cb6b94465d4b91fbf19c9a52faec365b1e51c857e212559be26",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop04_h150_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop04_h150_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "455c2f9963103a2702df727d47442b776694d8e5621df8eb879b20c7cb0b9593",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop07_h150_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop07_h150_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "5edb3372bcf6aa4ee2aa635bb3c1cafba8c1c6aec8b98f98d89b6355bce5e348",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop08_h150_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop08_h150_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "9a3eb7a8bcade2f60439b1ff0e14c901f77720cd93f17e5967cf1af0a9491828",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop00_h150_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop00_h150_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "90d3f08e4c51d90af3ba1a975829b8107826cdc3bd28da4a631749310cb3ab17",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop06_h150_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop06_h150_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "4ffcb69806c9301297b55d0163eabf9b8a8357b43cacb6ff84be4a39b65f3358",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop07_h150_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop07_h150_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "36a015f55386ae02ce5fb02cd5101b2c5aa2983b7609414734dccb3de2204bc6",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop09_h150_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop09_h150_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "310b2a0c84748fbc69bf9ecaecd0823f716501128b0539f14bdb277c577e8e6a",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop03_h180_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop03_h180_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "9c97a94af7ace74a658bb8cafa6cbb99b56f0b6114194865097565dd45f90f8c",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop04_h180_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop04_h180_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "d83b23679a3256aff58ed765743e10a72417c86e9010161bb162a20fc0ce2789",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop06_h180_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop06_h180_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "28c6eba05287e2190b5878a387cf0472be0775ee093c8a6bba80e65625bd066a",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop08_h180_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop08_h180_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "33f2e353d2d11afcebd1cb6c6269f67931374f92c687a1d58562a5173e7e5ef6",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop09_h180_cycle_market_average.pkl",
+      "destination": "runtime/models/models/long_horizon/crop09_h180_cycle_market_average.pkl",
+      "status": "OK",
+      "sha256": "af43d3969487e23ba0f85586cd8243e090eb9b1a40fd580859ed0acc6c91ece6",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop00_h180_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop00_h180_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "444cd788eb175facda4c9ad173a52e76c24c898fe09a959c3efa0ad1a263174f",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop03_h180_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop03_h180_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "b47c33ecfa73e4a32768a57c1a049c7e99b0fa95ee468ff9c365dca66dcc3e40",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop07_h180_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop07_h180_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "f3df8e0d97961871981c3156173e70f8d326b846ea63cb5d50c399233fb292bb",
+      "description": "Existing frozen long-horizon inference artifact; no training"
+    },
+    {
+      "source": "models/long_horizon/crop09_h180_harvest_market_price.pkl",
+      "destination": "runtime/models/models/long_horizon/crop09_h180_harvest_market_price.pkl",
+      "status": "OK",
+      "sha256": "25b5575ccaa22751aadf8ee474423f7f00af66083a15d19086ca2e85b62fbbe6",
+      "description": "Existing frozen long-horizon inference artifact; no training"
     }
   ]
 }

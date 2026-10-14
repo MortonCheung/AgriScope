@@ -14,6 +14,12 @@ from ..services import daily_service as DAILY
 router = APIRouter(tags=["health"])
 
 
+@router.get("/health/live", summary="独立存活探针")
+def live(request: Request) -> Dict[str, Any]:
+    # A failed publication affects readiness, not the life of this HTTP process.
+    return {"status": "ok", "request_id": request.state.request_id}
+
+
 @router.get("/health", summary="存活探针")
 def health(request: Request) -> Dict[str, Any]:
     return {"status": "ok", "request_id": request.state.request_id}
@@ -40,6 +46,7 @@ def ready(request: Request):
 
     pkls = list(C.FINAL_MODELS_DIR.glob("*.pkl")) if C.FINAL_MODELS_DIR.exists() else []
     checks["model_artifacts"] = {"ok": len(pkls) > 0, "n": len(pkls)}
+    ok = ok and checks["model_artifacts"]["ok"]
     checks["meta_files"] = {
         "ok": C.FINAL_RUN_META.exists(),
         "run_meta": C.FINAL_RUN_META.exists(),

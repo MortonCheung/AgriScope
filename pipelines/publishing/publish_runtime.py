@@ -20,6 +20,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -162,7 +163,18 @@ def main() -> int:
     (RUNTIME / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    print(f"[publish] manifest written: {len(records)} assets")
+    # Include only index-registered frozen weights, never the modeling workspace or training cache.
+    if str(AGRISCOPE) not in sys.path: sys.path.insert(0, str(AGRISCOPE))
+    from pipelines.publishing.publish_long_horizon_models import publish as publish_long_models
+    frozen_index = ROOT / 'models/long_horizon/index.json'
+    if frozen_index.is_file():
+        result = publish_long_models(frozen_index.parent, RUNTIME)
+        print(f"[publish] frozen long-horizon: {result['files']} files")
+    else:
+        manifest['assets'].append(dict(source='models/long_horizon', destination='runtime/models/models/long_horizon',
+                                      description='Required frozen long-horizon inference artifacts', status='SKIP(missing-src)'))
+        (RUNTIME / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding='utf-8')
+    print(f"[publish] manifest base written: {len(records)} assets")
     return 0
 
 

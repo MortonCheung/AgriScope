@@ -1,78 +1,72 @@
-# AgriScope 部署准备（RC3）
+# AgriScope Linux 部署准备
 
-**当前状态：未部署。** 本目录是**可一键执行的部署准备**，不是已部署声明。
+本轮完成本地整合与隔离验证，不连接阿里云、不安装远端服务、不启用定时任务。部署对象是包含已构建前端与精选运行资产的完整产品包；没有完整研发工程也能启动 API 和页面。
 
-## 0. 已确证的外部阻塞（SSH）
+## 路径与依赖
 
-- 目标主机 `root@39.105.27.85`（阿里云）可达；
-- `ssh -i ~/.ssh/morton_aliyun_ed25519 root@39.105.27.85` 在 `Server accepts key` 之后返回
-  `Permission denied (publickey)`；
-- 私钥 `~/.ssh/morton_aliyun_ed25519` **受 passphrase 保护**：`ssh-keygen -y -P "" -f <key>`
-  报 `incorrect passphrase supplied to decrypt private key`；
-- `ssh-add -l` 显示 `The agent has no identities`。
+产品代码、前端及已发布资产放 `/opt/agriscope`，`AGRISCOPE_ROOT=/opt/agriscope`。新增每日原始证据、加工结果、日志、锁放独立 `/srv/agriscope-worker`，`PROJECT_ROOT=/srv/agriscope-worker`。API 不写 worker；冻结模型、canonical 输入和研究只从产品 `runtime/` 读取，不训练、不覆盖。
 
-结论：无法在**非交互自动化**中完成认证。按 §40 属合法阻塞，本机侧工作全部完成，
-服务器侧需人工解阻后再执行第 1–7 步。**不得伪造"已部署"。**
+Linux 集成基准为 Python 3.11、glibc 2.24 以上（建议 Ubuntu 22.04/24.04 或等价环境）、系统 CA 证书与 `libgomp`。按 `backend/requirements.txt` 安装既有固定版本，不为部署升级模型依赖。实际 pandas 2.3.3 的 CPython 3.11 Linux wheel 使用 manylinux 2.24/2.28；云主机架构与系统版本需在正式部署时确认。
 
-### 解阻条件（二者其一，需人工）
+已构建 `frontend/dist` 由 Nginx 直接提供，运行服务器无需 Node。仅从源码构建时需要 Node 20.19 以上或 22.12 以上；建议固定 Node 22 LTS 的兼容版本，执行 `npm ci` 与 `npm run build`。
 
-1. 把密钥加入 agent 并输入口令：`ssh-add ~/.ssh/morton_aliyun_ed25519`；或
-2. 在服务器 `~/.ssh/authorized_keys` 中追加 `~/.ssh/morton_aliyun_ed25519.pub` 后重试。
+长期推理所需的正式运行资产已完成精选发布：`pipelines/publishing/publish_long_horizon_models.py` 按既有冻结索引选择并逐项核对 SHA256，将 61 份索引与注册权重复制到 `runtime/models/models/long_horizon`，在 manifest 中逐文件登记。当前运行资产共 82 项，长期模型缺包已解决；没有重新拟合，也没有更改源权重。这个发布步骤属于新 release 的构建准备，不属于每日采集，不应在已部署版本内改写冻结模型。重新生成 release 时需沿用经 registry 确认的模型源目录，不能猜文件或全量复制外层 models。
 
-## 1. 前置依赖
+## 生成和核验交付包
 
-服务器需 Python 3.9+、Node/npm、systemd、nginx。域名与 TLS 由服务器管理员配置。
+完成提交后，在产品仓运行：
 
-## 2. 部署步骤
+```sh
+python3 scripts/verify_assets.py
+python3 scripts/build_deploy_bundle.py --label YOUR_RELEASE --output-dir /ABSOLUTE/ARCHIVE/OUTPUT
+```
 
-1. 从唯一正式仓库 clone 到 `/opt/agriscope`，恢复 `runtime/manifest.json` 中资产，
-   或解开 `python3 scripts/build_deploy_bundle.py` 生成的部署包。
-2. 创建专用 `agriscope` 用户，使其拥有 `data/processed` 与 `llm/artifacts` 写权限；
-   源码与模型目录只读。
-3. `python3 -m venv .venv`；`.venv/bin/pip install -r backend/requirements.txt`；
-   `cd frontend && npm ci && npm run build`。
-4. 复制 `runtime.env.example` 到 `/etc/agriscope/runtime.env`，修改路径、域名、允许来源，
-   权限 `600`。**不要提交 Secret。** 无 LLM Key 时统计情景链路仍正常运行。
-   - 环境变量加载：项目根 `agriscope_env.py` 是唯一 loader。**系统环境变量优先**，
-     `backend/.env` 仅作兜底，不会覆盖已存在的进程环境；`.env` 中的过期
-     `AGRISCOPE_ROOT`/`PROJECT_ROOT` 会被拒绝注入（哨兵文件校验）。
-5. `.venv/bin/python scripts/verify_assets.py`、`./scripts/acceptance.sh`、
-   `python3 scripts/smoke_rc2.py --base-url http://127.0.0.1:8787`。
-6. 把本目录 `*.service`、`*.timer`、`*.path` 复制到 `/etc/systemd/system/`，
-   `systemctl daemon-reload`，启用 API、`agriscope-daily-chain.timer`、
-   `agriscope-api-refresh.path`；nginx 改域名后先 `nginx -t` 再 reload。
-7. 只读核对既有负载后再动服务：`docker ps`（若服务器运行 astrbot/napcat 等既有容器，
-   一律不得中断或改端口）。
+不指定输出目录时，包写入产品父级的 `archive/build_artifacts/deployment/<label>`，不污染产品目录。默认拒绝未提交工作区；仅本地隔离测试可显式 `--allow-dirty`，状态会进入清单。
 
-## 3. 运行约定
+包包含已构建页面、源码、必需 runtime、当前 Daily/行情 immutable generation，并附 `deployment-manifest.json`：每个文件的大小与 SHA256、源码提交与工作区状态、当前发布代。`.env`、私钥、node_modules、虚拟环境和未发布 LLM 实验资产不进入包；内部 symlink 直接拒绝，避免本机绝对路径混入 Linux。
 
-- 20:30 主任务与 23:30 安全网按 Asia/Shanghai 触发。外围编排**仅在 Daily 发布有效成功快照后**
-  运行长期推理；crawl FAILED、dry-run、无快照不触发。长期失败返回编排退出码 5 并写
-  `chain_status.json`，Daily 成功快照不受影响；长期 Job 可单独重跑。
-- 同一运行历史、Registry 与模型版本生成相同 `snapshot_hash`，重跑不改 latest 生成时间。
-- 长期 Job 独立 flock，`temp/flush/fsync/replace` 发布，backfill 不回退 latest。
-- 每日推理不 fit；人工模型更新仅允许显式
-  `PYTHONPATH=models/src:models:. python3 -m long_horizon.v2 --retrain`。
-- 每日数据更新后需**重启后端**以重新绑定推理快照；后端为单 worker + 启动时绑定快照 + 推理锁。
+在独立临时目录解包后，再运行包内 `python3 scripts/verify_assets.py`；它同时核验独立部署文件清单和运行资产。旧 runtime manifest 无 SHA 字段仍保持存在校验，交付包文件清单提供完整字节校验。运行清单的基底单独作规范 JSON 哈希，只允许 `daily_publication`、`market_publication`、`publication_rollbacks` 三个已定义运行字段变化；当前发布指针仍须通过各自严格解析器、逐文件哈希与来源合同校验。正常每日发布不会使 API 重启因旧 manifest 字节哈希失败；资产列表、模型、源码和研究仍不能变动。不要直接对生产目录运行研发态 `scripts/acceptance.sh`，它包括 worker/pipeline 验收；完整工程测试必须使用隔离 worker。
 
-## 4. 服务器侧验收清单
+## 正式部署时的步骤
 
-- [ ] `systemctl status agriscope-api` 为 active，`curl -s http://127.0.0.1:8787/health` 返回 ok。
-- [ ] `python3 scripts/smoke_rc2.py --base-url http://127.0.0.1:8787` 通过。
-- [ ] `./scripts/acceptance.sh` 全项通过；`pytest backend/tests/test_e2e.py` 通过。
-- [ ] `systemctl list-timers | grep agriscope` 显示 daily-chain 与 api-refresh 已排程。
-- [ ] `journalctl -u agriscope-daily-chain` 无 FAILED；`chain_status.json` 状态正常。
-- [ ] Daily latest_data_date 与长期 latest_data_date 均前进，无 `LONG_HORIZON_STALE`。
-- [ ] nginx 反代可达，前端静态资源 200，`ALLOWED_ORIGINS` 已收紧。
-- [ ] `llm/artifacts` 与 `runtime snapshots` 权限仅 `agriscope` 可写。
+以下供获准部署时执行，本轮不执行。先只读核对现有进程、端口、磁盘、Python/架构、Nginx 和容器；不停止其他项目，不复用被占用端口。
 
-## 5. 恢复
+1. 为新版本创建独立 release 目录，核对下载包 SHA256，在该目录解包。保存上一完整 release 和其部署文件清单。
+2. 创建专用 `agriscope` 用户。源码、冻结模型、研究与 canonical 输入由管理员持有，`agriscope` 只有读取和目录遍历权限。由管理员将产品读取组设为 `agriscope` 并赋予组读取和目录遍历权限（例如 `chgrp -R agriscope <release>`、`chmod -R g+rX <release>`），不赋予整个产品组写权限。Nginx用户还须能遍历release/frontend路径并读取frontend/dist；前端公开文件设0644、公开目录0755，API私有运行资产不因此开放写权限。仅 worker 新增区、runtime 的发布目录/manifest 替换父目录允许该用户写；`runtime/models`、`runtime/research`、`runtime/data/model_ready`、`runtime/data/metadata` 保持管理员持有且不可写。不要递归把整个产品 `chown` 给服务用户。
+3. 在该 release 内建立 Python 3.11 `.venv` 并安装 `backend/requirements.txt`，运行包内资产校验。使用临时端口验证独立包启动、`/health/live`、`/health/ready`、行情、决策、研究 API，不启动采集。
+4. 将 `runtime.env.example` 复制到 `/etc/agriscope/runtime.env`，文件由 root 持有并 `chmod 600`。systemd 由管理器读取该文件再传给专用服务用户；无需让该用户直接读取 Secret 文件。修改真实域名、允许来源和明确的产品/worker 路径。LLM 可选：配置匹配的 HTTPS 地址、模型与密钥后启用，实际 Secret 不进入源码、日志或交付包。
+5. 固定的 `/opt/agriscope` 可指向已核验 release。只安装 `deploy/agriscope-api.service`；`backend/deploy` 是兼容拷贝，不能同时安装另一 API。API 监听 127.0.0.1:8787，单 worker。服务使用只读系统、专用缓存/日志目录，权限不足必须纠正明确的写区，不能关闭所有保护。
+6. Nginx 与 API 同源。先替换 `YOUR_DOMAIN`；公开服务使用 `nginx.https.conf.example` 并准备真实证书，执行 `nginx -t` 后再 reload。HTTP 示例用于预检；没有证书时不能宣称 HTTPS 就绪。HTML 不缓存，构建 hash 资源长期缓存，未知 `/assets/` 返回 404，业务深链回到 SPA。API、health 不缓存；设置有限连接/读写超时。
+7. API 就绪验证通过后，先在隔离 worker 中验证一次采集与严格发布，再决定是否启用每日链路。预建 `runtime/data/processed/daily/publications`、`runtime/data/market/publications` 与 `runtime/publication_history` 并给专用用户写权限；运行清单父目录须允许临时文件和原子替换，不能只把 `manifest.json` 一个文件设为可写。systemd 把其余 `runtime/data` 及模型、研究、LLM/注册表设为只读，只对两个 publication 子目录与 history 重新开放写入。独立 worker 所需输入与权限未准备好时，不能启用 timer。日历默认 Asia/Shanghai 20:30 与 23:30，是工程调度，不代表官方发布时间。
+8. immutable 发布验证成功后，`agriscope-api-refresh.path` 观察 runtime manifest，`try-restart` 已运行 API 以重新绑定模型输入代；不会启动用户已经停止的 API。重启后的 ready 检查必须通过。刷新服务用有限60秒探针实际确认就绪，失败在systemd/journal中标红；已主动停止的API不被重新启动。
 
-监控 `journalctl -u agriscope-daily-chain`、Daily/长期 `latest_data_date`、
-`LONG_HORIZON_STALE`、`chain_status.json`。恢复时保留旧模型包与快照，停止 timer，
-恢复旧完整 bundle 并校验，再启动 API；**不要覆盖历史原始事实或移动 rc1/rc2**。
+## 验收与失败处理
 
-## 6. 诚实性边界
+- `/health/live` 仅代表 HTTP 进程存活；运行资产损坏也应能返回存活结果。
+- `/health/ready` 检查实际快照、数据集、模型文件、元数据和 Daily；缺模型不能声明 ready。
+- 交付文件校验失败时，API 的 `ExecStartPre` 阻止启动；不以清空旧资产或补假数据绕过。
+- LLM 使用 HTTPS、默认 TLS 校验、连接与总超时，服务端可回到既有统计方案；不会把传输异常或密钥回传前端。
+- 部署环境默认 `AGRISCOPE_MARKET_POLICY=observed`，代码在该变量缺省时也采用observed，只有显式competition才启用旧比赛完整视图兼容。首个严格行情发布代产生前，API 返回明确的本地观测缺项，不读取旧比赛包的跨城市补值；首次发布必须先通过来源与完整性验证。当前正式每日采集仅配置沈阳，其余五城仍为 `not_configured`，这是六城每日更新的明确阻塞，不得宣称六城实时采集已完成。真实的既有同城、同商品、同口径记录可展示；不能借其他城市或其他价型包装成本地实时数据。
+- 云端 HTTPS、Nginx、systemd、实际机器轮子兼容与权限，只有在相应环境实测后才能标为通过。本机模板检查不能替代 `nginx -t`、`systemd-analyze verify` 与独立 release API 验证。
 
-独立最终评估证据未到门槛时，部署仅提供情景参考，**不得给生产点预测或强推荐**。
-LLM/Hybrid 数值若未通过校准与门禁，一律停留在 `RESEARCH_ONLY`，不进入生产 Registry。
+## 回滚
+
+应用回滚以整个 release 为单位。先暂停该应用的更新 timer/path，不修改其他项目；保留失败 release、包 SHA、日志及新增原始证据。重新核验上一 release 的文件清单，再将 `/opt/agriscope` 入口原子切回上一完整 release，重启这一个 API 并核验 ready、API 与 SPA，最后恢复经过确认的更新任务。不要把新旧 frontend/dist、runtime、源码拼接使用。
+
+数据发布代回滚使用产品已提供的 immutable publication/rollback 工具，保留 generation 目录与原始事实；不能手动覆盖冻结模型、研究资产或历史原始记录。应用源码 release 与数据代的版本必须在同一次验收里核对。
+
+
+## 隔离 Linux 验证入口
+
+本机已用独立Python环境与解包目录验证，但没有Linux容器运行器；正式安装前必须在临时Linux实例或CI容器运行以下检查。此过程不连接、不修改生产阿里云服务器。
+
+```sh
+python3 -m venv /tmp/agriscope-test-env
+/tmp/agriscope-test-env/bin/pip install -r backend/requirements.txt
+/tmp/agriscope-test-env/bin/python scripts/verify_assets.py
+systemd-analyze verify deploy/*.service deploy/*.timer deploy/*.path
+# 在临时测试目录将YOUR_DOMAIN/证书与路径替换为测试值，安装该配置后：
+nginx -t
+```
+
+`systemd-analyze verify`需要临时环境中的真实用户、/opt/agriscope虚拟环境与目录；不能把缺失这些前提的告警算作正式unit失败或通过。完整worker验收使用独立PROJECT_ROOT，并将AGRISCOPE_ROOT指向独立release副本；禁用LLM外呼、保留原始证据与freeze hashes，只运行既有推理。API临时端口验证后，正常发布→重启→ready与回滚→重启→ready均需通过。Linux权限、证书、实际端口和域名为未实测外部条件。

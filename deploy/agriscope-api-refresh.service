@@ -1,6 +1,13 @@
 [Unit]
-Description=Restart AgriScope API after Daily data advances
+Description=Rebind AgriScope API after a validated immutable publication
 
 [Service]
 Type=oneshot
-ExecStart=/bin/systemctl restart agriscope-api.service
+ExecCondition=/bin/systemctl is-active --quiet agriscope-api.service
+ExecStart=/bin/systemctl try-restart agriscope-api.service
+ExecStartPost=/opt/agriscope/.venv/bin/python scripts/check_ready.py --timeout 60
+TimeoutStartSec=90
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
