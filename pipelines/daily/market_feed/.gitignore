@@ -1,0 +1,4 @@
+# market_feed 运行产物（数据/缓存/日志不进入源码仓库）
+.data/
+__pycache__/
+*.pyc

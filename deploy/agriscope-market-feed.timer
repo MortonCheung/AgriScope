@@ -1,0 +1,18 @@
+[Unit]
+Description=AgriScope 七区域价格采集定时器（每日 20:30 主采 / 23:30 补偿）
+Documentation=file:///opt/agriscope/pipelines/daily/market_feed/README.md
+
+[Timer]
+# 北京时间主采与补偿检查
+OnCalendar=*-*-* 20:30:00 Asia/Shanghai
+OnCalendar=*-*-* 23:30:00 Asia/Shanghai
+# 服务器停机后补跑错过的调度
+Persistent=true
+# 触发精度 5 分钟
+AccuracySec=5min
+# 抖动，避免与其它任务同时打点
+RandomizedDelaySec=120
+Unit=agriscope-market-feed.service
+
+[Install]
+WantedBy=timers.target

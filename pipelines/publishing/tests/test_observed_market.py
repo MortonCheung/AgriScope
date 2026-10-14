@@ -1,4 +1,4 @@
-"""Deployment tests use existing real published observations and isolated runtime directories."""
+"""Deployment tests use isolated runtime directories and real-shaped V3 observations."""
 import copy
 import json
 from pathlib import Path
@@ -9,22 +9,36 @@ from agriscope_market_publication import resolve
 from scripts.rollback_publication import rollback
 ROOT=Path(__file__).resolve().parents[3]
 
+SAMPLE=dict(region='shenyang',product='黄瓜',level='wholesale',price=3.8,day='2026-01-05',
+            collected='2026-01-05T20:30:05+08:00',source_id='SRC-SY-CLZ',
+            source_name='沈阳市发展和改革委员会 · 沈阳菜篮子信息发布平台',
+            source_url='https://www.lnsyjgjc.com/api/showList')
 
-def actual_record():
-    payload=json.loads((ROOT/'runtime/data/market/display.json').read_text())
-    lineage=json.loads((ROOT/'runtime/data/market/lineage.json').read_text())
-    local=next(row for row in lineage['records'] if row['region']=='shenyang' and row['product']=='黄瓜' and row['price_level']=='wholesale')
-    assert local['tier']==1 and local['adopted']['region']=='shenyang' and local['adopted']['price_level']=='wholesale'
-    row=next(row for row in payload['records'] if (row['region'],row['product'],row['price_level'])==('shenyang','黄瓜','wholesale'))
-    return row,local
+
+def sample_record():
+    return {"region":SAMPLE['region'],"product":SAMPLE['product'],"price_level":SAMPLE['level'],
+            "price":SAMPLE['price'],"observation_date":SAMPLE['day'],"collectedAt":SAMPLE['collected'],
+            "change_percent":0.0,"history":[{"date":SAMPLE['day'],"price":SAMPLE['price']}],
+            "unit":"元/kg","source":{"id":SAMPLE['source_id'],"name":SAMPLE['source_name'],"url":SAMPLE['source_url']}}
+
+
+def sample_lineage():
+    row=sample_record()
+    return {"region":row['region'],"product":row['product'],"price_level":row['price_level'],"tier":1,
+            "adoption":"same_source_series",
+            "adopted":dict(region=row['region'],product=row['product'],price_level=row['price_level'],
+                           observation_date=row['observation_date'],collectedAt=row['collectedAt'],
+                           price_per_kg=row['price'],source_id=row['source']['id']),
+            "history":[]}
 
 
 def observed(sample=True):
     body=empty_observed()
     if sample:
-        row,_=actual_record();body['records']=[row]
-        body['missing']=[r for r in body['missing'] if (r['region'],r['product'],r['price_level'])!=('shenyang','黄瓜','wholesale')]
-        body['coverage']['shenyang'].update(available_records=1,latest_observation_date=row['observation_date'])
+        row=sample_record();body['records']=[row]
+        body['missing']=[r for r in body['missing'] if (r['region'],r['product'],r['price_level'])!=(row['region'],row['product'],row['price_level'])]
+        body['coverage'][row['region']].update(available_records=1,
+            latest_observation_date=row['observation_date'],latest_collected_at=row['collectedAt'])
     return validate_display(body)
 
 
@@ -37,12 +51,12 @@ def runtime(tmp_path):
 
 
 def audit(body):
-    return {'records':[actual_record()[1]] if body['records'] else [],'generated_at':'excluded-clock','policy':'local_same_price_level'}
+    return {'records':[sample_lineage()] if body['records'] else [],'generated_at':'excluded-clock','policy':'local_same_price_level'}
 
 
 def test_strict_grid_does_not_borrow_city_price_level_or_province(tmp_path, monkeypatch):
     # Build with a saved, real Shenyang row as the only available source, not a made-up price.
-    row,_=actual_record()
+    row=sample_record()
     from pipelines.publishing.publish_market_display import Observation
     point=Observation(row['region'],row['product'],row['price_level'],row['observation_date'],row['price'],row['collectedAt'],row['price'],'元/kg','黄瓜','SRC-SY-CLZ','沈阳菜篮子','https://www.lnsyjgjc.com/api/showList','沈阳批发','A','daily','saved-real-record','raw_metadata_crawl_time',())
     monkeypatch.setattr(Reader,'rows',lambda self,family:[point] if family=='daily' else [])
@@ -50,7 +64,9 @@ def test_strict_grid_does_not_borrow_city_price_level_or_province(tmp_path, monk
         p=tmp_path/relative;p.parent.mkdir(parents=True,exist_ok=True);p.touch()
     body,evidence=build(tmp_path,strict=True)
     assert len(body['records'])==1 and body['records'][0]['region']=='shenyang'
-    assert len(body['missing'])==167 and all(r['price_level']=='wholesale' for r in body['records'])
+    # V3 grid is 7 x 8 x 4 = 224; the single local wholesale cell leaves 223 explicit misses.
+    assert len(body['missing'])==223 and all(r['price_level']=='wholesale' for r in body['records'])
+    assert body['records'][0]['unit']=='元/kg' and body['records'][0]['source']['id']=='SRC-SY-CLZ'
     assert evidence['tier_counts']=={'1':1}
     assert body['coverage']['tieling']['collection_status']=='not_configured'
 

@@ -13,11 +13,13 @@ from app.services import market_display_service as M
 
 
 def snapshot():
-    return dict(schema_version="1", products=list(M.PRODUCTS), price_levels=list(M.PRICE_LEVELS),
+    # Legacy competition-era V1 payload: it only ever carried the three legacy levels.
+    # V3 adds the official monitoring average and is published through the strict path.
+    return dict(schema_version="1", products=list(M.PRODUCTS), price_levels=list(M.LEGACY_PRICE_LEVELS),
                 records=[dict(region=region, product=product, price_level=level, price=3,
                               observation_date="2025-01-03", collectedAt="2025-01-04T08:09:10+08:00",
                               change_percent=50, history=[dict(date="2025-01-01", price=2), dict(date="2025-01-03", price=3)])
-                         for region in M.REGIONS for product in M.PRODUCTS for level in M.PRICE_LEVELS])
+                         for region in M.REGIONS for product in M.PRODUCTS for level in M.LEGACY_PRICE_LEVELS])
 
 
 @pytest.fixture

@@ -30,7 +30,7 @@ PRODUCT_ROOT = Path(__file__).resolve().parents[2]
 if str(PRODUCT_ROOT) not in sys.path:
     sys.path.insert(0, str(PRODUCT_ROOT))
 from backend.app.services.market_display_service import (  # noqa: E402
-    PRODUCTS, PRICE_LEVELS, REGIONS, validate_display,
+    LEGACY_PRICE_LEVELS, PRODUCTS, PRICE_LEVELS, REGIONS, validate_display,
 )
 
 CITY_IDS = {"沈阳": "shenyang", "铁岭": "tieling", "朝阳": "chaoyang",
@@ -50,6 +50,9 @@ LEVEL_NEARNESS = {
     "wholesale": ("wholesale", "market_average", "farm_gate", "retail_market", "retail", "supermarket"),
     "supermarket": ("supermarket", "retail_market", "retail", "market_average", "wholesale", "farm_gate"),
     "retail_market": ("retail_market", "retail", "supermarket", "market_average", "wholesale", "farm_gate"),
+    # Official monitoring average is its own price type in V3; it must never be
+    # silently mixed with wholesale or with a specific retail sub-type.
+    "market_average": ("market_average", "retail", "retail_market", "supermarket", "wholesale", "farm_gate"),
 }
 INPUTS = {
     "market": "data/processed/market/price_observation.parquet",
@@ -510,15 +513,22 @@ def _series(observations: list[Observation]) -> tuple[list[Series], int]:
     return series, conflicts
 
 
-def _row(region: str, product: str, level: str, history: list[dict], collected: str) -> dict:
+def _row(region: str, product: str, level: str, history: list[dict], collected: str,
+         source: "Observation | None" = None) -> dict:
     last = history[-1]
     previous = history[-2]["price"] if len(history) > 1 else last["price"]
-    return dict(region=region, product=product, price_level=level, price=last["price"],
-                observation_date=last["date"], collectedAt=collected,
-                change_percent=(last["price"] / previous - 1) * 100, history=history)
+    row = dict(region=region, product=product, price_level=level, price=last["price"],
+               observation_date=last["date"], collectedAt=collected,
+               change_percent=(last["price"] / previous - 1) * 100, history=history)
+    if source is not None:
+        # V3: expose the exact real source identity for every displayed record.
+        row["unit"] = "元/kg"
+        row["source"] = {"id": source.source_id, "name": source.source_name, "url": source.source_url}
+    return row
 
 
-def _adopt(region: str, product: str, level: str, series: Series, tier: int) -> tuple[dict, dict]:
+def _adopt(region: str, product: str, level: str, series: Series, tier: int,
+           with_source: bool = False) -> tuple[dict, dict]:
     # Keep the exact previous/latest pair for change, plus genuine week/month anchors.
     # A missing calendar day never becomes an invented observation.
     selected = {point.day: point for point in series.points[-2:]}
@@ -530,7 +540,8 @@ def _adopt(region: str, product: str, level: str, series: Series, tier: int) -> 
             selected[prior.day] = prior
     points = [selected[day] for day in sorted(selected)]
     history = [dict(date=point.day, price=point.price) for point in points]
-    return (_row(region, product, level, history, series.latest.collected),
+    return (_row(region, product, level, history, series.latest.collected,
+                 series.latest if with_source else None),
             dict(region=region, product=product, price_level=level, tier=tier,
                  adoption="same_source_series", adopted=series.latest.provenance(),
                  history=[point.provenance() for point in points]))
@@ -573,7 +584,8 @@ def _mean(region: str, product: str, level: str, candidates: list[Series]) -> tu
                           for point, sources in zip(history, contributors)]))
 
 
-def build(project_root: Path, feed_db: Path | None = None, strict: bool = False) -> tuple[dict, dict]:
+def build(project_root: Path, feed_db: Path | None = None, strict: bool = False,
+          configured_regions: "set[str] | None" = None) -> tuple[dict, dict]:
     reader = Reader(project_root)
     observations = []
     for family, relative in INPUTS.items():
@@ -586,10 +598,11 @@ def build(project_root: Path, feed_db: Path | None = None, strict: bool = False)
         observations.extend(reader.feed(selected_feed))
     series, conflicts = _series(observations)
     records, lineage, missing = [], [], []
+    levels = list(PRICE_LEVELS) if strict else list(LEGACY_PRICE_LEVELS)
     for region in REGIONS:
         for product in PRODUCTS:
             candidates = [s for s in series if s.latest.product == product]
-            for level in PRICE_LEVELS:
+            for level in levels:
                 same_region = [s for s in candidates if s.latest.region == region]
                 chosen = _best([s for s in same_region if s.latest.level == level], level)
                 tier = 1
@@ -600,15 +613,25 @@ def build(project_root: Path, feed_db: Path | None = None, strict: bool = False)
                     chosen, tier = _best(same_region, level), 2
                 if chosen is None and region != "liaoning":
                     chosen, tier = _best([s for s in candidates if s.latest.region != region], level, True), 3
-                row, evidence = _adopt(region, product, level, chosen, tier) if chosen else _mean(region, product, level, candidates)
+                row, evidence = (_adopt(region, product, level, chosen, tier, with_source=strict)
+                                 if chosen else _mean(region, product, level, candidates))
                 records.append(row)
                 lineage.append(evidence)
-    payload = dict(schema_version="2" if strict else "1", products=list(PRODUCTS), price_levels=list(PRICE_LEVELS), records=records)
     if strict:
-        payload.update(missing=missing, coverage={region: dict(
-            collection_status="scheduled" if region == "shenyang" else "not_configured",
-            available_records=sum(row["region"] == region for row in records), total_records=len(PRODUCTS) * len(PRICE_LEVELS),
-            latest_observation_date=max((row["observation_date"] for row in records if row["region"] == region), default=None)) for region in REGIONS})
+        # V3: only local, same-price-level, source-verified observations. Coverage is
+        # derived from the caller's verified collector registry — never hardcoded.
+        configured = set(configured_regions or ())
+        payload = dict(schema_version="3", products=list(PRODUCTS), price_levels=list(PRICE_LEVELS),
+                       published_at=None, records=records, missing=missing,
+                       coverage={region: dict(
+                           collection_status="configured" if region in configured else "not_configured",
+                           available_records=sum(row["region"] == region for row in records),
+                           total_records=len(PRODUCTS) * len(PRICE_LEVELS),
+                           latest_observation_date=max((row["observation_date"] for row in records if row["region"] == region), default=None),
+                           latest_collected_at=max((row["collectedAt"] for row in records if row["region"] == region), default=None),
+                       ) for region in REGIONS})
+    else:
+        payload = dict(schema_version="1", products=list(PRODUCTS), price_levels=list(LEGACY_PRICE_LEVELS), records=records)
     payload = validate_display(payload)
     # Source changes while reading must never publish a mixed generation.
     for relative, digest in reader.hashes.items():
@@ -648,11 +671,13 @@ def _atomic(path: Path, contents: bytes) -> None:
 
 
 def publish(project_root: Path, runtime_root: Path | None = None,
-            frontend_root: Path | None = None, feed_db: Path | None = None, *, strict: bool = False, write_frontend: bool = True) -> dict:
+            frontend_root: Path | None = None, feed_db: Path | None = None, *,
+            strict: bool = False, write_frontend: bool = True,
+            configured_regions: "set[str] | None" = None) -> dict:
     project_root = Path(project_root).resolve()
     runtime_root = Path(runtime_root or project_root / "AgriScope/runtime").resolve()
     frontend_root = Path(frontend_root or project_root / "AgriScope/frontend").resolve()
-    payload, audit = build(project_root, feed_db, strict)
+    payload, audit = build(project_root, feed_db, strict, configured_regions)
     if strict:
         if write_frontend:
             raise ValueError("scheduled observed publications must not mutate frontend sources")
@@ -737,9 +762,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--frontend-root", type=Path)
     parser.add_argument("--strict", action="store_true", help="Only local same-level observations; missing cells remain explicitly unavailable")
     parser.add_argument("--feed-db", type=Path, help="Optional latest user-provided observation DB with adjacent provenance.json")
+    parser.add_argument("--configured-regions", help="Comma-separated region ids with configured+verified collectors (drives V3 coverage)")
     args = parser.parse_args(argv)
+    configured = {r.strip() for r in (args.configured_regions or "").split(",") if r.strip()} or None
     try:
-        print(json.dumps(publish(args.project_root, args.runtime_root, args.frontend_root, args.feed_db, strict=args.strict, write_frontend=not args.strict), ensure_ascii=False))
+        print(json.dumps(publish(args.project_root, args.runtime_root, args.frontend_root, args.feed_db, strict=args.strict, write_frontend=not args.strict, configured_regions=configured), ensure_ascii=False))
     except (OSError, ValueError, KeyError, TypeError) as exc:
         print(f"Market publication refused: {exc}", file=sys.stderr)
         return 1

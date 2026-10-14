@@ -24,7 +24,7 @@ def validate_entry(runtime, entry):
             raise ValueError('market publication integrity mismatch')
     from backend.app.services.market_display_service import validate_display
     data = validate_display(json.loads((directory / 'display.json').read_text()))
-    if data['schema_version'] != '2':
+    if data['schema_version'] not in ('2', '3'):
         raise ValueError('production market generation requires local observations')
     lineage = json.loads((directory / 'lineage.json').read_text())
     if lineage.get('display_sha256') != files['display.json']:
