@@ -71,3 +71,20 @@ nginx -t
 ```
 
 `systemd-analyze verify`需要临时环境中的真实用户、/opt/agriscope虚拟环境与目录；不能把缺失这些前提的告警算作正式unit失败或通过。完整worker验收使用独立PROJECT_ROOT，并将AGRISCOPE_ROOT指向独立release副本；禁用LLM外呼、保留原始证据与freeze hashes，只运行既有推理。API临时端口验证后，正常发布→重启→ready与回滚→重启→ready均需通过。Linux权限、证书、实际端口和域名为未实测外部条件。
+
+## 七地区行情（Market Display V3）
+
+每日链 `scripts/run_daily_chain.py` 现在包含一个**独立**的 market_feed 阶段，先采集七地区真实行情，
+再执行沈阳 Daily 模型链；两者解耦：
+
+1. `market_feed`：`python -m pipelines.daily.market_feed daily`，写入 `$PROJECT_ROOT/market_feed/`
+   （原始证据 + SQLite + 快照 + 报表），单区失败不阻断其他区域。超时 `AGRISCOPE_MARKET_TIMEOUT_SECONDS`（默认 600s）。
+2. `market_publication`：`product_bridge.publish_product()` 导出 checkpoint 快照并发布**不可变 V3 行情代**
+   （原子 manifest 切换 + SHA256 + receipt + 可回滚），与沈阳模型成败无关。
+3. `daily` → `long_horizon` → `runtime_publication`：沈阳模型链与 Daily Runtime 发布，不受行情失败影响。
+
+- API 只读不可变行情代：`GET /api/market/display`（`schema_version="3"`，224 格，7×8×4）。
+- `coverage.collection_status` 由真实成功运行推导，未验证地区为 `not_configured`。
+- 采集阶段的写权限已包含在 `/srv/agriscope-worker`（chain unit 的 `ReadWritePaths`）；行情发布写
+  `runtime/data/market/publications` 与 `runtime/publication_history`（chain unit 已授权）。
+- 不再单独安装 market-feed 定时器，避免与链重复写入同一观测库。

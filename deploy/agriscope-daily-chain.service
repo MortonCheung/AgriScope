@@ -13,7 +13,9 @@ Environment=PYTHONDONTWRITEBYTECODE=1
 Environment=PYTHONUNBUFFERED=1
 Environment=MPLCONFIGDIR=/var/cache/agriscope/matplotlib
 ExecStart=/opt/agriscope/.venv/bin/python scripts/run_daily_chain.py
-TimeoutStartSec=2100
+# Budget covers: seven-region market feed (600) + Shenyang Daily (900) + long-horizon
+# (720) + two atomic publications. See deploy/runtime.env.example.
+TimeoutStartSec=2400
 TimeoutStopSec=30
 UMask=0027
 NoNewPrivileges=true

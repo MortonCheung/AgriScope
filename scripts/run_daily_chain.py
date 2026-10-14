@@ -121,6 +121,19 @@ def _process_result(command, env, timeout):
     print(output, end='')
     return {'exit_code': completed.returncode, 'stdout': output}
 
+def _market_feed_home(project):
+    return Path(os.environ.get('AGRISCOPE_MARKET_FEED_HOME') or (Path(project) / 'market_feed'))
+
+def _market_regions(project):
+    """Read the per-region states the market feed just published (never inferred from exit code)."""
+    index = _market_feed_home(project) / 'snapshots' / 'index.json'
+    try: data = json.loads(index.read_text(encoding='utf-8'))
+    except (OSError, ValueError): return []
+    return [{'region': r.get('regionId'), 'status': r.get('status'),
+             'latest_observation_date': r.get('latestObservationDate'),
+             'freshness': r.get('freshness'), 'records': r.get('recordCount')}
+            for r in data.get('regions', [])]
+
 def _execute(argv, result):
     probe = argparse.ArgumentParser(add_help=False)
     probe.add_argument('--city', choices=['沈阳', 'shenyang'], default='沈阳')
@@ -129,7 +142,35 @@ def _execute(argv, result):
                PYTHONPATH=os.pathsep.join([str(ROOT), str(ROOT / 'pipelines/modeling'), str(ROOT / 'pipelines/modeling/src')]))
     daily_timeout = float(os.environ.get('AGRISCOPE_DAILY_TIMEOUT_SECONDS', '900'))
     long_timeout = float(os.environ.get('AGRISCOPE_LONG_TIMEOUT_SECONDS', '900'))
-    if not 0 < daily_timeout <= 86400 or not 0 < long_timeout <= 86400: raise ValueError('invalid stage timeout')
+    market_timeout = float(os.environ.get('AGRISCOPE_MARKET_TIMEOUT_SECONDS', '900'))
+    if not 0 < daily_timeout <= 86400 or not 0 < long_timeout <= 86400 or not 0 < market_timeout <= 86400:
+        raise ValueError('invalid stage timeout')
+    dry_run, no_collect = '--dry-run' in argv, '--no-collect' in argv
+
+    # 1) Seven-region market feed — fully decoupled from the Shenyang model chain.
+    #    One region failing must never stop the other six.
+    market_feed_exit = 0
+    if not dry_run and not no_collect:
+        feed, feed_failure = _stage(result, 'market_feed', lambda: _process_result(
+            [sys.executable, '-m', 'pipelines.daily.market_feed', 'daily'], env, market_timeout))
+        market_feed_exit = feed['exit_code'] if feed else feed_failure
+        result['market_feed_exit'] = market_feed_exit
+        result['market_regions'] = _market_regions(PROJECT)
+    else:
+        result['market_feed_exit'] = None
+
+    # 2) Strict V3 publication from the feed observation DB. It never depends on the
+    #    Shenyang model chain; a model failure cannot discard other regions' verified prices.
+    market_exit = 0
+    published_ok = False
+    if not dry_run and not no_collect and market_feed_exit == 0:
+        from pipelines.daily.market_feed.product_bridge import publish_product
+        publication, market_exit = _stage(result, 'market_publication', lambda: publish_product(strict=True))
+        published_ok = market_exit == 0 and publication is not None
+        result['market_publication_exit'] = 7 if market_exit else 0
+        if publication is not None: result['market_publication'] = publication
+
+    # 3) Shenyang Daily model chain (collection + Final inference + snapshot).
     daily, failure = _stage(result, 'daily', lambda: _process_result([sys.executable, 'pipelines/daily/run_daily.py', *argv], env, daily_timeout))
     summary, summary_error = _summary(daily['stdout']) if daily else ({}, 'DAILY_NOT_COMPLETED')
     result['daily_exit'] = daily['exit_code'] if daily else failure
@@ -138,13 +179,10 @@ def _execute(argv, result):
     if result['daily_exit'] or summary_error:
         result['stages']['daily']['status'] = 'FAILED' if not failure else result['stages']['daily']['status']
     collection = _new_collection(summary, result['started_at'], argv, result['run_id'])
-    result['collection_status'] = 'SUCCESS' if collection else 'DRY_RUN' if '--dry-run' in argv else 'SKIPPED' if '--no-collect' in argv else 'NO_NEW_VALID_OBSERVATIONS'
-    market_exit = 0
-    if collection:
-        from pipelines.publishing.publish_market_display import publish as publish_market
-        _, market_exit = _stage(result, 'market_publication', lambda: publish_market(PROJECT, runtime_root=RUNTIME, strict=True, write_frontend=False))
-        result['market_publication_exit'] = 7 if market_exit else 0
-    if eligible(summary, result['daily_exit']) and '--dry-run' not in argv:
+    result['collection_status'] = 'SUCCESS' if collection else 'DRY_RUN' if dry_run else 'SKIPPED' if no_collect else 'NO_NEW_VALID_OBSERVATIONS'
+
+    # 4) Long horizon forecast + 5) immutable Daily runtime publication.
+    if eligible(summary, result['daily_exit']) and not dry_run:
         long, long_failure = _stage(result, 'long_horizon', lambda: _process_result([sys.executable, 'pipelines/long_horizon/run_long_horizon_job.py'], env, long_timeout))
         long_exit = long['exit_code'] if long else long_failure
         result['long_horizon_exit'] = long_exit
@@ -156,17 +194,21 @@ def _execute(argv, result):
         result['status'] = 'RUNTIME_PUBLICATION_FAILED' if pub_failure else 'DAILY_SUCCESS_LONG_HORIZON_FAILED' if long_exit else 'CHAIN_SUCCESS'
     else:
         result['long_horizon_exit'] = None
-        result['status'] = 'DRY_RUN' if '--dry-run' in argv and not result['daily_exit'] else 'LONG_HORIZON_SKIPPED_DAILY_NOT_SUCCESSFUL'
+        result['status'] = 'DRY_RUN' if dry_run and not result['daily_exit'] else 'LONG_HORIZON_SKIPPED_DAILY_NOT_SUCCESSFUL'
+    # Market outcome is reported without ever overwriting the model-chain outcome.
     if market_exit: result['status'] = 'MARKET_PUBLICATION_FAILED'
-    elif result['daily_exit'] and collection: result['status'] = 'MARKET_SUCCESS_DAILY_FAILED'
+    elif published_ok and result['daily_exit']: result['status'] = 'MARKET_SUCCESS_DAILY_FAILED'
+    elif result.get('market_feed_exit'): result['status'] = 'MARKET_FEED_FAILED'
     if not result['daily_exit'] and summary_error: result['daily_exit'] = 8
-    return result['daily_exit'] or result.get('runtime_publication_exit', 0) or result.get('market_publication_exit', 0) or (5 if result.get('long_horizon_exit') else 0)
+    return (result['daily_exit'] or result.get('runtime_publication_exit', 0) or result.get('market_publication_exit', 0)
+            or (9 if result.get('market_feed_exit') else 0) or (5 if result.get('long_horizon_exit') else 0))
 
 def main(argv=None):
     argv = list(argv or [])
-    result = {'run_id': uuid.uuid4().hex, 'started_at': _now(), 'status': 'STARTING', 'collector_cities': ['shenyang'],
-              'external_blocked_collector_cities': ['chaoyang', 'jinzhou', 'tieling', 'dandong', 'dalian'],
-              'stages': {key: {'status': 'SKIPPED'} for key in ['daily', 'long_horizon', 'runtime_publication', 'market_publication']}}
+    result = {'run_id': uuid.uuid4().hex, 'started_at': _now(), 'status': 'STARTING',
+              'collector_cities': ['shenyang', 'tieling', 'chaoyang', 'jinzhou', 'dandong', 'dalian', 'liaoning'],
+              'external_blocked_collector_cities': [],
+              'stages': {key: {'status': 'SKIPPED'} for key in ['market_feed', 'market_publication', 'daily', 'long_horizon', 'runtime_publication']}}
     active = False
     try:
         with chain_lock():
