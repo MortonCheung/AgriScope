@@ -1,15 +1,25 @@
 #!/usr/bin/env python3
 """不调用模型研究metrics函数，独立复算全部分组误差与样本/标签清洗证据。"""
+import argparse
 import json
+import os
 from pathlib import Path
 import numpy as np
 import pandas as pd
 ROOT=Path(__file__).resolve().parents[1]
 
 
-def main():
-    p=pd.read_parquet(ROOT/'pipelines/long_horizon/artifacts/v2/predictions.parquet')
-    m=pd.read_csv(ROOT.parent/'data/research/long_horizon/LONG_HORIZON_V2_METRICS.csv')
+def main(argv=None):
+    research = Path(os.environ.get('AGRISCOPE_RESEARCH_ROOT') or ROOT.parent).expanduser().resolve()
+    local_predictions = ROOT/'pipelines/long_horizon/artifacts/v2/predictions.parquet'
+    default_predictions = local_predictions if local_predictions.is_file() else research/'AgriScope/pipelines/long_horizon/artifacts/v2/predictions.parquet'
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--predictions', type=Path, default=default_predictions)
+    parser.add_argument('--metrics', type=Path, default=research/'data/research/long_horizon/LONG_HORIZON_V2_METRICS.csv')
+    parser.add_argument('--output', type=Path, help='Explicit process report destination; frozen Runtime is read-only by default')
+    args = parser.parse_args(argv)
+    p=pd.read_parquet(args.predictions)
+    m=pd.read_csv(args.metrics)
     protocol=json.loads((ROOT/'pipelines/long_horizon/evaluation_protocol_v2.json').read_text())
     phases={q['name']:q for q in protocol['config']['phases']}
     cols=['crop','horizon','target_type','method','phase']
@@ -35,9 +45,17 @@ def main():
     out={'status':'INDEPENDENT_RECALCULATION_PASS','prediction_rows':len(p),'metric_groups':len(m),
          'max_absolute_discrepancy':diffs,'label_maturity_and_phase_end_checks':'PASS',
          'untouched_claim':'NONE; historical periods previously viewed'}
-    out_path = ROOT / 'runtime' / 'RC2_INDEPENDENT_RECALCULATION.json'
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\n')
+    baseline = json.loads((ROOT/'runtime/RC2_INDEPENDENT_RECALCULATION.json').read_text())
+    assert set(baseline) == set(out), 'recalculation report contract changed'
+    for key, value in out.items():
+        if key == 'max_absolute_discrepancy':
+            assert set(value) == set(baseline[key])
+            assert all(abs(value[name] - baseline[key][name]) < 1e-8 for name in value)
+        else:
+            assert value == baseline[key], (key, value, baseline[key])
+    if args.output:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\n')
     print(json.dumps(out,ensure_ascii=False))
 
 

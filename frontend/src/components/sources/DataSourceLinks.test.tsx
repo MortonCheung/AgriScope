@@ -42,5 +42,14 @@ describe('范围明确的小票来源', () => {
     }
     opened.rerender(<DataSourceLinks scope={STUDY_CITY_IDS[19 % STUDY_CITY_IDS.length]}/>);
     expect(screen.getAllByRole('link')).toEqual(anchors);
+  });  it('验证来源列表优先于地域参考网站，显式空列表不借参考链接', () => {
+    const source = { name: 'TEST verified observation source', url: 'https://example.test/observations' };
+    const { rerender } = render(<DataSourceLinks scope="shenyang" items={[source]}/>);
+    expect(screen.getAllByRole('link')).toHaveLength(1);
+    expect(screen.getByRole('link', { name: source.name }).getAttribute('href')).toBe(source.url);
+    expect(screen.queryByRole('link', { name: citySources.shenyang[0].name })).toBeNull();
+    rerender(<DataSourceLinks scope="shenyang" items={[]}/>);
+    expect(screen.queryByRole('region', { name: '数据来源' })).toBeNull();
   });
+
 });

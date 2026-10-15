@@ -5,6 +5,7 @@ import type { ResearchPoint, ResearchTopic } from '../../domain/research/catalog
 import { ROUTES } from '../../app/routes';
 import { MOTION_DURATION, MOTION_EASE } from '../../design/motion';
 import './research-tree.css';
+import { SelectionGroup } from '../../components/controls/SelectionGroup';
 
 export interface ResearchTreeProps {
   cityId: string;
@@ -21,6 +22,10 @@ export interface ResearchTreeProps {
   selectedId?: string;
   /** picker：单击某条目时回调，只改 selectedResearchId，URL 不变（§21）。 */
   onSelect?: (researchId: string) => void;
+  /** Report navigation uses one local moving surface; legacy research keeps its styling. */
+  animatedSelection?: boolean;
+  /** A report city can own one surface across both tree and additional articles. */
+  externalSelectionSurface?: boolean;
 }
 
 /** 展开/收起：height + opacity + translateY，220–300ms，尊重 prefers-reduced-motion（§20）。 */
@@ -57,6 +62,7 @@ function PointRow({ cityId, point, current, selected, onSelect, index, reducedMo
         <button
           type="button"
           className="tree__point-link"
+          data-selection-value={point.id}
           aria-current={selected ? 'true' : undefined}
           onClick={() => onSelect(point.id)}
         >
@@ -68,12 +74,12 @@ function PointRow({ cityId, point, current, selected, onSelect, index, reducedMo
 
   return (
     <motion.li className="tree__point" data-current={current || undefined} data-selected={selected || undefined} variants={reducedMotion ? undefined : pointVariants} custom={index}>
-      <Link className="tree__point-link" to={ROUTES.research(cityId, point.id)} aria-current={current ? 'page' : undefined}>{inner}</Link>
+      <Link className="tree__point-link" data-selection-value={point.id} to={ROUTES.research(cityId, point.id)} aria-current={current ? 'page' : undefined}>{inner}</Link>
     </motion.li>
   );
 }
 
-function TopicBlock({ cityId, topic, currentTopicId, currentPointId, selectedId, onSelect, variant, defaultOpen }: {
+function TopicBlock({ cityId, topic, currentTopicId, currentPointId, selectedId, onSelect, variant, defaultOpen, animatedSelection }: {
   cityId: string;
   topic: ResearchTopic;
   currentTopicId?: string;
@@ -82,6 +88,7 @@ function TopicBlock({ cityId, topic, currentTopicId, currentPointId, selectedId,
   onSelect?: (researchId: string) => void;
   variant: 'rail' | 'picker';
   defaultOpen: boolean;
+  animatedSelection: boolean;
 }) {
   const reducedMotion = Boolean(useReducedMotion());
   const panelId = useId();
@@ -103,6 +110,7 @@ function TopicBlock({ cityId, topic, currentTopicId, currentPointId, selectedId,
         <button
           type="button"
           className="tree__toggle"
+          data-selection-value={topic.id}
           aria-expanded={open}
           aria-controls={panelId}
           aria-current={topic.id === selectedId ? 'true' : undefined}
@@ -110,6 +118,7 @@ function TopicBlock({ cityId, topic, currentTopicId, currentPointId, selectedId,
         >
           <span className="tree__topic-id">{topic.id}</span>
           <span className="tree__topic-title">{topic.title}</span>
+          {animatedSelection && <svg className="tree__chevron" width="12" height="12" viewBox="0 0 16 16" aria-hidden fill="none" stroke="currentColor" strokeWidth="1.25"><path d="m4 6 4 4 4-4"/></svg>}
         </button>
         {/* picker 里没有"进入 →"：进入研究只有一个入口，在右侧 Preview（§21/§22）。 */}
         {variant === 'rail' && (
@@ -162,11 +171,9 @@ function TopicBlock({ cityId, topic, currentTopicId, currentPointId, selectedId,
  * 真正导航由右侧 Preview 的「进入研究」负责（§21）。
  */
 export function ResearchTree({
-  cityId, topics, currentTopicId, currentPointId, variant, selectedId, onSelect,
+  cityId, topics, currentTopicId, currentPointId, variant, selectedId, onSelect, animatedSelection = false, externalSelectionSurface = false,
 }: ResearchTreeProps) {
-  return (
-    <ol className="tree" data-variant={variant}>
-      {topics.map((topic, index) => (
+  const entries = topics.map((topic, index) => (
         <TopicBlock
           key={topic.id}
           cityId={cityId}
@@ -177,8 +184,9 @@ export function ResearchTree({
           onSelect={onSelect}
           variant={variant}
           defaultOpen={variant === 'picker' ? index === 0 : false}
+          animatedSelection={animatedSelection}
         />
-      ))}
-    </ol>
-  );
+      ));
+  return animatedSelection && !externalSelectionSurface ? <SelectionGroup as="ol" className="tree" data-variant={variant} data-moving-selection value={selectedId ?? currentPointId ?? currentTopicId}>{entries}</SelectionGroup>
+    : <ol className="tree" data-variant={variant} data-moving-selection={animatedSelection || undefined}>{entries}</ol>;
 }

@@ -87,9 +87,10 @@ class LnfgwByCity(Adapter):
         collected = clock.now_str()
         try:
             # 取带参数的表单页（含 ViewState 与下拉选项）
-            h0 = sess.get(URL, referer=REF).text(("utf-8",))
+            initial_response = sess.get(URL, referer=REF)
+            h0 = initial_response.text(("utf-8",))
             res.raw_paths.append(evidence.save_raw(self.region_id, self.source_id, day,
-                                                   "form.html", h0.encode("utf-8")))
+                                                   "form.html", initial_response.body, immutable=True))
             cities = _options(h0, _P + "ddlCity")
             goods = _options(h0, _P + "ddlPriceBureauType")
             by_name = {name: guid for guid, name in goods}
@@ -103,7 +104,7 @@ class LnfgwByCity(Adapter):
             hid = _hidden(h0)
             year, month = (target_date or clock.today()).year, (target_date or clock.today()).month
             got_any = False
-            for cname in COMMODITIES:
+            for query_index, cname in enumerate(COMMODITIES):
                 guid = by_name.get(cname)
                 if not guid:
                     continue
@@ -116,9 +117,13 @@ class LnfgwByCity(Adapter):
                     _P + "btnQuery": "搜索",
                 })
                 try:
-                    html = sess.post_form(URL, form, referer=URL).text(("utf-8",))
+                    response = sess.post_form(URL, form, referer=URL)
                 except Exception:  # noqa: BLE001
                     continue
+                response_path = evidence.save_raw(self.region_id, self.source_id, day,
+                                                  f"query-{query_index:02d}.html", response.body, immutable=True)
+                res.raw_paths.append(response_path)
+                html = response.text(("utf-8",))
                 rows = _rows(html)
                 for cells in rows:
                     ds = cells[0]
@@ -136,8 +141,8 @@ class LnfgwByCity(Adapter):
                         observation_date=obs, collected_at=collected,
                         original_price=price, original_unit=cells[4], price_per_kg=None,
                         price_level=self.price_level,
-                        raw_evidence_path=res.raw_paths[-1] if res.raw_paths else "",
-                        source_parser_version="lnfgw_by_city-1.0.0",
+                        raw_evidence_path=response_path,
+                        source_parser_version="lnfgw_by_city-1.0.1",
                         notes=[f"分类：{cells[1]}"]))
                 if rows:
                     got_any = True

@@ -31,6 +31,7 @@ def test_worker_writes_new_state_and_generation_not_frozen_inputs():
     readonly = service['ReadOnlyPaths'].split()
     assert '/srv/agriscope-worker' in writable
     assert '/opt/agriscope/runtime/data/market/publications' in writable
+    assert '/opt/agriscope/runtime/data/market/presentation' in writable
     assert '/opt/agriscope/runtime/data/processed/daily/publications' in writable
     assert '/opt/agriscope/runtime/publication_history' in writable
     assert '/opt/agriscope/runtime/models' in readonly
@@ -70,3 +71,16 @@ def test_environment_does_not_treat_product_as_worker_or_read_legacy_demo_prices
     assert 'PROJECT_ROOT=/srv/agriscope-worker' in text
     assert 'AGRISCOPE_MARKET_POLICY=observed' in text
     assert 'PYTHONPATH=' not in text
+
+
+def test_worker_budget_covers_every_stage_and_termination_margin():
+    env = dict(line.split('=', 1) for line in (ROOT / 'deploy/runtime.env.example').read_text().splitlines()
+               if line and not line.startswith('#') and '=' in line)
+    names = ['MARKET', 'DAILY', 'LONG', 'PRESENTATION']
+    total = sum(int(env['AGRISCOPE_' + name + '_TIMEOUT_SECONDS']) for name in names)
+    total += 2 * int(env['AGRISCOPE_PUBLICATION_TIMEOUT_SECONDS'])
+    service = unit('deploy/agriscope-daily-chain.service')['Service']
+    assert int(service['TimeoutStartSec']) >= total + 60
+    assert unit('deploy/agriscope-daily-chain.timer')['Timer']['OnCalendar'] == '*-*-* 23:30:00 Asia/Shanghai'
+    timer = (ROOT / 'deploy/agriscope-daily-chain.timer').read_text()
+    assert '20:30:00 Asia/Shanghai' in timer and '23:30:00 Asia/Shanghai' in timer

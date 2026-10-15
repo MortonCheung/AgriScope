@@ -117,6 +117,19 @@ def _timestamp(value: Any) -> str | None:
         return None
 
 
+def _collection_key(value: str) -> tuple:
+    """Order known instants in UTC; retain day-only evidence without adding a time.
+
+    Historical evidence of day precision is compared by its Beijing calendar day.
+    A precise instant is preferred on that same day, without claiming an unknown
+    collection hour for the historical item.
+    """
+    if len(value) == 10:
+        return (value, 0, "")
+    moment = datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(timezone.utc)
+    return (moment.astimezone(CHINA_TZ).date().isoformat(), 1, moment.isoformat())
+
+
 def _hash(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -486,7 +499,7 @@ def _rank(series: Series, target_level: str, near_first: bool = False) -> tuple:
     point = series.latest
     near = -LEVEL_NEARNESS[target_level].index(point.level)
     # Newest valid source wins; stable tie-breaking makes repeated publication reproducible.
-    dated = (point.day, point.collected, 2 if point.family == "daily" else 1,
+    dated = (point.day, _collection_key(point.collected), 2 if point.family == "daily" else 1,
              {"S": 3, "A": 2, "B": 1}.get(point.quality, 0))
     return ((near, *dated) if near_first else (*dated, near)) + point.identity
 
@@ -507,7 +520,7 @@ def _series(observations: list[Observation]) -> tuple[list[Series], int]:
             if len({point.price for point in candidates}) > 1:
                 conflicts += 1
                 continue
-            points.append(max(candidates, key=lambda point: (point.collected, point.family == "daily", point.source_path)))
+            points.append(max(candidates, key=lambda point: (_collection_key(point.collected), point.family == "daily", point.source_path)))
         if points:
             series.append(Series(points))
     return series, conflicts
@@ -574,7 +587,7 @@ def _mean(region: str, product: str, level: str, candidates: list[Series]) -> tu
         contributors = [[s.latest for s in cohort]]
     history = [dict(date=max(point.day for point in points),
                     price=round(sum(point.price for point in points) / len(points), 10)) for points in contributors]
-    collected = max(point.collected for point in contributors[-1])
+    collected = max((point.collected for point in contributors[-1]), key=_collection_key)
     return (_row(region, product, level, history, collected),
             dict(region=region, product=product, price_level=level, tier=4,
                  adoption="fixed_cohort_regional_mean", adopted_price_level=selected_level,
@@ -596,6 +609,11 @@ def build(project_root: Path, feed_db: Path | None = None, strict: bool = False,
     selected_feed = Path(feed_db).resolve() if feed_db is not None else reader.root / DEFAULT_FEED_DB
     if feed_db is not None or selected_feed.is_file():
         observations.extend(reader.feed(selected_feed))
+    date_only_excluded = sum(len(point.collected) == 10 for point in observations) if strict else 0
+    # V3 promises an actual collection instant. Keep date-only history for the
+    # separate historical/presentation contract; never turn it into midnight.
+    if strict:
+        observations = [point for point in observations if len(point.collected) > 10]
     series, conflicts = _series(observations)
     records, lineage, missing = [], [], []
     levels = list(PRICE_LEVELS) if strict else list(LEGACY_PRICE_LEVELS)
@@ -628,7 +646,7 @@ def build(project_root: Path, feed_db: Path | None = None, strict: bool = False,
                            available_records=sum(row["region"] == region for row in records),
                            total_records=len(PRODUCTS) * len(PRICE_LEVELS),
                            latest_observation_date=max((row["observation_date"] for row in records if row["region"] == region), default=None),
-                           latest_collected_at=max((row["collectedAt"] for row in records if row["region"] == region), default=None),
+                           latest_collected_at=max((row["collectedAt"] for row in records if row["region"] == region), key=_collection_key, default=None),
                        ) for region in REGIONS})
     else:
         payload = dict(schema_version="1", products=list(PRODUCTS), price_levels=list(LEGACY_PRICE_LEVELS), records=records)
@@ -641,6 +659,7 @@ def build(project_root: Path, feed_db: Path | None = None, strict: bool = False,
                  generated_at=datetime.now(timezone.utc).isoformat(),
                  source_hashes=reader.hashes, input_statistics={k: dict(v) for k, v in reader.stats.items()},
                  same_source_conflict_days_omitted=conflicts,
+                 date_only_observations_excluded_v3=date_only_excluded,
                  tier_counts=dict(Counter(str(row["tier"]) for row in lineage)),
                  observation_date_range=[min((r["observation_date"] for r in records), default=None), max((r["observation_date"] for r in records), default=None)],
                  policy="local_same_price_level" if strict else "competition_complete", missing_count=len(missing),

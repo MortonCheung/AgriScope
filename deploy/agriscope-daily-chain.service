@@ -14,8 +14,10 @@ Environment=PYTHONUNBUFFERED=1
 Environment=MPLCONFIGDIR=/var/cache/agriscope/matplotlib
 ExecStart=/opt/agriscope/.venv/bin/python scripts/run_daily_chain.py
 # Budget covers: seven-region market feed (600) + Shenyang Daily (900) + long-horizon
-# (720) + two atomic publications. See deploy/runtime.env.example.
-TimeoutStartSec=2400
+# (720) + presentation (300) + two publications (60 each) = 2640s.
+# The remaining 360s covers process-group termination, status writes and startup.
+# Keep custom stage budgets below this total; see deploy/runtime.env.example.
+TimeoutStartSec=3000
 TimeoutStopSec=30
 UMask=0027
 NoNewPrivileges=true
@@ -24,5 +26,5 @@ ProtectSystem=strict
 ProtectHome=true
 CacheDirectory=agriscope
 LogsDirectory=agriscope
-ReadWritePaths=/srv/agriscope-worker /opt/agriscope/runtime /opt/agriscope/runtime/data/processed/daily/publications /opt/agriscope/runtime/data/market/publications /opt/agriscope/runtime/publication_history /var/cache/agriscope /var/log/agriscope
+ReadWritePaths=/srv/agriscope-worker /opt/agriscope/runtime /opt/agriscope/runtime/data/processed/daily/publications /opt/agriscope/runtime/data/market/publications /opt/agriscope/runtime/data/market/presentation /opt/agriscope/runtime/publication_history /var/cache/agriscope /var/log/agriscope
 ReadOnlyPaths=/opt/agriscope/runtime/models /opt/agriscope/runtime/research /opt/agriscope/runtime/data /opt/agriscope/runtime/llm /opt/agriscope/runtime/LONG_HORIZON_V2_REGISTRY.csv

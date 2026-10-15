@@ -98,3 +98,97 @@ def test_run_lock_reentrant_guard():
         with pytest.raises(RuntimeError):
             with runner.run_lock():
                 pass
+
+
+def test_failed_or_unvalidated_source_never_writes_returned_rows(tmp_path, monkeypatch):
+    st = Store(tmp_path / 'unchecked.sqlite')
+    try:
+        for status, schema in [(C.ST_FAILED, True), (C.ST_SUCCESS, False)]:
+            monkeypatch.setattr(runner, 'adapters_for', lambda rid: [_Fake(rid, status=status, schema_ok=schema)])
+            result = runner.collect_region(st, 'shenyang', None, status)
+            assert result['blocked'] is True
+            assert st.counts('shenyang')['records'] == 0
+    finally:
+        st.close()
+
+
+def test_all_rejected_records_are_not_classified_as_no_new_publication(tmp_path, monkeypatch):
+    st = Store(tmp_path / 'reject.sqlite')
+    monkeypatch.setattr(runner, 'adapters_for', lambda rid: [_Fake(rid)])
+    monkeypatch.setattr(runner, 'validate', lambda rec: (False, 'invalid price'))
+    try:
+        result = runner.collect_region(st, 'shenyang', None, 'rejected')
+        assert result['status'] == C.ST_SOURCE_SCHEMA_CHANGED and result['blocked'] is True
+        assert st.counts('shenyang')['records'] == 0
+    finally:
+        st.close()
+
+
+@pytest.mark.parametrize('statuses,expected', [
+    ([], C.ST_FAILED),
+    ([C.ST_FAILED, C.ST_FAILED], C.ST_FAILED),
+    ([C.ST_SOURCE_SCHEMA_CHANGED, C.ST_FAILED], C.ST_FAILED),
+    ([C.ST_NO_NEW_PUBLICATION, C.ST_NO_NEW_PUBLICATION], C.ST_NO_NEW_PUBLICATION),
+    ([C.ST_SUCCESS, C.ST_NO_NEW_PUBLICATION], C.ST_SUCCESS),
+    ([C.ST_SUCCESS, C.ST_FAILED], C.ST_PARTIAL),
+    ([C.ST_PARTIAL, C.ST_FAILED], C.ST_PARTIAL),
+])
+def test_overall_separates_failures_no_new_and_partial(statuses, expected):
+    assert runner._overall([{'status': status} for status in statuses]) == expected
+
+
+def test_real_cli_reports_total_failure_and_keeps_successful_process_distinct(monkeypatch, capsys):
+    from pipelines.daily.market_feed import cli
+    from types import SimpleNamespace
+    args = SimpleNamespace(regions=None, date=None, no_publish=False)
+    summary = {'overallStatus': C.ST_FAILED, 'regions': [{'region_id': 'shenyang', 'status': C.ST_FAILED, 'note': 'timeout', 'counts': {}}], 'published': None}
+    monkeypatch.setattr(cli, 'run', lambda **kw: summary)
+    assert cli.cmd_run(args) == 1
+    assert 'FEED ' in capsys.readouterr().out
+    summary['overallStatus'] = C.ST_NO_NEW_PUBLICATION
+    summary['regions'][0]['status'] = C.ST_NO_NEW_PUBLICATION
+    assert cli.cmd_run(args) == 0
+
+
+@pytest.mark.parametrize('entry', ['daily', 'run'])
+def test_public_collection_cli_to_chain_contract_with_real_store_and_snapshots(tmp_path, monkeypatch, capsys, entry):
+    """Exercise the actual production subcommand, not hand-built process stdout."""
+    import json
+    from pipelines.daily.market_feed import cli
+    from scripts import run_daily_chain as chain
+    for key, suffix in [('HOME', ''), ('RAW_DIR', 'raw'), ('SNAPSHOT_DIR', 'snapshots'),
+                        ('LOG_DIR', 'logs'), ('LOCK_PATH', '.run.lock'), ('REPORT_DIR', 'reports')]:
+        monkeypatch.setattr(C, key, tmp_path / suffix)
+    db = tmp_path / 'market_feed.sqlite'
+    monkeypatch.setattr(runner, 'Store', lambda: Store(db))
+    monkeypatch.setattr(cli, 'Store', lambda: Store(db))
+    monkeypatch.setattr(runner, 'adapters_for', lambda rid: [_Fake(rid)])
+
+    assert cli.main([entry]) == 0
+    first = chain._feed_outcome(capsys.readouterr().out)
+    assert first['overallStatus'] == C.ST_SUCCESS
+    assert {row['region_id'] for row in first['regions']} == set(C.REGION_ORDER)
+    assert sum(row['counts']['inserted'] for row in first['regions']) == 7
+    assert (C.SNAPSHOT_DIR / 'index.json').is_file()
+    if entry == 'daily':
+        assert list(C.REPORT_DIR.glob('*-sevenday.json'))
+
+    assert cli.main([entry]) == 0
+    repeated = chain._feed_outcome(capsys.readouterr().out)
+    assert repeated['overallStatus'] == C.ST_NO_NEW_PUBLICATION
+    assert sum(row['counts']['inserted'] + row['counts']['updated'] for row in repeated['regions']) == 0
+    assert sum(row['counts']['unchanged'] for row in repeated['regions']) == 7
+
+    monkeypatch.setattr(runner, 'adapters_for', lambda rid: [_Fake(rid, fail=True)])
+    assert cli.main([entry]) == 1
+    failed = chain._feed_outcome(capsys.readouterr().out)
+    assert failed['overallStatus'] == C.ST_FAILED
+    assert all(row['status'] == C.ST_FAILED for row in failed['regions'])
+    # Real failed collection retained the successful database and snapshot data.
+    with_db = Store(db)
+    try:
+        assert sum(with_db.counts(rid)['records'] for rid in C.REGION_ORDER) == 7
+    finally:
+        with_db.close()
+    index = json.loads((C.SNAPSHOT_DIR / 'index.json').read_text())
+    assert sum(row['recordCount'] for row in index['regions']) == 7

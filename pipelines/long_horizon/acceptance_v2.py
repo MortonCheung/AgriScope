@@ -1,5 +1,6 @@
 """Read-only V2 acceptance, including independent metric/sample recomputation."""
 import json
+import os
 from pathlib import Path
 
 import numpy as np
@@ -7,12 +8,16 @@ import pandas as pd
 
 from . import v2
 
+# Historical research acceptance is independent of mutable worker/runtime paths.
+# Select the original research root explicitly when running from a Git worktree.
+RESEARCH_ROOT = Path(os.environ.get("AGRISCOPE_RESEARCH_ROOT") or v2.ROOT).expanduser().resolve()
 # 交付物迁移后分散在多处：根 data/research/long_horizon、models/registry、archive、runtime
 _DELIVERY_DIRS = [
-    v2.ROOT / "data" / "research" / "long_horizon",
-    v2.ROOT / "models" / "registry",
+    RESEARCH_ROOT / "data" / "research" / "long_horizon",
+    RESEARCH_ROOT / "models" / "registry",
     v2.ARTIFACTS.parent.parent,
-    v2.ROOT / "archive" / "agent_reports",
+    RESEARCH_ROOT / "archive" / "agent_reports",
+    RESEARCH_ROOT / "archive" / "audits",
 ]
 
 
@@ -21,7 +26,7 @@ def _deliverable(name):
         p = d / name
         if p.is_file():
             return p
-    return v2.ROOT / name
+    return RESEARCH_ROOT / name
 
 
 def run() -> dict:
@@ -30,12 +35,12 @@ def run() -> dict:
     def check(name, condition):
         checks.append({"check": name, "pass": bool(condition)})
 
-    bundle = v2.load_bundle()
+    bundle = v2.load_bundle(RESEARCH_ROOT / "models" / "long_horizon" / "index.json")
     reg = pd.read_csv(_deliverable("LONG_HORIZON_V2_REGISTRY.csv"))
     account = pd.read_csv(_deliverable("LONG_HORIZON_SAMPLE_ACCOUNTING.csv"))
     met = pd.read_csv(_deliverable("LONG_HORIZON_V2_METRICS.csv"))
     p = pd.read_parquet(v2.ARTIFACTS/"predictions.parquet")
-    history = v2._normalize(pd.read_parquet(v2.DATA_PATH))
+    history = v2._normalize(pd.read_parquet(RESEARCH_ROOT / "data" / "model_ready" / "snapshots" / "final_v1" / "datasets" / "decision_dataset_沈阳.parquet"))
     crops = history.crop.nunique()
     check("registry has unique crop/horizon/target", len(reg)==crops*len(v2.HORIZONS)*2 and not reg.duplicated(["crop","horizon","target_type"]).any())
     check("all historical evidence conservatively scenario", reg.production_status.isin(["SCENARIO_ONLY","EXPLORATORY_SCENARIO_ONLY"]).all())

@@ -30,8 +30,8 @@ import daily.normalize as NZ
 import daily.snapshot as SN
 import daily.source_shenyang as SRC
 
-ROOT = next(p for p in Path(__file__).resolve().parents if (p / "AgriScope").is_dir() and (p / "data").is_dir())
-RUN_DAILY = ROOT / "AgriScope" / "pipelines" / "daily" / "run_daily.py"
+PRODUCT = Path(__file__).resolve().parents[3]
+RUN_DAILY = PRODUCT / "pipelines" / "daily" / "run_daily.py"
 CROPS = ["土豆", "黄瓜", "西红柿", "青椒"]
 
 
@@ -450,7 +450,7 @@ def _code_text(path: Path) -> str:
 
 def _production_modules():
     """生产模块（排除 tests/ 与验收脚本自身——后者按定义含被检查词表）。"""
-    mod_dir = ROOT / "AgriScope" / "pipelines" / "daily"
+    mod_dir = PRODUCT / "pipelines" / "daily"
     return [p for p in mod_dir.rglob("*.py")
             if "tests" not in p.parts and p.name != "acceptance.py"]
 
@@ -488,10 +488,10 @@ def _seed_raw(root: Path, dates, crops=("土豆", "黄瓜"), count=None):
 
 
 def _run(root: Path, *args, env_extra=None):
-    env = dict(os.environ, PROJECT_ROOT=str(root))
+    env = dict(os.environ, PROJECT_ROOT=str(root), AGRISCOPE_WORKER_ROOT=str(root))
     if env_extra:
         env.update(env_extra)
-    return subprocess.run([sys.executable, str(RUN_DAILY), *args], cwd=str(ROOT / "AgriScope"),
+    return subprocess.run([sys.executable, str(RUN_DAILY), *args], cwd=str(PRODUCT),
                           env=env, capture_output=True, text=True)
 
 

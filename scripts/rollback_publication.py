@@ -13,6 +13,8 @@ from agriscope_publication import atomic_bytes, publication_lock, retain_entry
 
 
 def rollback(runtime, kind, identity):
+    if kind == 'presentation':
+        return rollback_presentation(runtime, identity)
     if kind not in ('daily', 'market') or not re.fullmatch('[0-9a-f]{24}', identity):
         raise ValueError('explicit kind and 24-character generation identity required')
     root = Path(runtime).resolve()
@@ -47,11 +49,37 @@ def rollback(runtime, kind, identity):
         return {'status': 'ROLLED_BACK', 'generation': entry['generation'], 'previous_generation': old.get('generation') if old else None}
 
 
+def rollback_presentation(runtime, identity):
+    """Commit a previously verified complete presentation; preserve frozen base."""
+    if not re.fullmatch('[0-9a-f]{64}', identity):
+        raise ValueError('presentation requires the 64-character generation SHA256')
+    from backend.app.services.market_presentation_service import committed_path
+    from scripts.verify_assets import _plain_path, presentation_generation_files
+    from pipelines.publishing.publish_market_presentation import encoded, refresh_alias
+    root = Path(runtime).resolve()
+    relative = 'data/market/presentation/releases/' + identity + '.json'
+    target = _plain_path(root, relative)
+    with publication_lock(root):
+        payload = json.loads(target.read_text(encoding='utf-8'))
+        receipt = {'schema_version': 'presentation-release-1', 'path': relative,
+                   'sha256': identity, 'anchor_asset': payload.get('provenance', {}).get('anchor_asset')}
+        presentation_generation_files(root, receipt)
+        previous = committed_path(root)
+        if previous == target:
+            refresh_alias(root / 'data/market/presentation/latest.json', payload)
+            return {'status': 'UNCHANGED', 'generation': identity}
+        previous_identity = previous.stem if previous.is_file() else None
+        pointer = _plain_path(root, 'data/market/presentation/current.json')
+        atomic_bytes(pointer, encoded(receipt), 0o440)
+        refresh_alias(root / 'data/market/presentation/latest.json', payload)
+        return {'status': 'ROLLED_BACK', 'generation': identity, 'previous_generation': previous_identity}
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--runtime-dir', type=Path, default=ROOT / 'runtime')
-    parser.add_argument('--kind', required=True, choices=['daily', 'market'])
-    parser.add_argument('--generation', required=True, help='24 hex characters from publication status/history')
+    parser.add_argument('--kind', required=True, choices=['daily', 'market', 'presentation'])
+    parser.add_argument('--generation', required=True, help='Daily/market: 24 hex identity; presentation: 64 hex generation SHA256')
     args = parser.parse_args(argv)
     try:
         print(json.dumps(rollback(args.runtime_dir, args.kind, args.generation), ensure_ascii=False))

@@ -23,7 +23,7 @@ python3 scripts/build_deploy_bundle.py --label YOUR_RELEASE --output-dir /ABSOLU
 
 不指定输出目录时，包写入产品父级的 `archive/build_artifacts/deployment/<label>`，不污染产品目录。默认拒绝未提交工作区；仅本地隔离测试可显式 `--allow-dirty`，状态会进入清单。
 
-包包含已构建页面、源码、必需 runtime、当前 Daily/行情 immutable generation，并附 `deployment-manifest.json`：每个文件的大小与 SHA256、源码提交与工作区状态、当前发布代。`.env`、私钥、node_modules、虚拟环境和未发布 LLM 实验资产不进入包；内部 symlink 直接拒绝，避免本机绝对路径混入 Linux。
+包包含已构建页面、源码、必需 runtime、当前 Daily/行情 immutable generation，以及 Presentation 的 current.json、当前不可变完整包、当前 anchor 和匹配的 latest.json 兼容导出，并附 `deployment-manifest.json`：每个文件的大小与 SHA256、源码提交与工作区状态、当前发布代。兼容导出缺失或落后时先重新运行正式发布器修复，再打包；不把旧别名与新权威代拼进正式包。`.env`、私钥、node_modules、虚拟环境和未发布 LLM 实验资产不进入包；内部 symlink 直接拒绝，避免本机绝对路径混入 Linux。
 
 在独立临时目录解包后，再运行包内 `python3 scripts/verify_assets.py`；它同时核验独立部署文件清单和运行资产。旧 runtime manifest 无 SHA 字段仍保持存在校验，交付包文件清单提供完整字节校验。运行清单的基底单独作规范 JSON 哈希，只允许 `daily_publication`、`market_publication`、`publication_rollbacks` 三个已定义运行字段变化；当前发布指针仍须通过各自严格解析器、逐文件哈希与来源合同校验。正常每日发布不会使 API 重启因旧 manifest 字节哈希失败；资产列表、模型、源码和研究仍不能变动。不要直接对生产目录运行研发态 `scripts/acceptance.sh`，它包括 worker/pipeline 验收；完整工程测试必须使用隔离 worker。
 
@@ -37,7 +37,7 @@ python3 scripts/build_deploy_bundle.py --label YOUR_RELEASE --output-dir /ABSOLU
 4. 将 `runtime.env.example` 复制到 `/etc/agriscope/runtime.env`，文件由 root 持有并 `chmod 600`。systemd 由管理器读取该文件再传给专用服务用户；无需让该用户直接读取 Secret 文件。修改真实域名、允许来源和明确的产品/worker 路径。LLM 可选：配置匹配的 HTTPS 地址、模型与密钥后启用，实际 Secret 不进入源码、日志或交付包。
 5. 固定的 `/opt/agriscope` 可指向已核验 release。只安装 `deploy/agriscope-api.service`；`backend/deploy` 是兼容拷贝，不能同时安装另一 API。API 监听 127.0.0.1:8787，单 worker。服务使用只读系统、专用缓存/日志目录，权限不足必须纠正明确的写区，不能关闭所有保护。
 6. Nginx 与 API 同源。先替换 `YOUR_DOMAIN`；公开服务使用 `nginx.https.conf.example` 并准备真实证书，执行 `nginx -t` 后再 reload。HTTP 示例用于预检；没有证书时不能宣称 HTTPS 就绪。HTML 不缓存，构建 hash 资源长期缓存，未知 `/assets/` 返回 404，业务深链回到 SPA。API、health 不缓存；设置有限连接/读写超时。
-7. API 就绪验证通过后，先在隔离 worker 中验证一次采集与严格发布，再决定是否启用每日链路。预建 `runtime/data/processed/daily/publications`、`runtime/data/market/publications` 与 `runtime/publication_history` 并给专用用户写权限；运行清单父目录须允许临时文件和原子替换，不能只把 `manifest.json` 一个文件设为可写。systemd 把其余 `runtime/data` 及模型、研究、LLM/注册表设为只读，只对两个 publication 子目录与 history 重新开放写入。独立 worker 所需输入与权限未准备好时，不能启用 timer。日历默认 Asia/Shanghai 20:30 与 23:30，是工程调度，不代表官方发布时间。
+7. API 就绪验证通过后，先在隔离 worker 中验证一次采集与严格发布，再决定是否启用每日链路。预建 `runtime/data/processed/daily/publications`、`runtime/data/market/publications`、`runtime/data/market/presentation`（含 inputs、releases 子目录）与 `runtime/publication_history` 并给专用用户写权限；运行清单父目录须允许临时文件和原子替换，不能只把 `manifest.json` 一个文件设为可写。systemd 把其余 `runtime/data` 及模型、研究、LLM/注册表设为只读，只对三个发布子目录与 history 重新开放写入。独立 worker 所需输入与权限未准备好时，不能启用 timer。日历默认 Asia/Shanghai 20:30 与 23:30，是工程调度，不代表官方发布时间。
 8. immutable 发布验证成功后，`agriscope-api-refresh.path` 观察 runtime manifest，`try-restart` 已运行 API 以重新绑定模型输入代；不会启动用户已经停止的 API。重启后的 ready 检查必须通过。刷新服务用有限60秒探针实际确认就绪，失败在systemd/journal中标红；已主动停止的API不被重新启动。
 
 ## 验收与失败处理
@@ -46,7 +46,7 @@ python3 scripts/build_deploy_bundle.py --label YOUR_RELEASE --output-dir /ABSOLU
 - `/health/ready` 检查实际快照、数据集、模型文件、元数据和 Daily；缺模型不能声明 ready。
 - 交付文件校验失败时，API 的 `ExecStartPre` 阻止启动；不以清空旧资产或补假数据绕过。
 - LLM 使用 HTTPS、默认 TLS 校验、连接与总超时，服务端可回到既有统计方案；不会把传输异常或密钥回传前端。
-- 部署环境默认 `AGRISCOPE_MARKET_POLICY=observed`，代码在该变量缺省时也采用observed，只有显式competition才启用旧比赛完整视图兼容。首个严格行情发布代产生前，API 返回明确的本地观测缺项，不读取旧比赛包的跨城市补值；首次发布必须先通过来源与完整性验证。当前正式每日采集仅配置沈阳，其余五城仍为 `not_configured`，这是六城每日更新的明确阻塞，不得宣称六城实时采集已完成。真实的既有同城、同商品、同口径记录可展示；不能借其他城市或其他价型包装成本地实时数据。
+- 部署环境默认 `AGRISCOPE_MARKET_POLICY=observed`，代码在该变量缺省时也采用observed，只有显式competition才启用旧比赛完整视图兼容。首个严格行情发布代产生前，API 返回明确的本地观测缺项，不读取旧比赛包的跨城市补值；首次发布必须先通过来源与完整性验证。七地区来源按各自日度、周度或旬度频率执行，configured 只代表配置，最近运行结果、最新观测日期和新鲜度分别报告；不能把七地区配置完整解释为七地区当日采集成功。真实的既有同城、同商品、同口径记录可展示；不能借其他城市或其他价型包装成本地实时数据。
 - 沈阳超市、集市响应同时包含按重量计价的蔬菜和按升/袋计价的其他商品。请求价格类型、观测日期、必需字段和有效价格仍逐行核验；无法确认重量换算的商品在原有质检中以 `UNIT_UNKNOWN` 拒收，原始响应保留。它们不会使同一响应中的有效蔬菜整批丢失，也不会被猜重量或进入批发模型。
 - 云端 HTTPS、Nginx、systemd、实际机器轮子兼容与权限，只有在相应环境实测后才能标为通过。本机模板检查不能替代 `nginx -t`、`systemd-analyze verify` 与独立 release API 验证。
 
@@ -56,10 +56,14 @@ python3 scripts/build_deploy_bundle.py --label YOUR_RELEASE --output-dir /ABSOLU
 
 数据发布代回滚使用产品已提供的 immutable publication/rollback 工具，保留 generation 目录与原始事实；不能手动覆盖冻结模型、研究资产或历史原始记录。应用源码 release 与数据代的版本必须在同一次验收里核对。
 
+Daily 和严格行情使用 `scripts/rollback_publication.py --kind daily|market --generation <24位代ID>`。Presentation 使用同一工具的 `--kind presentation --generation <current.json记录的64位sha256>`；先校验目标完整包、目标 anchor 和合同，再原子切换 current.json，并尽力刷新兼容导出。目标校验失败保留原指针；不修改冻结 manifest。回滚后验证真实 API 和 ready。
+
+正式包只携带各对象当前代，避免夹带全部历史。独立回滚验收应先记录解包初始代，再在该隔离副本生成并发布新代，最后回滚到初始代。回滚更早的生产代需要上一完整 release 或经核验保留的 generation/receipt/anchor；不能假定最小交付包自带历史全集。
+
 
 ## 隔离 Linux 验证入口
 
-本机已用独立Python环境与解包目录验证，但没有Linux容器运行器；正式安装前必须在临时Linux实例或CI容器运行以下检查。此过程不连接、不修改生产阿里云服务器。
+macOS 上的模板和独立解包检查不能证明 Linux systemd、Nginx、文件挂载权限或轮子兼容通过；正式安装前必须在临时 Linux 实例或 CI 容器运行以下检查。此过程不连接、不修改生产阿里云服务器。目标 Ubuntu 26.04 的实际依赖安装结果应单列记录，Python 仍以已冻结依赖验证过的 3.11 为基准。
 
 ```sh
 python3 -m venv /tmp/agriscope-test-env
@@ -82,9 +86,30 @@ nginx -t
 2. `market_publication`：`product_bridge.publish_product()` 导出 checkpoint 快照并发布**不可变 V3 行情代**
    （原子 manifest 切换 + SHA256 + receipt + 可回滚），与沈阳模型成败无关。
 3. `daily` → `long_horizon` → `runtime_publication`：沈阳模型链与 Daily Runtime 发布，不受行情失败影响。
+4. `presentation_publication`：非 dry-run 均尝试使用已验证的 Runtime anchors 与本轮可用观测生成连续展示；Daily 失败不撤销之前的严格行情。阶段失败保留上一有效 Presentation。日常更新不改前端构建或冻结模型。
+
+部署环境的阶段预算为 market_feed 600s、Daily 900s、Long Horizon 720s、Presentation 300s、两次发布各 60s，共 2640s。`TimeoutStartSec=3000` 留 360s 供进程组终止及事务/日志开销。各阶段环境变量见 `runtime.env.example`；修改上限时须一并复核总预算。API 单 worker，定时任务避免额外并行推理；2 GiB 机器的峰值内存和发布引发的 API 重启仍须在隔离 Linux 机器实测。
 
 - API 只读不可变行情代：`GET /api/market/display`（`schema_version="3"`，224 格，7×8×4）。
 - `coverage.collection_status` 由真实成功运行推导，未验证地区为 `not_configured`。
 - 采集阶段的写权限已包含在 `/srv/agriscope-worker`（chain unit 的 `ReadWritePaths`）；行情发布写
   `runtime/data/market/publications` 与 `runtime/publication_history`（chain unit 已授权）。
 - 不再单独安装 market-feed 定时器，避免与链重复写入同一观测库。
+
+## 集成测试的路径与版本身份
+
+新 Git worktree 只带源码和清单，大部分 Runtime 与前端 dist 被 Git 忽略。先从经 SHA256 核验的正式资产通过既有 publishing 流程准备 Runtime，再构建前端；不能把外层 data/models/archive 当作产品启动依赖。
+
+研发测试入口 `scripts/test_all.sh` 与 `scripts/acceptance.sh` 支持明确选择解释器、研发根和独立 worker；新 worktree 的父目录不含 data/models 时会拒绝猜测。示例在产品根执行：
+
+```sh
+AGRISCOPE_ROOT="$PWD" \
+AGRISCOPE_RESEARCH_ROOT=/path/to/research-workspace \
+PROJECT_ROOT=/path/to/isolated-worker \
+AGRISCOPE_PYTHON=/path/to/python3.11 \
+bash scripts/test_all.sh
+```
+
+`AGRISCOPE_RESEARCH_ROOT` 只用于既有历史研究验收读取 data/models/archive；`PROJECT_ROOT` 必须明确指向预备好的独立 worker，入口拒绝把研发根、历史 data/models 或产品目录作为写区。历史 Final 验收和独立指标重算默认只读并输出 stdout，只有显式 `--output` 才写指定过程报告；不会重写历史 FREEZE_CHECKLIST.csv 或冻结 Runtime 重算报告。后端、Daily、market_feed、publishing、modeling 和 LLM 保持分进程测试以隔离同名包和冻结路径。正式包冷启动只依赖包内 Runtime，不执行要求历史研发 archive 的门禁。
+
+先提交候选源码及正式前端基底，确认工作区干净，再生成包并独立验收。最终 main 只快进到该候选 commit，部署清单 source.commit 必须与集成 HEAD、远端 main 相同；任何后续产品代码修复产生新 commit 后都重新构建和验收，正式包不使用 `--allow-dirty`。

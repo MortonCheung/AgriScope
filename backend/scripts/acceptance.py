@@ -14,6 +14,7 @@
 from __future__ import annotations
 
 import ast
+import hashlib
 import json
 import subprocess
 import sys
@@ -62,6 +63,7 @@ def static_scan() -> None:
     print("\n[静态扫描]")
     files = [p for p in _BACKEND.rglob("*.py")
              if "tests" not in p.parts and p.name != "acceptance.py"]
+    check("backend 生产源码扫描非空", bool(files), f"files={len(files)}")
     text = {str(p.relative_to(_BACKEND)): _code_text(p) for p in files}
     mac = [f"{n}:{t}" for n, s in text.items() for t in MAC_TOKENS if t in s]
     check("backend 代码无 Mac 绝对路径", not mac, ",".join(mac[:4]))
@@ -72,16 +74,14 @@ def static_scan() -> None:
 
 
 def _models_fingerprint() -> dict:
+    from app import config as C
     out = {}
-    base = _ROOT / "models"
+    base = C.MODELS_DIR
     if not base.exists():
         return out
     for p in base.rglob("*"):
         if p.is_file():
-            try:
-                out[str(p.relative_to(base))] = p.stat().st_mtime_ns
-            except OSError:
-                pass
+            out[str(p.relative_to(base))] = hashlib.sha256(p.read_bytes()).hexdigest()
     return out
 
 
@@ -102,6 +102,7 @@ def runtime_audit() -> None:
     }
 
     before = _models_fingerprint()
+    check("冻结模型检查清单非空", bool(before), f"files={len(before)}")
     with TestClient(app) as c:
         ready = c.get("/health/ready")
         check("/health/ready 真检查通过", ready.status_code == 200,

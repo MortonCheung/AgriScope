@@ -99,3 +99,17 @@ def test_bridge_refuses_unregistered_source_region(tmp_path):
     result = publish_display(project_root=worker, runtime_root=runtime, feed_db=snapshot,
                              strict=True, write_frontend=False, configured_regions={"dalian"})
     assert result["record_count"] == 0 and result["missing_count"] == 224
+
+
+def test_configured_survives_last_run_failure_without_claiming_current_success(tmp_path):
+    db = tmp_path / 'verified.sqlite'
+    _seed_store(db)
+    store = Store(db)
+    try:
+        store.log_run('later', 'shenyang', 'FAILED', detail={'error': 'temporary source timeout'})
+        store.conn.commit()
+        assert BR.verified_regions(store) == ['shenyang']
+        latest = store.conn.execute('SELECT status FROM runs WHERE region_id=? ORDER BY id DESC LIMIT 1', ('shenyang',)).fetchone()
+        assert latest['status'] == 'FAILED'
+    finally:
+        store.close()

@@ -3,6 +3,7 @@ from typing import Optional
 from fastapi import APIRouter, Query
 
 from ..services import market_service, market_display_service
+from ..services import market_presentation_service
 
 router = APIRouter(tags=["observations"])
 
@@ -16,3 +17,9 @@ def observations(city: str = Query(...), crop: Optional[str] = Query(None)):
 def display(region: Optional[str] = Query(None), product: Optional[str] = Query(None),
             price_level: Optional[str] = Query(None)):
     return market_display_service.display(region, product, price_level)
+
+
+@router.get("/api/market/presentation", summary="连续行情展示（真实观测与计算血缘分开，不用于模型输入）")
+def presentation(region: Optional[str] = Query(None), product: Optional[str] = Query(None),
+                 price_level: Optional[str] = Query(None)):
+    return market_presentation_service.presentation(region, product, price_level)

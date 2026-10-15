@@ -20,9 +20,15 @@
   --ag-measure: 66ch;
   --ag-content-max: 1360px;
   --ag-gutter: clamp(20px, 4.5vw, 76px);
+  /* Paper edges follow the existing homepage receipt window, not its map columns. */
+  --ag-paper-gutter-x: var(--ag-gutter);
+  --ag-paper-gutter-y: clamp(24px, 4vh, 44px);
   --ag-nav-height: 62px;
   --ag-section-gap: clamp(72px, 11vh, 148px);
 }
+@media (max-width: 1100px) { :root { --ag-paper-gutter-x: 24px; } }
+@media (max-width: 900px) { :root { --ag-paper-gutter-x: 20px; --ag-paper-gutter-y: 16px; } }
+@media (max-width: 600px) { :root { --ag-paper-gutter-x: 12px; --ag-paper-gutter-y: 12px; } }
 @media (max-width: 767px) {
   :root { --ag-nav-height: 54px; }
 }

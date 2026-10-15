@@ -43,6 +43,7 @@ export function AboutPage() {
       </section>
       <section className="about__section" id="data">
         <h2 className="about__section-title">数据来源</h2>
+        <p className="about__paragraph">行情展示结合各地公开监测资料、历史数据与冻结模型计算，各来源更新频率不同。观测日期、计算依据和来源信息保留在数据记录中。</p>
         {STUDY_CITY_IDS.map(city => <CitySources key={city} cityId={city} />)}
       </section>
       <section className="about__section" id="methods">

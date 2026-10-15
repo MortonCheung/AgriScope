@@ -119,7 +119,7 @@ function PlanningCity({ cityId, crops }: { cityId: string; crops: string[] }) {
     resultHeading.current?.focus({ preventScroll: true });
   };
   return <>
-    <WorkbenchMain label="输入条件" contentKey={`${cityId}:${session.activeCrop}`}><div className="planning-workbench">
+    <WorkbenchMain label="输入条件" contentKey={`${cityId}:${session.activeCrop}`} contentMotion={false}><div className="planning-workbench">
       <section className="planning-form" aria-label={`${city.shortName}经营条件`}>
         <div className="planning-form__heading"><h1 className="ag-title">输入条件</h1><button type="button" className="planning-result-jump" onClick={showResult}>查看结果 <span aria-hidden>↓</span></button></div>
         <ChoiceButtons label="作物" value={session.activeCrop} onChange={chooseCrop} options={[...options.map(name => ({ value: name, label: name })), { value: CUSTOM, label: '自定义作物' }]}/>

@@ -51,7 +51,7 @@ class ShenyangCLZ(Adapter):
         # observation_date 记录**命中的真实官方日期**，不写成目标日。
         lookback = LOOKBACK
         base = target_date or clock.today()
-        payloads, hit_day = {}, None
+        payloads, hit_day, evidence_by_type = {}, None, {}
         try:
             for back in range(lookback + 1):
                 cand = (base - timedelta(days=back)).isoformat()
@@ -68,14 +68,15 @@ class ShenyangCLZ(Adapter):
                 if got.get("1"):
                     payloads, hit_day = cand_payloads, cand
                     for mt, body in payloads.items():
-                        res.raw_paths.append(evidence.save_raw(self.region_id, self.source_id,
-                                                               cand, f"mt{mt}.json", body))
+                        evidence_by_type[mt] = evidence.save_raw(self.region_id, self.source_id,
+                                                                 cand, f"mt{mt}.json", body, immutable=True)
+                        res.raw_paths.append(evidence_by_type[mt])
                     break
             if hit_day is None:
                 # 全部为空：仍归档目标日原始响应，状态 NO_NEW_PUBLICATION
                 for mt, body in cand_payloads.items():
                     res.raw_paths.append(evidence.save_raw(self.region_id, self.source_id,
-                                                           day, f"mt{mt}.json", body))
+                                                           day, f"mt{mt}.json", body, immutable=True))
                 res.status = "NO_NEW_PUBLICATION"
                 res.detail = {"lookback": lookback, "requestedDate": day}
                 return res
@@ -118,8 +119,8 @@ class ShenyangCLZ(Adapter):
                     observation_date=day, collected_at=collected,
                     original_price=price, original_unit=str(item.get("unit") or ""),
                     price_per_kg=None, price_level=level,
-                    raw_evidence_path=res.raw_paths[-1] if res.raw_paths else "",
-                    source_parser_version="shenyang_clz-1.0.0",
+                    raw_evidence_path=evidence_by_type[mt],
+                    source_parser_version="shenyang_clz-1.0.1",
                     notes=[f"marketType={mt}"]))
             if mt == "1" and data and len(data) != EXPECTED_WHOLESALE_CROPS:
                 res.schema_ok = False

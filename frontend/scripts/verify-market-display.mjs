@@ -1,37 +1,40 @@
-/** The homepage bootstrap must remain the same complete publication as the API. */
+/** Production imports may use an audited published presentation, never synthetic/legacy seeds. */
 import { readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { createHash } from 'node:crypto';
-import { dirname, resolve } from 'node:path';
+import { dirname, resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
+
 const frontend = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const raw = await readFile(resolve(frontend, 'src/domain/market/publishedMarket.json'), 'utf8');
-const snapshot = JSON.parse(raw);
-const products = ['黄瓜','甘蓝','青椒','尖椒','土豆','西红柿','茄子','大白菜'];
-const levels = ['wholesale','supermarket','retail_market'];
-const regions = ['shenyang','tieling','chaoyang','jinzhou','dandong','dalian','liaoning'];
-const positive = value => typeof value === 'number' && Number.isFinite(value) && value > 0;
-const day = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
-  && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0,10) === value;
-if (snapshot.schema_version !== '1' || !Array.isArray(snapshot.records) || snapshot.records.length !== 168
-  || JSON.stringify(snapshot.products) !== JSON.stringify(products) || JSON.stringify(snapshot.price_levels) !== JSON.stringify(levels)) throw new Error('Invalid market publication contract.');
-const keys = new Set();
-for (const row of snapshot.records) {
-  const key = `${row.region}:${row.product}:${row.price_level}`;
-  if (!regions.includes(row.region) || !products.includes(row.product) || !levels.includes(row.price_level)
-    || keys.has(key) || !positive(row.price) || !day(row.observation_date) || !Number.isFinite(row.change_percent)
-    || typeof row.collectedAt !== 'string' || !Number.isFinite(Date.parse(row.collectedAt))
-    || !Array.isArray(row.history) || !row.history.length || row.history.length > 4) throw new Error(`Invalid market publication: ${key}`);
-  keys.add(key);
-  let previous = '';
-  for (const point of row.history) {
-    if (!day(point.date) || point.date <= previous || !positive(point.price)) throw new Error(`Invalid market history: ${key}`);
-    previous = point.date;
+const source = resolve(frontend, 'src');
+const visited = new Set();
+async function visit(path) {
+  if (visited.has(path) || !/\.[cm]?[jt]sx?$/.test(path)) return;
+  visited.add(path);
+  const raw = await readFile(path, 'utf8');
+  const tree = ts.createSourceFile(path, raw, ts.ScriptTarget.Latest, true);
+  const imports = [];
+  function inspect(node) {
+    if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) imports.push(node.moduleSpecifier.text);
+    if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword && ts.isStringLiteral(node.arguments[0])) imports.push(node.arguments[0].text);
+    ts.forEachChild(node, inspect);
   }
-  const last = row.history.at(-1), prior = row.history.at(-2);
-  if (last.date !== row.observation_date || last.price !== row.price
-    || Math.abs((prior ? (last.price/prior.price-1)*100 : 0)-row.change_percent) > .0001) throw new Error(`Market readings disagree: ${key}`);
+  inspect(tree);
+  for (const specifier of imports) {
+    if (!specifier.startsWith('.')) continue;
+    const base = resolve(dirname(path), specifier);
+    const target = [base, ...['.ts', '.tsx', '.js', '.jsx', '.json', '/index.ts', '/index.tsx'].map(extension => base + extension)].find(existsSync);
+    if (!target) continue;
+    const name = relative(source, target).replaceAll('\\', '/');
+    if (name.startsWith('test/') || /\.(test|spec)\.[jt]sx?$/.test(name) || name === 'domain/market/publishedMarket.json') throw new Error(`Test or obsolete market seed in production imports: ${name}`);
+    await visit(target);
+  }
 }
-const runtime = resolve(frontend, '../runtime/data/market/display.json');
-if (existsSync(runtime) && raw !== await readFile(runtime, 'utf8')) throw new Error('Frontend and API market publications differ.');
-console.log(`[verify-market-display] ${keys.size} complete combinations verified; sha256=${createHash('sha256').update(raw).digest('hex')}`);
+await visit(resolve(source, 'main.tsx'));
+const domain = await readFile(resolve(source, 'domain/market/displayMarket.ts'), 'utf8');
+if (/INITIAL_DISPLAY_MARKET/.test(domain)) throw new Error('Formal market still exposes an obsolete initial price seed.');
+const bootstrap = await readFile(resolve(source, 'domain/market/publishedPresentation.json'), 'utf8');
+const published = JSON.parse(bootstrap);
+if (published.schema_version !== 'presentation-1' || published.records?.length !== 224 || !/^[a-f0-9]{64}$/.test(published.input_hash)
+  || /SYNTHETIC|example\.test|provenance|\/Users\/|outputs\//.test(bootstrap)) throw new Error('Invalid production presentation projection.');
+console.log(`[verify-market-display] ${visited.size} production source modules checked; published presentation has 224 cells; no bundled test/legacy seeds. Full evidence validation is covered by Vitest.`);

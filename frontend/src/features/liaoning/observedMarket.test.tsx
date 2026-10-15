@@ -1,18 +1,15 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { UNAVAILABLE_DISPLAY_MARKET, INITIAL_DISPLAY_MARKET, validateDisplayMarket, displayMarketFor } from '../../domain/market/displayMarket';
+import { UNAVAILABLE_DISPLAY_MARKET, validateDisplayMarket, displayMarketFor } from '../../domain/market/displayMarket';
+import { TEST_DISPLAY_MARKET_V3 as INITIAL_DISPLAY_MARKET, sparseMarketFixture } from '../../test/fixtures/marketDisplay';
 import { MarketOverview } from './MarketOverview';
 import { createDisplayMarketStore } from './useDisplayMarket';
-vi.mock('motion/react', () => ({ useReducedMotion: () => true }));
+vi.mock('motion/react', async importOriginal => ({ ...await importOriginal<typeof import('motion/react')>(), useReducedMotion: () => true }));
 afterEach(cleanup);
 const available = () => {
-  const data = structuredClone(UNAVAILABLE_DISPLAY_MARKET);
   const observation = INITIAL_DISPLAY_MARKET.records.find(row => row.region === 'shenyang' && row.product === '黄瓜' && row.price_level === 'wholesale')!;
-  data.records = [observation];
-  data.missing = data.missing!.filter(row => !(row.region === observation.region && row.product === observation.product && row.price_level === observation.price_level));
-  data.coverage!.shenyang.available_records = 1; data.coverage!.shenyang.latest_observation_date = observation.observation_date;
-  return validateDisplayMarket(data);
+  return validateDisplayMarket(sparseMarketFixture([observation]));
 };
 describe('正式行情不冒充本地观测', () => {
   it('只有沈阳批发的真实样本不进入铁岭、超市或省级均价', () => {

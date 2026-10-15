@@ -68,10 +68,13 @@ def _classify(res, counts: dict) -> str:
         return C.ST_FAILED
     if not res.schema_ok:
         return C.ST_SOURCE_SCHEMA_CHANGED
-    if res.records and counts["inserted"] == 0 and counts["updated"] == 0:
-        return C.ST_NO_NEW_PUBLICATION
+    accepted = counts["inserted"] + counts["updated"] + counts["unchanged"]
+    if res.records and not accepted:
+        return C.ST_SOURCE_SCHEMA_CHANGED
     if res.records and counts["rejected"]:
         return C.ST_PARTIAL
+    if res.records and counts["inserted"] == 0 and counts["updated"] == 0:
+        return C.ST_NO_NEW_PUBLICATION
     if res.records:
         return C.ST_SUCCESS
     return C.ST_NO_NEW_PUBLICATION
@@ -97,7 +100,10 @@ def collect_region(store: Store, region_id: str, target_date: Optional[date],
             last = {"error": f"{type(exc).__name__}: {exc}",
                     "trace": traceback.format_exc()[-400:]}
         else:
-            counts = _upsert_all(store, res)
+            # An unsuccessful parser/source cannot contribute rows to the
+            # observation store even if it accidentally returned records.
+            counts = (_upsert_all(store, res) if res.status != "FAILED" and res.schema_ok else
+                      {"inserted": 0, "updated": 0, "unchanged": 0, "rejected": len(res.records), "samples": []})
             status = _classify(res, counts)
             if res.status == "FAILED" or status == C.ST_SOURCE_SCHEMA_CHANGED:
                 # 主来源不可用 → 尝试备用
@@ -116,7 +122,7 @@ def collect_region(store: Store, region_id: str, target_date: Optional[date],
                         "detail": res.detail, "error": res.error, "schema_note": res.schema_note},
                 started_at=started)
             return {"region_id": region_id, "status": status,
-                    "source_id": res.source_id, "blocked": False,
+                    "source_id": res.source_id, "blocked": status in {C.ST_FAILED, C.ST_SOURCE_SCHEMA_CHANGED},
                     "note": res.schema_note or res.error or "",
                     "counts": counts, "frequency": adapter.frequency,
                     "observation_date": res.observation_date,
@@ -188,8 +194,11 @@ def _region_notes(st: dict) -> list:
 
 def _overall(results: list) -> str:
     stats = [r["status"] for r in results]
+    usable = {C.ST_SUCCESS, C.ST_PARTIAL, C.ST_NO_NEW_PUBLICATION}
+    if not stats or not any(s in usable for s in stats):
+        return C.ST_FAILED
+    if all(s == C.ST_NO_NEW_PUBLICATION for s in stats):
+        return C.ST_NO_NEW_PUBLICATION
     if all(s in (C.ST_SUCCESS, C.ST_NO_NEW_PUBLICATION) for s in stats):
         return C.ST_SUCCESS
-    if any(s == C.ST_FAILED for s in stats):
-        return C.ST_PARTIAL
     return C.ST_PARTIAL

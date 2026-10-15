@@ -1,5 +1,6 @@
 """Real provenance and strict same-market history; all mutations use temp files."""
 import hashlib
+import shutil
 import sys
 from pathlib import Path
 
@@ -9,11 +10,22 @@ from fastapi.testclient import TestClient
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app.main import app
+from app import config as C
 from app.services import market_service as M
 
 
 @pytest.fixture
-def client():
+def client(tmp_path, monkeypatch):
+    # Fixed real-data replay through 2026-10-06, separate from live worker
+    # generations. Copy only the three market tables this contract consumes;
+    # all test mutation/cache checks remain inside the temporary snapshot.
+    replay = tmp_path / 'historical-replay'
+    for bucket, _level, _markets in M.MARKETS.values():
+        relative = Path('model_ready') / bucket / 'market_daily.parquet'
+        target = replay / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(C.EXTENDED_SNAPSHOT_DIR / relative, target)
+    monkeypatch.setattr(M.RS, 'state', lambda: {'snapshot_dir': str(replay)})
     M.reset_cache()
     yield TestClient(app)
     M.reset_cache()

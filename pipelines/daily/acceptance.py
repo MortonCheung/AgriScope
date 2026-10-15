@@ -75,13 +75,16 @@ def _code_text(path: Path) -> str:
 
 def _production_modules() -> list[Path]:
     """生产模块（排除 tests/ 与本验收脚本自身——后者按定义包含被检查的词表）。"""
-    return [p for p in (C.ROOT / "data" / "daily").rglob("*.py")
+    return [p for p in Path(__file__).resolve().parent.rglob("*.py")
             if "tests" not in p.parts and p.name != "acceptance.py"]
 
 
 def static_scan() -> None:
     print("\n[静态扫描]")
-    text = {p.name: _code_text(p) for p in _production_modules()}
+    files = _production_modules()
+    check("Daily 生产源码扫描非空", bool(files), f"files={len(files)}")
+    source = Path(__file__).resolve().parent
+    text = {str(p.relative_to(source)): _code_text(p) for p in files}
     v1 = [f"{n}:{t}" for n, s in text.items() for t in FORBIDDEN_TOKENS if t in s]
     check("无旧 v1 生产依赖（static）", not v1, ",".join(v1[:4]))
     mac = [f"{n}:{t}" for n, s in text.items() for t in MAC_TOKENS if t in s]
@@ -162,6 +165,7 @@ def runtime_audit(target_date: str) -> None:
     from daily import run_daily as RD
 
     before = _models_fingerprint()
+    check("冻结模型检查清单非空", bool(before), f"files={len(before)}")
     with _Recorder() as rec:
         summary, code = RD.run(target_date=target_date, collect=False, dry_run=False,
                                adapter="final")

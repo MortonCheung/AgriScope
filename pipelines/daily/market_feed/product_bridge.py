@@ -64,10 +64,9 @@ def verified_regions(store: Store) -> list[str]:
     """Regions whose registered collector has at least one successful real run."""
     rows = store.conn.execute(
         "SELECT region_id, status FROM runs ORDER BY id").fetchall()
-    seen: dict[str, str] = {}
-    for row in rows:
-        seen[row["region_id"]] = row["status"]
-    return sorted(region for region, status in seen.items() if status in _VERIFIED_RUN_STATUS)
+    # Configuration/capability does not disappear after a temporary timeout.
+    # Last-run status and observation freshness remain separate feed metadata.
+    return sorted({row["region_id"] for row in rows if row["status"] in _VERIFIED_RUN_STATUS})
 
 
 def build_snapshot(store_path: Path | str = C.DB_PATH,

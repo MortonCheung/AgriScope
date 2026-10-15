@@ -1,0 +1,10 @@
+.market-data-status { min-width:0; padding-block:12px; border-bottom:1px solid var(--ag-rule-soft); }
+.market-data-status__heading { display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:4px 8px; margin-bottom:8px; }
+.market-data-status .market-data-status__heading h2 { margin:0; font-size:var(--ag-fs-meta); font-weight:500; }
+.market-data-status__heading>span { color:var(--ag-ink-soft); font-size:var(--ag-fs-micro); }
+.market-data-status__times { margin:0; }
+.market-data-status__times>div { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:2px 8px; margin-top:4px; font-size:var(--ag-fs-micro); }
+.market-data-status__times dt { color:var(--ag-ink-muted); }
+.market-data-status__times dd { margin:0; min-width:0; color:var(--ag-ink-soft); font-variant-numeric:tabular-nums; }
+.market-data-status__times time { white-space:nowrap; }
+.market-data-status__notice { margin:8px 0 0; color:var(--ag-ink-muted); font-size:var(--ag-fs-micro); }

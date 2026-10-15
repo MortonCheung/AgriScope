@@ -4,6 +4,7 @@ from copy import deepcopy
 import hashlib
 import json
 import sys
+from datetime import date, timedelta
 from pathlib import Path
 
 import pytest
@@ -158,9 +159,17 @@ def test_http_product_endpoint_and_frozen_contract_remain_separate():
 
 
 def test_overlapping_long_ranges_keep_discrete_windows_instead_of_one_best_date():
-    RS.bind()
     req=request(city_id="shenyang",price_is_user=False)
-    response=S._build(req)
+    # Exercise the overlap policy with six explicitly overlapping scenarios.
+    # A live publication can advance past the fixed request date, in which case
+    # _build correctly refuses future model evidence and has no long windows.
+    anchor = date(2026, 10, 6)
+    forecasts = [{"source_city": "shenyang", "model_as_of": str(anchor), "horizon_days": horizon,
+        "price_per_kg": 3., "price_low": 2., "price_high": 4., "price_level": "wholesale",
+        "method": "test_only_scenario", "model_id": f"fixture:{horizon}", "target_type": "harvest_market_price",
+        "window": {"start": str(anchor + timedelta(days=horizon - 6)), "end": str(anchor + timedelta(days=horizon + 7))}}
+        for horizon in (30, 60, 90, 120, 150, 180)]
+    response=S._base(req, forecasts)
     original=deepcopy(response["origin"]["forecasts"])
     S._window_comparison(response)
     choices=response["origin"]["window_choices"]

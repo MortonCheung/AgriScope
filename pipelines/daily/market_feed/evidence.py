@@ -34,11 +34,14 @@ def atomic_write_json(path: Path, obj) -> None:
 
 
 def save_raw(region_id: str, source_id: str, observation_date: str,
-             name: str, body: bytes) -> str:
+             name: str, body: bytes, *, immutable: bool = False) -> str:
     """保存原始响应，返回相对 HOME 的路径。重复内容不覆盖，改存 attempts。"""
     day_dir = C.RAW_DIR / region_id / source_id / observation_date
-    target = day_dir / name
     new_hash = hashlib.sha256(body).hexdigest()
+    requested = Path(name)
+    target = day_dir / (f"{requested.stem}.{new_hash}{requested.suffix}" if immutable else name)
+    if immutable and target.exists() and target.read_bytes() != body:
+        raise ValueError("Immutable raw response checksum mismatch")
     if target.exists():
         old_hash = hashlib.sha256(target.read_bytes()).hexdigest()
         if old_hash != new_hash:
@@ -47,9 +50,23 @@ def save_raw(region_id: str, source_id: str, observation_date: str,
             ts = now_str().replace(":", "").replace("-", "").replace(" ", "T")
             _atomic_write(attempts / f"{name}.{ts}", target.read_bytes())
         else:
+            _save_sha_receipt(target, new_hash, len(body))
             return str(target.relative_to(C.HOME))
     _atomic_write(target, body)
+    _save_sha_receipt(target, new_hash, len(body))
     return str(target.relative_to(C.HOME))
+
+
+def _save_sha_receipt(target: Path, checksum: str, size: int) -> None:
+    """Receipt creation time is not a retroactive signature of old collection."""
+    receipt = target.with_name(target.name + ".sha256.json")
+    if receipt.exists():
+        previous = json.loads(receipt.read_text(encoding="utf-8"))
+        if previous.get("sha256") == checksum and previous.get("bytes") == size:
+            return
+    atomic_write_json(receipt, {"schema": "raw-response-sha256-1", "sha256": checksum,
+                               "bytes": size, "path": str(target.relative_to(C.HOME)),
+                               "receipt_created_at": now_str()})
 
 
 def save_meta(region_id: str, source_id: str, observation_date: str, meta: dict) -> str:

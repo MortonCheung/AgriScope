@@ -37,8 +37,8 @@ def _day(value: Any) -> bool:
         return False
 
 
-def _timestamp(value: Any) -> bool:
-    if _day(value):
+def _timestamp(value: Any, *, allow_date: bool = True) -> bool:
+    if allow_date and _day(value):
         return True
     if not isinstance(value, str) or not TIME_PATTERN.fullmatch(value) or not _day(value[:10]):
         return False
@@ -86,7 +86,7 @@ def validate_display(data: Any) -> dict:
             or not isinstance(data.get("records"), list)
             or (version == "1" and len(data["records"]) != len(REGIONS) * len(PRODUCTS) * len(LEGACY_PRICE_LEVELS))):
         raise ValueError("Incomplete market publication")
-    if version == "3" and data.get("published_at") is not None and not _timestamp(data["published_at"]):
+    if version == "3" and data.get("published_at") is not None and not _timestamp(data["published_at"], allow_date=False):
         raise ValueError("Invalid market publication time")
     seen = set()
     for row in data["records"]:
@@ -95,7 +95,7 @@ def validate_display(data: Any) -> dict:
         region, product, level = row.get("region"), row.get("product"), row.get("price_level")
         if (region not in REGIONS or product not in PRODUCTS or level not in levels
                 or not _number(row.get("price"), True) or not _day(row.get("observation_date"))
-                or not _timestamp(row.get("collectedAt")) or not _number(row.get("change_percent"))):
+                or not _timestamp(row.get("collectedAt"), allow_date=version != "3") or not _number(row.get("change_percent"))):
             raise ValueError("Invalid market fields")
         if version == "3":
             source = row.get("source")
@@ -152,9 +152,11 @@ def validate_display(data: Any) -> dict:
                 raise ValueError("Market coverage differs from local observations")
             if version == "3":
                 latest_collected = item["latest_collected_at"]
-                if latest_collected is not None and not _timestamp(latest_collected):
+                if latest_collected is not None and not _timestamp(latest_collected, allow_date=False):
                     raise ValueError("Invalid market coverage time")
-                if latest_collected != max((r["collectedAt"] for r in records), default=None):
+                # Offsets describe instants: 02:00Z is later than 09:00+08:00.
+                moment = lambda value: datetime.fromisoformat(value.replace("Z", "+00:00")) if value is not None else None
+                if moment(latest_collected) != max((moment(r["collectedAt"]) for r in records), default=None):
                     raise ValueError("Market coverage time differs from local observations")
     return data
 

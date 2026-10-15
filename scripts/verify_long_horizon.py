@@ -2,10 +2,11 @@
 """V2 独立验收：报告/Registry/双目标/未见证据/freshness/模型包，不训练。"""
 import json
 import math
+import os
 from pathlib import Path
 import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
-PROJECT = ROOT.parent                      # monorepo 根（data/ 与 models/ 所在）
+PROJECT = Path(os.environ.get('AGRISCOPE_RESEARCH_ROOT') or ROOT.parent).expanduser().resolve()
 RUNTIME = ROOT / 'runtime'                 # 产品运行时资产
 # 交付报告分散在：AgriScope 根（LLM 报告）、runtime、根 data/research/long_horizon、archive
 SEARCH_DIRS = [ROOT, RUNTIME,

@@ -1,5 +1,27 @@
 # iTeach → AgriScope 迁移矩阵（ITEACH_MIGRATION_MATRIX）
 
+## 七地区每日行情前端（2026-10-14）
+
+以部署整合 `1b3bb96` 为基线，在独立工作树保留已完成的最终动效精修。本节先登记生产旧行情入口的替代关系：
+
+- `displayMarket` 生产模块中的 V1 静态价格导入与 `INITIAL_DISPLAY_MARKET` 种子，由严格校验的 V3 / V2 API 完整快照接替；首次未取得有效快照时只展示真实缺项，更新失败保留最后有效快照，不加载演示价格。
+- 原测试使用的静态初始行情，迁移到 `src/test/fixtures/marketDisplay.ts` 明确标记的测试样例；生产模块不得导入该目录。
+- 三种价格口径继续保留，新增独立“监测均价”口径；不借用其他城市或口径补齐。
+- 右侧纸面新增独立北京时间与实际行情观测、采集、发布时间。生产来源使用响应记录中验证通过的真实链接；已有其他页面来源入口保留。
+
+仅修改前端源码、测试与说明。冻结研究、模型、运行时资产、后端、采集器与部署配置不变。
+
+## 最终动效精修（2026-10-14）
+
+本轮先核验真实代码，再按用户最新要求登记替代关系：
+
+- `ReportNavigation` 中只跳转 `/about#methods` 的“方法与来源”重复入口退役；全局“关于”、报告真实来源与方法正文继续提供原功能。
+- 决策城市与报告文章按钮叠加的左竖线、下划线，改为组内单一选中底纹；真实选择状态立即更新，首次进入直接落位，不恢复跨路由共享指示器。
+- 首页行情两组按钮复用同一底纹反馈，保留固定操作区、独立数据滚动及既有价格口径；原数字换值继续使用 FlipValue。
+- 展开控件补方向一致的揭开/收回与图标反馈；关闭语义、焦点和键盘处理立即生效，减少动画时直接完成。
+
+本轮只调整前端细节，不改布局结构、研究原文、真实数据、模型、Runtime 或后端。
+
 ## Report 对齐精修（2026-10-11）
 
 审计和修改映射已先存档到比赛工作区 `archive/agent_reports/report-aligned-polish-20261011/PROJECT_AUDIT_AND_MAPPING.md`。本节先登记替代关系，再实施。用户授权新增六城模拟行情，统一标注“模拟数据”。
@@ -278,3 +300,13 @@
 - A complete city/product/price-type publication replaces per-selection network loads; a validated bundled publication and last-good cache keep the first view and failed refreshes complete.
 - The strict research/decision observations API remains unchanged. The independent display API applies explicit fallback priorities with lineage retained in backend assets.
 - Existing paper layout, map, FlipValue, trend toggle and research views remain. Price-type buttons and a shared product selector operate on the same paper DOM; trends use actual selected-source dates and prior observations.
+
+## 精准连续性修复（2026-10-15，修改前登记）
+
+- 上轮移除的工作台按钮底部细线恢复为已有自持生长/收回动画；保留局部滑动底纹，不恢复左侧竖线，也不使用跨路由共享 layoutId。
+- 工作台整块 stage 的 8px 入场位移退役；稳定输入与工具栏不动，只有正文/依据内容使用从当前位置开始的小幅反馈，既有结果数字动画保留。纸面不清空、不增加延迟。
+- 决策、报告、关于的外层纸张边距向首页既有边界对齐；首页、地图比例、独立滚动和关于内部阅读行长保留。
+
+## 行情卡精简（2026-10-15，修改前登记）
+
+- 删除左侧商品卡重复的价型和更新日期；价型保留顶部控制区，数据时间仍保留右票。左侧现价与历史来源链接统一移至已有右票来源区，真实链接不丢失，价格、趋势、动画和滚动不变。

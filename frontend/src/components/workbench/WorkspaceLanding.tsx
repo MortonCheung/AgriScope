@@ -15,8 +15,8 @@ export function WorkspaceLanding({ title, children, secondary, className = '' }:
   </section>;
 }
 
-export function WorkspaceLink({ children, className = '', ...props }: LinkProps) {
-  return <TransitionLink {...props} className={`workspace-choice ${className}`}>
+export function WorkspaceLink({ children, className = '', selectionValue, ...props }: LinkProps & { selectionValue?: string }) {
+  return <TransitionLink {...props} data-selection-value={selectionValue} className={`workspace-choice ${className}`}>
     {children}<AnimatedUnderline active={props['aria-current'] === 'page'}/>
   </TransitionLink>;
 }

@@ -44,6 +44,16 @@ def request(h=120, actual=None):
 
 @pytest.fixture
 def assets(tmp_path, monkeypatch):
+    # publication.path() prefers an immutable generation in RUNTIME_DIR over
+    # legacy file constants. These synthetic contract inputs need their own
+    # manifest root as well as their own paths, even after a real worker run.
+    runtime = tmp_path / 'runtime'
+    runtime.mkdir()
+    (runtime / 'manifest.json').write_text('{"assets":[]}')
+    monkeypatch.setattr(C, 'RUNTIME_DIR', runtime)
+    from app.services import observation_service
+    monkeypatch.setattr(observation_service, 'PRODUCT_ROOT', runtime / 'research/product')
+    monkeypatch.setattr(observation_service, 'CLIMATE_PATH', runtime / 'data/model_ready/climate/climate_daily.parquet')
     lh, daily = tmp_path / 'lh.json', tmp_path / 'daily.json'
     lh.write_text(json.dumps(snapshot(), ensure_ascii=False))
     daily.write_text(json.dumps({'latest_data_date': '2026-10-06', 'data_freshness': 'DELAYED',
@@ -57,6 +67,16 @@ def assets(tmp_path, monkeypatch):
 def client(assets):
     with TestClient(app) as c:
         yield c
+
+
+def test_contract_fixture_pins_its_own_inputs_instead_of_the_product_generation(assets):
+    from app import publication
+    from app.services import long_horizon_service
+    with publication.pin():
+        assert publication.current() == {}
+        assert publication.path('long') == assets[0]
+        assert publication.path('daily') == assets[1]
+        assert long_horizon_service._load_latest() == snapshot()
 
 
 def test_dual_target_default_is_harvest_and_cycle_is_distinct(client):

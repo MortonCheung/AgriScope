@@ -11,7 +11,7 @@ if(!demo){
   const files=readdirSync('dist/assets').filter(name=>name.endsWith('.js'));
   for(const file of files){
     const text=readFileSync(resolve('dist/assets',file),'utf8');
-    if(/decision-ui-test-v0|decision-ui-formula-v0|test-native-contract|decision\/index\.json|test_state=normal|LegacyStressExperiment|公式情景：收入减成本/.test(text))throw new Error(`Demo payload/code in formal build: ${file}`);
+    if(/decision-ui-test-v0|decision-ui-formula-v0|test-native-contract|TEST-SYNTHETIC-|example\.test\/|decision\/index\.json|test_state=normal|LegacyStressExperiment|公式情景：收入减成本/.test(text))throw new Error(`Demo payload/code in formal build: ${file}`);
   }
   if(existsSync('dist/decision'))throw new Error('Historical fixtures in formal build');
 }

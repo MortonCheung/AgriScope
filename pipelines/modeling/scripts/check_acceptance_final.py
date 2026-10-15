@@ -6,13 +6,17 @@
 输出 PASS/FAIL 计数；只有全部满足才允许冻结 Final Model。
 """
 from __future__ import annotations
+import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
 import pandas as pd
 
-PROJECT = Path(__file__).resolve().parents[4]      # monorepo 根（迁移后 data/ 与 models/ 所在）
+# Historical research acceptance needs the research archive, independently of the
+# mutable worker. Explicit selection also supports product Git worktrees.
+PROJECT = Path(os.environ.get("AGRISCOPE_RESEARCH_ROOT") or Path(__file__).resolve().parents[4]).expanduser().resolve()
 DE = PROJECT / "models"
 R = DE / "reports" / "final"
 T = R / "tables"
@@ -38,7 +42,10 @@ def _json(p):
         return {}
 
 
-def main():
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--output', type=Path, help='Optional process report path; historical research is read-only by default')
+    args = parser.parse_args(argv)
     # 1 data audit
     av = _json(M / "audit" / "audit_verdict.json")
     check("Final Data Audit PASS", av.get("verdict") == "DATA_AUDIT_PASS", av.get("verdict"))
@@ -142,8 +149,9 @@ def main():
     check("13 交付物齐备", not missing, f"missing={missing}")
 
     df = pd.DataFrame(results)
-    out = R / "FREEZE_CHECKLIST.csv"
-    df.to_csv(out, index=False, encoding="utf-8-sig")
+    if args.output:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        df.to_csv(args.output, index=False, encoding="utf-8-sig")
     n_pass = int(df["ok"].sum())
     print(df.to_string(index=False))
     print(f"\n[acceptance_final] {n_pass}/{len(df)} passed")

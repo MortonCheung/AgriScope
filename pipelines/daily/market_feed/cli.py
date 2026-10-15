@@ -44,6 +44,12 @@ def _progress(*args):
     print("  ·", " ".join(str(a) for a in args), file=sys.stderr)
 
 
+def _finish_collection(summary: dict) -> int:
+    """Both public collection commands share the production chain contract."""
+    print("FEED " + json.dumps(summary, ensure_ascii=False, separators=(",", ":")))
+    return 0 if summary["overallStatus"] != C.ST_FAILED else 1
+
+
 def cmd_run(args) -> int:
     summary = run(regions=_regions(args.regions), target_date=_parse_date(args.date),
                   publish_output=not args.no_publish, progress=_progress)
@@ -52,7 +58,7 @@ def cmd_run(args) -> int:
                       "regions": [{k: r[k] for k in ("region_id", "status", "note")}
                                   for r in summary["regions"]]},
                      ensure_ascii=False, indent=1))
-    return 0 if summary["overallStatus"] != C.ST_FAILED else 1
+    return _finish_collection(summary)
 
 
 def cmd_backfill(args) -> int:
@@ -132,7 +138,7 @@ def cmd_daily(args) -> int:
                       "regions": [{k: r[k] for k in ("region_id", "status")}
                                   for r in summary["regions"]]},
                      ensure_ascii=False, indent=1))
-    return 0 if summary["overallStatus"] != C.ST_FAILED else 1
+    return _finish_collection(summary)
 
 
 def main(argv=None) -> int:

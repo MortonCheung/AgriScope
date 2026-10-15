@@ -132,3 +132,26 @@ def test_wrong_scope_lineage_cannot_be_published(runtime):
     before=(runtime/'manifest.json').read_bytes()
     with pytest.raises(ValueError):publish_generation(runtime,body,proof)
     assert (runtime/'manifest.json').read_bytes()==before
+
+
+def test_strict_builder_uses_actual_instants_and_omits_unknown_collection_hours(tmp_path, monkeypatch):
+    from dataclasses import replace
+    from pipelines.publishing.publish_market_display import Observation, INPUTS, _best, _series
+    early = Observation('shenyang', '黄瓜', 'wholesale', '2025-01-04', 3., '2025-01-05T09:00:00+08:00',
+        3., '元/kg', '黄瓜', 'fixture-early', 'Test source', 'https://example.test/prices',
+        'Test market', 'A', 'market', 'fixture.parquet', 'test_only')
+    late = replace(early, collected='2025-01-05T02:00:00Z', source_id='fixture-late', price=4., original_price=4.)
+    series, _ = _series([early, late])
+    assert _best(series, 'wholesale').latest == late
+    same_source_late = replace(late, source_id=early.source_id, price=3., original_price=3.)
+    assert _series([early, same_source_late])[0][0].latest == same_source_late
+    unknown = replace(early, product='青椒', raw_product='青椒', day='2025-01-06', collected='2025-01-07')
+    cabbage = replace(early, product='甘蓝', raw_product='甘蓝')
+    monkeypatch.setattr(Reader, 'rows', lambda self, family: [early, late, cabbage, unknown] if family == 'market' else [])
+    for relative in INPUTS.values():
+        path = tmp_path / relative; path.parent.mkdir(parents=True, exist_ok=True); path.touch()
+    body, audit = build(tmp_path, strict=True)
+    assert len(body['records']) == 2 and len(body['missing']) == 222
+    assert body['coverage']['shenyang']['latest_collected_at'] == late.collected
+    assert audit['date_only_observations_excluded_v3'] == 1
+    assert all(row['product'] != '青椒' for row in body['records'])
