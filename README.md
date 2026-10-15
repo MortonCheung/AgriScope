@@ -67,11 +67,29 @@ python3 -m venv .venv
 cd frontend && npm ci && cd ..
 ```
 
-源码 clone **不含**运行时数据与模型权重。把运行时资产包解到仓库根后校验清单：
+源码 clone **不含**运行时数据与模型权重。以下路径刻意不入 Git，必须在构建/运行前恢复：
+
+```text
+runtime/models/**     推理库源码、权重、配置
+runtime/data/**       发布的数据快照与不可变 publication generation
+runtime/research/**   研究产品载荷与图（frontend 的 typecheck/test/build 需要）
+runtime/*.csv         长期研究注册表副本
+```
+
+三种恢复方式（任选其一，勿混用）：
+
+1. **部署包**（推荐）：解压已验证的 `agriscope-<label>-deploy.tar.gz` 到仓库根；
+2. **重新发布**：在外层研发目录就位时由 `pipelines/publishing/publish_runtime.py` 生成；
+3. **不可变发布归档**：从存档的 `product/runtime` 复制对应 generation 目录。
+
+恢复后**必须**校验清单（含 82 项资产与 Daily/Market 发布指针的 SHA256 身份）：
 
 ```bash
-.venv/bin/python scripts/verify_assets.py
+.venv/bin/python scripts/verify_assets.py    # 期望 ASSETS_VERIFY_OK
 ```
+
+缺 `runtime/research/` 时前端 `npm run typecheck` 会报找不到 `research_catalog.json`，
+`npm run build` 会报图片尺寸过期 —— 二者都属"资产未恢复"，不是代码缺陷。
 
 ## 运行
 
