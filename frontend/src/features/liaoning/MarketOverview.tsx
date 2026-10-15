@@ -42,14 +42,12 @@ export function MarketOverview({ title, market, product, onProductChange, onPric
     <div className="market-overview__data" role="region" aria-label="商品行情列表" tabIndex={0}>
     <ul className="market-overview__prices">{products.map(name => {
       const row = market.rows.find(item => item.product === name);
-      if (!row) return <li className="market-overview__price" key={name} data-availability="missing"><h3>{name}</h3><p className="market-overview__meta">尚无本地观测</p><div className="market-overview__meta"><span>{PRICE_LEVEL_LABEL[market.priceLevel]}</span></div></li>;
+      if (!row) return <li className="market-overview__price" key={name} data-availability="missing"><h3>{name}</h3><p className="market-overview__meta">尚无本地观测</p></li>;
       const direction = marketDirection(row.change_percent);
       const comparable = row.history.length > 1;
       const movement = !comparable ? '最新' : direction === 'flat' ? '平稳' : `${direction === 'up' ? '↑' : '↓'}${Math.abs(row.change_percent).toFixed(1)}%`;
       return <li className="market-overview__price" key={row.product}>
         <h3>{row.product}</h3><div className="market-overview__row"><p className="market-overview__value"><strong><FlipValue value={formattedPrice(row.price)}/></strong><small>元/kg</small></p><span className="market-overview__change" data-direction={direction} aria-label={comparable ? `较前次 ${direction === 'flat' ? '平稳' : `${signedChange(row.change_percent)}%`}` : '最新观测'}><FlipValue value={movement}/></span></div>
-        <div className="market-overview__meta"><span>{PRICE_LEVEL_LABEL[row.price_level]}</span><time dateTime={row.display_date ?? row.observation_date ?? undefined}>{row.display_date ? '更新' : '观测'}：{row.display_date ?? row.observation_date ?? '—'}</time></div>
-        {row.source && <a className="market-overview__source" href={row.source.url} target="_blank" rel="noopener noreferrer" aria-label={`${row.product}数据来源：${row.source.name}`}><span>{row.source.name}</span><span aria-hidden>↗</span></a>}
         <motion.div className="market-overview__trend-reveal" aria-hidden={view !== 'trend'} inert={view !== 'trend'} initial={false}
           animate={{ height: view === 'trend' ? 'auto' : 0, opacity: view === 'trend' ? 1 : 0, clipPath: view === 'trend' ? 'inset(0 0 0% 0)' : 'inset(0 0 100% 0)' }}
           transition={{ duration: reduced ? 0 : MOTION_DURATION.normal, ease: MOTION_EASE.out }}><MarketTrend row={row}/></motion.div>
@@ -68,6 +66,5 @@ function MarketTrend({ row }: { row: DisplayMarketRow }) {
     {points.map(point => <circle key={point.date} cx={point.x} cy={y(point.price)} r="3"><title>{point.date}：{formattedPrice(point.price)} 元/kg</title></circle>)}
     </svg>
     <div className="market-overview__trend-dates"><time dateTime={points[0].date}>{points[0].date.slice(5)}</time><time dateTime={points.at(-1)!.date}>{points.at(-1)!.date.slice(5)}</time></div>
-    {row.trend_sources?.map(source => <a key={`${source.id}:${source.url}`} className="market-overview__source" href={source.url} target="_blank" rel="noopener noreferrer" aria-label={`${row.product}历史价格来源：${source.name}`}><span>{source.name}</span><span aria-hidden>↗</span></a>)}
   </div>;
 }

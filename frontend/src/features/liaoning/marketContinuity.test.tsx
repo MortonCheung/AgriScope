@@ -72,9 +72,11 @@ describe('价格和历史的持续可用性', () => {
   it('右票展示真实来源集合，计算价格不伪造观测/采集时间、不暴露内部状态', async () => {
     const data = makePresentationFixture(), row = data.records[0];
     row.observed_at = null; row.collected_at = null; row.origin = { kind: 'model_estimate', history_kind: 'calculation' };
+    row.trend_sources = [row.sources[0], { id: 'TEST-HISTORY', name: 'Test-only historical source', url: 'https://example.test/history' }];
     const market = { ...displayMarketFor(data,'shenyang','wholesale'), rows: [displayMarketFor(data,'shenyang','wholesale').rows[0]] };
     const { container } = render(<MemoryRouter><CitySummary market={market}/></MemoryRouter>);
-    expect(screen.getByRole('region', { name: '数据来源' }).querySelectorAll('a')).toHaveLength(4);
+    expect(screen.getByRole('region', { name: '数据来源' }).querySelectorAll('a')).toHaveLength(5);
+    expect(screen.getByRole('link', { name: 'Test-only historical source' }).getAttribute('href')).toBe('https://example.test/history');
     expect(container.textContent).not.toMatch(/模型|计算|模拟|数据较旧|暂无本地|无法获取/);
     const times = container.querySelectorAll('.market-data-status__times dd');
     expect(times[0].textContent).toBe('—'); expect(times[1].textContent).toBe('—');

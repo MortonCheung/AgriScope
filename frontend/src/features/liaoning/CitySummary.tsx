@@ -11,7 +11,7 @@ import { MarketDataStatus } from './MarketDataStatus';
 export function CitySummary({ market }: { market: DisplayMarketView }) {
   const { rising, falling, topRiser, topFaller, average, comparable } = summarizeMarket(market);
   const observed = market.rows.length > 0;
-  const sources = [...new Map((market.regionRows ?? market.rows).flatMap(row => (row.sources ?? (row.source ? [row.source] : [])).map(source => [`${source.id}\n${source.name}\n${source.url}`, source] as const))).values()];
+  const sources = [...new Map((market.regionRows ?? market.rows).flatMap(row => [...(row.sources ?? (row.source ? [row.source] : [])), ...(row.trend_sources ?? [])].map(source => [`${source.id}\n${source.name}\n${source.url}`, source] as const))).values()];
   return <section className="city-summary" aria-label="行情摘要">
     <nav className="city-summary__actions" aria-label="城市工作空间">
       {market.cityId ? <>
