@@ -17,7 +17,7 @@
 `providers/`（决策数据源：正式 HTTP / fixture / mock）、`design/`（设计令牌）、`services/`（IO 与缓存）、
 `performance/`（DPR / 画质档）。讲解模式在 `features/presentation`，证据抽屉在 `features/evidence`。
 
-> `src/legacy/` 已在 V3 收口时整体删除（`frontend/docs/ITEACH_MIGRATION_MATRIX.md` 记录依据）。
+> `src/legacy/` 已在 V3 收口时整体删除（迁移依据归档于仓库外 `archive/reports/`）。
 
 ## 2. 三层与运行时边界
 

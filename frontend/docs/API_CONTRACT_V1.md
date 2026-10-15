@@ -64,4 +64,4 @@
 
 正式 `npm run build` 排除 `dist/decision` 和演示代码，并通过 bundle 边界检查；源快照与旧测试保留。DEV 的 `test_state` 在 production 不生效。请求使用 v1 独立 session key，只保存输入；取消与迟到响应不能回填。
 
-外部 JSON Schema 目前仍保留较窄的旧枚举及 profit.expected 字段，与正式 Python runtime 有差异。本轮按真实生产入口、capability 和运行结果适配，保留版本与测试；没有修改模型工程。后端部署、接口限制与验证见 [`../backend/README.md`](../backend/README.md) 与 [`../backend/FRONTEND_INTEGRATION_HANDOFF.md`](../backend/FRONTEND_INTEGRATION_HANDOFF.md)。
+外部 JSON Schema 目前仍保留较窄的旧枚举及 profit.expected 字段，与正式 Python runtime 有差异。本轮按真实生产入口、capability 和运行结果适配，保留版本与测试；没有修改模型工程。后端部署、接口限制与验证见 [`../backend/README.md`](../backend/README.md)。

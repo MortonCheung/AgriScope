@@ -51,10 +51,11 @@
 - `llm/`：真实 Provider、匿名归一化上下文、严格校验、缓存与实验；其 `llm/artifacts/v2/` 三份评估证据是发布资产。
 - `deploy/`：systemd、20:30/23:30 timer、nginx、环境模板与操作说明（见 `deploy/README.md`）。
 - `scripts/`：启动、全量测试、完整验收、Daily 编排、独立指标重算、资产/发布审计与密钥扫描。
-- `frontend/docs/`：前端设计、审计与迁移文档；`frontend/docs/ITEACH_MIGRATION_MATRIX.md` 记录迁移分类与
-  本轮 `src/legacy/` 清理。
-- 工程文档：`docs/ARCHITECTURE.md`、`docs/API.md`；模型与局限报告在 `docs/models/`；
-  `docs/archive/rc1/` 是已被取代的历史报告，**不能作当前结论**。
+- `frontend/docs/`：前端架构、设计系统、动效与视觉基线、API 与内容契约。
+- 工程文档：`docs/ARCHITECTURE.md`、`docs/API.md`、`docs/RUNTIME_ASSETS.md`；
+  模型规格与局限在 `docs/models/`；运行与数据契约在 `docs/v4-final/`。
+- 阶段报告（施工总结、审计、浏览器证据、旧版研究）**不入库**，本地归档于仓库外
+  `../archive/reports/`；远端只保留 README、架构、API 与必要契约。
 
 ## 安装
 
@@ -187,19 +188,21 @@ GET  /api/research/{city}/tables/{file}      研究数据表（CSV，按需加�
 - **WAPE ≠ 准确率**：它是加权绝对百分比误差；个别档位 `sample_n` 很小，不能当作预测能力。
 
 H / 上市日期由用户输入；没有可信的沈阳日粒度物候，因此**不按作物名猜生育期**。价格是同口径批发市场价，
-**不等于农户实际到手价**。详细证据以 `RC3_FINAL_REPORT.md`、`LLM_REAL_EVALUATION_REPORT.md`、
-`LLM_ABLATION_V2_REPORT.md`、`HYBRID_V2_REPORT.md`、`RC3_TEST_REPORT.md`、`PROJECT_STATUS.md` 为准。
+**不等于农户实际到手价**。详细依据见 `docs/models/MODEL_LIMITATIONS.md`、`docs/models/LEAKAGE_VALIDATION.md`
+与 `docs/v4-final/MARKET_OBSERVATIONS_CONTRACT.md`；LLM 回测与消融的原始报告不入库，本地归档于
+`../archive/reports/`。
 
-## 报告与文档索引
+## 文档索引
 
-前端 V4 的实现、逐阶段验收和浏览器证据见 [V4 设计说明](docs/v4/V4_DESIGN_NOTES.md)、[V4 验收报告](docs/v4/V4_ACCEPTANCE_REPORT.md)、[六城能力矩阵](docs/v4/CITY_DECISION_CAPABILITY_MATRIX.md)。默认从全省观察进入；六城均支持用户条件经营核算，正式短期价格仅沈阳/朝阳，沈阳长期保留探索情景语义。
+默认从全省观察进入；六城均支持用户条件经营核算，正式短期价格仅沈阳/朝阳，沈阳长期保留探索情景语义。
 
-- 长期目标 / 评估 / 门禁 / 回测：`pipelines/long_horizon/artifacts/v2/`
-  （`LONG_HORIZON_V2_TARGET_REPORT.md`、`LONG_HORIZON_V2_EVALUATION_REPORT.md`、
-  `PRODUCTION_GATE_REPORT.md`、`DECISION_LONG_HORIZON_BACKTEST.md`、`LONG_HORIZON_V2_METRICS.csv`）；
-  运行时副本在 `runtime/research/long_horizon/`。
-- 正式销售窗口：`pipelines/long_horizon/artifacts/v2/HARVEST_WINDOW_REPORT.md`。
-- 模型与局限：`docs/models/`（`MODEL_LIMITATIONS.md`、`HRI_REPORT.md`、`PRICE_MODEL_REPORT.md`、
-  `DECISION_ENGINE_SPEC.md` 等）。
-- 工程文档：`docs/ARCHITECTURE.md`（结构、数据流、`runtime` 与 `publishing`）、`docs/API.md`（端点）。
-- 前端工程：`frontend/docs/**`；部署：`deploy/README.md`。
+- 工程文档：`docs/ARCHITECTURE.md`（结构、数据流、`runtime` 与 `publishing`）、`docs/API.md`（端点）、
+  `docs/RUNTIME_ASSETS.md`（运行时资产身份与恢复）。
+- 模型规格与局限：`docs/models/`（`DECISION_ENGINE_SPEC.md`、`RECOMMENDATION_ENGINE_SPEC.md`、
+  `MODEL_LIMITATIONS.md`、`LEAKAGE_VALIDATION.md`、`PRICE_MODEL_REPORT.md` 等）。
+- 运行与数据契约：`docs/v4-final/`（`EXPERIENCE_CONTRACT.md`、`MARKET_OBSERVATIONS_CONTRACT.md`、
+  `SEVEN_REGION_MARKET_FEED_CONTRACT.md`、`DAILY_PUBLICATION_RUNBOOK.md`、`ACCEPTANCE.md`）。
+- 前端工程：`frontend/docs/`（架构、设计系统、动效与视觉基线、API 与内容契约）；部署：`deploy/README.md`。
+- 长期研究产物（本地，不入库）：`pipelines/long_horizon/artifacts/v2/`；运行时副本在
+  `runtime/research/long_horizon/`。
+- 阶段报告 / 审计 / 浏览器证据（本地，不入库）：仓库外 `../archive/reports/`。

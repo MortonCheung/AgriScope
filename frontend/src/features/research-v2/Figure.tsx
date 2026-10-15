@@ -14,7 +14,7 @@ export interface V2FigureProps {
 /**
  * v2 论文图（V5 §34/§35/§88）。
  *
- * 现实约束（见 docs/SHENYANG_V2_FRONTEND_AUDIT.md §G3）：v2 只给了文件名，
+ * 现实约束（原审计见本地归档 archive/reports/ §G3）：v2 只给了文件名，
  * **没有** 图标题、图注、图级来源。因此这里只做三件确定的事：
  *   图编号、图片本体（点击放大、object-fit: contain、不裁切）、统一的来源段落在文末。
  * 缺的那三样**不编**，记入文档。

@@ -4,7 +4,7 @@ import { GLOSS_UNWRAP, PROSE_ENUM_REPLACEMENTS, PROSE_TOKEN_CANDIDATES, proseTer
 /**
  * 有限 markdown 解析（V5 §33 的现实退化）。
  *
- * v2 的 `sections[].content` **本身就是 markdown 字符串**（见 docs/SHENYANG_V2_FRONTEND_AUDIT.md §4），
+ * v2 的 `sections[].content` **本身就是 markdown 字符串**（原审计见本地归档 archive/reports/ §4），
  * 所以"完全不解析"在这一版数据上做不到。这里的边界是：
  *
  *   只解析研究侧**实际用到**的 4 种语法 —— `###` 小标题、`- ` 列表、`| 表格 |`、行内 `**加粗**` 与 `` `代码` ``；

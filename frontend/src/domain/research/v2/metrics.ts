@@ -10,8 +10,8 @@
  *        - 列名里的单位后缀（`_ha` / `_t` / `_kg_ha` / `_per_mm` / `_pct`）
  *        - 文章正文（A01 §2.3 变量定义、§3.1 方法）
  *
- * 缺口（没有 definition / formula / interpretation 的）记入 `docs/METRIC_GAPS.md`，
- * 未登记的中文列名的缺口记入 `docs/TABLE_SCHEMA_GAPS.md`。
+ * 缺口（没有 definition / formula / interpretation 的）与未登记的中文列名，
+ * 统一记录在本地归档 `archive/reports/`（原 `frontend/docs/` 缺口清单，不入 Git）。
  */
 
 export type MetricKind = 'physical' | 'derived' | 'statistical';
@@ -147,7 +147,7 @@ export const COLUMN_META: Record<string, ColumnMeta> = {
   x_mean: { key: 'x_mean', label: '暴露变量均值', kind: 'derived', valueType: 'number' },
   x_sd: { key: 'x_sd', label: '暴露变量标准差', kind: 'derived', valueType: 'number' },
 
-  // ---- 预测/稳健性：单位在研究侧未声明，只有数值（记入 METRIC_GAPS）----
+  // ---- 预测/稳健性：单位在研究侧未声明，只有数值（缺口登记见本地归档）----
   baseline: { key: 'baseline', label: '基线 RMSE', kind: 'derived', valueType: 'number', precision: 4 },
   weather: { key: 'weather', label: '含天气模型 RMSE', kind: 'derived', valueType: 'number', precision: 4 },
   delta_rmse: { key: 'delta_rmse', label: 'RMSE 变化', kind: 'derived', valueType: 'number', precision: 4 },
@@ -427,7 +427,7 @@ export const VALUE_LABELS: Record<string, Record<string, string>> = {
 
 /**
  * 指标定义（V5 §53）。只收录研究正文/方法里**明确写过**的定义与公式；
- * 没写的不要在这里补，缺口记入 `docs/METRIC_GAPS.md`。
+ * 没写的不要在这里补，缺口登记在本地归档 `archive/reports/`。
  */
 export const METRIC_DEFINITIONS: readonly MetricDefinition[] = [
   {

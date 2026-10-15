@@ -45,5 +45,5 @@
 
 - 禁止运行时直接访问研究工程路径；研究内容必须经同步脚本进入 `public/research`。
 - 禁止把 `data/ models/ reports/ outputs/` 全量复制进前端。
-- 任何删除前先更新 `docs/ITEACH_MIGRATION_MATRIX.md`，确认旧模块已被新组件取代。
+- 任何删除前先确认旧模块已被新组件取代，并在提交信息中写明依据（迁移记录归档于仓库外 `archive/reports/`）。
 - 每个阶段完成后必须 `npm run build` 通过；新增非平凡逻辑至少保留一个能证明行为的自动化检查。
