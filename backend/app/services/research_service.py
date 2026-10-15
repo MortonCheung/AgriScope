@@ -59,7 +59,7 @@ LLM_VARIANT_COLUMNS: Tuple[Tuple[str, str], ...] = (
     ("hybrid_C", "hybrid_C_WAPE"),
 )
 
-# 治理红线（来自 RC3_FINAL_REPORT.md §6）：独立未来验证起点不得早于该日期。
+# 治理红线（原始依据见本地归档 archive/reports/ 中 RC3_FINAL_REPORT.md §6，不入 Git）：独立未来验证起点不得早于该日期。
 PROSPECTIVE_VALIDATION_NOT_BEFORE = "2026-10-08"
 
 # 路径白名单：只允许小写字母/下划线城市 id；文章 id 形如 A01；文件名禁止斜杠与点号穿越。

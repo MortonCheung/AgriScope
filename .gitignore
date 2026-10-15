@@ -47,3 +47,36 @@ pipelines/long_horizon/reports/
 # Mutable publication transaction state (never part of a source release).
 runtime/.manifest.lock
 runtime/publication_history/
+
+# ============================================================================
+# 过程材料（阶段报告 / 审计 / 浏览器证据）——不进 Git
+# 远端只保留 README、架构、API、运行与数据契约；
+# 阶段报告统一归档到仓库外 archive/reports/，避免再次上传。
+# ============================================================================
+
+# 根级过程报告
+/RC[0-9]*.md
+/PROJECT_STATUS.md
+/*_REPORT.md
+/*_AUDIT.md
+/*_HANDOFF.md
+/*_FREEZE_GATE.md
+
+# 任意目录下的过程产物（施工总结 / 审计 / 交接 / 门禁）
+*_AUDIT.md
+*_HANDOFF.md
+*_FREEZE_GATE.md
+
+# 阶段证据目录
+docs/v4/
+docs/archive/
+llm/reports/
+
+# 前端过程文档（保留 DESIGN_SYSTEM / *_CONTRACT / ARCHITECTURE / MOTION / VISUAL 等契约）
+frontend/docs/*_AUDIT.md
+frontend/docs/*_REPORT.md
+frontend/docs/*_PLAN.md
+# 同步脚本会重新生成这些缺口/映射清单（研发态产物，不入 Git）
+frontend/docs/*_GAPS.md
+frontend/docs/*_MATRIX.md
+frontend/docs/*_MAP.md

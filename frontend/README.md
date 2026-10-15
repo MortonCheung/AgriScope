@@ -35,7 +35,7 @@ python3 -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8787 -
 npm run preview
 ```
 
-后端部署与接口见 [`../backend/README.md`](../backend/README.md) 与 [`../backend/FRONTEND_INTEGRATION_HANDOFF.md`](../backend/FRONTEND_INTEGRATION_HANDOFF.md)；正式数据契约见 [API_CONTRACT_V1.md](docs/API_CONTRACT_V1.md)。旧的 `server/` bridge **已退役**（见 [server/README.md](server/README.md)）。已发布研究不需要为 Decision/Daily 接入重新同步。
+后端部署与接口见 [`../backend/README.md`](../backend/README.md)；正式数据契约见 [API_CONTRACT_V1.md](docs/API_CONTRACT_V1.md)。旧的 `server/` bridge **已退役**（见 [server/README.md](server/README.md)）。已发布研究不需要为 Decision/Daily 接入重新同步。
 
 ## 验证
 
@@ -85,14 +85,14 @@ docs/               施工方案、架构、内容契约、设计系统、迁移
 
 ## 文档
 
-- [本轮前端交付与验证](docs/FRONTEND_FINAL_REPORT.md)
 - [Decision Contract v0](docs/API_CONTRACT_V0.md)
-- [真实样例与 Mock 字段](docs/MOCK_DATA_MAP.md)
+- [Decision Contract v1](docs/API_CONTRACT_V1.md)
 - [现役视觉基线](docs/VISUAL_BASELINE.md)
-- [实际参考使用记录](docs/REFERENCE_USAGE_REPORT.md)
+- [动效语言](docs/MOTION_LANGUAGE.md)
 - [前端架构](docs/FRONTEND_ARCHITECTURE.md)
 - [研究内容契约](docs/RESEARCH_CONTENT_CONTRACT.md)
 - [设计系统](docs/DESIGN_SYSTEM.md)
-- [施工方案](docs/AGRISCOPE_FRONTEND_PLAN.md)
-- [iTeach 迁移矩阵](docs/ITEACH_MIGRATION_MATRIX.md)
-- [输入资源审计](docs/INPUT_AUDIT.md)
+- [七区域行情呈现](docs/CONTINUOUS_MARKET_PRESENTATION.md)
+- [七区域前端接入](docs/SEVEN_REGION_LIVE_FRONTEND.md)
+
+阶段报告（交付验证、迁移矩阵、输入审计、Mock 字段映射等）不入库，统一归档于仓库外 `../archive/reports/`。

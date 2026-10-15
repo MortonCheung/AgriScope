@@ -5,7 +5,7 @@
 
 - 唯一正式后端：工程根目录的 **`backend/`**（FastAPI）—— 见 [`../backend/README.md`](../backend/README.md)
 - 启动方式（在前端目录运行）：`npm run dev:api` → 实际启动 `backend.app.main:app`（127.0.0.1:8787）
-- 前端契约与逐字段交接：`../backend/FRONTEND_INTEGRATION_HANDOFF.md`
+- 前端契约与逐字段交接：`../backend/README.md`（旧交接报告已归档于仓库外 `archive/reports/`）
 - 双后端审计与最终处置：`../FINAL_INTEGRATION_MERGE_REPORT.md`
 - 单仓库与长期层落地：`../MONOREPO_V1_MERGE_REPORT.md`
 - 基线布局与运行时资产：`../RUNTIME_ASSETS.md`

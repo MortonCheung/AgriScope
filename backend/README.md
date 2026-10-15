@@ -12,7 +12,7 @@
 - 不改 Final / Daily 任何冻结代码；不重训；不改前端 `AgriScope/`；
 - 不接 LLM、不加数据库、不加额外基础设施中间件（仅 CORS + request_id）；
 - **canonical 数据只读**：`models/data/**`、`data/model_ready/**`、`models/reports/final/**` 全只读；
-- 不改写任何冻结报告 / 哈希交付物（见 `CONTRACT_ALIGNMENT_REPORT.md` 的 Phase 2 说明）。
+- 不改写任何冻结报告 / 哈希交付物（原始对齐说明归档于仓库外 `archive/reports/` 的 `CONTRACT_ALIGNMENT_REPORT.md`）。
 
 ## 目录
 
@@ -32,11 +32,7 @@ backend/
 ├── deploy/agriscope-api.service
 ├── openapi.json               # 生成的 OpenAPI 规范
 ├── requirements.txt / .env.example
-├── README.md
-├── FRONTEND_INTEGRATION_HANDOFF.md
-├── CONTRACT_ALIGNMENT_REPORT.md
-├── BACKEND_FINAL_REPORT.md
-└── BACKEND_FREEZE_GATE.md
+└── README.md
 ```
 
 ## 安装与运行
@@ -103,4 +99,4 @@ python3 -m pytest backend/tests/test_e2e.py -q   # 17 passed
 ```
 
 契约另用**前端真实 adapter**（`finalAdapter.ts` + `validation.ts`）交叉验证：
-27/27 通过（详见 `FRONTEND_INTEGRATION_HANDOFF.md`）。
+27/27 通过（原始交接报告归档于仓库外 `archive/reports/`）。
