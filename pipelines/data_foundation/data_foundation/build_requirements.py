@@ -170,7 +170,7 @@ def main():
 
     # CANONICAL_TABLE_REGISTRY（§52：每个指标有且仅有一个推荐表）
     creg = [
-        ("daily price", "02_standardized/market/price_observation.parquet", "六城 canonical（污染已恢复）", "archive/old_marts/marts/fact_price_*（已归档，勿用）", "A", "2020-2026", "v1.1"),
+        ("daily price", "02_standardized/market/price_observation.parquet", "六城 canonical（污染已恢复）", "archive/legacy_data/old_marts/marts/fact_price_*（已归档，勿用）", "A", "2020-2026", "v1.1"),
         ("province price", "02_standardized/market/province_price_reference.parquet", "retained_source supplement V1+V3", "—", "A", "2019-2026", "v1.1"),
         ("market volume", "02_standardized/market/market_volume.parquet", "六城 canonical volume", "—", "C", "2015-2026", "v1.1"),
         ("market supply proxy", "02_standardized/market/supply_proxy.parquet", "retained_source V3", "—", "B", "2019-2026", "v1.1"),
@@ -211,9 +211,9 @@ def main():
     # DO_NOT_USE_FOR_MODEL（§53）
     dnu = [
         ("02_standardized/market/price_observation_nonstandard.parquet", "非作物/未知 token（苗木/观赏/加工/未知），不得作为作物特征", "非作物"),
-        ("archive/old_marts/**", "旧 marts/curated/staging 聚合层，已被 data/ 取代", "旧加工层"),
-        ("archive/data_legacy/**", "旧 supplement V1-V3 加工副本，正式数据请用 data/processed 与 data/model_ready（原始保留在 data/raw/retained_source）", "旧加工层"),
-        ("archive/data_reports/**", "历史报告/清单，非数据表", "历史报告"),
+        ("archive/legacy_data/old_marts/**", "旧 marts/curated/staging 聚合层，已被 data/ 取代", "旧加工层"),
+        ("archive/legacy_data/**", "旧 supplement/历史备份等加工副本，正式数据请用 data/processed 与 data/model_ready（原始保留在 data/raw/retained_source）", "旧加工层"),
+        ("archive/legacy_data/data_reports/**", "历史报告/清单，非数据表", "历史报告"),
         ("city_data/reference/**", "已清场，不再作为数据入口", "废弃路径"),
         ("models/data/snapshots/**", "建模侧冻结快照，与 foundation 可能不同步", "快照"),
         ("02_standardized/demand/demand_proxy.parquet 中 model_value=UNUSABLE 行", "NOT_FOUND 占位，无真实数值", "占位"),

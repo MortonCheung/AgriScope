@@ -35,7 +35,7 @@ def load_price(path, is_marts=False):
 
 def main():
     rows = []
-    marts_p = ROOT / "archive/old_marts/marts/fact_price_observation.csv"
+    marts_p = ROOT / "archive/legacy_data/old_marts/marts/fact_price_observation.csv"
     if not marts_p.exists():
         marts_p = ROOT / "city_data/reference/marts/fact_price_observation.csv"
     mp = load_price(marts_p, True) if marts_p.exists() else {}

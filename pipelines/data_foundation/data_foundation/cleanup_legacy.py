@@ -34,12 +34,12 @@ RETAINED_FILES = [
 ]
 # 旧加工层 / 审计 / 报告 → archive/
 ARCHIVE_MOVES = [
-    ("city_data/reference/marts", "archive/old_marts/marts"),
-    ("city_data/reference/staging", "archive/old_marts/staging"),
-    ("city_data/reference/curated", "archive/old_marts/curated"),
-    ("city_data/reference/final_foundation", "archive/data_reports/final_foundation"),
-    ("city_data/reference/reports", "archive/data_reports/reference_reports"),
-    ("city_data/reference/registries", "archive/migration/reference_registries"),
+    ("city_data/reference/marts", "archive/legacy_data/old_marts/marts"),
+    ("city_data/reference/staging", "archive/legacy_data/old_marts/staging"),
+    ("city_data/reference/curated", "archive/legacy_data/old_marts/curated"),
+    ("city_data/reference/final_foundation", "archive/legacy_data/data_reports/final_foundation"),
+    ("city_data/reference/reports", "archive/legacy_data/data_reports/reference_reports"),
+    ("city_data/reference/registries", "archive/audits/migration-20260923/reference_registries"),
     ("decision_audit", "archive/audits/decision_engine_pre_foundation"),
 ]
 
@@ -156,7 +156,7 @@ def main():
         print(f"[ARCHIVE] {src} -> {dst}")
 
     # 3b) supplement 报告归档
-    rep_dst = ARC / "data_reports"
+    rep_dst = ARC / "legacy_data" / "data_reports"
     rep_dst.mkdir(parents=True, exist_ok=True)
     for pat in ["*DECISION_ENGINE_DATA_SUPPLEMENT*.md", "*_V2_REPORT.md", "*V3_REPORT.md",
                 "DATA_GAP_*.md", "QC_REPORT_supplement.md", "QC_REPORT_v2.md", "QC_REPORT_v3.md",

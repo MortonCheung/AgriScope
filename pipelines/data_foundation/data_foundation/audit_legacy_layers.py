@@ -56,10 +56,10 @@ LINEAGE = {
 
 SCAN = [
     ("data/raw/retained_source/city_data", "retained_source/city_data"),
-    ("archive/old_marts/marts", "archive/old_marts/marts"),
-    ("archive/old_marts/curated", "archive/old_marts/curated"),
-    ("archive/old_marts/staging", "archive/old_marts/staging"),
-    ("archive/data_reports/final_foundation", "archive/data_reports/final_foundation"),
+    ("archive/legacy_data/old_marts/marts", "archive/legacy_data/old_marts/marts"),
+    ("archive/legacy_data/old_marts/curated", "archive/legacy_data/old_marts/curated"),
+    ("archive/legacy_data/old_marts/staging", "archive/legacy_data/old_marts/staging"),
+    ("archive/legacy_data/data_reports/final_foundation", "archive/legacy_data/data_reports/final_foundation"),
 ]
 
 
@@ -120,9 +120,9 @@ def main():
                 role = "DERIVED_USEFUL"
                 if src_rows and tgt_rows and src_rows > tgt_rows * 1.2:
                     status = "PARTIALLY_MIGRATED"
-            elif layer.startswith("archive/old_marts"):
+            elif layer.startswith("archive/legacy_data/old_marts"):
                 status, role = "SUPERSEDED", "SUPERSEDED"
-            elif layer.startswith("archive/data_reports"):
+            elif layer.startswith("archive/legacy_data/data_reports"):
                 status, role = "SUPERSEDED", "LEGACY"
             else:
                 status, role = "NOT_USED", "LEGACY"
