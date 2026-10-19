@@ -11,7 +11,8 @@ RUNTIME = ROOT / 'runtime'                 # 产品运行时资产
 # 交付报告分散在：AgriScope 根（LLM 报告）、runtime、根 data/research/long_horizon、archive
 SEARCH_DIRS = [ROOT, RUNTIME,
                PROJECT / 'data' / 'research' / 'long_horizon',
-               PROJECT / 'archive' / 'agent_reports',
+               PROJECT / 'archive' / 'historical' / 'agent_reports',
+               PROJECT / 'archive' / 'agent_reports',  # 兼容重组前旧位置
                PROJECT / 'archive' / 'audits']
 DELIVERABLES = ['LONG_HORIZON_V2_TARGET_REPORT.md','LONG_HORIZON_V2_EVALUATION_REPORT.md',
  'LONG_HORIZON_V2_METRICS.csv','LONG_HORIZON_V2_REGISTRY.csv','HARVEST_WINDOW_REPORT.md',

@@ -16,7 +16,8 @@ _DELIVERY_DIRS = [
     RESEARCH_ROOT / "data" / "research" / "long_horizon",
     RESEARCH_ROOT / "models" / "registry",
     v2.ARTIFACTS.parent.parent,
-    RESEARCH_ROOT / "archive" / "agent_reports",
+    RESEARCH_ROOT / "archive" / "historical" / "agent_reports",
+    RESEARCH_ROOT / "archive" / "agent_reports",  # 兼容 2026-10-19 重组前的旧位置
     RESEARCH_ROOT / "archive" / "audits",
 ]
 
