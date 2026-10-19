@@ -80,3 +80,13 @@ frontend/docs/*_PLAN.md
 frontend/docs/*_GAPS.md
 frontend/docs/*_MATRIX.md
 frontend/docs/*_MAP.md
+
+# ============================================================================
+# 二进制归档 / 媒体产物（部署包统一归档到外层 archive/build_artifacts/）
+# ============================================================================
+*.tar.gz
+*.tgz
+*.zip
+*.7z
+*.mp4
+*.mov
