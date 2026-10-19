@@ -34,7 +34,7 @@ AgriScope/pipelines/research/
 ## 运行
 
 ```
-cd /Users/morton_cheung/Desktop/比赛/大数据分析/AgriScope
+cd /path/to/AgriScope   # 替换为你的仓库根目录（含 pipelines/ 的目录）
 python3 -m pipelines.research.run_research --module A01 --cities all
 python3 -m pipelines.research.run_research --module A01 --cities chaoyang
 ```
